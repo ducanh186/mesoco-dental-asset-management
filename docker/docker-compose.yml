@@ -1,0 +1,103 @@
+# =============================================================================
+# Mesoco Dental Asset Management - Docker Compose (Devpack)
+# =============================================================================
+# Phase 0.5: Handoff-friendly local development environment
+# Recipient only needs Docker Desktop installed
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Laravel Application (PHP + Artisan serve)
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile
+    container_name: mesoco-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind-mount source code for live edits
+      - ..:/var/www/html
+      # Named volumes for dependencies (faster on Windows)
+      - vendor_data:/var/www/html/vendor
+      - node_modules_data:/var/www/html/node_modules
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=mesoco_dental
+      - DB_USERNAME=mesoco
+      - DB_PASSWORD=secret
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mesoco-network
+
+  # ---------------------------------------------------------------------------
+  # Vite Dev Server (HMR for React)
+  # ---------------------------------------------------------------------------
+  vite:
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile
+    container_name: mesoco-vite
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ..:/var/www/html
+      - node_modules_data:/var/www/html/node_modules
+    command: >
+      sh -c "
+        cd /var/www/html &&
+        if [ ! -d node_modules ]; then npm install; fi &&
+        npm run dev -- --host 0.0.0.0 --port 5173
+      "
+    environment:
+      - VITE_HMR_HOST=localhost
+    networks:
+      - mesoco-network
+
+  # ---------------------------------------------------------------------------
+  # MySQL Database
+  # ---------------------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: mesoco-db
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mesoco_dental
+      MYSQL_USER: mesoco
+      MYSQL_PASSWORD: secret
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - mesoco-network
+
+# =============================================================================
+# Named Volumes (for performance on Windows)
+# =============================================================================
+volumes:
+  db_data:
+    driver: local
+  vendor_data:
+    driver: local
+  node_modules_data:
+    driver: local
+
+# =============================================================================
+# Network
+# =============================================================================
+networks:
+  mesoco-network:
+    driver: bridge
