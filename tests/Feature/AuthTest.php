@@ -97,6 +97,18 @@ class AuthTest extends TestCase
             ->assertJsonValidationErrors(['employee_code', 'password']);
     }
 
+    public function test_login_rejects_old_login_field_payload(): void
+    {
+        // Test that old payload format { login, password } is rejected
+        $response = $this->postJson('/login', [
+            'login' => 'EMP001',
+            'password' => 'Password123!',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['employee_code']);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Me Endpoint Tests

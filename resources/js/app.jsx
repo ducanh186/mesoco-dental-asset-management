@@ -48,9 +48,9 @@ const AuthProvider = ({ children }) => {
           }
      };
 
-     const login = async (login, password) => {
+     const login = async (employee_code, password) => {
           await axios.get('/sanctum/csrf-cookie');
-          await axios.post('/login', { login, password });
+          await axios.post('/login', { employee_code, password });
           await fetchUser();
      };
 
@@ -383,7 +383,7 @@ const ForgotPasswordPage = () => {
 };
 
 const LoginPage = () => {
-     const [loginId, setLoginId] = useState('');
+     const [employeeCode, setEmployeeCode] = useState('');
      const [password, setPassword] = useState('');
      const [remember, setRemember] = useState(false);
      const [error, setError] = useState(null);
@@ -400,11 +400,11 @@ const LoginPage = () => {
           setIsLoading(true);
 
           try {
-               await login(loginId, password, remember);
+               await login(employeeCode, password, remember);
                navigate(from, { replace: true });
           } catch (err) {
                const message = err.response?.data?.message ||
-                    err.response?.data?.errors?.login?.[0] ||
+                    err.response?.data?.errors?.employee_code?.[0] ||
                     'Login failed. Please check your credentials.';
                setError(message);
           } finally {
@@ -429,14 +429,14 @@ const LoginPage = () => {
                          )}
 
                          <div className="form-group">
-                              <label htmlFor="login">Email or Employee ID</label>
+                              <label htmlFor="employee_code">Employee ID</label>
                               <input
-                                   id="login"
+                                   id="employee_code"
                                    type="text"
                                    className="form-input"
-                                   value={loginId}
-                                   onChange={e => setLoginId(e.target.value)}
-                                   placeholder="Enter your email or employee ID"
+                                   value={employeeCode}
+                                   onChange={e => setEmployeeCode(e.target.value)}
+                                   placeholder="Enter your employee ID"
                                    required
                                    autoFocus
                               />
