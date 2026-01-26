@@ -12,11 +12,13 @@ import {
     TablePagination,
     useToast 
 } from '../components/ui';
+import { useI18n } from '../i18n';
 
 /**
  * MaintenancePage - Maintenance schedules and service records
  */
 const MaintenancePage = ({ user }) => {
+    const { t } = useI18n();
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -94,12 +96,12 @@ const MaintenancePage = ({ user }) => {
     ];
 
     const statusOptions = [
-        { value: '', label: 'All Status' },
-        { value: 'scheduled', label: 'Scheduled' },
-        { value: 'upcoming', label: 'Upcoming' },
-        { value: 'in-progress', label: 'In Progress' },
-        { value: 'completed', label: 'Completed' },
-        { value: 'overdue', label: 'Overdue' },
+        { value: '', label: t('assets.statuses.all') },
+        { value: 'scheduled', label: t('maintenance.types.scheduled') },
+        { value: 'upcoming', label: t('maintenance.upcoming') },
+        { value: 'in-progress', label: t('maintenance.inProgress') },
+        { value: 'completed', label: t('maintenance.completed') },
+        { value: 'overdue', label: t('maintenance.overdue') },
     ];
 
     // Filter data
@@ -135,13 +137,13 @@ const MaintenancePage = ({ user }) => {
     const columns = [
         { 
             key: 'id', 
-            label: 'ID',
+            label: t('maintenance.maintenanceId'),
             width: '100px',
             render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>
         },
         { 
             key: 'equipment', 
-            label: 'Equipment',
+            label: t('requests.equipment'),
             render: (value, row) => (
                 <div>
                     <p className="font-medium text-text">{value}</p>
@@ -151,14 +153,14 @@ const MaintenancePage = ({ user }) => {
         },
         { 
             key: 'type', 
-            label: 'Type',
+            label: t('common.type'),
             render: (value) => <Badge variant={getTypeVariant(value)} size="sm">{value}</Badge>
         },
-        { key: 'scheduledDate', label: 'Scheduled Date' },
-        { key: 'assignedTo', label: 'Assigned To' },
+        { key: 'scheduledDate', label: t('maintenance.scheduledDate') },
+        { key: 'assignedTo', label: t('maintenance.assignedTo') },
         { 
             key: 'priority', 
-            label: 'Priority',
+            label: t('requests.priority'),
             render: (value) => {
                 const colors = { high: 'danger', normal: 'default', low: 'info' };
                 return <Badge variant={colors[value]} size="sm" outline>{value}</Badge>;
@@ -166,21 +168,21 @@ const MaintenancePage = ({ user }) => {
         },
         { 
             key: 'status', 
-            label: 'Status',
+            label: t('common.status'),
             render: (value) => <Badge variant={getStatusVariant(value)} size="sm" dot>{value}</Badge>
         },
         {
             key: 'actions',
-            label: 'Actions',
+            label: t('common.actions'),
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => toast.info(`Viewing ${row.id}`)}>
-                        View
+                        {t('common.view')}
                     </Button>
                     {row.status !== 'completed' && (
                         <Button size="sm" variant="outline" onClick={() => toast.info(`Updating ${row.id}`)}>
-                            Update
+                            {t('common.edit')}
                         </Button>
                     )}
                 </div>
@@ -211,7 +213,7 @@ const MaintenancePage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-text">{stats.upcoming}</p>
-                                <p className="text-sm text-text-muted">Upcoming</p>
+                                <p className="text-sm text-text-muted">{t('maintenance.upcoming')}</p>
                             </div>
                         </div>
                     </CardBody>
@@ -227,7 +229,7 @@ const MaintenancePage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-text">{stats.inProgress}</p>
-                                <p className="text-sm text-text-muted">In Progress</p>
+                                <p className="text-sm text-text-muted">{t('maintenance.inProgress')}</p>
                             </div>
                         </div>
                     </CardBody>
@@ -243,7 +245,7 @@ const MaintenancePage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-text">{stats.completed}</p>
-                                <p className="text-sm text-text-muted">Completed</p>
+                                <p className="text-sm text-text-muted">{t('maintenance.completed')}</p>
                             </div>
                         </div>
                     </CardBody>
@@ -260,7 +262,7 @@ const MaintenancePage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-text">{stats.emergency}</p>
-                                <p className="text-sm text-text-muted">Emergency</p>
+                                <p className="text-sm text-text-muted">{t('maintenance.types.emergency')}</p>
                             </div>
                         </div>
                     </CardBody>
@@ -270,21 +272,21 @@ const MaintenancePage = ({ user }) => {
             {/* Maintenance Table */}
             <Card>
                 <CardHeader 
-                    title="Maintenance Schedule"
-                    subtitle="Track scheduled and ongoing maintenance activities"
+                    title={t('maintenance.schedule')}
+                    subtitle={t('maintenance.subtitle')}
                     action={
                         <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => toast.info('Calendar view coming soon')}>
+                            <Button size="sm" variant="outline" onClick={() => toast.info(t('maintenance.comingSoon'))}>
                                 <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                                     <line x1="16" y1="2" x2="16" y2="6" />
                                     <line x1="8" y1="2" x2="8" y2="6" />
                                     <line x1="3" y1="10" x2="21" y2="10" />
                                 </svg>
-                                Calendar
+                                {t('maintenance.calendarView')}
                             </Button>
-                            <Button size="sm" onClick={() => toast.info('Schedule maintenance form coming soon')}>
-                                Schedule Maintenance
+                            <Button size="sm" onClick={() => toast.info(t('maintenance.comingSoon'))}>
+                                {t('maintenance.createSchedule')}
                             </Button>
                         </div>
                     }
@@ -294,7 +296,7 @@ const MaintenancePage = ({ user }) => {
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Input
-                                placeholder="Search by equipment, ID, or code..."
+                                placeholder={t('maintenance.searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 leftIcon={
@@ -318,15 +320,15 @@ const MaintenancePage = ({ user }) => {
                     <Table
                         columns={columns}
                         data={filteredData}
-                        emptyMessage="No maintenance records found"
+                        emptyMessage={t('maintenance.noRecords')}
                         emptyState={
                             <div className="text-center py-12">
                                 <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                     <circle cx="12" cy="12" r="3" />
                                     <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42" />
                                 </svg>
-                                <h3 className="mt-3 text-sm font-medium text-text">No maintenance scheduled</h3>
-                                <p className="mt-1 text-sm text-text-muted">All equipment is up to date.</p>
+                                <h3 className="mt-3 text-sm font-medium text-text">{t('maintenance.noRecords')}</h3>
+                                <p className="mt-1 text-sm text-text-muted">{t('maintenance.noRecordsHint')}</p>
                             </div>
                         }
                     />

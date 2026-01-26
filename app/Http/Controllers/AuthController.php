@@ -69,7 +69,13 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        Auth::logout();
+        // For Sanctum SPA authentication
+        if ($request->user()) {
+            // Delete all personal access tokens for the user
+            $request->user()->tokens()->delete();
+        }
+        
+        // Invalidate session
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

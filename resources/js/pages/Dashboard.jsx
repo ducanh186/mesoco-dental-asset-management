@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../i18n';
 
 /**
  * Dashboard Page - OrangeHRM-inspired dashboard with summary cards and data table
  */
 const Dashboard = ({ user }) => {
+    const { t } = useI18n();
     const [tableData, setTableData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -26,26 +28,26 @@ const Dashboard = ({ user }) => {
     // Summary cards data
     const summaryCards = [
         {
-            title: 'Total Equipment',
+            title: t('dashboard.totalEquipment'),
             value: '156',
             icon: 'equipment',
-            trend: '+12 this month',
+            trend: t('dashboard.thisMonth', { count: 12 }),
             trendUp: true,
             color: 'primary'
         },
         {
-            title: 'Active Requests',
+            title: t('dashboard.activeRequests'),
             value: '24',
             icon: 'requests',
-            trend: '8 pending approval',
+            trend: t('dashboard.pendingApproval', { count: 8 }),
             trendUp: null,
             color: 'warning'
         },
         {
-            title: 'Maintenance Due',
+            title: t('dashboard.maintenanceDue'),
             value: '7',
             icon: 'maintenance',
-            trend: '3 overdue',
+            trend: t('dashboard.overdue', { count: 3 }),
             trendUp: false,
             color: 'danger'
         }
@@ -90,10 +92,10 @@ const Dashboard = ({ user }) => {
             {/* Welcome Section */}
             <div className="welcome-section bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
                 <h2 className="welcome-title text-text">
-                    Welcome back, {user?.name?.split(' ')[0] || 'User'}!
+                    {t('dashboard.welcome', { name: user?.name || 'User' })}
                 </h2>
                 <p className="welcome-subtitle text-text-muted">
-                    Here's what's happening with your equipment today.
+                    {t('dashboard.welcomeSubtitle')}
                 </p>
             </div>
 
@@ -117,14 +119,14 @@ const Dashboard = ({ user }) => {
 
             {/* Quick Actions */}
             <div className="quick-actions-section">
-                <h3 className="section-title text-text">Quick Actions</h3>
+                <h3 className="section-title text-text">{t('dashboard.quickActions')}</h3>
                 <div className="quick-actions-grid">
                     <Link to="/equipment/new" className="quick-action-btn bg-surface hover:bg-surface-hover border border-border text-text rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                        Add Equipment
+                        {t('dashboard.addEquipment')}
                     </Link>
                     <Link to="/requests/new" className="quick-action-btn bg-surface hover:bg-surface-hover border border-border text-text rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -133,16 +135,16 @@ const Dashboard = ({ user }) => {
                             <line x1="12" y1="18" x2="12" y2="12" />
                             <line x1="9" y1="15" x2="15" y2="15" />
                         </svg>
-                        New Request
+                        {t('dashboard.newRequest')}
                     </Link>
-                    <Link to="/qr-scan" className="quick-action-btn bg-surface hover:bg-surface-hover border border-border text-text rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <Link to="/my-assets" className="quick-action-btn bg-surface hover:bg-surface-hover border border-border text-text rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="3" width="7" height="7" />
                             <rect x="14" y="3" width="7" height="7" />
                             <rect x="3" y="14" width="7" height="7" />
                             <rect x="14" y="14" width="7" height="7" />
                         </svg>
-                        Scan QR Code
+                        {t('dashboard.scanQrCode')}
                     </Link>
                     <Link to="/reports" className="quick-action-btn bg-surface hover:bg-surface-hover border border-border text-text rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -151,7 +153,7 @@ const Dashboard = ({ user }) => {
                             <path d="M13 17V5" />
                             <path d="M8 17v-3" />
                         </svg>
-                        View Reports
+                        {t('dashboard.viewReports')}
                     </Link>
                 </div>
             </div>
@@ -159,9 +161,9 @@ const Dashboard = ({ user }) => {
             {/* Recent Equipment Table */}
             <div className="data-table-section bg-surface rounded-lg shadow-sm border border-border">
                 <div className="section-header border-b border-border">
-                    <h3 className="section-title text-text">Recent Equipment</h3>
-                    <Link to="/equipment" className="view-all-link text-primary hover:text-primary-hover">
-                        View All
+                    <h3 className="section-title text-text">{t('dashboard.recentEquipment')}</h3>
+                    <Link to="/assets" className="view-all-link text-primary hover:text-primary-hover">
+                        {t('dashboard.viewAll')}
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="9 18 15 12 9 6" />
                         </svg>
@@ -172,7 +174,7 @@ const Dashboard = ({ user }) => {
                     {isLoading ? (
                         <div className="table-loading text-text-muted">
                             <div className="loading-spinner border-primary"></div>
-                            <p>Loading equipment...</p>
+                            <p>{t('dashboard.loading')}</p>
                         </div>
                     ) : tableData.length === 0 ? (
                         <div className="table-empty text-text-muted">
@@ -181,22 +183,22 @@ const Dashboard = ({ user }) => {
                                 <rect x="2" y="13" width="20" height="8" rx="2" />
                                 <line x1="12" y1="17" x2="12" y2="17.01" />
                             </svg>
-                            <h4 className="text-text">No Equipment Found</h4>
-                            <p>Start by adding your first piece of equipment.</p>
-                            <Link to="/equipment/new" className="btn btn-primary bg-primary hover:bg-primary-hover text-text-invert">
-                                Add Equipment
+                            <h4 className="text-text">{t('dashboard.noEquipmentFound')}</h4>
+                            <p>{t('dashboard.noEquipmentHint')}</p>
+                            <Link to="/assets" className="btn btn-primary bg-primary hover:bg-primary-hover text-text-invert">
+                                {t('dashboard.addEquipment')}
                             </Link>
                         </div>
                     ) : (
                         <table className="data-table">
                             <thead className="bg-surface-muted">
                                 <tr>
-                                    <th className="text-text-muted">Equipment Name</th>
-                                    <th className="text-text-muted">Code</th>
-                                    <th className="text-text-muted">Status</th>
-                                    <th className="text-text-muted">Assigned To</th>
-                                    <th className="text-text-muted">Last Maintenance</th>
-                                    <th className="text-text-muted">Actions</th>
+                                    <th className="text-text-muted">{t('dashboard.equipmentName')}</th>
+                                    <th className="text-text-muted">{t('dashboard.code')}</th>
+                                    <th className="text-text-muted">{t('common.status')}</th>
+                                    <th className="text-text-muted">{t('dashboard.assignedTo')}</th>
+                                    <th className="text-text-muted">{t('dashboard.lastMaintenance')}</th>
+                                    <th className="text-text-muted">{t('common.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>

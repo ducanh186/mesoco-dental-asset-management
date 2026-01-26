@@ -13,11 +13,13 @@ import {
     Modal,
     useToast 
 } from '../components/ui';
+import { useI18n } from '../i18n';
 
 /**
  * RequestsPage - Equipment borrow/return/maintenance requests
  */
 const RequestsPage = ({ user }) => {
+    const { t } = useI18n();
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
@@ -90,18 +92,18 @@ const RequestsPage = ({ user }) => {
     ];
 
     const typeOptions = [
-        { value: '', label: 'All Types' },
-        { value: 'Borrow', label: 'Borrow' },
-        { value: 'Return', label: 'Return' },
-        { value: 'Maintenance', label: 'Maintenance' },
+        { value: '', label: t('requests.types.all') },
+        { value: 'Borrow', label: t('requests.types.borrow') },
+        { value: 'Return', label: t('requests.types.return') },
+        { value: 'Maintenance', label: t('requests.types.maintenance') },
     ];
 
     const statusOptions = [
-        { value: '', label: 'All Status' },
-        { value: 'pending', label: 'Pending' },
-        { value: 'approved', label: 'Approved' },
-        { value: 'rejected', label: 'Rejected' },
-        { value: 'completed', label: 'Completed' },
+        { value: '', label: t('assets.statuses.all') },
+        { value: 'pending', label: t('requests.pending') },
+        { value: 'approved', label: t('requests.approved') },
+        { value: 'rejected', label: t('requests.rejected') },
+        { value: 'completed', label: t('requests.completed') },
     ];
 
     // Filter data
@@ -135,17 +137,17 @@ const RequestsPage = ({ user }) => {
     const columns = [
         { 
             key: 'id', 
-            label: 'Request ID',
+            label: t('requests.requestId'),
             render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>
         },
         { 
             key: 'type', 
-            label: 'Type',
+            label: t('common.type'),
             render: (value) => <Badge variant={getTypeVariant(value)} size="sm">{value}</Badge>
         },
         { 
             key: 'equipment', 
-            label: 'Equipment',
+            label: t('requests.equipment'),
             render: (value, row) => (
                 <div>
                     <p className="font-medium text-text">{value}</p>
@@ -153,29 +155,29 @@ const RequestsPage = ({ user }) => {
                 </div>
             )
         },
-        { key: 'requestDate', label: 'Request Date' },
+        { key: 'requestDate', label: t('requests.requestDate') },
         { 
             key: 'priority', 
-            label: 'Priority',
+            label: t('requests.priority'),
             render: (value) => <Badge variant={getPriorityVariant(value)} size="sm" outline>{value}</Badge>
         },
         { 
             key: 'status', 
-            label: 'Status',
+            label: t('common.status'),
             render: (value) => <StatusBadge status={value} />
         },
         {
             key: 'actions',
-            label: 'Actions',
+            label: t('common.actions'),
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => toast.info(`Viewing ${row.id}`)}>
-                        View
+                        {t('requests.view')}
                     </Button>
                     {row.status === 'pending' && (
                         <Button size="sm" variant="outline" onClick={() => toast.warning(`Cancelling ${row.id}`)}>
-                            Cancel
+                            {t('requests.cancel')}
                         </Button>
                     )}
                 </div>
@@ -198,7 +200,7 @@ const RequestsPage = ({ user }) => {
                     <CardBody>
                         <div className="text-center">
                             <p className="text-3xl font-bold text-text">{mockRequests.length}</p>
-                            <p className="text-sm text-text-muted">Total Requests</p>
+                            <p className="text-sm text-text-muted">{t('requests.totalRequests')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -206,7 +208,7 @@ const RequestsPage = ({ user }) => {
                     <CardBody>
                         <div className="text-center">
                             <p className="text-3xl font-bold text-warning">{stats.pending}</p>
-                            <p className="text-sm text-text-muted">Pending</p>
+                            <p className="text-sm text-text-muted">{t('requests.pending')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -214,7 +216,7 @@ const RequestsPage = ({ user }) => {
                     <CardBody>
                         <div className="text-center">
                             <p className="text-3xl font-bold text-success">{stats.approved}</p>
-                            <p className="text-sm text-text-muted">Approved</p>
+                            <p className="text-sm text-text-muted">{t('requests.approved')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -222,7 +224,7 @@ const RequestsPage = ({ user }) => {
                     <CardBody>
                         <div className="text-center">
                             <p className="text-3xl font-bold text-info">{stats.completed}</p>
-                            <p className="text-sm text-text-muted">Completed</p>
+                            <p className="text-sm text-text-muted">{t('requests.completed')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -231,11 +233,11 @@ const RequestsPage = ({ user }) => {
             {/* Requests Table */}
             <Card>
                 <CardHeader 
-                    title="All Requests"
-                    subtitle="Manage equipment borrow, return, and maintenance requests"
+                    title={t('requests.allRequests')}
+                    subtitle={t('requests.subtitle')}
                     action={
                         <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>
-                            New Request
+                            {t('requests.newRequest')}
                         </Button>
                     }
                 />
@@ -244,7 +246,7 @@ const RequestsPage = ({ user }) => {
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Input
-                                placeholder="Search by equipment or request ID..."
+                                placeholder={t('requests.searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 leftIcon={
@@ -275,17 +277,17 @@ const RequestsPage = ({ user }) => {
                     <Table
                         columns={columns}
                         data={filteredData}
-                        emptyMessage="No requests found"
+                        emptyMessage={t('requests.noRequests')}
                         emptyState={
                             <div className="text-center py-12">
                                 <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                     <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
                                     <rect x="9" y="3" width="6" height="4" rx="1" />
                                 </svg>
-                                <h3 className="mt-3 text-sm font-medium text-text">No requests</h3>
-                                <p className="mt-1 text-sm text-text-muted">Get started by creating a new request.</p>
+                                <h3 className="mt-3 text-sm font-medium text-text">{t('requests.noRequests')}</h3>
+                                <p className="mt-1 text-sm text-text-muted">{t('requests.noRequestsHint')}</p>
                                 <div className="mt-4">
-                                    <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>New Request</Button>
+                                    <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>{t('requests.newRequest')}</Button>
                                 </div>
                             </div>
                         }
@@ -308,34 +310,34 @@ const RequestsPage = ({ user }) => {
             <Modal
                 isOpen={isNewRequestOpen}
                 onClose={() => setIsNewRequestOpen(false)}
-                title="New Request"
+                title={t('requests.newRequest')}
                 size="md"
                 footer={
                     <div className="flex gap-3">
                         <Button variant="secondary" onClick={() => setIsNewRequestOpen(false)}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={() => {
-                            toast.success('Request submitted successfully!');
+                            toast.success(t('requests.requestSubmitted'));
                             setIsNewRequestOpen(false);
                         }}>
-                            Submit Request
+                            {t('requests.submitRequest')}
                         </Button>
                     </div>
                 }
             >
                 <div className="space-y-4">
                     <Select
-                        label="Request Type"
+                        label={t('requests.requestType')}
                         options={[
-                            { value: 'borrow', label: 'Borrow Equipment' },
-                            { value: 'return', label: 'Return Equipment' },
-                            { value: 'maintenance', label: 'Request Maintenance' },
+                            { value: 'borrow', label: t('requests.types.borrow') },
+                            { value: 'return', label: t('requests.types.return') },
+                            { value: 'maintenance', label: t('requests.types.maintenance') },
                         ]}
                         required
                     />
                     <Select
-                        label="Equipment"
+                        label={t('requests.equipment')}
                         options={[
                             { value: '1', label: 'Dental X-Ray Machine (EQ-001)' },
                             { value: '2', label: 'Ultrasonic Scaler (EQ-015)' },
@@ -345,16 +347,16 @@ const RequestsPage = ({ user }) => {
                         required
                     />
                     <Select
-                        label="Priority"
+                        label={t('requests.priority')}
                         options={[
-                            { value: 'low', label: 'Low' },
-                            { value: 'normal', label: 'Normal' },
-                            { value: 'high', label: 'High' },
+                            { value: 'low', label: t('requests.priorities.low') },
+                            { value: 'normal', label: t('requests.priorities.normal') },
+                            { value: 'high', label: t('requests.priorities.high') },
                         ]}
                     />
                     <Input
-                        label="Notes"
-                        placeholder="Add any additional details..."
+                        label={t('requests.notes')}
+                        placeholder={t('requests.addDetails')}
                     />
                 </div>
             </Modal>

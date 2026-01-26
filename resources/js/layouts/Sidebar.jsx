@@ -1,60 +1,68 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useI18n } from '../i18n';
 
 /**
  * Sidebar - OrangeHRM-inspired collapsible sidebar navigation
  */
-const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
+const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const location = useLocation();
+    const { t } = useI18n();
     const [expandedMenus, setExpandedMenus] = useState({});
 
+    // Check if user is admin or hr
+    const isAdminOrHr = user?.role === 'admin' || user?.role === 'hr';
+
     // Navigation items with optional children for submenus
+    // Filtered based on user role
     const navItems = [
         { 
             id: 'dashboard',
             path: '/dashboard', 
-            label: 'Dashboard', 
+            labelKey: 'nav.dashboard', 
             icon: 'dashboard'
         },
         { 
-            id: 'equipment',
-            path: '/equipment', 
-            label: 'Equipment', 
-            icon: 'equipment',
-            children: [
-                { path: '/equipment', label: 'All Equipment' },
-                { path: '/equipment/assigned', label: 'Assigned' },
-                { path: '/equipment/available', label: 'Available' },
-            ]
+            id: 'my-assets',
+            path: '/my-assets', 
+            labelKey: 'nav.myAssets', 
+            icon: 'myAssets'
         },
+        // Admin/HR only items
+        ...(isAdminOrHr ? [{
+            id: 'assets',
+            path: '/assets', 
+            labelKey: 'nav.assets', 
+            icon: 'assets'
+        }] : []),
         { 
             id: 'requests',
             path: '/requests', 
-            label: 'Requests', 
+            labelKey: 'nav.requests', 
             icon: 'requests'
         },
         { 
             id: 'maintenance',
             path: '/maintenance', 
-            label: 'Maintenance', 
+            labelKey: 'nav.maintenance', 
             icon: 'maintenance'
         },
-        { 
+        ...(isAdminOrHr ? [{
             id: 'reports',
             path: '/reports', 
-            label: 'Reports', 
+            labelKey: 'nav.reports', 
             icon: 'reports'
-        },
-        { 
+        }] : []),
+        ...(isAdminOrHr ? [{
             id: 'users',
             path: '/users', 
-            label: 'Users', 
+            labelKey: 'nav.users', 
             icon: 'users'
-        },
+        }] : []),
         { 
             id: 'settings',
             path: '/settings', 
-            label: 'Settings', 
+            labelKey: 'nav.settings', 
             icon: 'settings'
         },
     ];
@@ -81,6 +89,20 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                     <rect x="14" y="3" width="7" height="7" rx="1" />
                     <rect x="3" y="14" width="7" height="7" rx="1" />
                     <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+            ),
+            myAssets: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+            ),
+            assets: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
                 </svg>
             ),
             equipment: (
@@ -144,7 +166,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                         {renderIcon(item.icon)}
                         {!collapsed && (
                             <>
-                                <span className="nav-label">{item.label}</span>
+                                <span className="nav-label">{t(item.labelKey)}</span>
                                 <svg 
                                     className={`nav-arrow ${isExpanded ? 'expanded' : ''}`} 
                                     viewBox="0 0 24 24" 
@@ -183,7 +205,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                 onClick={onMobileClose}
             >
                 {renderIcon(item.icon)}
-                {!collapsed && <span className="nav-label">{item.label}</span>}
+                {!collapsed && <span className="nav-label">{t(item.labelKey)}</span>}
             </Link>
         );
     };
@@ -233,7 +255,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                     >
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
-                    {!collapsed && <span>Collapse</span>}
+                    {!collapsed && <span>{t('nav.collapse')}</span>}
                 </button>
             </div>
         </aside>

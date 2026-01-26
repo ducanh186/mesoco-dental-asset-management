@@ -156,6 +156,7 @@ class AuthService
 
     /**
      * Change password for authenticated user.
+     * Also clears must_change_password flag if set.
      */
     public function changePassword(User $user, string $currentPassword, string $newPassword): array
     {
@@ -169,6 +170,7 @@ class AuthService
 
         $user->update([
             'password' => $newPassword, // Will be hashed by cast
+            'must_change_password' => false, // Clear the flag after password change
         ]);
 
         Log::info('Password changed successfully', ['user_id' => $user->id]);

@@ -13,12 +13,17 @@ import Dashboard from './pages/Dashboard';
 import UIKit from './pages/UIKit';
 import ProfilePage from './pages/ProfilePage';
 import MyEquipmentPage from './pages/MyEquipmentPage';
+import AssetsPage from './pages/AssetsPage';
+import MyAssetsPage from './pages/MyAssetsPage';
 import RequestsPage from './pages/RequestsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import InventoryPage from './pages/InventoryPage';
 
 // UI Components
 import { ToastProvider } from './components/ui';
+
+// i18n - Internationalization
+import { I18nProvider } from './i18n';
 
 // ============================================================================
 // Axios Configuration
@@ -40,7 +45,7 @@ const AuthProvider = ({ children }) => {
      const fetchUser = async () => {
           try {
                const response = await axios.get('/api/me');
-               setUser(response.data);
+               setUser(response.data.user);
           } catch (error) {
                setUser(null);
           } finally {
@@ -529,6 +534,43 @@ const MyEquipmentPageWrapper = () => {
      );
 };
 
+const AssetsPageWrapper = () => {
+     const { user } = useAuth();
+     const navigate = useNavigate();
+     
+     // RBAC check - only admin and hr can access
+     useEffect(() => {
+          if (user && user.role !== 'admin' && user.role !== 'hr') {
+               navigate('/dashboard', { replace: true });
+          }
+     }, [user, navigate]);
+     
+     if (!user || (user.role !== 'admin' && user.role !== 'hr')) {
+          return null;
+     }
+     
+     return (
+          <AdminLayoutWrapper 
+               title="Asset Management" 
+               breadcrumbs={[{ label: 'Assets' }]}
+          >
+               <AssetsPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const MyAssetsPageWrapper = () => {
+     const { user } = useAuth();
+     return (
+          <AdminLayoutWrapper 
+               title="My Assets" 
+               breadcrumbs={[{ label: 'My Assets' }]}
+          >
+               <MyAssetsPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
 const EquipmentPage = () => (
      <AdminLayoutWrapper 
           title="Equipment" 
@@ -674,18 +716,19 @@ const NotFoundPage = () => (
 const App = () => {
      return (
           <BrowserRouter>
-               <ToastProvider position="top-right">
-                    <AuthProvider>
-                         <Routes>
-                              {/* Guest Routes */}
-                              <Route path="/login" element={
-                                   <GuestRoute>
-                                        <LoginPage />
-                                   </GuestRoute>
-                              } />
-                              <Route path="/forgot-password" element={
-                                   <GuestRoute>
-                                        <ForgotPasswordPage />
+               <I18nProvider>
+                    <ToastProvider position="top-right">
+                         <AuthProvider>
+                              <Routes>
+                                   {/* Guest Routes */}
+                                   <Route path="/login" element={
+                                        <GuestRoute>
+                                             <LoginPage />
+                                        </GuestRoute>
+                                   } />
+                                   <Route path="/forgot-password" element={
+                                        <GuestRoute>
+                                             <ForgotPasswordPage />
                                    </GuestRoute>
                               } />
 
@@ -709,6 +752,16 @@ const App = () => {
                          <Route path="/my-equipment" element={
                               <ProtectedRoute>
                                    <MyEquipmentPageWrapper />
+                              </ProtectedRoute>
+                         } />
+                         <Route path="/my-assets" element={
+                              <ProtectedRoute>
+                                   <MyAssetsPageWrapper />
+                              </ProtectedRoute>
+                         } />
+                         <Route path="/assets" element={
+                              <ProtectedRoute>
+                                   <AssetsPageWrapper />
                               </ProtectedRoute>
                          } />
                          <Route path="/equipment" element={
@@ -767,6 +820,7 @@ const App = () => {
                     </Routes>
                </AuthProvider>
           </ToastProvider>
+          </I18nProvider>
           </BrowserRouter>
      );
 };

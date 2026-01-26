@@ -2,8 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\Asset;
+use App\Models\AssetCheckin;
+use App\Models\Employee;
+use App\Models\User;
+use App\Policies\AssetCheckinPolicy;
+use App\Policies\EmployeePolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,6 +31,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+        $this->registerPolicies();
+    }
+
+    /**
+     * Register authorization policies.
+     */
+    protected function registerPolicies(): void
+    {
+        Gate::policy(Employee::class, EmployeePolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(AssetCheckin::class, AssetCheckinPolicy::class);
+
+        // Register checkIn ability for Asset (used via Gate::inspect)
+        Gate::define('checkIn', [AssetCheckinPolicy::class, 'checkIn']);
     }
 
     /**
