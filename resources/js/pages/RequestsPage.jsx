@@ -117,11 +117,22 @@ const RequestsPage = ({ user }) => {
     const fetchAssetsForType = async (requestType) => {
         try {
             let response;
+            const isAdminOrHr = user && ['admin', 'hr'].includes(user.role);
+            
             if (requestType === REQUEST_TYPES.JUSTIFICATION) {
-                // For Justification: get assets assigned to current user
-                response = await myAssetsApi.dropdown();
-                // API returns { data: [...] }
-                setAssetOptions(response.data || []);
+                if (isAdminOrHr) {
+                    // Admin/HR can create justification for any active asset
+                    response = await assetsApi.list({ per_page: 200, status: 'active' });
+                    setAssetOptions((response.assets || []).map(a => ({
+                        value: a.id,
+                        label: a.asset_code ? `${a.asset_code} - ${a.name}` : `${a.name} (ID: ${a.id})`,
+                    })));
+                } else {
+                    // Regular users: only their assigned assets
+                    response = await myAssetsApi.dropdown();
+                    // API returns { data: [...] }
+                    setAssetOptions(response.data || []);
+                }
             } else if (requestType === REQUEST_TYPES.ASSET_LOAN) {
                 // For Asset Loan: get available (unassigned) assets
                 response = await myAssetsApi.availableForLoan();
@@ -185,7 +196,7 @@ const RequestsPage = ({ user }) => {
         
         try {
             await requestsApi.cancel(request.id);
-            toast.success('Request cancelled successfully');
+            toast.success(t('requests.cancelSuccess'));
             fetchRequests(pagination.current_page);
         } catch (error) {
             handleApiError(error, toast);
@@ -209,7 +220,7 @@ const RequestsPage = ({ user }) => {
             }
 
             await requestsApi.create(payload);
-            toast.success('Request submitted successfully');
+            toast.success(t('requests.submitSuccess'));
             setIsNewRequestOpen(false);
             resetForm();
             fetchRequests(1);
@@ -264,9 +275,9 @@ const RequestsPage = ({ user }) => {
     // ========================================
     const getTypeLabel = (type) => {
         switch (type) {
-            case REQUEST_TYPES.JUSTIFICATION: return 'Justification';
-            case REQUEST_TYPES.ASSET_LOAN: return 'Asset Loan';
-            case REQUEST_TYPES.CONSUMABLE_REQUEST: return 'Consumable';
+            case REQUEST_TYPES.JUSTIFICATION: return t('requests.types.JUSTIFICATION');
+            case REQUEST_TYPES.ASSET_LOAN: return t('requests.types.ASSET_LOAN');
+            case REQUEST_TYPES.CONSUMABLE_REQUEST: return t('requests.types.CONSUMABLE_REQUEST');
             default: return type;
         }
     };
@@ -306,7 +317,7 @@ const RequestsPage = ({ user }) => {
     const columns = [
         { 
             key: 'code', 
-            label: 'Request ID',
+            label: t('requests.requestId'),
             render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>
         },
         { 
@@ -391,7 +402,7 @@ const RequestsPage = ({ user }) => {
                     <CardBody>
                         <div className="text-center">
                             <p className="text-3xl font-bold text-text">{stats.total}</p>
-                            <p className="text-sm text-text-muted">Total Requests</p>
+                            <p className="text-sm text-text-muted">{t('requests.totalRequests')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -399,7 +410,7 @@ const RequestsPage = ({ user }) => {
                     <CardBody>
                         <div className="text-center">
                             <p className="text-3xl font-bold text-warning">{stats.submitted}</p>
-                            <p className="text-sm text-text-muted">Pending Review</p>
+                            <p className="text-sm text-text-muted">{t('requests.pendingReview')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -407,7 +418,7 @@ const RequestsPage = ({ user }) => {
                     <CardBody>
                         <div className="text-center">
                             <p className="text-3xl font-bold text-success">{stats.approved}</p>
-                            <p className="text-sm text-text-muted">Approved</p>
+                            <p className="text-sm text-text-muted">{t('requests.approved')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -416,11 +427,11 @@ const RequestsPage = ({ user }) => {
             {/* Requests Table */}
             <Card>
                 <CardHeader 
-                    title="My Requests"
-                    subtitle="View and manage your equipment requests"
+                    title={t('requests.myRequests')}
+                    subtitle={t('requests.myRequestsSubtitle')}
                     action={
                         <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>
-                            New Request
+                            {t('requests.newRequest')}
                         </Button>
                     }
                 />
@@ -429,7 +440,7 @@ const RequestsPage = ({ user }) => {
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Input
-                                placeholder="Search by code or title..."
+                                placeholder={t('requests.searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 leftIcon={
@@ -500,15 +511,15 @@ const RequestsPage = ({ user }) => {
             <Modal
                 isOpen={isNewRequestOpen}
                 onClose={() => { setIsNewRequestOpen(false); resetForm(); }}
-                title="Create New Request"
+                title={t('requests.createNewRequest')}
                 size="lg"
                 footer={
                     <div className="flex gap-3">
                         <Button variant="secondary" onClick={() => { setIsNewRequestOpen(false); resetForm(); }}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={handleSubmitRequest} disabled={submitting || !formData.title || formData.items.length === 0}>
-                            {submitting ? 'Submitting...' : 'Submit Request'}
+                            {submitting ? t('requests.submitting') : t('requests.submitRequest')}
                         </Button>
                     </div>
                 }
@@ -532,19 +543,19 @@ const RequestsPage = ({ user }) => {
                     </div>
 
                     <Input
-                        label="Title"
-                        placeholder="Brief description of your request"
+                        label={t('requests.title')}
+                        placeholder={t('requests.titlePlaceholder')}
                         value={formData.title}
                         onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                         required
                     />
 
                     <div>
-                        <label className="block text-sm font-medium text-text mb-1">Description</label>
+                        <label className="block text-sm font-medium text-text mb-1">{t('requests.description')}</label>
                         <textarea
                             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-surface text-text"
                             rows={3}
-                            placeholder="Provide more details..."
+                            placeholder={t('requests.descriptionPlaceholder')}
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                         />
@@ -554,22 +565,22 @@ const RequestsPage = ({ user }) => {
                     {formType === REQUEST_TYPES.JUSTIFICATION && (
                         <div className="grid grid-cols-2 gap-4">
                             <Select
-                                label="Severity"
+                                label={t('requests.severity')}
                                 options={[
-                                    { value: SEVERITIES.low, label: 'Low' },
-                                    { value: SEVERITIES.medium, label: 'Medium' },
-                                    { value: SEVERITIES.high, label: 'High' },
-                                    { value: SEVERITIES.critical, label: 'Critical' },
+                                    { value: SEVERITIES.low, label: t('requests.severities.low') },
+                                    { value: SEVERITIES.medium, label: t('requests.severities.medium') },
+                                    { value: SEVERITIES.high, label: t('requests.severities.high') },
+                                    { value: SEVERITIES.critical, label: t('requests.severities.critical') },
                                 ]}
                                 value={formData.severity}
                                 onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value }))}
                             />
                             <Select
-                                label="Suspected Cause"
+                                label={t('requests.suspectedCause')}
                                 options={[
-                                    { value: '', label: 'Unknown' },
-                                    { value: 'wear', label: 'Wear & Tear' },
-                                    { value: 'operation', label: 'Operation Error' },
+                                    { value: '', label: t('requests.suspectedCauses.unknown') },
+                                    { value: 'wear', label: t('requests.suspectedCauses.wear') },
+                                    { value: 'operation', label: t('requests.suspectedCauses.operation') },
                                 ]}
                                 value={formData.suspected_cause}
                                 onChange={(e) => setFormData(prev => ({ ...prev, suspected_cause: e.target.value }))}
@@ -581,10 +592,10 @@ const RequestsPage = ({ user }) => {
                     <div className="border-t border-border pt-4">
                         <div className="flex justify-between items-center mb-3">
                             <h4 className="font-medium text-text">
-                                {formType === REQUEST_TYPES.CONSUMABLE_REQUEST ? 'Consumable Items' : 'Assets'}
+                                {formType === REQUEST_TYPES.CONSUMABLE_REQUEST ? t('requests.consumableItems') : t('requests.assets')}
                             </h4>
                             <Button size="sm" variant="outline" onClick={addItem}>
-                                + Add Item
+                                {t('requests.addItem')}
                             </Button>
                         </div>
 
@@ -600,7 +611,7 @@ const RequestsPage = ({ user }) => {
                                     <>
                                         <div className="flex-1">
                                             <Input
-                                                placeholder="Item name"
+                                                placeholder={t('requests.itemName')}
                                                 value={item.name}
                                                 onChange={(e) => updateItem(index, 'name', e.target.value)}
                                             />
@@ -608,14 +619,14 @@ const RequestsPage = ({ user }) => {
                                         <div className="w-20">
                                             <Input
                                                 type="number"
-                                                placeholder="Qty"
+                                                placeholder={t('requests.quantity')}
                                                 value={item.qty}
                                                 onChange={(e) => updateItem(index, 'qty', e.target.value)}
                                             />
                                         </div>
                                         <div className="w-24">
                                             <Input
-                                                placeholder="Unit"
+                                                placeholder={t('requests.unit')}
                                                 value={item.unit}
                                                 onChange={(e) => updateItem(index, 'unit', e.target.value)}
                                             />
@@ -625,7 +636,8 @@ const RequestsPage = ({ user }) => {
                                     <>
                                         <div className="flex-1">
                                             <Select
-                                                options={[{ value: '', label: 'Select Asset...' }, ...assetOptions]}
+                                                placeholder={t('requests.selectAsset')}
+                                                options={assetOptions}
                                                 value={item.asset_id}
                                                 onChange={(e) => updateItem(index, 'asset_id', e.target.value)}
                                             />
@@ -634,14 +646,16 @@ const RequestsPage = ({ user }) => {
                                             <>
                                                 <div className="w-40">
                                                     <Select
-                                                        options={[{ value: '', label: 'From Shift...' }, ...shiftOptions]}
+                                                        placeholder={t('requests.fromShift')}
+                                                        options={shiftOptions}
                                                         value={item.from_shift_id}
                                                         onChange={(e) => updateItem(index, 'from_shift_id', e.target.value)}
                                                     />
                                                 </div>
                                                 <div className="w-40">
                                                     <Select
-                                                        options={[{ value: '', label: 'To Shift...' }, ...shiftOptions]}
+                                                        placeholder={t('requests.toShift')}
+                                                        options={shiftOptions}
                                                         value={item.to_shift_id}
                                                         onChange={(e) => updateItem(index, 'to_shift_id', e.target.value)}
                                                     />
@@ -668,7 +682,7 @@ const RequestsPage = ({ user }) => {
             <Modal
                 isOpen={isDetailOpen}
                 onClose={() => { setIsDetailOpen(false); setSelectedRequest(null); }}
-                title={selectedRequest?.code || 'Request Detail'}
+                title={selectedRequest?.code || t('requests.requestDetail')}}
                 size="lg"
             >
                 {selectedRequest && (
@@ -683,7 +697,7 @@ const RequestsPage = ({ user }) => {
                             </Badge>
                             {selectedRequest.severity && (
                                 <Badge variant={getSeverityVariant(selectedRequest.severity)} outline>
-                                    {selectedRequest.severity} severity
+                                    {selectedRequest.severity}
                                 </Badge>
                             )}
                         </div>
@@ -699,11 +713,11 @@ const RequestsPage = ({ user }) => {
                         {/* Meta Info */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <span className="text-text-muted">Requested by:</span>
+                                <span className="text-text-muted">{t('requests.requestedBy')}:</span>
                                 <span className="ml-2 text-text">{selectedRequest.requester?.full_name}</span>
                             </div>
                             <div>
-                                <span className="text-text-muted">Created:</span>
+                                <span className="text-text-muted">{t('common.createdAt')}:</span>
                                 <span className="ml-2 text-text">
                                     {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString() : '-'}
                                 </span>
@@ -711,11 +725,11 @@ const RequestsPage = ({ user }) => {
                             {selectedRequest.reviewer && (
                                 <>
                                     <div>
-                                        <span className="text-text-muted">Reviewed by:</span>
+                                        <span className="text-text-muted">{t('requests.reviewedBy')}:</span>
                                         <span className="ml-2 text-text">{selectedRequest.reviewer.name}</span>
                                     </div>
                                     <div>
-                                        <span className="text-text-muted">Reviewed at:</span>
+                                        <span className="text-text-muted">{t('requests.reviewedAt')}:</span>
                                         <span className="ml-2 text-text">
                                             {selectedRequest.reviewed_at ? new Date(selectedRequest.reviewed_at).toLocaleString() : '-'}
                                         </span>
@@ -727,7 +741,7 @@ const RequestsPage = ({ user }) => {
                         {/* Review Note */}
                         {selectedRequest.review_note && (
                             <div className="p-3 bg-surface-muted rounded-md">
-                                <span className="text-sm font-medium text-text">Review Note:</span>
+                                <span className="text-sm font-medium text-text">{t('requests.reviewNote')}:</span>
                                 <p className="text-sm text-text-muted mt-1">{selectedRequest.review_note}</p>
                             </div>
                         )}
@@ -735,7 +749,7 @@ const RequestsPage = ({ user }) => {
                         {/* Items */}
                         {selectedRequest.items && selectedRequest.items.length > 0 && (
                             <div>
-                                <h4 className="font-medium text-text mb-2">Items</h4>
+                                <h4 className="font-medium text-text mb-2">{t('requests.items')}</h4>
                                 <div className="space-y-2">
                                     {selectedRequest.items.map((item, index) => (
                                         <div key={index} className="p-3 bg-surface-muted rounded-md flex justify-between">
@@ -767,7 +781,7 @@ const RequestsPage = ({ user }) => {
                         {/* Events Timeline */}
                         {selectedRequest.events && selectedRequest.events.length > 0 && (
                             <div>
-                                <h4 className="font-medium text-text mb-2">Activity</h4>
+                                <h4 className="font-medium text-text mb-2">{t('requests.activity')}</h4>
                                 <div className="space-y-2">
                                     {selectedRequest.events.map((event, index) => (
                                         <div key={index} className="flex gap-3 text-sm">
