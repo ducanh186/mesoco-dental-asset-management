@@ -22,7 +22,7 @@ class StoreAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'asset_code' => ['required', 'string', 'max:50', 'unique:assets,asset_code'],
+            'asset_code' => ['nullable', 'string', 'max:50', 'unique:assets,asset_code'],
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', Rule::in(Asset::TYPES)],
             'status' => ['sometimes', 'string', Rule::in(Asset::STATUSES)],

@@ -16,14 +16,16 @@ import MyEquipmentPage from './pages/MyEquipmentPage';
 import AssetsPage from './pages/AssetsPage';
 import MyAssetsPage from './pages/MyAssetsPage';
 import RequestsPage from './pages/RequestsPage';
+import ReviewRequestsPage from './pages/ReviewRequestsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import InventoryPage from './pages/InventoryPage';
+import AdminPage from './pages/AdminPage';
 
 // UI Components
 import { ToastProvider } from './components/ui';
 
 // i18n - Internationalization
-import { I18nProvider } from './i18n';
+import { I18nProvider, useI18n } from './i18n';
 
 // ============================================================================
 // Axios Configuration
@@ -103,6 +105,25 @@ const GuestRoute = ({ children }) => {
      }
 
      if (user) {
+          return <Navigate to="/dashboard" replace />;
+     }
+
+     return children;
+};
+
+const AdminOnlyRoute = ({ children }) => {
+     const { user, loading } = useAuth();
+     const location = useLocation();
+
+     if (loading) {
+          return <LoadingScreen />;
+     }
+
+     if (!user) {
+          return <Navigate to="/login" state={{ from: location }} replace />;
+     }
+
+     if (user.role !== 'admin') {
           return <Navigate to="/dashboard" replace />;
      }
 
@@ -522,18 +543,6 @@ const ProfilePageWrapper = () => {
      );
 };
 
-const MyEquipmentPageWrapper = () => {
-     const { user } = useAuth();
-     return (
-          <AdminLayoutWrapper 
-               title="My Equipment" 
-               breadcrumbs={[{ label: 'My Equipment' }]}
-          >
-               <MyEquipmentPage user={user} />
-          </AdminLayoutWrapper>
-     );
-};
-
 const AssetsPageWrapper = () => {
      const { user } = useAuth();
      const navigate = useNavigate();
@@ -549,10 +558,11 @@ const AssetsPageWrapper = () => {
           return null;
      }
      
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="Asset Management" 
-               breadcrumbs={[{ label: 'Assets' }]}
+               title={t('assets.title')} 
+               breadcrumbs={[{ label: t('nav.assets') }]}
           >
                <AssetsPage user={user} />
           </AdminLayoutWrapper>
@@ -561,10 +571,11 @@ const AssetsPageWrapper = () => {
 
 const MyAssetsPageWrapper = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="My Assets" 
-               breadcrumbs={[{ label: 'My Assets' }]}
+               title={t('assets.myAssets')} 
+               breadcrumbs={[{ label: t('nav.myAssets') }]}
           >
                <MyAssetsPage user={user} />
           </AdminLayoutWrapper>
@@ -614,6 +625,18 @@ const RequestsPageWrapper = () => {
                breadcrumbs={[{ label: 'Requests' }]}
           >
                <RequestsPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const ReviewRequestsPageWrapper = () => {
+     const { user } = useAuth();
+     return (
+          <AdminLayoutWrapper 
+               title="Review Requests" 
+               breadcrumbs={[{ label: 'Review Requests' }]}
+          >
+               <ReviewRequestsPage user={user} />
           </AdminLayoutWrapper>
      );
 };
@@ -679,6 +702,19 @@ const UsersPage = () => (
           </div>
      </AdminLayoutWrapper>
 );
+
+const AdminPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper 
+               title={t('admin.title')} 
+               breadcrumbs={[{ label: t('nav.admin') }]}
+          >
+               <AdminPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
 
 const SettingsPage = () => (
      <AdminLayoutWrapper 
@@ -749,16 +785,7 @@ const App = () => {
                                         <ProfilePageWrapper />
                                    </ProtectedRoute>
                               } />
-                         <Route path="/my-equipment" element={
-                              <ProtectedRoute>
-                                   <MyEquipmentPageWrapper />
-                              </ProtectedRoute>
-                         } />
-                         <Route path="/my-assets" element={
-                              <ProtectedRoute>
-                                   <MyAssetsPageWrapper />
-                              </ProtectedRoute>
-                         } />
+
                          <Route path="/assets" element={
                               <ProtectedRoute>
                                    <AssetsPageWrapper />
@@ -789,6 +816,11 @@ const App = () => {
                                    <RequestsPageWrapper />
                               </ProtectedRoute>
                          } />
+                         <Route path="/review-requests" element={
+                              <ProtectedRoute>
+                                   <ReviewRequestsPageWrapper />
+                              </ProtectedRoute>
+                         } />
                          <Route path="/maintenance" element={
                               <ProtectedRoute>
                                    <MaintenancePageWrapper />
@@ -808,6 +840,11 @@ const App = () => {
                               <ProtectedRoute>
                                    <UsersPage />
                               </ProtectedRoute>
+                         } />
+                         <Route path="/admin" element={
+                              <AdminOnlyRoute>
+                                   <AdminPageWrapper />
+                              </AdminOnlyRoute>
                          } />
                          <Route path="/settings" element={
                               <ProtectedRoute>

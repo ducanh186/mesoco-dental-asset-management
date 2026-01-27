@@ -1,5 +1,10 @@
 /**
  * Vietnamese Translations - Tiếng Việt
+ * Mesoco Dental Asset Management
+ * Quy ước: Dùng từ ngữ thân thiện vận hành phòng khám
+ * - "Phiếu" thay vì "Request"
+ * - "Chờ duyệt" thay vì "Submitted"
+ * - "Thiết bị" thay vì "Asset"
  */
 export default {
     // ========================================================================
@@ -9,22 +14,23 @@ export default {
         save: 'Lưu',
         cancel: 'Hủy',
         delete: 'Xóa',
-        edit: 'Sửa',
+        edit: 'Chỉnh sửa',
         create: 'Tạo mới',
         add: 'Thêm',
         remove: 'Gỡ bỏ',
         search: 'Tìm kiếm',
         filter: 'Lọc',
+        sort: 'Sắp xếp',
         clear: 'Xóa',
         reset: 'Đặt lại',
         submit: 'Gửi',
         confirm: 'Xác nhận',
         close: 'Đóng',
         back: 'Quay lại',
-        next: 'Tiếp theo',
+        next: 'Tiếp tục',
         previous: 'Trước',
         loading: 'Đang tải...',
-        noData: 'Không có dữ liệu',
+        noData: 'Chưa có dữ liệu',
         error: 'Lỗi',
         success: 'Thành công',
         warning: 'Cảnh báo',
@@ -38,11 +44,14 @@ export default {
         type: 'Loại',
         name: 'Tên',
         description: 'Mô tả',
+        note: 'Ghi chú',
         notes: 'Ghi chú',
         date: 'Ngày',
         time: 'Thời gian',
+        from: 'Từ',
+        to: 'Đến',
         createdAt: 'Ngày tạo',
-        updatedAt: 'Ngày cập nhật',
+        updatedAt: 'Cập nhật lúc',
         details: 'Chi tiết',
         view: 'Xem',
         copy: 'Sao chép',
@@ -51,11 +60,11 @@ export default {
         upload: 'Tải lên',
         refresh: 'Làm mới',
         retry: 'Thử lại',
-        optional: 'Tùy chọn',
+        optional: 'Không bắt buộc',
         required: 'Bắt buộc',
         items: 'mục',
-        assign: 'Gán',
-        unassign: 'Gỡ gán',
+        assign: 'Giao',
+        unassign: 'Thu hồi',
         regenerate: 'Tạo lại',
     },
 
@@ -64,15 +73,24 @@ export default {
     // ========================================================================
     nav: {
         dashboard: 'Tổng quan',
-        myAssets: 'Tài sản của tôi',
-        assets: 'Quản lý tài sản',
-        equipment: 'Thiết bị',
-        requests: 'Yêu cầu',
-        maintenance: 'Bảo trì',
-        reports: 'Báo cáo',
-        users: 'Người dùng',
-        settings: 'Cài đặt',
         profile: 'Hồ sơ',
+        employees: 'Nhân sự',
+        assets: 'Thiết bị',
+        myEquipment: 'Thiết bị của tôi',
+        myAssets: 'Thiết bị của tôi',
+        equipment: 'Thiết bị',
+        shifts: 'Ca làm',
+        checkin: 'Ghi nhận ca',
+        requests: 'Phiếu yêu cầu',
+        reviewRequests: 'Duyệt phiếu',
+        inventory: 'Kho vật tư',
+        maintenance: 'Bảo trì',
+        offService: 'Tạm ngưng sử dụng',
+        feedback: 'Góp ý',
+        reports: 'Báo cáo',
+        settings: 'Cài đặt',
+        admin: 'Quản trị',
+        users: 'Người dùng',
         logout: 'Đăng xuất',
         collapse: 'Thu gọn',
         expand: 'Mở rộng',
@@ -112,6 +130,21 @@ export default {
     },
 
     // ========================================================================
+    // Roles / Vai trò
+    // ========================================================================
+    roles: {
+        staff: 'Nhân viên',
+        doctor: 'Bác sĩ',
+        nurse: 'Y tá',
+        technician: 'Kỹ thuật viên',
+        receptionist: 'Lễ tân',
+        manager: 'Quản lý',
+        admin: 'Quản trị',
+        owner: 'Chủ phòng khám',
+        hr: 'Nhân sự',
+    },
+
+    // ========================================================================
     // Dashboard / Tổng quan
     // ========================================================================
     dashboard: {
@@ -119,22 +152,22 @@ export default {
         welcome: 'Chào mừng trở lại, {name}!',
         welcomeSubtitle: 'Đây là tình hình thiết bị của bạn hôm nay.',
         totalEquipment: 'Tổng thiết bị',
-        totalAssets: 'Tổng tài sản',
-        activeRequests: 'Yêu cầu đang xử lý',
+        totalAssets: 'Tổng thiết bị',
+        activeRequests: 'Phiếu đang xử lý',
         maintenanceDue: 'Cần bảo trì',
-        assignedAssets: 'Đã gán',
+        assignedAssets: 'Đã giao',
         availableAssets: 'Có sẵn',
         maintenanceAssets: 'Đang bảo trì',
         recentActivity: 'Hoạt động gần đây',
         recentEquipment: 'Thiết bị gần đây',
         quickActions: 'Thao tác nhanh',
-        myAssignedAssets: 'Tài sản được gán cho tôi',
-        pendingRequests: 'Yêu cầu chờ xử lý',
+        myAssignedAssets: 'Thiết bị được giao cho tôi',
+        pendingRequests: 'Phiếu chờ xử lý',
         pendingApproval: '{count} chờ duyệt',
         overdue: '{count} quá hạn',
         thisMonth: '+{count} tháng này',
         addEquipment: 'Thêm thiết bị',
-        newRequest: 'Tạo yêu cầu',
+        newRequest: 'Tạo phiếu',
         scanQrCode: 'Quét mã QR',
         viewReports: 'Xem báo cáo',
         viewAll: 'Xem tất cả',
@@ -148,22 +181,28 @@ export default {
     },
 
     // ========================================================================
-    // Assets / Tài sản
+    // Assets / Thiết bị
     // ========================================================================
     assets: {
-        title: 'Quản lý tài sản',
-        subtitle: 'Quản lý dữ liệu và phân công tài sản',
-        myAssets: 'Tài sản của tôi',
-        myAssetsSubtitle: 'Xem tài sản được gán và tra cứu QR',
-        allAssets: 'Tất cả tài sản',
-        createAsset: 'Tạo tài sản mới',
-        editAsset: 'Chỉnh sửa tài sản',
-        deleteAsset: 'Xóa tài sản',
-        assetDetails: 'Chi tiết tài sản',
-        assetCode: 'Mã tài sản',
-        assetName: 'Tên tài sản',
-        assetType: 'Loại tài sản',
+        title: 'Thiết bị',
+        subtitle: 'Quản lý dữ liệu và phân công thiết bị',
+        myAssets: 'Thiết bị của tôi',
+        myAssetsSubtitle: 'Xem thiết bị được giao và tra cứu QR',
+        allAssets: 'Tất cả thiết bị',
+        createAsset: 'Tạo thiết bị mới',
+        editAsset: 'Chỉnh sửa thiết bị',
+        deleteAsset: 'Xóa thiết bị',
+        assetDetails: 'Chi tiết thiết bị',
+        assetCode: 'Mã thiết bị',
+        assetName: 'Tên thiết bị',
+        assetType: 'Loại thiết bị',
         assetStatus: 'Trạng thái',
+        serialNumber: 'Số serial',
+        model: 'Model',
+        category: 'Nhóm thiết bị',
+        location: 'Vị trí',
+        movable: 'Thiết bị di động',
+        fixed: 'Thiết bị cố định',
         
         // Types
         types: {
@@ -179,70 +218,78 @@ export default {
         statuses: {
             all: 'Tất cả trạng thái',
             active: 'Đang hoạt động',
-            off_service: 'Ngừng phục vụ',
+            off_service: 'Tạm ngưng sử dụng',
             maintenance: 'Đang bảo trì',
             retired: 'Đã thanh lý',
         },
         
         // Assignment
         assignment: 'Phân công',
-        assigned: 'Đã gán',
-        unassigned: 'Chưa gán',
-        assignTo: 'Gán cho',
-        assignAsset: 'Gán tài sản',
-        unassignAsset: 'Gỡ gán tài sản',
+        assigned: 'Đã giao',
+        unassigned: 'Chưa giao',
+        assignTo: 'Giao cho',
+        assignAsset: 'Giao thiết bị',
+        unassignAsset: 'Thu hồi thiết bị',
         currentAssignee: 'Người đang sử dụng',
-        assignedSince: 'Được gán từ',
+        assignedTo: 'Đang giao cho',
+        assignedSince: 'Được giao từ',
         assignmentHistory: 'Lịch sử phân công',
-        noAssignment: 'Chưa được gán',
+        noAssignment: 'Chưa được giao',
+        notAssigned: 'Chưa được giao thiết bị',
         selectEmployee: 'Chọn nhân viên',
-        assignSuccess: 'Gán tài sản thành công',
-        unassignSuccess: 'Gỡ gán tài sản thành công',
+        assignSuccess: 'Giao thiết bị thành công',
+        unassignSuccess: 'Thu hồi thiết bị thành công',
+        
+        // Condition
+        condition: 'Tình trạng',
         
         // QR
         qrIdentity: 'Định danh QR',
         qrCode: 'Mã QR',
         qrPayload: 'Nội dung QR',
+        scanQr: 'Quét QR',
         regenerateQr: 'Tạo lại QR',
         regenerateQrConfirm: 'Mã QR cũ vẫn hoạt động (để tương thích ngược). Bạn có chắc muốn tạo mã QR mới?',
         qrRegenerated: 'Đã tạo mã QR mới',
         copyPayload: 'Sao chép nội dung QR',
         noQrCode: 'Chưa có mã QR',
+        viewAsset: 'Xem thiết bị',
         
         // QR Resolve
         qrLookup: 'Tra cứu QR',
-        qrLookupSubtitle: 'Nhập hoặc quét mã QR để xem thông tin tài sản',
+        qrLookupSubtitle: 'Nhập hoặc quét mã QR để xem thông tin thiết bị',
         enterQrPayload: 'Nhập nội dung QR (VD: MESO-xxxx-xxxx-xxxx)',
         resolve: 'Tra cứu',
-        assetFound: 'Đã tìm thấy tài sản!',
-        assetNotFound: 'Không tìm thấy tài sản hoặc đã bị xóa',
-        qrEnterHint: 'Nhập mã QR để xem thông tin tài sản',
+        assetFound: 'Đã tìm thấy thiết bị!',
+        assetNotFound: 'Không tìm thấy thiết bị hoặc đã bị xóa',
+        qrEnterHint: 'Nhập mã QR để xem thông tin thiết bị',
         qrHelpTitle: 'Hướng dẫn tra cứu QR',
-        qrHelpDesc: 'Quét mã QR trên tài sản bằng camera điện thoại hoặc ứng dụng quét QR, sau đó dán nội dung (VD: MESO-xxxx-xxxx-xxxx) vào ô nhập liệu phía trên.',
+        qrHelpDesc: 'Quét mã QR trên thiết bị bằng camera điện thoại hoặc ứng dụng quét QR, sau đó dán nội dung (VD: MESO-xxxx-xxxx-xxxx) vào ô nhập liệu phía trên.',
         
         // Table columns
         columns: {
-            assetCode: 'Mã tài sản',
-            name: 'Tên tài sản',
+            assetCode: 'Mã thiết bị',
+            name: 'Tên thiết bị',
             type: 'Loại',
             status: 'Trạng thái',
             assignee: 'Người sử dụng',
             assignment: 'Phân công',
             qr: 'QR',
-            assignedAt: 'Ngày gán',
+            assignedAt: 'Ngày giao',
             actions: 'Thao tác',
         },
         
         // My Assets
-        myAssigned: 'Tài sản được gán',
-        noAssignedYet: 'Bạn chưa được gán tài sản nào',
+        myAssigned: 'Thiết bị được giao',
+        myEquipmentTitle: 'Thiết bị của tôi',
+        noAssignedYet: 'Bạn chưa được giao thiết bị nào',
         available: 'Có sẵn',
         
         // CRUD
-        createSuccess: 'Tạo tài sản thành công',
-        updateSuccess: 'Cập nhật tài sản thành công',
-        deleteSuccess: 'Xóa tài sản thành công',
-        deleteConfirm: 'Bạn có chắc muốn xóa tài sản "{name}"? Thao tác này không thể hoàn tác.',
+        createSuccess: 'Tạo thiết bị thành công',
+        updateSuccess: 'Cập nhật thiết bị thành công',
+        deleteSuccess: 'Xóa thiết bị thành công',
+        deleteConfirm: 'Bạn có chắc muốn xóa thiết bị "{name}"? Thao tác này không thể hoàn tác.',
         
         // Filters
         searchPlaceholder: 'Tìm theo mã hoặc tên...',
@@ -251,26 +298,26 @@ export default {
         filterByAssignment: 'Lọc theo phân công',
         
         // Empty states
-        noAssets: 'Không có tài sản nào',
-        noAssignedAssets: 'Bạn chưa được gán tài sản nào',
+        noAssets: 'Không có thiết bị nào',
+        noAssignedAssets: 'Bạn chưa được giao thiết bị nào',
         
         // Form
         assetCodeHint: 'Để trống để tự động tạo mã',
-        enterAssetName: 'Nhập tên tài sản',
-        optionalNotes: 'Ghi chú (tùy chọn)',
+        enterAssetName: 'Nhập tên thiết bị',
+        optionalNotes: 'Ghi chú (không bắt buộc)',
         chooseEmployee: 'Chọn nhân viên...',
         
         // Items count
-        itemsCount: '{count} tài sản',
+        itemsCount: '{count} thiết bị',
 
         // Check-in / Check-out (Phase 4)
-        checkIn: 'Nhận tài sản',
-        checkOut: 'Trả tài sản',
+        checkIn: 'Nhận thiết bị',
+        checkOut: 'Trả thiết bị',
         checkinStatus: 'Trạng thái nhận',
         checkedIn: 'Đã nhận',
         notCheckedIn: 'Chưa nhận',
-        checkinSuccess: 'Nhận tài sản thành công',
-        checkoutSuccess: 'Trả tài sản thành công',
+        checkinSuccess: 'Nhận thiết bị thành công',
+        checkoutSuccess: 'Trả thiết bị thành công',
         checkedInAt: 'Đã nhận lúc',
         notCheckedInYet: 'Chưa nhận hôm nay',
         currentShift: 'Ca hiện tại',
@@ -281,8 +328,19 @@ export default {
         statusTab: 'Trạng thái',
         instructionsTab: 'Hướng dẫn',
         openInstructions: 'Mở hướng dẫn',
-        noInstructions: 'Không có hướng dẫn cho tài sản này',
-        instructionsDesc: 'Tài sản này có tài liệu hướng dẫn đính kèm. Nhấn nút bên dưới để xem.',
+        noInstructions: 'Không có hướng dẫn cho thiết bị này',
+        instructionsDesc: 'Thiết bị này có tài liệu hướng dẫn đính kèm. Nhấn nút bên dưới để xem.',
+    },
+
+    // ========================================================================
+    // Asset Condition / Tình trạng thiết bị
+    // ========================================================================
+    assetCondition: {
+        ok: 'Hoạt động tốt',
+        needsCheck: 'Cần kiểm tra',
+        needsMaintenance: 'Cần bảo trì',
+        broken: 'Bị hỏng',
+        offService: 'Tạm ngưng sử dụng',
     },
 
     // ========================================================================
@@ -301,9 +359,9 @@ export default {
         role: 'Vai trò',
         status: 'Trạng thái',
         
-        // Roles
+        // Roles (dùng chung từ roles section)
         roles: {
-            admin: 'Quản trị viên',
+            admin: 'Quản trị',
             hr: 'Nhân sự',
             doctor: 'Bác sĩ',
             technician: 'Kỹ thuật viên',
@@ -318,17 +376,42 @@ export default {
     },
 
     // ========================================================================
-    // Profile / Hồ sơ
+    // Profile / Hồ sơ cá nhân
     // ========================================================================
     profile: {
-        title: 'Hồ sơ của tôi',
+        title: 'Hồ sơ cá nhân',
         personalInfo: 'Thông tin cá nhân',
         security: 'Bảo mật',
         preferences: 'Tùy chọn',
         language: 'Ngôn ngữ',
         changeAvatar: 'Đổi ảnh đại diện',
         updateProfile: 'Cập nhật hồ sơ',
-        updateSuccess: 'Cập nhật hồ sơ thành công',
+        updateSuccess: 'Đã cập nhật hồ sơ',
+        employeeId: 'Mã nhân viên',
+        fullName: 'Họ và tên',
+        phone: 'Số điện thoại',
+        department: 'Bộ phận',
+        position: 'Vị trí',
+        email: 'Email',
+        address: 'Địa chỉ',
+        emergencyContact: 'Liên hệ khẩn cấp',
+        disabledFieldHint: 'Trường này không thể chỉnh sửa',
+    },
+
+    // ========================================================================
+    // Shifts / Ca làm
+    // ========================================================================
+    shifts: {
+        title: 'Ca làm',
+        shift: 'Ca',
+        selectShift: 'Chọn ca',
+        shiftS1: 'Ca 1',
+        shiftS2: 'Ca 2',
+        checkin: 'Ghi nhận ca',
+        checkedIn: 'Đã ghi nhận',
+        notCheckedIn: 'Chưa ghi nhận',
+        checkinSuccess: 'Đã ghi nhận ca thành công',
+        checkinDuplicate: 'Ca này đã được ghi nhận trước đó',
     },
 
     // ========================================================================
@@ -348,56 +431,225 @@ export default {
     },
 
     // ========================================================================
-    // Requests / Yêu cầu
+    // Requests / Phiếu yêu cầu (Phase 5)
     // ========================================================================
     requests: {
-        title: 'Yêu cầu',
-        subtitle: 'Quản lý yêu cầu mượn, trả và bảo trì thiết bị',
-        myRequests: 'Yêu cầu của tôi',
-        allRequests: 'Tất cả yêu cầu',
-        totalRequests: 'Tổng yêu cầu',
-        createRequest: 'Tạo yêu cầu',
-        newRequest: 'Yêu cầu mới',
-        requestDetails: 'Chi tiết yêu cầu',
-        requestId: 'Mã yêu cầu',
-        requestDate: 'Ngày yêu cầu',
-        requestType: 'Loại yêu cầu',
+        title: 'Phiếu yêu cầu',
+        subtitle: 'Quản lý phiếu báo sự cố, mượn thiết bị và xin vật tư',
+        myRequests: 'Phiếu của tôi',
+        allRequests: 'Tất cả phiếu',
+        totalRequests: 'Tổng phiếu',
+        createRequest: 'Tạo phiếu',
+        newRequest: 'Phiếu mới',
+        requestDetails: 'Chi tiết phiếu',
+        requestCode: 'Mã phiếu',
+        requestId: 'Mã phiếu',
+        requestDate: 'Ngày tạo phiếu',
+        requestType: 'Loại phiếu',
+        requestStatus: 'Trạng thái',
+        requestItems: 'Nội dung phiếu',
         equipment: 'Thiết bị',
         priority: 'Độ ưu tiên',
         notes: 'Ghi chú',
-        requester: 'Người yêu cầu',
+        requester: 'Người tạo phiếu',
+        reviewer: 'Người duyệt',
+        reviewNote: 'Ghi chú duyệt',
+        reviewedAt: 'Duyệt lúc',
+        reviewedBy: 'Người duyệt',
+
         // Status
-        pending: 'Chờ xử lý',
+        statuses: {
+            all: 'Tất cả trạng thái',
+            DRAFT: 'Nháp',
+            SUBMITTED: 'Chờ duyệt',
+            APPROVED: 'Đã duyệt',
+            REJECTED: 'Từ chối',
+            CANCELLED: 'Đã hủy',
+        },
+        pending: 'Chờ duyệt',
+        submitted: 'Chờ duyệt',
         approved: 'Đã duyệt',
         rejected: 'Từ chối',
         completed: 'Hoàn thành',
         cancelled: 'Đã hủy',
-        // Types
+        draft: 'Nháp',
+
+        // Types (Phase 5)
         types: {
             all: 'Tất cả loại',
+            JUSTIFICATION: 'Báo sự cố thiết bị',
+            ASSET_LOAN: 'Mượn thiết bị',
+            CONSUMABLE_REQUEST: 'Xin vật tư',
+            // Legacy
             borrow: 'Mượn thiết bị',
             return: 'Trả thiết bị',
             maintenance: 'Yêu cầu bảo trì',
         },
+
+        // Severity (Justification)
+        severity: 'Mức độ',
+        severities: {
+            low: 'Nhẹ - Vẫn dùng được',
+            medium: 'Bình thường - Ảnh hưởng công việc',
+            high: 'Nghiêm trọng - Cần xử lý gấp',
+            critical: 'Khẩn - Không thể sử dụng',
+        },
+
+        // Justification fields
+        incidentAt: 'Thời điểm xảy ra',
+        suspectedCause: 'Nguyên nhân nghi ngờ',
+        
+        // Asset Loan fields
+        fromShift: 'Từ ca',
+        toShift: 'Đến ca',
+        loanReason: 'Mục đích',
+
+        // Consumable fields
+        itemName: 'Tên vật tư',
+        quantity: 'Số lượng',
+        unit: 'Đơn vị',
+        units: {
+            box: 'Hộp',
+            pack: 'Gói',
+            piece: 'Cái',
+            bottle: 'Chai',
+            set: 'Bộ',
+        },
+
         // Priority
         priorities: {
             low: 'Thấp',
             normal: 'Bình thường',
             high: 'Cao',
         },
+
         // Actions
         view: 'Xem',
-        cancel: 'Hủy',
+        cancel: 'Hủy phiếu',
+        cancelRequest: 'Hủy phiếu',
         approve: 'Duyệt',
         reject: 'Từ chối',
-        submitRequest: 'Gửi yêu cầu',
+        submitRequest: 'Gửi phiếu',
+        addItem: 'Thêm dòng',
+        removeItem: 'Xóa dòng',
+
         // Messages
-        noRequests: 'Không có yêu cầu',
-        noRequestsHint: 'Bắt đầu bằng cách tạo yêu cầu mới.',
-        searchPlaceholder: 'Tìm theo thiết bị hoặc mã yêu cầu...',
-        requestSubmitted: 'Gửi yêu cầu thành công!',
+        submitSuccess: 'Đã gửi phiếu',
+        cancelSuccess: 'Đã hủy phiếu',
+        cannotEditFinal: 'Phiếu đã được xử lý, không thể chỉnh sửa',
+
+        // Review
+        reviewQueue: 'Danh sách chờ duyệt',
+        viewQueue: 'Xem danh sách chờ duyệt',
+        reviewRequest: 'Xử lý phiếu',
+        approveConfirm: 'Xác nhận duyệt phiếu này?',
+        rejectConfirm: 'Xác nhận từ chối phiếu này?',
+        approveSuccess: 'Đã duyệt phiếu',
+        rejectSuccess: 'Đã từ chối phiếu',
+        pendingCount: '{count} chờ duyệt',
+        noPendingRequests: 'Không có phiếu chờ duyệt',
+        allProcessed: 'Tất cả phiếu đã được xử lý',
+
+        // Empty states
+        noRequests: 'Không có phiếu',
+        noRequestsHint: 'Bấm "Tạo phiếu" để bắt đầu.',
+        searchPlaceholder: 'Tìm theo mã phiếu hoặc người tạo...',
+        requestSubmitted: 'Gửi phiếu thành công!',
         addDetails: 'Thêm thông tin chi tiết...',
+        cannotCancelFinal: 'Không thể hủy phiếu đã được xử lý',
+        notAuthorized: 'Bạn không có quyền thực hiện thao tác này',
+
+        // Form labels
+        selectAsset: 'Chọn thiết bị',
+        selectShift: 'Chọn ca',
+        describeIssue: 'Mô tả sự cố...',
+        describeReason: 'Mô tả lý do...',
+        items: 'Danh sách mục',
+        noItems: 'Chưa có mục nào',
         comingSoon: 'Sắp ra mắt',
+    },
+
+    // ========================================================================
+    // Request Types / Loại phiếu (cho form)
+    // ========================================================================
+    requestType: {
+        justification: 'Báo sự cố thiết bị',
+        assetLoan: 'Mượn thiết bị',
+        consumableRequest: 'Xin vật tư',
+    },
+
+    // ========================================================================
+    // Request Status / Trạng thái phiếu (mapping từ enum)
+    // ========================================================================
+    requestStatus: {
+        draft: 'Nháp',
+        submitted: 'Chờ duyệt',
+        approved: 'Đã duyệt',
+        rejected: 'Từ chối',
+        cancelled: 'Đã hủy',
+    },
+
+    // ========================================================================
+    // Justification / Báo sự cố thiết bị
+    // ========================================================================
+    justification: {
+        title: 'Báo sự cố thiết bị',
+        selectAsset: 'Chọn thiết bị',
+        severity: 'Mức độ',
+        incidentDetails: 'Mô tả sự cố',
+        addPhoto: 'Thêm ảnh (nếu có)',
+    },
+
+    // ========================================================================
+    // Severity / Mức độ nghiêm trọng
+    // ========================================================================
+    severity: {
+        low: 'Nhẹ',
+        medium: 'Bình thường',
+        high: 'Nghiêm trọng',
+        urgent: 'Khẩn',
+    },
+
+    // ========================================================================
+    // Asset Loan / Mượn thiết bị
+    // ========================================================================
+    assetLoan: {
+        title: 'Mượn thiết bị',
+        selectAsset: 'Chọn thiết bị cần mượn',
+        fromShift: 'Từ ca',
+        toShift: 'Đến ca',
+        purpose: 'Mục đích',
+    },
+
+    // ========================================================================
+    // Consumables / Vật tư tiêu hao
+    // ========================================================================
+    consumables: {
+        title: 'Xin vật tư',
+        itemName: 'Tên vật tư',
+        sku: 'Mã vật tư',
+        quantity: 'Số lượng',
+        unit: 'Đơn vị',
+        unitBox: 'Hộp',
+        unitPiece: 'Cái',
+        unitPack: 'Gói',
+    },
+
+    // ========================================================================
+    // Review / Duyệt phiếu
+    // ========================================================================
+    review: {
+        title: 'Duyệt phiếu',
+        reviewQueue: 'Danh sách chờ duyệt',
+        viewQueue: 'Xem danh sách chờ duyệt',
+        reviewRequest: 'Xử lý phiếu',
+        approve: 'Duyệt',
+        reject: 'Từ chối',
+        reviewNote: 'Ghi chú duyệt',
+        reviewedBy: 'Người duyệt',
+        reviewedAt: 'Duyệt lúc',
+        approveSuccess: 'Đã duyệt phiếu',
+        rejectSuccess: 'Đã từ chối phiếu',
     },
 
     // ========================================================================
@@ -413,6 +665,7 @@ export default {
         inProgress: 'Đang thực hiện',
         completed: 'Hoàn thành',
         overdue: 'Quá hạn',
+        createTicket: 'Tạo phiếu bảo trì',
         // Types
         types: {
             all: 'Tất cả loại',
@@ -420,6 +673,12 @@ export default {
             emergency: 'Khẩn cấp',
             preventive: 'Phòng ngừa',
         },
+        maintenanceType: 'Hình thức',
+        preventive: 'Định kỳ',
+        corrective: 'Sửa chữa',
+        vendor: 'Đơn vị thực hiện',
+        cost: 'Chi phí',
+        nextDue: 'Lần tới',
         // Fields
         maintenanceId: 'Mã bảo trì',
         equipmentCode: 'Mã thiết bị',
@@ -442,16 +701,56 @@ export default {
     },
 
     // ========================================================================
+    // Off Service / Tạm ngưng sử dụng
+    // ========================================================================
+    offService: {
+        title: 'Tạm ngưng sử dụng',
+        lockAsset: 'Tạm ngưng thiết bị',
+        unlockAsset: 'Mở lại thiết bị',
+        reason: 'Lý do',
+        locked: 'Đang tạm ngưng',
+        unlocked: 'Đã hoạt động',
+    },
+
+    // ========================================================================
+    // Inventory / Kho vật tư
+    // ========================================================================
+    inventory: {
+        title: 'Kho vật tư',
+        stock: 'Tồn kho',
+        inbound: 'Nhập kho',
+        outbound: 'Xuất kho',
+        lowStock: 'Sắp hết',
+        reorder: 'Đề xuất nhập thêm',
+    },
+
+    // ========================================================================
     // Reports / Báo cáo
     // ========================================================================
     reports: {
         title: 'Báo cáo',
-        assetReport: 'Báo cáo tài sản',
+        overview: 'Tổng hợp',
+        assetReport: 'Báo cáo thiết bị',
+        assetUsage: 'Sử dụng thiết bị',
+        incidents: 'Sự cố',
+        requests: 'Phiếu yêu cầu',
         assignmentReport: 'Báo cáo phân công',
         maintenanceReport: 'Báo cáo bảo trì',
+        maintenance: 'Bảo trì',
+        export: 'Xuất báo cáo',
         exportPdf: 'Xuất PDF',
         exportExcel: 'Xuất Excel',
         comingSoon: 'Sắp ra mắt',
+    },
+
+    // ========================================================================
+    // Feedback / Góp ý
+    // ========================================================================
+    feedback: {
+        title: 'Góp ý',
+        sendFeedback: 'Gửi góp ý',
+        placeholder: 'Nhập nội dung góp ý...',
+        thanks: 'Cảm ơn bạn đã góp ý',
     },
 
     // ========================================================================
@@ -460,12 +759,14 @@ export default {
     errors: {
         general: 'Đã xảy ra lỗi. Vui lòng thử lại.',
         network: 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối.',
-        notFound: 'Không tìm thấy trang',
+        notFound: 'Không tìm thấy dữ liệu',
         notFoundMessage: 'Trang bạn tìm kiếm không tồn tại.',
-        forbidden: 'Bạn không có quyền truy cập trang này',
-        serverError: 'Lỗi máy chủ. Vui lòng thử lại sau.',
-        validation: 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.',
+        forbidden: 'Bạn không có quyền thực hiện thao tác này',
+        serverError: 'Hệ thống đang gặp sự cố, vui lòng thử lại',
+        server: 'Hệ thống đang gặp sự cố, vui lòng thử lại',
+        validation: 'Vui lòng kiểm tra lại thông tin đã nhập',
         sessionExpired: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+        required: 'Vui lòng nhập thông tin bắt buộc',
         goHome: 'Về trang chủ',
         goBack: 'Quay lại',
     },
@@ -476,9 +777,9 @@ export default {
     confirm: {
         delete: 'Xác nhận xóa',
         deleteMessage: 'Bạn có chắc muốn xóa? Thao tác này không thể hoàn tác.',
-        deleteAssetMessage: 'Bạn có chắc muốn xóa tài sản "{name}"? Thao tác này không thể hoàn tác.',
-        unassign: 'Xác nhận gỡ gán',
-        unassignMessage: 'Bạn có chắc muốn gỡ gán tài sản "{name}" khỏi {assignee}?',
+        deleteAssetMessage: 'Bạn có chắc muốn xóa thiết bị "{name}"? Thao tác này không thể hoàn tác.',
+        unassign: 'Xác nhận thu hồi',
+        unassignMessage: 'Bạn có chắc muốn thu hồi thiết bị "{name}" khỏi {assignee}?',
         regenerateQr: 'Xác nhận tạo lại QR',
         logout: 'Xác nhận đăng xuất',
         logoutMessage: 'Bạn có chắc muốn đăng xuất?',
@@ -512,5 +813,57 @@ export default {
         goToPage: 'Đến trang',
         first: 'Đầu',
         last: 'Cuối',
+    },
+
+    // ========================================================================
+    // Admin / Quản trị hệ thống
+    // ========================================================================
+    admin: {
+        title: 'Quản trị Hệ thống',
+        subtitle: 'Quản lý người dùng, phân quyền và cài đặt hệ thống',
+        
+        // Tabs
+        users: 'Người dùng',
+        rolesPermissions: 'Quyền & Vai trò',
+        systemSettings: 'Cài đặt hệ thống',
+        auditLog: 'Nhật ký hệ thống',
+        
+        // User Management
+        searchUsers: 'Tìm kiếm người dùng...',
+        createUser: 'Tạo tài khoản',
+        noUsers: 'Chưa có người dùng nào',
+        employeeCode: 'Mã NV',
+        userName: 'Họ tên',
+        role: 'Vai trò',
+        changeRole: 'Đổi quyền',
+        currentUser: 'Người dùng hiện tại',
+        newRole: 'Vai trò mới',
+        selectEmployee: 'Chọn nhân viên',
+        selectEmployeePlaceholder: '-- Chọn nhân viên --',
+        defaultPassword: 'Mật khẩu mặc định',
+        defaultPasswordPlaceholder: 'Nhập mật khẩu mặc định',
+        userCreated: 'Tạo tài khoản thành công',
+        userDeleted: 'Đã xóa tài khoản',
+        roleUpdated: 'Đã cập nhật vai trò',
+        deleteConfirm: 'Bạn có chắc muốn xóa tài khoản này?',
+        
+        // RBAC
+        rbacMatrix: 'Ma trận Phân quyền (RBAC)',
+        permission: 'Quyền hạn',
+        
+        // System Settings
+        companyProfile: 'Hồ sơ Công ty',
+        companyName: 'Tên công ty',
+        companyEmail: 'Email',
+        companyPhone: 'Điện thoại',
+        companyAddress: 'Địa chỉ',
+        codeGeneration: 'Quy tắc tạo mã',
+        assetCodeFormat: 'Mã thiết bị',
+        employeeCodeFormat: 'Mã nhân viên',
+        requestCodeFormat: 'Mã phiếu yêu cầu',
+        settingsComingSoon: 'Chức năng chỉnh sửa sẽ sớm ra mắt.',
+        
+        // Audit
+        auditComingSoon: 'Nhật ký hệ thống sẽ sớm ra mắt.',
     },
 };

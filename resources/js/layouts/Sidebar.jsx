@@ -4,61 +4,97 @@ import { useI18n } from '../i18n';
 
 /**
  * Sidebar - OrangeHRM-inspired collapsible sidebar navigation
+ * 
+ * RBAC Menu Visibility:
+ * ┌─────────────┬──────────────────────────────────────────────────────┐
+ * │ Role        │ Menu Items                                           │
+ * ├─────────────┼──────────────────────────────────────────────────────┤
+ * │ admin       │ All menus                                            │
+ * │ hr          │ Dashboard, My Equipment, Assets, Requests,           │
+ * │             │ Review Requests, Reports, Users, Settings            │
+ * │ doctor      │ Dashboard, My Equipment, Requests, Settings          │
+ * │ technician  │ Dashboard, My Equipment, Requests, Maintenance,      │
+ * │             │ Settings                                             │
+ * │ staff       │ Dashboard, My Equipment, Requests, Settings          │
+ * └─────────────┴──────────────────────────────────────────────────────┘
  */
 const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const location = useLocation();
     const { t } = useI18n();
     const [expandedMenus, setExpandedMenus] = useState({});
 
-    // Check if user is admin or hr
-    const isAdminOrHr = user?.role === 'admin' || user?.role === 'hr';
+    // Role helpers
+    const isAdmin = user?.role === 'admin';
+    const isHr = user?.role === 'hr';
+    const isTechnician = user?.role === 'technician';
+    const isAdminOrHr = isAdmin || isHr;
 
-    // Navigation items with optional children for submenus
-    // Filtered based on user role
+    // Navigation items with role-based visibility
     const navItems = [
+        // All users
         { 
             id: 'dashboard',
             path: '/dashboard', 
             labelKey: 'nav.dashboard', 
             icon: 'dashboard'
         },
+        // All users - My Equipment
         { 
             id: 'my-assets',
             path: '/my-assets', 
             labelKey: 'nav.myAssets', 
             icon: 'myAssets'
         },
-        // Admin/HR only items
+        // Admin/HR only - Asset Management
         ...(isAdminOrHr ? [{
             id: 'assets',
             path: '/assets', 
             labelKey: 'nav.assets', 
             icon: 'assets'
         }] : []),
+        // All users - Requests
         { 
             id: 'requests',
             path: '/requests', 
             labelKey: 'nav.requests', 
             icon: 'requests'
         },
-        { 
+        // Admin/HR only - Review Requests
+        ...(isAdminOrHr ? [{
+            id: 'review-requests',
+            path: '/review-requests', 
+            labelKey: 'nav.reviewRequests', 
+            icon: 'reviewRequests'
+        }] : []),
+        // Technician + Admin/HR - Maintenance
+        ...((isTechnician || isAdminOrHr) ? [{
             id: 'maintenance',
             path: '/maintenance', 
             labelKey: 'nav.maintenance', 
             icon: 'maintenance'
-        },
+        }] : []),
+        // Admin/HR only - Reports
         ...(isAdminOrHr ? [{
             id: 'reports',
             path: '/reports', 
             labelKey: 'nav.reports', 
             icon: 'reports'
         }] : []),
+        // Admin/HR only - Users
         ...(isAdminOrHr ? [{
             id: 'users',
             path: '/users', 
             labelKey: 'nav.users', 
             icon: 'users'
         }] : []),
+        // Admin only - System Administration
+        ...(isAdmin ? [{
+            id: 'admin',
+            path: '/admin', 
+            labelKey: 'nav.admin', 
+            icon: 'admin'
+        }] : []),
+        // All users - Settings
         { 
             id: 'settings',
             path: '/settings', 
@@ -118,6 +154,13 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     <path d="M9 16h6" />
                 </svg>
             ),
+            reviewRequests: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                    <path d="M9 14l2 2 4-4" />
+                </svg>
+            ),
             maintenance: (
                 <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="3" />
@@ -138,6 +181,12 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     <circle cx="9" cy="7" r="4" />
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+            ),
+            admin: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12l2 2 4-4" />
                 </svg>
             ),
             settings: (

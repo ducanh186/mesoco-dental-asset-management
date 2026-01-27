@@ -1,5 +1,6 @@
 /**
  * English Translations
+ * Mesoco Dental Asset Management
  */
 export default {
     // ========================================================================
@@ -15,6 +16,7 @@ export default {
         remove: 'Remove',
         search: 'Search',
         filter: 'Filter',
+        sort: 'Sort',
         clear: 'Clear',
         reset: 'Reset',
         submit: 'Submit',
@@ -38,9 +40,12 @@ export default {
         type: 'Type',
         name: 'Name',
         description: 'Description',
+        note: 'Note',
         notes: 'Notes',
         date: 'Date',
         time: 'Time',
+        from: 'From',
+        to: 'To',
         createdAt: 'Created at',
         updatedAt: 'Updated at',
         details: 'Details',
@@ -64,15 +69,24 @@ export default {
     // ========================================================================
     nav: {
         dashboard: 'Dashboard',
-        myAssets: 'My Assets',
-        assets: 'Asset Management',
-        equipment: 'Equipment',
-        requests: 'Requests',
-        maintenance: 'Maintenance',
-        reports: 'Reports',
-        users: 'Users',
-        settings: 'Settings',
         profile: 'Profile',
+        employees: 'Employees',
+        assets: 'Assets',
+        myEquipment: 'My Equipment',
+        myAssets: 'My Equipment',
+        equipment: 'Equipment',
+        shifts: 'Shifts',
+        checkin: 'Shift Check-in',
+        requests: 'Requests',
+        reviewRequests: 'Review Requests',
+        inventory: 'Inventory',
+        maintenance: 'Maintenance',
+        offService: 'Off Service',
+        feedback: 'Feedback',
+        reports: 'Reports',
+        settings: 'Settings',
+        admin: 'Admin',
+        users: 'Users',
         logout: 'Logout',
         collapse: 'Collapse',
         expand: 'Expand',
@@ -109,6 +123,21 @@ export default {
         mustChangePassword: 'You must change your password to continue',
         welcomeBack: 'Welcome back',
         signInToContinue: 'Sign in to continue',
+    },
+
+    // ========================================================================
+    // Roles
+    // ========================================================================
+    roles: {
+        staff: 'Staff',
+        doctor: 'Doctor',
+        nurse: 'Nurse',
+        technician: 'Technician',
+        receptionist: 'Receptionist',
+        manager: 'Manager',
+        admin: 'Admin',
+        owner: 'Owner',
+        hr: 'HR',
     },
 
     // ========================================================================
@@ -151,19 +180,25 @@ export default {
     // Assets
     // ========================================================================
     assets: {
-        title: 'Asset Management',
+        title: 'Assets',
         subtitle: 'Manage master data and assignments',
-        myAssets: 'My Assets',
-        myAssetsSubtitle: 'View your assigned assets and lookup QR codes',
-        allAssets: 'All Assets',
-        createAsset: 'Create New Asset',
-        editAsset: 'Edit Asset',
-        deleteAsset: 'Delete Asset',
-        assetDetails: 'Asset Details',
-        assetCode: 'Asset Code',
-        assetName: 'Asset Name',
-        assetType: 'Asset Type',
+        myAssets: 'My Equipment',
+        myAssetsSubtitle: 'View your assigned equipment and lookup QR codes',
+        allAssets: 'All Equipment',
+        createAsset: 'Create New Equipment',
+        editAsset: 'Edit Equipment',
+        deleteAsset: 'Delete Equipment',
+        assetDetails: 'Equipment Details',
+        assetCode: 'Equipment Code',
+        assetName: 'Equipment Name',
+        assetType: 'Equipment Type',
         assetStatus: 'Status',
+        serialNumber: 'Serial Number',
+        model: 'Model',
+        category: 'Category',
+        location: 'Location',
+        movable: 'Movable',
+        fixed: 'Fixed',
         
         // Types
         types: {
@@ -180,7 +215,7 @@ export default {
             all: 'All Status',
             active: 'Active',
             off_service: 'Off Service',
-            maintenance: 'Maintenance',
+            maintenance: 'Under Maintenance',
             retired: 'Retired',
         },
         
@@ -189,40 +224,47 @@ export default {
         assigned: 'Assigned',
         unassigned: 'Unassigned',
         assignTo: 'Assign to',
-        assignAsset: 'Assign Asset',
-        unassignAsset: 'Unassign Asset',
+        assignAsset: 'Assign Equipment',
+        unassignAsset: 'Unassign Equipment',
         currentAssignee: 'Current Assignee',
+        assignedTo: 'Assigned To',
         assignedSince: 'Assigned since',
         assignmentHistory: 'Assignment History',
         noAssignment: 'Currently unassigned',
+        notAssigned: 'No equipment assigned',
         selectEmployee: 'Select Employee',
-        assignSuccess: 'Asset assigned successfully',
-        unassignSuccess: 'Asset unassigned successfully',
+        assignSuccess: 'Equipment assigned successfully',
+        unassignSuccess: 'Equipment unassigned successfully',
+        
+        // Condition
+        condition: 'Condition',
         
         // QR
         qrIdentity: 'QR Identity',
         qrCode: 'QR Code',
         qrPayload: 'QR Payload',
+        scanQr: 'Scan QR',
         regenerateQr: 'Regenerate QR',
         regenerateQrConfirm: 'The old QR code will still work (for backward compatibility). Are you sure you want to generate a new QR code?',
         qrRegenerated: 'QR code regenerated successfully',
         copyPayload: 'Copy Payload',
         noQrCode: 'No QR code generated',
+        viewAsset: 'View Equipment',
         
         // QR Resolve
         qrLookup: 'QR Code Lookup',
-        qrLookupSubtitle: 'Enter or scan a QR payload to find asset details',
+        qrLookupSubtitle: 'Enter or scan a QR payload to find equipment details',
         enterQrPayload: 'Enter QR payload (e.g., MESO-xxxx-xxxx-xxxx)',
         resolve: 'Resolve',
-        assetFound: 'Asset found!',
-        assetNotFound: 'Asset not found or has been deleted',
-        qrEnterHint: 'Enter a QR payload to see asset details',
+        assetFound: 'Equipment found!',
+        assetNotFound: 'Equipment not found or has been deleted',
+        qrEnterHint: 'Enter a QR payload to see equipment details',
         qrHelpTitle: 'How to use QR Lookup',
-        qrHelpDesc: 'Scan the QR code on an asset using your phone camera or any QR scanner app, then paste the payload (e.g., MESO-xxxx-xxxx-xxxx) in the input field above.',
+        qrHelpDesc: 'Scan the QR code on equipment using your phone camera or any QR scanner app, then paste the payload (e.g., MESO-xxxx-xxxx-xxxx) in the input field above.',
         
         // Table columns
         columns: {
-            assetCode: 'Asset Code',
+            assetCode: 'Code',
             name: 'Name',
             type: 'Type',
             status: 'Status',
@@ -234,14 +276,15 @@ export default {
         },
         
         // My Assets
-        myAssigned: 'My Assigned Assets',
-        noAssignedYet: "You don't have any assigned assets yet",
+        myAssigned: 'My Assigned Equipment',
+        myEquipmentTitle: 'My Equipment',
+        noAssignedYet: "You don't have any assigned equipment yet",
         available: 'Available',
         
         // CRUD
-        createSuccess: 'Asset created successfully',
-        updateSuccess: 'Asset updated successfully',
-        deleteSuccess: 'Asset deleted successfully',
+        createSuccess: 'Equipment created successfully',
+        updateSuccess: 'Equipment updated successfully',
+        deleteSuccess: 'Equipment deleted successfully',
         deleteConfirm: 'Are you sure you want to delete "{name}"? This action cannot be undone.',
         
         // Filters
@@ -251,12 +294,12 @@ export default {
         filterByAssignment: 'Filter by assignment',
         
         // Empty states
-        noAssets: 'No assets found',
-        noAssignedAssets: 'You don\'t have any assigned assets yet',
+        noAssets: 'No equipment found',
+        noAssignedAssets: 'You don\'t have any assigned equipment yet',
         
         // Form
         assetCodeHint: 'Leave blank for auto-generate',
-        enterAssetName: 'Enter asset name',
+        enterAssetName: 'Enter equipment name',
         optionalNotes: 'Optional notes',
         chooseEmployee: 'Choose an employee...',
         
@@ -281,8 +324,19 @@ export default {
         statusTab: 'Status',
         instructionsTab: 'Instructions',
         openInstructions: 'Open Instructions',
-        noInstructions: 'No instructions available for this asset',
-        instructionsDesc: 'This asset has attached instructions. Click the button below to view them.',
+        noInstructions: 'No instructions available for this equipment',
+        instructionsDesc: 'This equipment has attached instructions. Click the button below to view them.',
+    },
+
+    // ========================================================================
+    // Asset Condition
+    // ========================================================================
+    assetCondition: {
+        ok: 'Working Well',
+        needsCheck: 'Needs Check',
+        needsMaintenance: 'Needs Maintenance',
+        broken: 'Broken',
+        offService: 'Off Service',
     },
 
     // ========================================================================
@@ -329,6 +383,31 @@ export default {
         changeAvatar: 'Change Avatar',
         updateProfile: 'Update Profile',
         updateSuccess: 'Profile updated successfully',
+        employeeId: 'Employee ID',
+        fullName: 'Full Name',
+        phone: 'Phone',
+        department: 'Department',
+        position: 'Position',
+        email: 'Email',
+        address: 'Address',
+        emergencyContact: 'Emergency Contact',
+        disabledFieldHint: 'This field cannot be edited',
+    },
+
+    // ========================================================================
+    // Shifts
+    // ========================================================================
+    shifts: {
+        title: 'Shifts',
+        shift: 'Shift',
+        selectShift: 'Select shift',
+        shiftS1: 'Shift 1',
+        shiftS2: 'Shift 2',
+        checkin: 'Shift Check-in',
+        checkedIn: 'Checked In',
+        notCheckedIn: 'Not Checked In',
+        checkinSuccess: 'Shift checked in successfully',
+        checkinDuplicate: 'This shift was already checked in',
     },
 
     // ========================================================================
@@ -348,56 +427,225 @@ export default {
     },
 
     // ========================================================================
-    // Requests
+    // Requests (Phase 5)
     // ========================================================================
     requests: {
         title: 'Requests',
-        subtitle: 'Manage equipment borrow, return, and maintenance requests',
+        subtitle: 'Manage equipment issue reports, loans, and consumable requests',
         myRequests: 'My Requests',
         allRequests: 'All Requests',
         totalRequests: 'Total Requests',
         createRequest: 'Create Request',
         newRequest: 'New Request',
         requestDetails: 'Request Details',
+        requestCode: 'Request Code',
         requestId: 'Request ID',
         requestDate: 'Request Date',
         requestType: 'Request Type',
+        requestStatus: 'Status',
+        requestItems: 'Request Items',
         equipment: 'Equipment',
         priority: 'Priority',
         notes: 'Notes',
         requester: 'Requester',
+        reviewer: 'Reviewer',
+        reviewNote: 'Review Note',
+        reviewedAt: 'Reviewed At',
+        reviewedBy: 'Reviewed By',
+
         // Status
+        statuses: {
+            all: 'All Statuses',
+            DRAFT: 'Draft',
+            SUBMITTED: 'Pending',
+            APPROVED: 'Approved',
+            REJECTED: 'Rejected',
+            CANCELLED: 'Cancelled',
+        },
         pending: 'Pending',
+        submitted: 'Pending',
         approved: 'Approved',
         rejected: 'Rejected',
         completed: 'Completed',
         cancelled: 'Cancelled',
-        // Types
+        draft: 'Draft',
+
+        // Types (Phase 5)
         types: {
             all: 'All Types',
+            JUSTIFICATION: 'Equipment Issue Report',
+            ASSET_LOAN: 'Equipment Loan',
+            CONSUMABLE_REQUEST: 'Consumable Request',
+            // Legacy
             borrow: 'Borrow Equipment',
             return: 'Return Equipment',
             maintenance: 'Request Maintenance',
         },
+
+        // Severity (Justification)
+        severity: 'Severity',
+        severities: {
+            low: 'Low - Still usable',
+            medium: 'Medium - Affects work',
+            high: 'High - Needs urgent fix',
+            critical: 'Critical - Cannot use',
+        },
+
+        // Justification fields
+        incidentAt: 'Incident Time',
+        suspectedCause: 'Suspected Cause',
+        
+        // Asset Loan fields
+        fromShift: 'From Shift',
+        toShift: 'To Shift',
+        loanReason: 'Purpose',
+
+        // Consumable fields
+        itemName: 'Item Name',
+        quantity: 'Quantity',
+        unit: 'Unit',
+        units: {
+            box: 'Box',
+            pack: 'Pack',
+            piece: 'Piece',
+            bottle: 'Bottle',
+            set: 'Set',
+        },
+
         // Priority
         priorities: {
             low: 'Low',
             normal: 'Normal',
             high: 'High',
         },
+
         // Actions
         view: 'View',
-        cancel: 'Cancel',
+        cancel: 'Cancel Request',
+        cancelRequest: 'Cancel Request',
         approve: 'Approve',
         reject: 'Reject',
         submitRequest: 'Submit Request',
+        addItem: 'Add Item',
+        removeItem: 'Remove Item',
+
         // Messages
+        submitSuccess: 'Request submitted',
+        cancelSuccess: 'Request cancelled',
+        cannotEditFinal: 'Request has been processed and cannot be edited',
+
+        // Review
+        reviewQueue: 'Review Queue',
+        viewQueue: 'View Review Queue',
+        reviewRequest: 'Review Request',
+        approveConfirm: 'Confirm approval of this request?',
+        rejectConfirm: 'Confirm rejection of this request?',
+        approveSuccess: 'Request approved successfully',
+        rejectSuccess: 'Request rejected successfully',
+        pendingCount: '{count} pending',
+        noPendingRequests: 'No pending requests',
+        allProcessed: 'All requests have been processed',
+
+        // Empty states
         noRequests: 'No requests',
         noRequestsHint: 'Get started by creating a new request.',
-        searchPlaceholder: 'Search by equipment or request ID...',
+        searchPlaceholder: 'Search by request code or requester...',
         requestSubmitted: 'Request submitted successfully!',
         addDetails: 'Add any additional details...',
+        cannotCancelFinal: 'Cannot cancel a finalized request',
+        notAuthorized: 'You are not authorized to perform this action',
+
+        // Form labels
+        selectAsset: 'Select Equipment',
+        selectShift: 'Select Shift',
+        describeIssue: 'Describe the issue...',
+        describeReason: 'Describe the reason...',
+        items: 'Items',
+        noItems: 'No items added',
         comingSoon: 'Coming Soon',
+    },
+
+    // ========================================================================
+    // Request Types (for forms)
+    // ========================================================================
+    requestType: {
+        justification: 'Equipment Issue Report',
+        assetLoan: 'Equipment Loan',
+        consumableRequest: 'Consumable Request',
+    },
+
+    // ========================================================================
+    // Request Status (enum mapping)
+    // ========================================================================
+    requestStatus: {
+        draft: 'Draft',
+        submitted: 'Pending',
+        approved: 'Approved',
+        rejected: 'Rejected',
+        cancelled: 'Cancelled',
+    },
+
+    // ========================================================================
+    // Justification / Equipment Issue Report
+    // ========================================================================
+    justification: {
+        title: 'Equipment Issue Report',
+        selectAsset: 'Select equipment',
+        severity: 'Severity',
+        incidentDetails: 'Incident details',
+        addPhoto: 'Add photo (optional)',
+    },
+
+    // ========================================================================
+    // Severity
+    // ========================================================================
+    severity: {
+        low: 'Low',
+        medium: 'Medium',
+        high: 'High',
+        urgent: 'Urgent',
+    },
+
+    // ========================================================================
+    // Asset Loan
+    // ========================================================================
+    assetLoan: {
+        title: 'Equipment Loan',
+        selectAsset: 'Select equipment to loan',
+        fromShift: 'From shift',
+        toShift: 'To shift',
+        purpose: 'Purpose',
+    },
+
+    // ========================================================================
+    // Consumables
+    // ========================================================================
+    consumables: {
+        title: 'Consumable Request',
+        itemName: 'Item name',
+        sku: 'SKU',
+        quantity: 'Quantity',
+        unit: 'Unit',
+        unitBox: 'Box',
+        unitPiece: 'Piece',
+        unitPack: 'Pack',
+    },
+
+    // ========================================================================
+    // Review
+    // ========================================================================
+    review: {
+        title: 'Review Requests',
+        reviewQueue: 'Review Queue',
+        viewQueue: 'View Review Queue',
+        reviewRequest: 'Review Request',
+        approve: 'Approve',
+        reject: 'Reject',
+        reviewNote: 'Review Note',
+        reviewedBy: 'Reviewed By',
+        reviewedAt: 'Reviewed At',
+        approveSuccess: 'Request approved',
+        rejectSuccess: 'Request rejected',
     },
 
     // ========================================================================
@@ -439,6 +687,37 @@ export default {
         searchPlaceholder: 'Search by equipment or maintenance ID...',
         history: 'Maintenance History',
         comingSoon: 'Coming Soon',
+        createTicket: 'Create Maintenance Ticket',
+        maintenanceType: 'Type',
+        preventive: 'Preventive',
+        corrective: 'Corrective',
+        vendor: 'Vendor',
+        cost: 'Cost',
+        nextDue: 'Next Due',
+    },
+
+    // ========================================================================
+    // Off Service
+    // ========================================================================
+    offService: {
+        title: 'Off Service',
+        lockAsset: 'Lock Asset',
+        unlockAsset: 'Unlock Asset',
+        reason: 'Reason',
+        locked: 'Locked',
+        unlocked: 'Unlocked',
+    },
+
+    // ========================================================================
+    // Inventory
+    // ========================================================================
+    inventory: {
+        title: 'Inventory',
+        stock: 'Stock',
+        inbound: 'Inbound',
+        outbound: 'Outbound',
+        lowStock: 'Low Stock',
+        reorder: 'Reorder Suggestion',
     },
 
     // ========================================================================
@@ -446,12 +725,28 @@ export default {
     // ========================================================================
     reports: {
         title: 'Reports',
+        overview: 'Overview',
         assetReport: 'Asset Report',
+        assetUsage: 'Asset Usage',
+        incidents: 'Incidents',
+        requests: 'Requests',
         assignmentReport: 'Assignment Report',
         maintenanceReport: 'Maintenance Report',
+        maintenance: 'Maintenance',
+        export: 'Export',
         exportPdf: 'Export PDF',
         exportExcel: 'Export Excel',
         comingSoon: 'Coming Soon',
+    },
+
+    // ========================================================================
+    // Feedback
+    // ========================================================================
+    feedback: {
+        title: 'Feedback',
+        sendFeedback: 'Send Feedback',
+        placeholder: 'Enter your feedback...',
+        thanks: 'Thank you for your feedback',
     },
 
     // ========================================================================
@@ -460,12 +755,14 @@ export default {
     errors: {
         general: 'An error occurred. Please try again.',
         network: 'Network error. Please check your connection.',
-        notFound: 'Page Not Found',
+        notFound: 'Not Found',
         notFoundMessage: 'The page you are looking for does not exist.',
-        forbidden: 'You do not have permission to access this page',
+        forbidden: 'You do not have permission to perform this action',
         serverError: 'Server error. Please try again later.',
-        validation: 'Invalid data. Please check your input.',
+        server: 'Server error. Please try again later.',
+        validation: 'Please check your input',
         sessionExpired: 'Session expired. Please login again.',
+        required: 'Please fill in required fields',
         goHome: 'Go Home',
         goBack: 'Go Back',
     },
@@ -512,5 +809,57 @@ export default {
         goToPage: 'Go to page',
         first: 'First',
         last: 'Last',
+    },
+
+    // ========================================================================
+    // Admin / System Administration
+    // ========================================================================
+    admin: {
+        title: 'System Administration',
+        subtitle: 'Manage users, permissions and system settings',
+        
+        // Tabs
+        users: 'Users',
+        rolesPermissions: 'Roles & Permissions',
+        systemSettings: 'System Settings',
+        auditLog: 'Audit Log',
+        
+        // User Management
+        searchUsers: 'Search users...',
+        createUser: 'Create Account',
+        noUsers: 'No users found',
+        employeeCode: 'Employee ID',
+        userName: 'Name',
+        role: 'Role',
+        changeRole: 'Change Role',
+        currentUser: 'Current User',
+        newRole: 'New Role',
+        selectEmployee: 'Select Employee',
+        selectEmployeePlaceholder: '-- Select Employee --',
+        defaultPassword: 'Default Password',
+        defaultPasswordPlaceholder: 'Enter default password',
+        userCreated: 'Account created successfully',
+        userDeleted: 'Account deleted',
+        roleUpdated: 'Role updated successfully',
+        deleteConfirm: 'Are you sure you want to delete this account?',
+        
+        // RBAC
+        rbacMatrix: 'Permissions Matrix (RBAC)',
+        permission: 'Permission',
+        
+        // System Settings
+        companyProfile: 'Company Profile',
+        companyName: 'Company Name',
+        companyEmail: 'Email',
+        companyPhone: 'Phone',
+        companyAddress: 'Address',
+        codeGeneration: 'Code Generation Rules',
+        assetCodeFormat: 'Asset Code Format',
+        employeeCodeFormat: 'Employee Code Format',
+        requestCodeFormat: 'Request Code Format',
+        settingsComingSoon: 'Edit functionality coming soon.',
+        
+        // Audit
+        auditComingSoon: 'Audit log coming soon.',
     },
 };

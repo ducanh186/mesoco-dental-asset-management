@@ -141,6 +141,26 @@ export const myAssetsApi = {
         const response = await axios.get('/api/my-assets', { params });
         return response.data;
     },
+
+    /**
+     * Get current user's assigned assets in dropdown format
+     * GET /api/my-assigned-assets/dropdown
+     * @returns { data: [{ value, label, asset_code, name, type }] }
+     */
+    dropdown: async () => {
+        const response = await axios.get('/api/my-assigned-assets/dropdown');
+        return response.data;
+    },
+
+    /**
+     * Get available assets for loan in dropdown format
+     * GET /api/assets/available-for-loan
+     * @returns { data: [{ value, label, asset_code, name, type }] }
+     */
+    availableForLoan: async () => {
+        const response = await axios.get('/api/assets/available-for-loan');
+        return response.data;
+    },
 };
 
 // ============================================================================
@@ -180,10 +200,196 @@ export const employeesApi = {
     },
 };
 
+// ============================================================================
+// Requests API - Phase 5
+// ============================================================================
+export const requestsApi = {
+    /**
+     * List requests (filtered by mine=1 for staff, or all for admin)
+     * GET /api/requests
+     */
+    list: async (params = {}) => {
+        const response = await axios.get('/api/requests', { params });
+        return response.data;
+    },
+
+    /**
+     * Get single request details
+     * GET /api/requests/{id}
+     */
+    get: async (id) => {
+        const response = await axios.get(`/api/requests/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Create new request
+     * POST /api/requests
+     */
+    create: async (data) => {
+        const response = await axios.post('/api/requests', data);
+        return response.data;
+    },
+
+    /**
+     * Cancel a request
+     * POST /api/requests/{id}/cancel
+     */
+    cancel: async (id) => {
+        const response = await axios.post(`/api/requests/${id}/cancel`);
+        return response.data;
+    },
+
+    /**
+     * Get review queue (admin/HR only)
+     * GET /api/review-requests
+     */
+    reviewQueue: async (params = {}) => {
+        const response = await axios.get('/api/review-requests', { params });
+        return response.data;
+    },
+
+    /**
+     * Review (approve/reject) a request
+     * POST /api/requests/{id}/review
+     */
+    review: async (id, action, note = null) => {
+        const response = await axios.post(`/api/requests/${id}/review`, {
+            action,
+            note,
+        });
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Shifts API
+// ============================================================================
+export const shiftsApi = {
+    /**
+     * List all shifts
+     * GET /api/shifts
+     */
+    list: async () => {
+        const response = await axios.get('/api/shifts');
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Users API (Admin Only)
+// ============================================================================
+export const usersApi = {
+    /**
+     * List all users with pagination
+     * GET /api/users
+     */
+    list: async (params = {}) => {
+        const response = await axios.get('/api/users', { params });
+        return response.data;
+    },
+
+    /**
+     * Get user by ID
+     * GET /api/users/:id
+     */
+    get: async (id) => {
+        const response = await axios.get(`/api/users/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Create new user (Admin/HR only)
+     * POST /api/users
+     */
+    create: async (data) => {
+        const response = await axios.post('/api/users', data);
+        return response.data;
+    },
+
+    /**
+     * Update user role (Admin only)
+     * PATCH /api/users/:id/role
+     */
+    updateRole: async (id, role) => {
+        const response = await axios.patch(`/api/users/${id}/role`, { role });
+        return response.data;
+    },
+
+    /**
+     * Delete user (Admin only)
+     * DELETE /api/users/:id
+     */
+    delete: async (id) => {
+        const response = await axios.delete(`/api/users/${id}`);
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Inventory API (Phase 6 - Admin/HR Only)
+// ============================================================================
+export const inventoryApi = {
+    /**
+     * Get inventory summary statistics
+     * GET /api/inventory/summary
+     */
+    summary: async () => {
+        const response = await axios.get('/api/inventory/summary');
+        return response.data;
+    },
+
+    /**
+     * Get paginated inventory assets with filters
+     * GET /api/inventory/assets
+     */
+    assets: async (params = {}) => {
+        const response = await axios.get('/api/inventory/assets', { params });
+        return response.data;
+    },
+
+    /**
+     * Get asset valuation report
+     * GET /api/inventory/valuation
+     */
+    valuation: async (params = {}) => {
+        const response = await axios.get('/api/inventory/valuation', { params });
+        return response.data;
+    },
+};
+
+// ============================================================================
+// My Asset History API (Phase 6 - All Users)
+// ============================================================================
+export const myAssetHistoryApi = {
+    /**
+     * Get personal asset history timeline
+     * GET /api/my-asset-history
+     */
+    list: async (params = {}) => {
+        const response = await axios.get('/api/my-asset-history', { params });
+        return response.data;
+    },
+
+    /**
+     * Get history summary statistics
+     * GET /api/my-asset-history/summary
+     */
+    summary: async () => {
+        const response = await axios.get('/api/my-asset-history/summary');
+        return response.data;
+    },
+};
+
 export default {
     assets: assetsApi,
     myAssets: myAssetsApi,
     qr: qrApi,
     employees: employeesApi,
+    requests: requestsApi,
+    shifts: shiftsApi,
+    users: usersApi,
+    inventory: inventoryApi,
+    myAssetHistory: myAssetHistoryApi,
     handleApiError,
 };
