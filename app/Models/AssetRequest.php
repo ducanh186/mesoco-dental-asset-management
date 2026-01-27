@@ -214,66 +214,96 @@ class AssetRequest extends Model
 
     /**
      * Approve this request.
+     * 
+     * Uses DB transaction + lock to prevent race conditions.
      */
     public function approve(User $reviewer, ?string $note = null): bool
     {
-        if (!$this->canBeReviewed()) {
-            return false;
-        }
+        return DB::transaction(function () use ($reviewer, $note) {
+            // Lock and re-check status to prevent race condition
+            $locked = self::where('id', $this->id)->lockForUpdate()->first();
+            
+            if (!$locked || !$locked->canBeReviewed()) {
+                return false;
+            }
 
-        $this->update([
-            'status' => self::STATUS_APPROVED,
-            'reviewed_by_user_id' => $reviewer->id,
-            'reviewed_at' => now(),
-            'review_note' => $note,
-        ]);
+            $locked->update([
+                'status' => self::STATUS_APPROVED,
+                'reviewed_by_user_id' => $reviewer->id,
+                'reviewed_at' => now(),
+                'review_note' => $note,
+            ]);
 
-        $this->logEvent(RequestEvent::TYPE_APPROVED, $reviewer, [
-            'note' => $note,
-        ]);
+            $locked->logEvent(RequestEvent::TYPE_APPROVED, $reviewer, [
+                'note' => $note,
+            ]);
 
-        return true;
+            // Refresh current instance
+            $this->refresh();
+
+            return true;
+        });
     }
 
     /**
      * Reject this request.
+     * 
+     * Uses DB transaction + lock to prevent race conditions.
      */
     public function reject(User $reviewer, ?string $note = null): bool
     {
-        if (!$this->canBeReviewed()) {
-            return false;
-        }
+        return DB::transaction(function () use ($reviewer, $note) {
+            // Lock and re-check status to prevent race condition
+            $locked = self::where('id', $this->id)->lockForUpdate()->first();
+            
+            if (!$locked || !$locked->canBeReviewed()) {
+                return false;
+            }
 
-        $this->update([
-            'status' => self::STATUS_REJECTED,
-            'reviewed_by_user_id' => $reviewer->id,
-            'reviewed_at' => now(),
-            'review_note' => $note,
-        ]);
+            $locked->update([
+                'status' => self::STATUS_REJECTED,
+                'reviewed_by_user_id' => $reviewer->id,
+                'reviewed_at' => now(),
+                'review_note' => $note,
+            ]);
 
-        $this->logEvent(RequestEvent::TYPE_REJECTED, $reviewer, [
-            'note' => $note,
-        ]);
+            $locked->logEvent(RequestEvent::TYPE_REJECTED, $reviewer, [
+                'note' => $note,
+            ]);
 
-        return true;
+            // Refresh current instance
+            $this->refresh();
+
+            return true;
+        });
     }
 
     /**
      * Cancel this request (by requester).
+     * 
+     * Uses DB transaction + lock to prevent race conditions.
      */
     public function cancel(User $actor): bool
     {
-        if (!$this->canBeCancelled()) {
-            return false;
-        }
+        return DB::transaction(function () use ($actor) {
+            // Lock and re-check status to prevent race condition
+            $locked = self::where('id', $this->id)->lockForUpdate()->first();
+            
+            if (!$locked || !$locked->canBeCancelled()) {
+                return false;
+            }
 
-        $this->update([
-            'status' => self::STATUS_CANCELLED,
-        ]);
+            $locked->update([
+                'status' => self::STATUS_CANCELLED,
+            ]);
 
-        $this->logEvent(RequestEvent::TYPE_CANCELLED, $actor);
+            $locked->logEvent(RequestEvent::TYPE_CANCELLED, $actor);
 
-        return true;
+            // Refresh current instance
+            $this->refresh();
+
+            return true;
+        });
     }
 
     /**

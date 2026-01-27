@@ -19,7 +19,9 @@ import RequestsPage from './pages/RequestsPage';
 import ReviewRequestsPage from './pages/ReviewRequestsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import InventoryPage from './pages/InventoryPage';
+import LocationsPage from './pages/LocationsPage';
 import AdminPage from './pages/AdminPage';
+import MyAssetHistoryPage from './pages/MyAssetHistoryPage';
 
 // UI Components
 import { ToastProvider } from './components/ui';
@@ -181,6 +183,7 @@ const ForgotPasswordPage = () => {
      const [isLoading, setIsLoading] = useState(false);
      const [successMessage, setSuccessMessage] = useState(null);
      const [countdown, setCountdown] = useState(0);
+     const { t } = useI18n();
      const navigate = useNavigate();
 
      useEffect(() => {
@@ -204,7 +207,7 @@ const ForgotPasswordPage = () => {
           } catch (err) {
                const message = err.response?.data?.message ||
                     err.response?.data?.errors?.email?.[0] ||
-                    'Failed to send verification code. Please try again.';
+                    t('auth.failedToSendCode');
                setError(message);
           } finally {
                setIsLoading(false);
@@ -234,7 +237,7 @@ const ForgotPasswordPage = () => {
                     errors?.verification_code?.[0] ||
                     errors?.password?.[0] ||
                     errors?.email?.[0] ||
-                    'Failed to reset password. Please try again.';
+                    t('auth.failedToResetPassword');
                setError(message);
           } finally {
                setIsLoading(false);
@@ -250,10 +253,10 @@ const ForgotPasswordPage = () => {
 
           try {
                const response = await axios.post('/forgot-password/request', { email });
-               setSuccessMessage('Verification code resent successfully.');
+               setSuccessMessage(t('auth.verificationCodeResent'));
                setCountdown(60);
           } catch (err) {
-               setError('Failed to resend code. Please try again.');
+               setError(t('auth.failedToResendCode'));
           } finally {
                setIsLoading(false);
           }
@@ -269,9 +272,9 @@ const ForgotPasswordPage = () => {
 
                     {step === 1 ? (
                          <form onSubmit={handleRequestCode} className="auth-form">
-                              <h2 className="auth-title">Forgot Password</h2>
+                              <h2 className="auth-title">{t('auth.forgotPassword')}</h2>
                               <p className="auth-description text-center mb-6 text-sm text-gray-500">
-                                   Enter your email address and we'll send you a verification code to reset your password.
+                                   {t('auth.forgotPasswordDesc')}
                               </p>
 
                               {error && (
@@ -282,14 +285,14 @@ const ForgotPasswordPage = () => {
                               )}
 
                               <div className="form-group">
-                                   <label htmlFor="email">Email Address</label>
+                                   <label htmlFor="email">{t('auth.emailAddress')}</label>
                                    <input
                                         id="email"
                                         type="email"
                                         className="form-input"
                                         value={email}
                                         onChange={e => setEmail(e.target.value)}
-                                        placeholder="Enter your email"
+                                        placeholder={t('auth.enterEmail')}
                                         required
                                         autoFocus
                                    />
@@ -300,20 +303,20 @@ const ForgotPasswordPage = () => {
                                    className="btn btn-primary btn-block mb-4"
                                    disabled={isLoading}
                               >
-                                   {isLoading ? 'Sending...' : 'Send Verification Code'}
+                                   {isLoading ? t('auth.sending') : t('auth.sendVerificationCode')}
                               </button>
 
                               <div className="text-center">
                                    <Link to="/login" className="text-sm text-primary hover:text-primary-hover hover:underline">
-                                        Back to Login
+                                        {t('auth.backToLogin')}
                                    </Link>
                               </div>
                          </form>
                     ) : (
                          <form onSubmit={handleResetPassword} className="auth-form">
-                              <h2 className="auth-title">Reset Password</h2>
+                              <h2 className="auth-title">{t('auth.resetPassword')}</h2>
                               <p className="auth-description text-center mb-6 text-sm text-gray-500">
-                                   Enter the 6-digit verification code sent to your email and your new password.
+                                   {t('auth.resetPasswordDesc')}
                               </p>
 
                               {error && (
@@ -324,7 +327,7 @@ const ForgotPasswordPage = () => {
                               )}
 
                               <div className="form-group">
-                                   <label htmlFor="verification_code">Verification Code</label>
+                                   <label htmlFor="verification_code">{t('auth.verificationCode')}</label>
                                    <input
                                         id="verification_code"
                                         type="text"
@@ -340,7 +343,7 @@ const ForgotPasswordPage = () => {
                                    <div className="text-center mt-2">
                                         {countdown > 0 ? (
                                              <span className="text-xs text-gray-500">
-                                                  Resend code in {countdown}s
+                                                  {t('auth.resendCodeIn', { seconds: countdown })}
                                              </span>
                                         ) : (
                                              <button
@@ -349,37 +352,37 @@ const ForgotPasswordPage = () => {
                                                   className="text-xs text-primary hover:text-primary-hover hover:underline"
                                                   disabled={isLoading}
                                              >
-                                                  Resend verification code
+                                                  {t('auth.resendVerificationCode')}
                                              </button>
                                         )}
                                    </div>
                               </div>
 
                               <div className="form-group">
-                                   <label htmlFor="password">New Password</label>
+                                   <label htmlFor="password">{t('auth.newPassword')}</label>
                                    <input
                                         id="password"
                                         type="password"
                                         className="form-input"
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
-                                        placeholder="Enter new password"
+                                        placeholder={t('auth.enterNewPassword')}
                                         required
                                    />
                                    <p className="text-xs text-gray-500 mt-1">
-                                        Must be at least 8 characters with uppercase, lowercase, number, and symbol
+                                        {t('auth.passwordRequirements')}
                                    </p>
                               </div>
 
                               <div className="form-group">
-                                   <label htmlFor="password_confirmation">Confirm Password</label>
+                                   <label htmlFor="password_confirmation">{t('auth.confirmPassword')}</label>
                                    <input
                                         id="password_confirmation"
                                         type="password"
                                         className="form-input"
                                         value={passwordConfirmation}
                                         onChange={e => setPasswordConfirmation(e.target.value)}
-                                        placeholder="Confirm new password"
+                                        placeholder={t('auth.confirmNewPassword')}
                                         required
                                    />
                               </div>
@@ -389,7 +392,7 @@ const ForgotPasswordPage = () => {
                                    className="btn btn-primary btn-block mb-4"
                                    disabled={isLoading}
                               >
-                                   {isLoading ? 'Resetting...' : 'Reset Password'}
+                                   {isLoading ? t('auth.resetting') : t('auth.resetPasswordBtn')}
                               </button>
 
                               <div className="text-center">
@@ -398,7 +401,7 @@ const ForgotPasswordPage = () => {
                                         onClick={() => setStep(1)}
                                         className="text-sm text-primary hover:text-primary-hover hover:underline"
                                    >
-                                        Back to Email
+                                        {t('auth.backToEmail')}
                                    </button>
                               </div>
                          </form>
@@ -415,6 +418,7 @@ const LoginPage = () => {
      const [error, setError] = useState(null);
      const [isLoading, setIsLoading] = useState(false);
      const { login } = useAuth();
+     const { t } = useI18n();
      const navigate = useNavigate();
      const location = useLocation();
 
@@ -431,7 +435,7 @@ const LoginPage = () => {
           } catch (err) {
                const message = err.response?.data?.message ||
                     err.response?.data?.errors?.employee_code?.[0] ||
-                    'Login failed. Please check your credentials.';
+                    t('auth.loginFailed');
                setError(message);
           } finally {
                setIsLoading(false);
@@ -447,36 +451,36 @@ const LoginPage = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="auth-form">
-                         <h2 className="auth-title">Welcome Back</h2>
-                         <p className="auth-description text-center mb-6 text-sm text-gray-500">Sign in to your account to continue</p>
+                         <h2 className="auth-title">{t('auth.welcomeBack')}</h2>
+                         <p className="auth-description text-center mb-6 text-sm text-gray-500">{t('auth.signInToContinue')}</p>
 
                          {error && (
                               <div className="alert alert-error">{error}</div>
                          )}
 
                          <div className="form-group">
-                              <label htmlFor="employee_code">Employee ID</label>
+                              <label htmlFor="employee_code">{t('auth.employeeId')}</label>
                               <input
                                    id="employee_code"
                                    type="text"
                                    className="form-input"
                                    value={employeeCode}
                                    onChange={e => setEmployeeCode(e.target.value)}
-                                   placeholder="Enter your employee ID"
+                                   placeholder={t('auth.enterEmployeeId')}
                                    required
                                    autoFocus
                               />
                          </div>
 
                          <div className="form-group">
-                              <label htmlFor="password">Password</label>
+                              <label htmlFor="password">{t('auth.password')}</label>
                               <input
                                    id="password"
                                    type="password"
                                    className="form-input"
                                    value={password}
                                    onChange={e => setPassword(e.target.value)}
-                                   placeholder="Enter your password"
+                                   placeholder={t('auth.enterPassword')}
                                    required
                               />
                          </div>
@@ -489,7 +493,7 @@ const LoginPage = () => {
                                         checked={remember}
                                         onChange={e => setRemember(e.target.checked)}
                                    />
-                                   <span className="text-sm text-gray-600">Remember me</span>
+                                   <span className="text-sm text-gray-600">{t('auth.rememberMe')}</span>
                               </label>
                          </div>
 
@@ -498,12 +502,12 @@ const LoginPage = () => {
                               className="btn btn-primary btn-block mb-4"
                               disabled={isLoading}
                          >
-                              {isLoading ? 'Signing in...' : 'Continue'}
+                              {isLoading ? t('auth.signingIn') : t('auth.continue')}
                          </button>
 
                          <div className="text-center">
                               <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-hover hover:underline">
-                                   Forgot password?
+                                   {t('auth.forgotPassword')}?
                               </Link>
                          </div>
                     </form>
@@ -665,6 +669,31 @@ const InventoryPageWrapper = () => {
      );
 };
 
+const LocationsPageWrapper = () => {
+     const { user } = useAuth();
+     return (
+          <AdminLayoutWrapper 
+               title="Locations" 
+               breadcrumbs={[{ label: 'Locations' }]}
+          >
+               <LocationsPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const MyAssetHistoryPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.myAssetHistory')} 
+               breadcrumbs={[{ label: t('nav.myAssetHistory') }]}
+          >
+               <MyAssetHistoryPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
 const ReportsPage = () => (
      <AdminLayoutWrapper 
           title="Reports" 
@@ -791,6 +820,11 @@ const App = () => {
                                    <AssetsPageWrapper />
                               </ProtectedRoute>
                          } />
+                         <Route path="/my-assets" element={
+                              <ProtectedRoute>
+                                   <MyAssetsPageWrapper />
+                              </ProtectedRoute>
+                         } />
                          <Route path="/equipment" element={
                               <ProtectedRoute>
                                    <EquipmentPage />
@@ -829,6 +863,16 @@ const App = () => {
                          <Route path="/inventory" element={
                               <ProtectedRoute>
                                    <InventoryPageWrapper />
+                              </ProtectedRoute>
+                         } />
+                         <Route path="/locations" element={
+                              <ProtectedRoute>
+                                   <LocationsPageWrapper />
+                              </ProtectedRoute>
+                         } />
+                         <Route path="/my-asset-history" element={
+                              <ProtectedRoute>
+                                   <MyAssetHistoryPageWrapper />
                               </ProtectedRoute>
                          } />
                          <Route path="/reports" element={

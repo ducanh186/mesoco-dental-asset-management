@@ -184,33 +184,81 @@ export default {
         title: 'Tổng quan',
         welcome: 'Chào mừng trở lại, {name}!',
         welcomeSubtitle: 'Đây là tình hình thiết bị của bạn hôm nay.',
+        welcomeSubtitleAdmin: 'Tổng quan về hệ thống quản lý thiết bị nha khoa.',
+        welcomeSubtitleUser: 'Xem thiết bị được giao và quản lý phiếu yêu cầu của bạn.',
+        welcomeSubtitleTechnician: 'Theo dõi lịch bảo trì và quản lý thiết bị.',
+        
+        // Admin/HR Cards
         totalEquipment: 'Tổng thiết bị',
         totalAssets: 'Tổng thiết bị',
+        pendingApprovals: 'Phiếu chờ duyệt',
         activeRequests: 'Phiếu đang xử lý',
         maintenanceDue: 'Cần bảo trì',
+        
+        // Technician Cards
+        maintenanceInProgress: 'Đang bảo trì',
+        scheduledMaintenance: 'Lịch bảo trì',
+        scheduled: '{count} đã lên lịch',
+        upcomingTasks: 'Có công việc sắp tới',
+        noScheduled: 'Không có lịch',
+        
+        // Doctor/Staff Cards
+        myEquipmentCount: 'Thiết bị của tôi',
+        myActiveRequests: 'Phiếu đang xử lý',
+        alerts: 'Cảnh báo',
+        lockedCount: '{count} đang khóa',
+        pendingCount: '{count} chờ duyệt',
+        allAvailable: 'Tất cả sẵn sàng',
+        equipmentLocked: 'Thiết bị bị khóa',
+        noAlerts: 'Không có cảnh báo',
+        
+        // Card Subtitles
+        activeCount: '{count} đang hoạt động',
+        needsReview: 'Cần xem xét',
+        allClear: 'Đã xử lý hết',
+        onSchedule: 'Đúng tiến độ',
+        
+        // Legacy keys (keep for backward compatibility)
         assignedAssets: 'Đã giao',
         availableAssets: 'Có sẵn',
         maintenanceAssets: 'Đang bảo trì',
         recentActivity: 'Hoạt động gần đây',
         recentEquipment: 'Thiết bị gần đây',
+        myRecentEquipment: 'Thiết bị của tôi',
+        
+        // Quick Actions
         quickActions: 'Thao tác nhanh',
-        myAssignedAssets: 'Thiết bị được giao cho tôi',
-        pendingRequests: 'Phiếu chờ xử lý',
-        pendingApproval: '{count} chờ duyệt',
-        overdue: '{count} quá hạn',
-        thisMonth: '+{count} tháng này',
         addEquipment: 'Thêm thiết bị',
         newRequest: 'Tạo phiếu',
         scanQrCode: 'Quét mã QR',
         viewReports: 'Xem báo cáo',
+        myEquipment: 'Thiết bị của tôi',
+        myRequests: 'Phiếu của tôi',
+        reviewRequests: 'Duyệt phiếu',
+        maintenance: 'Bảo trì',
+        inventory: 'Kho & định giá',
+        
+        // Table
         viewAll: 'Xem tất cả',
         loading: 'Đang tải...',
+        fetchError: 'Không thể tải dữ liệu. Vui lòng thử lại.',
         noEquipmentFound: 'Không tìm thấy thiết bị',
         noEquipmentHint: 'Bắt đầu bằng cách thêm thiết bị đầu tiên.',
         equipmentName: 'Tên thiết bị',
         code: 'Mã',
         assignedTo: 'Người sử dụng',
         lastMaintenance: 'Bảo trì lần cuối',
+        lockStatus: 'Trạng thái khóa',
+        locked: 'Đang khóa',
+        available: 'Sẵn sàng',
+        createRequest: 'Tạo phiếu',
+        
+        // Legacy keys
+        myAssignedAssets: 'Thiết bị được giao cho tôi',
+        pendingRequests: 'Phiếu chờ xử lý',
+        pendingApproval: '{count} chờ duyệt',
+        overdue: '{count} quá hạn',
+        thisMonth: '+{count} tháng này',
     },
 
     // ========================================================================

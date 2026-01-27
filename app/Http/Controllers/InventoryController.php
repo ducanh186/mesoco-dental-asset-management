@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * InventoryController - Phase 6 Inventory Management
  * 
  * Provides inventory dashboard, asset listing with filters,
- * and valuation reports for Admin/HR roles.
+ * valuation reports, and CSV export for Admin/HR roles.
  * 
  * RBAC: admin, hr only (enforced via route middleware)
  */
@@ -63,6 +65,12 @@ class InventoryController extends Controller
             ->get()
             ->sum(fn($asset) => $asset->getAccumulatedDepreciation() ?? 0);
 
+        // Warranty statistics
+        $warrantyThresholdDays = config('inventory.warranty_expiry_threshold_days', 30);
+        $warrantyExpiringSoonCount = Asset::warrantyExpiringSoon($warrantyThresholdDays)->count();
+        $warrantyExpiredCount = Asset::warrantyExpired()->count();
+        $warrantyValidCount = Asset::warrantyValid()->count();
+
         return response()->json([
             'summary' => [
                 'total_assets' => $totalAssets,
@@ -85,6 +93,12 @@ class InventoryController extends Controller
                 'total_current_book_value' => round($totalCurrentBookValue, 2),
                 'total_accumulated_depreciation' => round($totalAccumulatedDepreciation, 2),
             ],
+            'warranty' => [
+                'expiring_soon_count' => $warrantyExpiringSoonCount,
+                'expired_count' => $warrantyExpiredCount,
+                'valid_count' => $warrantyValidCount,
+                'threshold_days' => $warrantyThresholdDays,
+            ],
             'available_types' => Asset::TYPES,
             'available_statuses' => Asset::STATUSES,
             'available_categories' => Asset::CATEGORIES,
@@ -95,11 +109,12 @@ class InventoryController extends Controller
      * Get paginated inventory list with filters.
      * 
      * GET /api/inventory/assets
-     * Query params: search, type, status, category, location, assigned, per_page
+     * Query params: search, type, status, category, location, assigned, warranty_expiring_soon, per_page
      */
     public function assets(Request $request): JsonResponse
     {
         $perPage = min($request->input('per_page', 15), 100);
+        $warrantyThresholdDays = config('inventory.warranty_expiry_threshold_days', 30);
 
         $query = Asset::with(['currentAssignment.employee', 'qrIdentity'])
             ->search($request->input('search'))
@@ -117,10 +132,15 @@ class InventoryController extends Controller
             }
         }
 
+        // Filter by warranty expiring soon
+        if ($request->has('warranty_expiring_soon') && $request->boolean('warranty_expiring_soon')) {
+            $query->warrantyExpiringSoon($warrantyThresholdDays);
+        }
+
         // Sorting
         $sortBy = $request->input('sort_by', 'asset_code');
         $sortDir = $request->input('sort_dir', 'asc');
-        $allowedSorts = ['asset_code', 'name', 'type', 'status', 'category', 'location', 'purchase_date', 'purchase_cost', 'created_at'];
+        $allowedSorts = ['asset_code', 'name', 'type', 'status', 'category', 'location', 'purchase_date', 'purchase_cost', 'created_at', 'warranty_expiry'];
         
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDir === 'desc' ? 'desc' : 'asc');
@@ -128,7 +148,7 @@ class InventoryController extends Controller
 
         $assets = $query->paginate($perPage);
 
-        $transformedAssets = collect($assets->items())->map(function ($asset) {
+        $transformedAssets = collect($assets->items())->map(function ($asset) use ($warrantyThresholdDays) {
             return [
                 'id' => $asset->id,
                 'asset_code' => $asset->asset_code,
@@ -141,6 +161,9 @@ class InventoryController extends Controller
                 'purchase_date' => $asset->purchase_date?->toDateString(),
                 'purchase_cost' => $asset->purchase_cost ? (float) $asset->purchase_cost : null,
                 'warranty_expiry' => $asset->warranty_expiry?->toDateString(),
+                'warranty_status' => $asset->getWarrantyStatus($warrantyThresholdDays),
+                'warranty_days_left' => $asset->getWarrantyDaysLeft(),
+                'is_warranty_expiring_soon' => $asset->isWarrantyExpiringSoon($warrantyThresholdDays),
                 'current_book_value' => $asset->getCurrentBookValue(),
                 'qr_payload' => $asset->qrIdentity?->qr_payload,
                 'assigned_to' => $asset->currentAssignment ? [
@@ -182,6 +205,9 @@ class InventoryController extends Controller
      * 
      * GET /api/inventory/valuation
      * Query params: search, category, fully_depreciated, per_page
+     * 
+     * Note: fully_depreciated filter is applied server-side using SQL calculation
+     * to ensure correct pagination results.
      */
     public function valuation(Request $request): JsonResponse
     {
@@ -191,6 +217,12 @@ class InventoryController extends Controller
             ->with(['currentAssignment.employee'])
             ->search($request->input('search'))
             ->byCategory($request->input('category'));
+
+        // Apply fully_depreciated filter server-side for correct pagination
+        if ($request->has('fully_depreciated')) {
+            $isFullyDepreciated = filter_var($request->input('fully_depreciated'), FILTER_VALIDATE_BOOLEAN);
+            $query->fullyDepreciated($isFullyDepreciated);
+        }
 
         // Sorting
         $sortBy = $request->input('sort_by', 'purchase_cost');
@@ -202,9 +234,6 @@ class InventoryController extends Controller
         }
 
         $assets = $query->paginate($perPage);
-
-        // Filter fully depreciated after pagination (computed field)
-        $filterFullyDepreciated = $request->input('fully_depreciated');
         
         $transformedAssets = collect($assets->items())->map(function ($asset) {
             $valuation = $asset->getValuationData();
@@ -221,14 +250,6 @@ class InventoryController extends Controller
             ];
         });
 
-        // Filter by fully_depreciated if specified
-        if ($filterFullyDepreciated !== null) {
-            $isFullyDepreciated = filter_var($filterFullyDepreciated, FILTER_VALIDATE_BOOLEAN);
-            $transformedAssets = $transformedAssets->filter(function ($asset) use ($isFullyDepreciated) {
-                return $asset['valuation']['is_fully_depreciated'] === $isFullyDepreciated;
-            })->values();
-        }
-
         return response()->json([
             'assets' => $transformedAssets,
             'pagination' => [
@@ -238,5 +259,98 @@ class InventoryController extends Controller
                 'total' => $assets->total(),
             ],
         ]);
+    }
+
+    /**
+     * Export inventory assets to CSV.
+     * 
+     * GET /api/inventory/export
+     * Query params: Same filters as /inventory/assets (search, type, status, category, location, assigned)
+     * 
+     * Returns CSV file with all matching assets (no pagination).
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $query = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+            ->search($request->input('search'))
+            ->byType($request->input('type'))
+            ->byStatus($request->input('status'))
+            ->byCategory($request->input('category'))
+            ->byLocation($request->input('location'));
+
+        // Filter by assignment status
+        if ($request->has('assigned')) {
+            if ($request->boolean('assigned')) {
+                $query->assigned();
+            } else {
+                $query->unassigned();
+            }
+        }
+
+        // Filter by warranty status
+        if ($request->has('warranty_expiring_soon')) {
+            $thresholdDays = config('inventory.warranty_expiry_threshold_days', 30);
+            $query->warrantyExpiringSoon($thresholdDays);
+        }
+
+        // Sort consistently
+        $query->orderBy('asset_code', 'asc');
+
+        $assets = $query->get();
+
+        $filename = 'inventory_export_' . now()->format('Y-m-d_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'max-age=0',
+        ];
+
+        $callback = function () use ($assets) {
+            $file = fopen('php://output', 'w');
+
+            // UTF-8 BOM for Excel compatibility
+            fwrite($file, "\xEF\xBB\xBF");
+
+            // CSV Header
+            fputcsv($file, [
+                'Asset Code',
+                'Name',
+                'Type',
+                'Category',
+                'Location',
+                'Status',
+                'Assigned To',
+                'Purchase Date',
+                'Purchase Cost',
+                'Warranty Expiry',
+                'Current Book Value',
+                'QR Payload',
+                'Notes',
+            ]);
+
+            // Data rows
+            foreach ($assets as $asset) {
+                fputcsv($file, [
+                    $asset->asset_code ?? '',
+                    $asset->name ?? '',
+                    $asset->type ?? '',
+                    $asset->category ?? '',
+                    $asset->location ?? '',
+                    $asset->status ?? '',
+                    $asset->currentAssignment?->employee?->name ?? '',
+                    $asset->purchase_date?->toDateString() ?? '',
+                    $asset->purchase_cost ? number_format((float) $asset->purchase_cost, 2, '.', '') : '',
+                    $asset->warranty_expiry?->toDateString() ?? '',
+                    $asset->getCurrentBookValue() !== null ? number_format($asset->getCurrentBookValue(), 2, '.', '') : '',
+                    $asset->qrIdentity?->qr_payload ?? '',
+                    $asset->notes ?? '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

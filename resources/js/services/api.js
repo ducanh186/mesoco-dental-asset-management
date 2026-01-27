@@ -356,6 +356,19 @@ export const inventoryApi = {
         const response = await axios.get('/api/inventory/valuation', { params });
         return response.data;
     },
+
+    /**
+     * Export inventory to CSV
+     * GET /api/inventory/export
+     * Returns a blob for download
+     */
+    exportCsv: async (params = {}) => {
+        const response = await axios.get('/api/inventory/export', { 
+            params,
+            responseType: 'blob' 
+        });
+        return response;
+    },
 };
 
 // ============================================================================
@@ -381,6 +394,269 @@ export const myAssetHistoryApi = {
     },
 };
 
+// ============================================================================
+// Locations API (Phase 6 - Admin/HR)
+// ============================================================================
+export const locationsApi = {
+    /**
+     * List all locations with pagination
+     * GET /api/locations
+     */
+    list: async (params = {}) => {
+        const response = await axios.get('/api/locations', { params });
+        return response.data;
+    },
+
+    /**
+     * Get location details
+     * GET /api/locations/{id}
+     */
+    get: async (id) => {
+        const response = await axios.get(`/api/locations/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Create new location
+     * POST /api/locations
+     */
+    create: async (data) => {
+        const response = await axios.post('/api/locations', data);
+        return response.data;
+    },
+
+    /**
+     * Update location
+     * PUT /api/locations/{id}
+     */
+    update: async (id, data) => {
+        const response = await axios.put(`/api/locations/${id}`, data);
+        return response.data;
+    },
+
+    /**
+     * Delete location
+     * DELETE /api/locations/{id}
+     */
+    delete: async (id) => {
+        const response = await axios.delete(`/api/locations/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Get dropdown list (active only)
+     * GET /api/locations/dropdown
+     */
+    dropdown: async () => {
+        const response = await axios.get('/api/locations/dropdown');
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Maintenance Events API (Phase 7)
+// ============================================================================
+export const maintenanceApi = {
+    /**
+     * List maintenance events with filters
+     * GET /api/maintenance-events
+     */
+    list: async (params = {}) => {
+        const response = await axios.get('/api/maintenance-events', { params });
+        return response.data;
+    },
+
+    /**
+     * Get maintenance summary (stats + upcoming/overdue)
+     * GET /api/maintenance-events/summary
+     */
+    summary: async () => {
+        const response = await axios.get('/api/maintenance-events/summary');
+        return response.data;
+    },
+
+    /**
+     * Get single maintenance event
+     * GET /api/maintenance-events/{id}
+     */
+    get: async (id) => {
+        const response = await axios.get(`/api/maintenance-events/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Create maintenance event
+     * POST /api/maintenance-events
+     */
+    create: async (data) => {
+        const response = await axios.post('/api/maintenance-events', data);
+        return response.data;
+    },
+
+    /**
+     * Update maintenance event
+     * PUT /api/maintenance-events/{id}
+     */
+    update: async (id, data) => {
+        const response = await axios.put(`/api/maintenance-events/${id}`, data);
+        return response.data;
+    },
+
+    /**
+     * Delete maintenance event
+     * DELETE /api/maintenance-events/{id}
+     */
+    delete: async (id) => {
+        const response = await axios.delete(`/api/maintenance-events/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Start maintenance (scheduled -> in_progress)
+     * POST /api/maintenance-events/{id}/start
+     */
+    start: async (id, note = null) => {
+        const response = await axios.post(`/api/maintenance-events/${id}/start`, { note });
+        return response.data;
+    },
+
+    /**
+     * Complete maintenance (in_progress -> completed)
+     * POST /api/maintenance-events/{id}/complete
+     */
+    complete: async (id, data = {}) => {
+        const response = await axios.post(`/api/maintenance-events/${id}/complete`, data);
+        return response.data;
+    },
+
+    /**
+     * Cancel maintenance
+     * POST /api/maintenance-events/{id}/cancel
+     */
+    cancel: async (id, reason = null) => {
+        const response = await axios.post(`/api/maintenance-events/${id}/cancel`, { cancel_reason: reason });
+        return response.data;
+    },
+
+    /**
+     * Lock asset manually
+     * POST /api/assets/{id}/lock
+     */
+    lockAsset: async (assetId, reason, until = null) => {
+        const response = await axios.post(`/api/assets/${assetId}/lock`, { reason, until });
+        return response.data;
+    },
+
+    /**
+     * Unlock asset manually
+     * POST /api/assets/{id}/unlock
+     */
+    unlockAsset: async (assetId) => {
+        const response = await axios.post(`/api/assets/${assetId}/unlock`);
+        return response.data;
+    },
+
+    /**
+     * Get asset lock status
+     * GET /api/assets/{id}/lock-status
+     */
+    getLockStatus: async (assetId) => {
+        const response = await axios.get(`/api/assets/${assetId}/lock-status`);
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Feedback API (Phase 8)
+// ============================================================================
+export const feedbackApi = {
+    /**
+     * List feedbacks with filters
+     * GET /api/feedbacks
+     */
+    list: async (params = {}) => {
+        const response = await axios.get('/api/feedbacks', { params });
+        return response.data;
+    },
+
+    /**
+     * Get feedback summary stats
+     * GET /api/feedbacks/summary
+     */
+    summary: async () => {
+        const response = await axios.get('/api/feedbacks/summary');
+        return response.data;
+    },
+
+    /**
+     * Get single feedback
+     * GET /api/feedbacks/{id}
+     */
+    get: async (id) => {
+        const response = await axios.get(`/api/feedbacks/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Create feedback
+     * POST /api/feedbacks
+     */
+    create: async (data) => {
+        const response = await axios.post('/api/feedbacks', data);
+        return response.data;
+    },
+
+    /**
+     * Update feedback
+     * PUT /api/feedbacks/{id}
+     */
+    update: async (id, data) => {
+        const response = await axios.put(`/api/feedbacks/${id}`, data);
+        return response.data;
+    },
+
+    /**
+     * Update feedback status (managers only)
+     * PATCH /api/feedbacks/{id}/status
+     */
+    updateStatus: async (id, status, response = null) => {
+        const res = await axios.patch(`/api/feedbacks/${id}/status`, { status, response });
+        return res.data;
+    },
+
+    /**
+     * Delete feedback (admin only)
+     * DELETE /api/feedbacks/{id}
+     */
+    delete: async (id) => {
+        const response = await axios.delete(`/api/feedbacks/${id}`);
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Reports API (Phase 8 - Admin/HR Only)
+// ============================================================================
+export const reportsApi = {
+    /**
+     * Get overall system summary report
+     * GET /api/reports/summary
+     */
+    summary: async (params = {}) => {
+        const response = await axios.get('/api/reports/summary', { params });
+        return response.data;
+    },
+
+    /**
+     * Export report (admin only - placeholder)
+     * GET /api/reports/export
+     */
+    export: async (params = {}) => {
+        const response = await axios.get('/api/reports/export', { params });
+        return response.data;
+    },
+};
+
 export default {
     assets: assetsApi,
     myAssets: myAssetsApi,
@@ -391,5 +667,9 @@ export default {
     users: usersApi,
     inventory: inventoryApi,
     myAssetHistory: myAssetHistoryApi,
+    locations: locationsApi,
+    maintenance: maintenanceApi,
+    feedback: feedbackApi,
+    reports: reportsApi,
     handleApiError,
 };

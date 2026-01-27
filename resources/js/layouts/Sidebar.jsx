@@ -9,13 +9,19 @@ import { useI18n } from '../i18n';
  * ┌─────────────┬──────────────────────────────────────────────────────┐
  * │ Role        │ Menu Items                                           │
  * ├─────────────┼──────────────────────────────────────────────────────┤
- * │ admin       │ All menus                                            │
- * │ hr          │ Dashboard, My Equipment, Assets, Requests,           │
- * │             │ Review Requests, Reports, Users, Settings            │
- * │ doctor      │ Dashboard, My Equipment, Requests, Settings          │
- * │ technician  │ Dashboard, My Equipment, Requests, Maintenance,      │
+ * │ admin       │ Dashboard, My Equipment, Equipment Catalog,          │
+ * │             │ Inventory & Valuation, Requests, Review Requests,    │
+ * │             │ Maintenance, Reports, Users, Locations, Admin,       │
  * │             │ Settings                                             │
- * │ staff       │ Dashboard, My Equipment, Requests, Settings          │
+ * │ hr          │ Dashboard, My Equipment, Equipment Catalog,          │
+ * │             │ Inventory & Valuation, Requests, Review Requests,    │
+ * │             │ Maintenance, Reports, Users, Locations, Settings     │
+ * │ doctor      │ Dashboard, My Equipment, Requests, My Asset History, │
+ * │             │ Settings                                             │
+ * │ technician  │ Dashboard, My Equipment, Requests, Maintenance,      │
+ * │             │ My Asset History, Settings                           │
+ * │ staff       │ Dashboard, My Equipment, Requests, My Asset History, │
+ * │             │ Settings                                             │
  * └─────────────┴──────────────────────────────────────────────────────┘
  */
 const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
@@ -27,11 +33,14 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const isAdmin = user?.role === 'admin';
     const isHr = user?.role === 'hr';
     const isTechnician = user?.role === 'technician';
+    const isDoctor = user?.role === 'doctor';
+    const isStaff = user?.role === 'staff';
     const isAdminOrHr = isAdmin || isHr;
+    const isNonAdminRole = isDoctor || isTechnician || isStaff;
 
     // Navigation items with role-based visibility
     const navItems = [
-        // All users
+        // All users - Dashboard
         { 
             id: 'dashboard',
             path: '/dashboard', 
@@ -42,15 +51,22 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
         { 
             id: 'my-assets',
             path: '/my-assets', 
-            labelKey: 'nav.myAssets', 
+            labelKey: 'nav.myEquipment', 
             icon: 'myAssets'
         },
-        // Admin/HR only - Asset Management
+        // Admin/HR only - Equipment Catalog (Danh mục thiết bị)
         ...(isAdminOrHr ? [{
             id: 'assets',
             path: '/assets', 
-            labelKey: 'nav.assets', 
+            labelKey: 'nav.equipmentCatalog', 
             icon: 'assets'
+        }] : []),
+        // Admin/HR only - Inventory & Valuation (Kho & định giá)
+        ...(isAdminOrHr ? [{
+            id: 'inventory',
+            path: '/inventory', 
+            labelKey: 'nav.inventoryValuation', 
+            icon: 'inventory'
         }] : []),
         // All users - Requests
         { 
@@ -73,6 +89,13 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             labelKey: 'nav.maintenance', 
             icon: 'maintenance'
         }] : []),
+        // Non-admin roles only - My Asset History
+        ...(isNonAdminRole ? [{
+            id: 'my-asset-history',
+            path: '/my-asset-history', 
+            labelKey: 'nav.myAssetHistory', 
+            icon: 'history'
+        }] : []),
         // Admin/HR only - Reports
         ...(isAdminOrHr ? [{
             id: 'reports',
@@ -86,6 +109,13 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             path: '/users', 
             labelKey: 'nav.users', 
             icon: 'users'
+        }] : []),
+        // Admin/HR only - Locations
+        ...(isAdminOrHr ? [{
+            id: 'locations',
+            path: '/locations', 
+            labelKey: 'nav.locations', 
+            icon: 'locations'
         }] : []),
         // Admin only - System Administration
         ...(isAdmin ? [{
@@ -193,6 +223,24 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="3" />
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+            ),
+            // New icons for additional menu items
+            inventory: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            ),
+            locations: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                </svg>
+            ),
+            history: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
                 </svg>
             ),
         };

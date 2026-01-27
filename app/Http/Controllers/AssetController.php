@@ -328,7 +328,16 @@ class AssetController extends Controller
             // Lock the asset row for update to prevent race conditions
             $lockedAsset = Asset::where('id', $asset->id)->lockForUpdate()->first();
 
-            // Check if asset status allows assignment
+            // Check if asset is locked (off_service or maintenance)
+            if ($lockedAsset->isLocked()) {
+                return response()->json([
+                    'message' => $lockedAsset->getLockReason() ?? 'Asset is currently unavailable.',
+                    'error' => 'ASSET_LOCKED',
+                    'asset_status' => $lockedAsset->status,
+                ], 422);
+            }
+
+            // Check if asset status allows assignment (must be active)
             if ($lockedAsset->status !== Asset::STATUS_ACTIVE) {
                 return response()->json([
                     'message' => 'Cannot assign asset that is not active.',

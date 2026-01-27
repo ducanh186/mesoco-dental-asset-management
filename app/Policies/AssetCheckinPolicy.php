@@ -41,14 +41,15 @@ class AssetCheckinPolicy
      * Determine whether the user can check-in an asset.
      * 
      * Rules:
-     * - Asset must not be off_service
+     * - Asset must not be locked (off_service or maintenance)
      * - User must be the current assignee OR admin/hr
      */
     public function checkIn(User $user, Asset $asset): Response
     {
-        // Block off_service assets
-        if ($asset->status === 'off_service') {
-            return Response::deny('Cannot check in an asset that is off service.', 'ASSET_OFF_SERVICE');
+        // Block locked assets (off_service or maintenance)
+        if ($asset->isLocked()) {
+            $reason = $asset->getLockReason() ?? 'Asset is currently unavailable';
+            return Response::deny($reason, 'ASSET_LOCKED');
         }
 
         // Admin/HR can check in any asset

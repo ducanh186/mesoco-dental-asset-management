@@ -1,0 +1,593 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  LayoutDashboard, 
+  Stethoscope, 
+  Settings, 
+  Users, 
+  Box, 
+  FileText, 
+  PlusCircle, 
+  QrCode, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  Search,
+  LogOut,
+  ChevronRight,
+  Wrench,
+  Eye,
+  Trash2,
+  Edit,
+  ClipboardList
+} from 'lucide-react';
+
+// --- CONFIGURATION ---
+// Set to false to use real Laravel API
+const USE_MOCK_DATA = true; 
+
+// --- MOCK DATA (For Preview Only) ---
+const MOCK_USER_ADMIN = { id: 1, name: "Admin User", role: "admin", email: "admin@mesoco.dental" };
+const MOCK_USER_DOCTOR = { id: 3, name: "Dr. Smith", role: "doctor", email: "smith@mesoco.dental" };
+const MOCK_USER_TECH = { id: 4, name: "Tech Dave", role: "technician", email: "dave@mesoco.dental" };
+
+const MOCK_ASSETS_GLOBAL = [
+  { id: 101, name: "Dental Chair A1", code: "EQ-2024-001", status: "active", locked: false, last_maintenance: "2024-01-15" },
+  { id: 102, name: "X-Ray Unit X5", code: "EQ-2023-042", status: "maintenance", locked: true, last_maintenance: "2023-11-20" },
+  { id: 103, name: "Autoclave Pro", code: "EQ-2024-012", status: "active", locked: false, last_maintenance: "2024-02-01" },
+  { id: 104, name: "Curing Light", code: "EQ-2024-055", status: "broken", locked: true, last_maintenance: "2023-10-10" },
+  { id: 105, name: "Intraoral Camera", code: "EQ-2024-033", status: "active", locked: false, last_maintenance: "2024-01-05" },
+];
+
+const MOCK_MY_ASSETS = [
+  { id: 101, name: "Dental Chair A1", code: "EQ-2024-001", status: "active", locked: false, last_maintenance: "2024-01-15" },
+  { id: 105, name: "Intraoral Camera", code: "EQ-2024-033", status: "active", locked: false, last_maintenance: "2024-01-05" },
+];
+
+// --- UTILS ---
+const formatCurrency = (val) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+// --- API LAYER (Simulated Axios) ---
+const api = {
+  get: async (url) => {
+    if (USE_MOCK_DATA) {
+      await sleep(600); // Simulate network latency
+      console.log(`[GET] ${url}`);
+      
+      // Auth
+      if (url === '/api/me') return { data: window.currentUser || MOCK_USER_ADMIN };
+      
+      // Assets
+      if (url === '/api/my-assets') return { data: MOCK_MY_ASSETS };
+      if (url === '/api/assets') return { data: MOCK_ASSETS_GLOBAL };
+      
+      // Requests
+      if (url === '/api/requests') return { data: [
+        { id: 1, type: 'repair', status: 'pending', created_at: '2024-02-10' },
+        { id: 2, type: 'supply', status: 'approved', created_at: '2024-02-01' }
+      ]};
+      if (url === '/api/review-requests') return { data: [
+        { id: 3, type: 'maintenance', status: 'pending', requester: 'Dr. House' },
+        { id: 4, type: 'repair', status: 'pending', requester: 'Tech Dave' },
+        { id: 5, type: 'repair', status: 'pending', requester: 'Dr. Smith' },
+      ]};
+
+      // Metrics
+      if (url === '/api/inventory/summary') return { data: { total_count: 156, total_value: 5000000000 } };
+      if (url === '/api/maintenance-events') return { data: [
+        { id: 1, asset: "X-Ray", due_date: "2024-02-15", status: "scheduled" },
+        { id: 2, asset: "Chair B2", due_date: "2024-02-10", status: "overdue" }
+      ]};
+
+      return { data: [] };
+    }
+    // Real Axios implementation would be: return axios.get(url);
+    throw new Error("Real API not connected");
+  }
+};
+
+// --- COMPONENTS ---
+
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+  </div>
+);
+
+const Badge = ({ status }) => {
+  const styles = {
+    active: "bg-green-100 text-green-800 border-green-200",
+    maintenance: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    broken: "bg-red-100 text-red-800 border-red-200",
+    pending: "bg-blue-100 text-blue-800 border-blue-200",
+    overdue: "bg-red-100 text-red-800 border-red-200",
+    scheduled: "bg-purple-100 text-purple-800 border-purple-200",
+  };
+  
+  const defaultStyle = "bg-gray-100 text-gray-800 border-gray-200";
+  
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${styles[status] || defaultStyle} capitalize`}>
+      {status}
+    </span>
+  );
+};
+
+// 1. STAT CARDS
+const StatCard = ({ title, value, subtext, icon: Icon, colorClass = "border-orange-500" }) => (
+  <div className={`bg-white rounded-lg shadow-sm p-5 border-l-4 ${colorClass} flex flex-col justify-between h-32 transition hover:shadow-md`}>
+    <div className="flex justify-between items-start">
+      <div>
+        <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wide">{title}</h3>
+        <div className="mt-2 text-3xl font-bold text-gray-800">{value}</div>
+      </div>
+      <div className={`p-2 rounded-full bg-gray-50 text-gray-400`}>
+        <Icon size={24} />
+      </div>
+    </div>
+    {subtext && <div className="text-xs text-gray-400 mt-2">{subtext}</div>}
+  </div>
+);
+
+// 2. QUICK ACTION TILES
+const QuickActionTile = ({ title, icon: Icon, onClick, color = "bg-orange-500" }) => (
+  <button 
+    onClick={onClick}
+    className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition flex flex-col items-center justify-center gap-3 border border-gray-100 group h-32 w-full"
+  >
+    <div className={`p-3 rounded-full text-white ${color} group-hover:scale-110 transition-transform`}>
+      <Icon size={24} />
+    </div>
+    <span className="font-semibold text-gray-700 text-sm">{title}</span>
+  </button>
+);
+
+// 3. RECENT TABLE
+const RecentTable = ({ role, data, onView, onAction }) => {
+  const isDoctorOrStaff = ['doctor', 'staff'].includes(role);
+  const isTechnician = role === 'technician';
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-8 text-center border border-gray-100">
+        <div className="bg-gray-50 inline-block p-4 rounded-full mb-3">
+          <Box className="text-gray-400" size={32} />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900">No equipment found</h3>
+        <p className="text-gray-500 text-sm mt-1">There are no assets to display right now.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+        <h3 className="font-semibold text-gray-700">
+          {isDoctorOrStaff ? "My Recent Equipment" : isTechnician ? "Maintenance Queue" : "Recent Inventory"}
+        </h3>
+        <button className="text-orange-600 text-sm font-medium hover:underline">View All</button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+              <th className="px-6 py-3">Asset Name</th>
+              <th className="px-6 py-3">Code</th>
+              <th className="px-6 py-3">Status</th>
+              {!isDoctorOrStaff && <th className="px-6 py-3">Last Maintenance</th>}
+              <th className="px-6 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {data.map((item) => (
+              <tr key={item.id} className="hover:bg-gray-50 transition h-14">
+                <td className="px-6 py-3 font-medium text-gray-800">
+                  <div className="flex items-center gap-2">
+                    {item.name}
+                    {item.locked && <AlertTriangle size={14} className="text-red-500" title="Locked" />}
+                  </div>
+                </td>
+                <td className="px-6 py-3 text-gray-600 text-sm">{item.code}</td>
+                <td className="px-6 py-3">
+                   <Badge status={item.status} />
+                </td>
+                {!isDoctorOrStaff && (
+                  <td className="px-6 py-3 text-sm text-gray-500">{item.last_maintenance || 'N/A'}</td>
+                )}
+                <td className="px-6 py-3 text-right space-x-2">
+                  <button onClick={() => onView(item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded" title="View Details">
+                    <Eye size={16} />
+                  </button>
+                  
+                  {isDoctorOrStaff && (
+                    <button onClick={() => onAction('request', item)} className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded" title="Create Request">
+                      <Wrench size={16} />
+                    </button>
+                  )}
+
+                  {/* Admin Actions */}
+                  {!isDoctorOrStaff && !isTechnician && (
+                    <>
+                      <button className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded" title="Edit">
+                        <Edit size={16} />
+                      </button>
+                      <button className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Delete">
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// 4. MAIN DASHBOARD PAGE
+const Dashboard = ({ user, setView }) => {
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({ card1: 0, card2: 0, card3: 0 });
+  const [recentItems, setRecentItems] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const role = user.role;
+
+        // --- DOCTOR / STAFF LOGIC ---
+        if (role === 'doctor' || role === 'staff') {
+          const [assetsRes, reqRes] = await Promise.all([
+            api.get('/api/my-assets'),
+            api.get('/api/requests')
+          ]);
+
+          const myAssets = assetsRes.data;
+          const myRequests = reqRes.data;
+
+          // Card 1: My Equipment Count
+          const totalAssets = myAssets.length;
+
+          // Card 2: Active Requests (pending/approved)
+          const activeReqs = myRequests.filter(r => ['pending', 'approved'].includes(r.status)).length;
+
+          // Card 3: Alerts (Locked or Broken)
+          // Note: In real app, we might need a specific alerts endpoint, but we use logic here as requested
+          const alertsCount = myAssets.filter(a => a.locked || a.status === 'broken').length;
+
+          setMetrics({ 
+            card1: { val: totalAssets, title: "My Equipment", icon: Box, sub: "Assigned assets" },
+            card2: { val: activeReqs, title: "Active Requests", icon: ClipboardList, sub: "Pending resolution" },
+            card3: { val: alertsCount, title: "Alerts", icon: AlertTriangle, sub: "Locked / Broken", color: alertsCount > 0 ? "border-red-500" : "border-green-500" }
+          });
+          
+          setRecentItems(myAssets.slice(0, 5));
+        } 
+        
+        // --- TECHNICIAN LOGIC ---
+        else if (role === 'technician') {
+          const maintRes = await Promise.all([
+            api.get('/api/maintenance-events'),
+            api.get('/api/my-assets') // Optional fallback
+          ]);
+
+          const events = maintRes[0].data;
+          
+          const due = events.filter(e => e.status === 'scheduled' || e.status === 'overdue').length;
+          const overdue = events.filter(e => e.status === 'overdue').length;
+          
+          setMetrics({
+            card1: { val: due, title: "Maintenance Queue", icon: Wrench, sub: "Jobs assigned" },
+            card2: { val: overdue, title: "Overdue", icon: Clock, sub: "High priority", color: "border-red-500" },
+            card3: { val: maintRes[1].data.length, title: "My Tools", icon: Box, sub: "Personal equipment" }
+          });
+
+          // Use events as the table data for technician (mapped to table structure)
+          setRecentItems(events.map(e => ({ 
+            id: e.id, 
+            name: e.asset, 
+            code: `Job #${e.id}`, 
+            status: e.status, 
+            last_maintenance: e.due_date 
+          })));
+        }
+
+        // --- ADMIN / HR LOGIC ---
+        else {
+          const [invRes, revRes, maintRes, assetRes] = await Promise.all([
+            api.get('/api/inventory/summary'),
+            api.get('/api/review-requests'),
+            api.get('/api/maintenance-events'),
+            api.get('/api/assets')
+          ]);
+
+          const inventory = invRes.data;
+          const pendingReviews = revRes.data.length;
+          const maintenanceDue = maintRes.data.filter(e => e.status === 'overdue').length;
+
+          setMetrics({
+            card1: { val: inventory.total_count, title: "Total Equipment", icon: Box, sub: "System-wide inventory" },
+            card2: { val: pendingReviews, title: "Pending Approvals", icon: CheckCircle, sub: "Needs review", color: pendingReviews > 0 ? "border-orange-500" : "border-green-500" },
+            card3: { val: maintenanceDue, title: "Maintenance Alerts", icon: AlertTriangle, sub: "Overdue items", color: maintenanceDue > 0 ? "border-red-500" : "border-green-500" }
+          });
+
+          setRecentItems(assetRes.data.slice(0, 5));
+        }
+
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+        setError("Failed to load dashboard data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  // Actions Logic
+  const handleQuickAction = (action) => {
+    // In a real app with React Router, these would contain history.push('/path')
+    console.log(`Navigating to: ${action}`);
+    if (action === 'new_request') setView('wizard');
+    else alert(`Action triggered: ${action} (Route placeholder)`);
+  };
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return (
+    <div className="p-6 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center justify-between">
+      <span>{error}</span>
+      <button onClick={() => window.location.reload()} className="underline font-bold">Retry</button>
+    </div>
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Welcome Section */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Welcome back, {user.name}</h1>
+          <p className="text-gray-500 mt-1">Here is what's happening with your assets today.</p>
+        </div>
+        <div className="text-right text-sm text-gray-400">
+          <p>{new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard 
+          title={metrics.card1.title} 
+          value={metrics.card1.val} 
+          icon={metrics.card1.icon} 
+          subtext={metrics.card1.sub} 
+          colorClass={metrics.card1.color}
+        />
+        <StatCard 
+          title={metrics.card2.title} 
+          value={metrics.card2.val} 
+          icon={metrics.card2.icon} 
+          subtext={metrics.card2.sub}
+          colorClass={metrics.card2.color} 
+        />
+        <StatCard 
+          title={metrics.card3.title} 
+          value={metrics.card3.val} 
+          icon={metrics.card3.icon} 
+          subtext={metrics.card3.sub} 
+          colorClass={metrics.card3.color}
+        />
+      </div>
+
+      {/* Quick Actions & Recent Table Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Col: Recent Items Table */}
+        <div className="lg:col-span-2">
+          <RecentTable 
+            role={user.role} 
+            data={recentItems} 
+            onView={(item) => alert(`View details for ID: ${item.id}`)}
+            onAction={(type, item) => handleQuickAction('new_request')}
+          />
+        </div>
+
+        {/* Right Col: Quick Actions */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-gray-700 mb-4 px-1">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-4">
+            
+            {/* DOCTOR / STAFF ACTIONS */}
+            {(user.role === 'doctor' || user.role === 'staff') && (
+              <>
+                <QuickActionTile title="New Request" icon={PlusCircle} onClick={() => handleQuickAction('new_request')} />
+                <QuickActionTile title="Scan QR" icon={QrCode} onClick={() => handleQuickAction('scan_qr')} color="bg-blue-500" />
+                <QuickActionTile title="My Equipment" icon={Box} onClick={() => handleQuickAction('my_equipment')} color="bg-teal-500" />
+                <QuickActionTile title="My Requests" icon={ClipboardList} onClick={() => handleQuickAction('my_requests')} color="bg-indigo-500" />
+              </>
+            )}
+
+            {/* ADMIN / HR ACTIONS */}
+            {(user.role === 'admin' || user.role === 'hr') && (
+              <>
+                <QuickActionTile title="Add Asset" icon={PlusCircle} onClick={() => handleQuickAction('add_asset')} />
+                <QuickActionTile title="Approvals" icon={CheckCircle} onClick={() => handleQuickAction('reviews')} color="bg-green-600" />
+                <QuickActionTile title="Maintenance" icon={Wrench} onClick={() => handleQuickAction('maintenance')} color="bg-red-500" />
+                <QuickActionTile title="Inventory" icon={FileText} onClick={() => handleQuickAction('inventory')} color="bg-blue-600" />
+              </>
+            )}
+
+            {/* TECHNICIAN ACTIONS */}
+            {user.role === 'technician' && (
+              <>
+                <QuickActionTile title="Maintenance" icon={Wrench} onClick={() => handleQuickAction('maintenance')} />
+                <QuickActionTile title="Scan QR" icon={QrCode} onClick={() => handleQuickAction('scan_qr')} color="bg-blue-500" />
+                <QuickActionTile title="My Tools" icon={Box} onClick={() => handleQuickAction('my_equipment')} color="bg-teal-500" />
+                <QuickActionTile title="Requests" icon={ClipboardList} onClick={() => handleQuickAction('requests')} color="bg-indigo-500" />
+              </>
+            )}
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 5. REQUEST WIZARD (STUB FOR DEMO)
+const RequestWizard = ({ setView }) => {
+  const [step, setStep] = useState(1);
+  
+  return (
+    <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 p-8">
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800">New Request Wizard</h2>
+        <div className="flex items-center mt-4">
+          <div className={`h-2 flex-1 rounded ${step >= 1 ? 'bg-orange-500' : 'bg-gray-200'}`}></div>
+          <div className={`h-2 flex-1 rounded mx-2 ${step >= 2 ? 'bg-orange-500' : 'bg-gray-200'}`}></div>
+          <div className={`h-2 flex-1 rounded ${step >= 3 ? 'bg-orange-500' : 'bg-gray-200'}`}></div>
+        </div>
+        <p className="text-sm text-gray-500 mt-2">Step {step} of 3</p>
+      </div>
+
+      <div className="h-48 flex items-center justify-center bg-gray-50 rounded border border-dashed border-gray-300 mb-8">
+        {step === 1 && <span className="text-gray-500">Step 1: Select Equipment</span>}
+        {step === 2 && <span className="text-gray-500">Step 2: Describe Issue</span>}
+        {step === 3 && <span className="text-gray-500">Step 3: Confirm & Submit</span>}
+      </div>
+
+      <div className="flex justify-between">
+        <button 
+          onClick={() => step > 1 ? setStep(step - 1) : setView('dashboard')}
+          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+        >
+          {step === 1 ? 'Cancel' : 'Back'}
+        </button>
+        <button 
+          onClick={() => step < 3 ? setStep(step + 1) : setView('dashboard')}
+          className="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 shadow-sm"
+        >
+          {step === 3 ? 'Submit Request' : 'Next'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- APP SHELL / LAYOUT ---
+
+const SidebarItem = ({ icon: Icon, label, active }) => (
+  <div className={`flex items-center gap-3 px-4 py-3 rounded-r-full mb-1 cursor-pointer transition-colors ${active ? 'bg-orange-50 text-orange-600 border-l-4 border-orange-500' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
+    <Icon size={20} />
+    <span className="font-medium text-sm">{label}</span>
+  </div>
+);
+
+const App = () => {
+  const [currentUser, setCurrentUser] = useState(null); // Initially null to simulate loading
+  const [view, setView] = useState('dashboard');
+  
+  // Simulate Auth Check on mount
+  useEffect(() => {
+    // For DEMO purposes: Load Admin by default. 
+    // You can switch this to MOCK_USER_DOCTOR to test Role Awareness.
+    const bootstrap = async () => {
+      try {
+        const res = await api.get('/api/me');
+        window.currentUser = MOCK_USER_ADMIN; // Setting global for demo swapper
+        setCurrentUser(res.data);
+      } catch (e) {
+        console.error("Auth check failed", e);
+      }
+    };
+    bootstrap();
+  }, []);
+
+  const switchUser = (userType) => {
+    window.currentUser = userType;
+    setCurrentUser(userType);
+    setView('dashboard'); // Reset view on user switch
+  };
+
+  if (!currentUser) return <LoadingSpinner />;
+
+  return (
+    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-800">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-gray-200 fixed h-full z-10 hidden md:block">
+        <div className="h-16 flex items-center px-6 border-b border-gray-100">
+          <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center text-white font-bold mr-3">M</div>
+          <span className="text-lg font-bold text-gray-800 tracking-tight">Mesoco<span className="text-orange-500">Dental</span></span>
+        </div>
+        
+        <div className="py-6 pr-4">
+          <SidebarItem icon={LayoutDashboard} label="Dashboard" active={view === 'dashboard'} />
+          <SidebarItem icon={Box} label="Equipment" />
+          <SidebarItem icon={ClipboardList} label="Requests" />
+          <SidebarItem icon={Wrench} label="Maintenance" />
+          <SidebarItem icon={FileText} label="Reports" />
+          <SidebarItem icon={Users} label="Staff" />
+          <SidebarItem icon={Settings} label="Settings" />
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 md:ml-64 flex flex-col">
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-gray-200 px-6 flex justify-between items-center sticky top-0 z-20 shadow-sm">
+          <div className="flex items-center bg-gray-100 rounded-lg px-3 py-1.5 w-64">
+             <Search size={18} className="text-gray-400 mr-2" />
+             <input type="text" placeholder="Search..." className="bg-transparent border-none focus:outline-none text-sm w-full" />
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* DEMO: Role Switcher */}
+            <select 
+              className="text-xs bg-gray-100 p-2 rounded border border-gray-300"
+              onChange={(e) => {
+                 if(e.target.value === 'admin') switchUser(MOCK_USER_ADMIN);
+                 if(e.target.value === 'doctor') switchUser(MOCK_USER_DOCTOR);
+                 if(e.target.value === 'tech') switchUser(MOCK_USER_TECH);
+              }}
+              value={currentUser.role === 'admin' ? 'admin' : currentUser.role === 'doctor' ? 'doctor' : 'tech'}
+            >
+              <option value="admin">View as Admin</option>
+              <option value="doctor">View as Doctor</option>
+              <option value="tech">View as Tech</option>
+            </select>
+
+            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+              <div className="text-right hidden sm:block">
+                <div className="text-sm font-semibold text-gray-700">{currentUser.name}</div>
+                <div className="text-xs text-gray-500 capitalize">{currentUser.role}</div>
+              </div>
+              <div className="h-8 w-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-sm">
+                {currentUser.name.charAt(0)}
+              </div>
+              <LogOut size={18} className="text-gray-400 cursor-pointer hover:text-gray-600" />
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="p-6 md:p-8 flex-1 overflow-y-auto">
+          {view === 'dashboard' ? (
+             <Dashboard user={currentUser} setView={setView} />
+          ) : view === 'wizard' ? (
+             <RequestWizard setView={setView} />
+          ) : (
+             <div className="text-center py-20 text-gray-500">View Placeholder</div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default App;

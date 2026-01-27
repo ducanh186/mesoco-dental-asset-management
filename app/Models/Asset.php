@@ -73,6 +73,11 @@ class Asset extends Model
         'salvage_value',
         'depreciation_method',
         'warranty_expiry',
+        // Off-service metadata (Phase 7)
+        'off_service_reason',
+        'off_service_from',
+        'off_service_until',
+        'off_service_set_by',
     ];
 
     /**
@@ -85,7 +90,89 @@ class Asset extends Model
             'warranty_expiry' => 'date',
             'purchase_cost' => 'decimal:2',
             'salvage_value' => 'decimal:2',
+            'off_service_from' => 'datetime',
+            'off_service_until' => 'datetime',
         ];
+    }
+
+    /**
+     * Statuses that indicate an asset is locked (unavailable for use).
+     * Used by isLocked() for consistent lock checking across the system.
+     */
+    public const LOCKED_STATUSES = [self::STATUS_OFF_SERVICE, self::STATUS_MAINTENANCE];
+
+    // =========================================================================
+    // Lock Status Methods (Phase 7)
+    // =========================================================================
+
+    /**
+     * Check if asset is locked (off_service or maintenance).
+     * 
+     * SINGLE SOURCE OF TRUTH for lock status.
+     * Use this method everywhere instead of checking status directly.
+     * 
+     * Locked assets cannot be:
+     * - Requested for loan
+     * - Assigned to employees
+     * - Checked in/out
+     */
+    public function isLocked(): bool
+    {
+        return in_array($this->status, self::LOCKED_STATUSES);
+    }
+
+    /**
+     * Get human-readable lock reason.
+     * Returns null if asset is not locked.
+     */
+    public function getLockReason(): ?string
+    {
+        if (!$this->isLocked()) {
+            return null;
+        }
+
+        if ($this->off_service_reason) {
+            return $this->off_service_reason;
+        }
+
+        return match ($this->status) {
+            self::STATUS_MAINTENANCE => 'Asset is under maintenance',
+            self::STATUS_OFF_SERVICE => 'Asset is off service',
+            default => null,
+        };
+    }
+
+    /**
+     * Get the user who locked this asset.
+     */
+    public function offServiceSetBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'off_service_set_by');
+    }
+
+    /**
+     * Get maintenance events for this asset.
+     */
+    public function maintenanceEvents(): HasMany
+    {
+        return $this->hasMany(MaintenanceEvent::class);
+    }
+
+    /**
+     * Get active (in_progress) maintenance events.
+     */
+    public function activeMaintenanceEvents(): HasMany
+    {
+        return $this->hasMany(MaintenanceEvent::class)
+            ->where('status', MaintenanceEvent::STATUS_IN_PROGRESS);
+    }
+
+    /**
+     * Check if asset has any in-progress maintenance.
+     */
+    public function hasActiveMaintenanceEvent(): bool
+    {
+        return $this->activeMaintenanceEvents()->exists();
     }
 
     /**
@@ -406,6 +493,137 @@ class Asset extends Model
     public function scopeWithValuation($query)
     {
         return $query->whereNotNull('purchase_cost');
+    }
+
+    /**
+     * Scope to get assets with warranty expiring soon.
+     * 
+     * @param int $thresholdDays Days before expiry to consider as "expiring soon"
+     */
+    public function scopeWarrantyExpiringSoon($query, int $thresholdDays = 30)
+    {
+        $today = Carbon::today();
+        $thresholdDate = $today->copy()->addDays($thresholdDays);
+        
+        return $query->whereNotNull('warranty_expiry')
+            ->where('warranty_expiry', '>=', $today)
+            ->where('warranty_expiry', '<=', $thresholdDate);
+    }
+
+    /**
+     * Scope to get assets with expired warranty.
+     */
+    public function scopeWarrantyExpired($query)
+    {
+        return $query->whereNotNull('warranty_expiry')
+            ->where('warranty_expiry', '<', Carbon::today());
+    }
+
+    /**
+     * Scope to get assets with valid warranty.
+     */
+    public function scopeWarrantyValid($query)
+    {
+        return $query->whereNotNull('warranty_expiry')
+            ->where('warranty_expiry', '>=', Carbon::today());
+    }
+
+    /**
+     * Get warranty status as a string.
+     * 
+     * @param int $thresholdDays Days before expiry to consider as "expiring soon"
+     * @return string|null 'valid', 'expiring_soon', 'expired', or null if no warranty
+     */
+    public function getWarrantyStatus(int $thresholdDays = 30): ?string
+    {
+        if (!$this->warranty_expiry) {
+            return null;
+        }
+        
+        $today = Carbon::today();
+        $expiryDate = $this->warranty_expiry instanceof Carbon 
+            ? $this->warranty_expiry 
+            : Carbon::parse($this->warranty_expiry);
+        
+        if ($expiryDate->lt($today)) {
+            return 'expired';
+        }
+        
+        $daysLeft = $today->diffInDays($expiryDate, false);
+        
+        if ($daysLeft <= $thresholdDays) {
+            return 'expiring_soon';
+        }
+        
+        return 'valid';
+    }
+
+    /**
+     * Get warranty days left.
+     * 
+     * @return int|null Days left until warranty expires, negative if expired, null if no warranty
+     */
+    public function getWarrantyDaysLeft(): ?int
+    {
+        if (!$this->warranty_expiry) {
+            return null;
+        }
+        
+        $today = Carbon::today();
+        $expiryDate = $this->warranty_expiry instanceof Carbon 
+            ? $this->warranty_expiry 
+            : Carbon::parse($this->warranty_expiry);
+        
+        return $today->diffInDays($expiryDate, false);
+    }
+
+    /**
+     * Check if warranty is expiring soon.
+     * 
+     * @param int $thresholdDays Days before expiry to consider as "expiring soon"
+     */
+    public function isWarrantyExpiringSoon(int $thresholdDays = 30): bool
+    {
+        return $this->getWarrantyStatus($thresholdDays) === 'expiring_soon';
+    }
+
+    /**
+     * Scope to filter by fully depreciated status.
+     * Uses a simplified SQL calculation compatible with both MySQL and SQLite.
+     * 
+     * An asset is fully depreciated when months_in_service >= useful_life_months.
+     * This is a reliable proxy for the full depreciation calculation.
+     * 
+     * @param bool $isFullyDepreciated True to get fully depreciated, false to get not fully depreciated
+     */
+    public function scopeFullyDepreciated($query, bool $isFullyDepreciated = true)
+    {
+        // Detect database driver for appropriate SQL syntax
+        $driver = $query->getConnection()->getDriverName();
+        
+        if ($driver === 'sqlite') {
+            // SQLite: Use julianday for month calculation
+            $monthsInServiceExpr = "CAST((julianday('now') - julianday(purchase_date)) / 30.44 AS INTEGER)";
+        } else {
+            // MySQL: Use TIMESTAMPDIFF
+            $monthsInServiceExpr = 'TIMESTAMPDIFF(MONTH, purchase_date, NOW())';
+        }
+        
+        if ($isFullyDepreciated) {
+            // Fully depreciated: months in service >= useful life
+            return $query->whereNotNull('useful_life_months')
+                ->where('useful_life_months', '>', 0)
+                ->whereNotNull('purchase_date')
+                ->whereRaw("({$monthsInServiceExpr}) >= useful_life_months");
+        } else {
+            // Not fully depreciated: months in service < useful life OR no depreciation data
+            return $query->where(function ($q) use ($monthsInServiceExpr) {
+                $q->whereNull('useful_life_months')
+                    ->orWhere('useful_life_months', '<=', 0)
+                    ->orWhereNull('purchase_date')
+                    ->orWhereRaw("({$monthsInServiceExpr}) < useful_life_months");
+            });
+        }
     }
 }
 

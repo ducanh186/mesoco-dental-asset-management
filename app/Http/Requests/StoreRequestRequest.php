@@ -181,6 +181,13 @@ class StoreRequestRequest extends FormRequest
                             "items.{$index}.asset_id",
                             'Tài sản được chọn không tồn tại.'
                         );
+                    } elseif ($asset->isLocked()) {
+                        // Block locked assets (off_service or maintenance) - Phase 7
+                        $reason = $asset->getLockReason() ?? 'Tài sản đang tạm ngưng sử dụng';
+                        $validator->errors()->add(
+                            "items.{$index}.asset_id",
+                            $reason . '. Vui lòng chọn tài sản khác hoặc liên hệ kỹ thuật viên.'
+                        );
                     } elseif (!$asset->isAvailableForLoan()) {
                         // Provide specific error message based on reason
                         if ($asset->status !== \App\Models\Asset::STATUS_ACTIVE) {

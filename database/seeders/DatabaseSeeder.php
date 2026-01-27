@@ -4,8 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\Asset;
 use App\Models\AssetAssignment;
+use App\Models\AssetCheckin;
 use App\Models\AssetQrIdentity;
 use App\Models\Employee;
+use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -213,7 +215,7 @@ class DatabaseSeeder extends Seeder
         // PHASE 3: Test Assets
         // ========================================
         
-        // Tray assets
+        // Tray assets with valuation data
         $tray1 = Asset::updateOrCreate(
             ['asset_code' => 'TRAY-001'],
             [
@@ -222,6 +224,11 @@ class DatabaseSeeder extends Seeder
                 'status' => 'active',
                 'notes' => 'Standard examination instruments set',
                 'instructions_url' => 'https://docs.mesoco.example/trays/basic-examination-tray',
+                'purchase_date' => '2024-02-15',
+                'purchase_cost' => 3500000.00, // 3.5M VND
+                'useful_life_months' => 24, // 2 years
+                'salvage_value' => 350000.00, // 350K VND
+                'warranty_expiry' => '2026-02-15', // Valid warranty
             ]
         );
 
@@ -232,6 +239,11 @@ class DatabaseSeeder extends Seeder
                 'type' => 'tray',
                 'status' => 'active',
                 'notes' => 'For minor surgical procedures',
+                'purchase_date' => '2023-09-10',
+                'purchase_cost' => 6800000.00, // 6.8M VND
+                'useful_life_months' => 36, // 3 years
+                'salvage_value' => 680000.00, // 680K VND
+                'warranty_expiry' => '2025-12-31', // Expired warranty
             ]
         );
 
@@ -242,10 +254,15 @@ class DatabaseSeeder extends Seeder
                 'type' => 'tray',
                 'status' => 'active',
                 'notes' => 'Orthodontic adjustment instruments',
+                'purchase_date' => '2024-05-20',
+                'purchase_cost' => 4200000.00, // 4.2M VND
+                'useful_life_months' => 30, // 2.5 years
+                'salvage_value' => 420000.00, // 420K VND
+                'warranty_expiry' => '2026-05-20', // Valid warranty
             ]
         );
 
-        // Machine assets
+        // Machine assets with valuation data
         $machine1 = Asset::updateOrCreate(
             ['asset_code' => 'MACH-001'],
             [
@@ -254,6 +271,11 @@ class DatabaseSeeder extends Seeder
                 'status' => 'active',
                 'notes' => 'Digital X-ray machine, Room 101',
                 'instructions_url' => 'https://docs.mesoco.example/machines/dental-xray-unit',
+                'purchase_date' => '2023-01-15',
+                'purchase_cost' => 85000000.00, // 85M VND
+                'useful_life_months' => 120, // 10 years
+                'salvage_value' => 8500000.00, // 8.5M VND
+                'warranty_expiry' => '2026-01-15', // Valid warranty
             ]
         );
 
@@ -264,6 +286,11 @@ class DatabaseSeeder extends Seeder
                 'type' => 'machine',
                 'status' => 'active',
                 'notes' => 'Piezoelectric scaler unit',
+                'purchase_date' => '2024-06-01',
+                'purchase_cost' => 12000000.00, // 12M VND
+                'useful_life_months' => 60, // 5 years
+                'salvage_value' => 1200000.00, // 1.2M VND
+                'warranty_expiry' => '2026-03-15', // Expiring soon (within 3 months)
             ]
         );
 
@@ -274,10 +301,15 @@ class DatabaseSeeder extends Seeder
                 'type' => 'machine',
                 'status' => 'maintenance',
                 'notes' => 'Under scheduled maintenance',
+                'purchase_date' => '2022-03-10',
+                'purchase_cost' => 25000000.00, // 25M VND
+                'useful_life_months' => 84, // 7 years
+                'salvage_value' => 2500000.00, // 2.5M VND
+                'warranty_expiry' => '2025-03-10', // Expired warranty
             ]
         );
 
-        // Equipment assets
+        // Equipment assets with valuation data
         $equip1 = Asset::updateOrCreate(
             ['asset_code' => 'EQUIP-001'],
             [
@@ -285,6 +317,11 @@ class DatabaseSeeder extends Seeder
                 'type' => 'equipment',
                 'status' => 'active',
                 'notes' => 'Main treatment room chair',
+                'purchase_date' => '2023-08-20',
+                'purchase_cost' => 45000000.00, // 45M VND
+                'useful_life_months' => 180, // 15 years
+                'salvage_value' => 4500000.00, // 4.5M VND
+                'warranty_expiry' => '2028-08-20', // Valid warranty (long term)
             ]
         );
 
@@ -295,6 +332,11 @@ class DatabaseSeeder extends Seeder
                 'type' => 'equipment',
                 'status' => 'active',
                 'notes' => 'LED curing light',
+                'purchase_date' => '2024-11-01',
+                'purchase_cost' => 8500000.00, // 8.5M VND
+                'useful_life_months' => 36, // 3 years
+                'salvage_value' => 850000.00, // 850K VND
+                'warranty_expiry' => '2026-02-01', // Expiring soon (within 1 month)
             ]
         );
 
@@ -354,5 +396,111 @@ class DatabaseSeeder extends Seeder
                 'assigned_at' => now()->subDays(7),
             ]
         );
+
+        // ========================================
+        // Asset History Events - Create some check-in/check-out events
+        // ========================================
+        
+        // Get shifts for check-in data
+        $morningShift = \App\Models\Shift::where('name', 'Morning Shift')->first();
+        $eveningShift = \App\Models\Shift::where('name', 'Evening Shift')->first();
+        
+        // Doctor's check-ins with TRAY-001 (multiple events over time)
+        $doctorUser = User::where('employee_code', 'E0003')->first();
+        $techUser = User::where('employee_code', 'E0004')->first();
+        
+        // Historical check-in/check-out events
+        \App\Models\AssetCheckin::updateOrCreate(
+            [
+                'asset_id' => $tray1->id,
+                'employee_id' => $doctorUser->id,
+                'shift_date' => now()->subDays(10)->format('Y-m-d'),
+                'shift_id' => $morningShift->id,
+            ],
+            [
+                'checked_in_at' => now()->subDays(10)->setHour(8)->setMinute(30),
+                'checked_out_at' => now()->subDays(10)->setHour(17)->setMinute(45),
+                'source' => 'manual',
+                'notes' => 'Used for routine examinations',
+            ]
+        );
+        
+        \App\Models\AssetCheckin::updateOrCreate(
+            [
+                'asset_id' => $tray1->id,
+                'employee_id' => $doctorUser->id,
+                'shift_date' => now()->subDays(8)->format('Y-m-d'),
+                'shift_id' => $eveningShift->id,
+            ],
+            [
+                'checked_in_at' => now()->subDays(8)->setHour(14)->setMinute(15),
+                'checked_out_at' => now()->subDays(8)->setHour(21)->setMinute(30),
+                'source' => 'qr',
+                'notes' => 'Evening shift procedures',
+            ]
+        );
+        
+        // Technician's check-ins with MACH-002 (Ultrasonic Scaler)
+        \App\Models\AssetCheckin::updateOrCreate(
+            [
+                'asset_id' => $machine2->id,
+                'employee_id' => $techUser->id,
+                'shift_date' => now()->subDays(5)->format('Y-m-d'),
+                'shift_id' => $morningShift->id,
+            ],
+            [
+                'checked_in_at' => now()->subDays(5)->setHour(9)->setMinute(0),
+                'checked_out_at' => now()->subDays(5)->setHour(16)->setMinute(30),
+                'source' => 'qr',
+                'notes' => 'Deep cleaning procedures',
+            ]
+        );
+        
+        \App\Models\AssetCheckin::updateOrCreate(
+            [
+                'asset_id' => $machine2->id,
+                'employee_id' => $techUser->id,
+                'shift_date' => now()->subDays(3)->format('Y-m-d'),
+                'shift_id' => $morningShift->id,
+            ],
+            [
+                'checked_in_at' => now()->subDays(3)->setHour(8)->setMinute(45),
+                'checked_out_at' => now()->subDays(3)->setHour(15)->setMinute(20),
+                'source' => 'manual',
+                'notes' => 'Maintenance and calibration',
+            ]
+        );
+        
+        // Doctor's recent check-in with EQUIP-002 (Light Curing Unit) - still checked in
+        \App\Models\AssetCheckin::updateOrCreate(
+            [
+                'asset_id' => $equip2->id,
+                'employee_id' => $doctorUser->id,
+                'shift_date' => now()->format('Y-m-d'),
+                'shift_id' => $morningShift->id,
+            ],
+            [
+                'checked_in_at' => now()->setHour(8)->setMinute(0),
+                'checked_out_at' => null, // Still checked in
+                'source' => 'qr',
+                'notes' => 'Current day usage',
+            ]
+        );
+
+        // ========================================
+        // Historical Assignment Changes (for assignment history)
+        // ========================================
+        
+        // Show an asset that was reassigned from one employee to another
+        $staffEmployee = Employee::where('employee_code', 'E0005')->first();
+        
+        // Create a historical assignment (unassigned)
+        AssetAssignment::create([
+            'asset_id' => $equip2->id,
+            'employee_id' => $staffEmployee->id,
+            'assigned_by' => $adminUser->id,
+            'assigned_at' => now()->subDays(30),
+            'unassigned_at' => now()->subDays(7), // Unassigned 7 days ago
+        ]);
     }
 }

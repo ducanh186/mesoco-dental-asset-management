@@ -8,12 +8,14 @@ import {
     Badge,
     useToast 
 } from '../components/ui';
+import { useI18n } from '../i18n';
 
 /**
  * ProfilePage - User profile with personal info and settings
  */
 const ProfilePage = ({ user }) => {
     const toast = useToast();
+    const { t } = useI18n();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: user?.name || 'John Doe',
@@ -24,15 +26,15 @@ const ProfilePage = ({ user }) => {
 
     // Mock activity data
     const recentActivity = [
-        { id: 1, action: 'Borrowed equipment', item: 'Dental X-Ray Machine', date: '2026-01-22', status: 'active' },
-        { id: 2, action: 'Returned equipment', item: 'Ultrasonic Scaler', date: '2026-01-20', status: 'completed' },
-        { id: 3, action: 'Maintenance request', item: 'Autoclave Sterilizer', date: '2026-01-18', status: 'pending' },
-        { id: 4, action: 'Borrowed equipment', item: 'LED Curing Light', date: '2026-01-15', status: 'completed' },
+        { id: 1, action: t('profile.borrowedEquipment'), item: 'Dental X-Ray Machine', date: '2026-01-22', status: 'active' },
+        { id: 2, action: t('profile.returnedEquipment'), item: 'Ultrasonic Scaler', date: '2026-01-20', status: 'completed' },
+        { id: 3, action: t('profile.maintenanceRequest'), item: 'Autoclave Sterilizer', date: '2026-01-18', status: 'pending' },
+        { id: 4, action: t('profile.borrowedEquipment'), item: 'LED Curing Light', date: '2026-01-15', status: 'completed' },
     ];
 
     const handleSave = () => {
         setIsEditing(false);
-        toast.success('Profile updated successfully!');
+        toast.success(t('profile.updateSuccess'));
     };
 
     const getStatusVariant = (status) => {
@@ -41,6 +43,15 @@ const ProfilePage = ({ user }) => {
             case 'completed': return 'success';
             case 'pending': return 'warning';
             default: return 'default';
+        }
+    };
+
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case 'active': return t('profile.active');
+            case 'completed': return t('profile.completed');
+            case 'pending': return t('profile.pending');
+            default: return status;
         }
     };
 
@@ -77,16 +88,16 @@ const ProfilePage = ({ user }) => {
                             <div className="mt-6 pt-6 border-t border-border">
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-text-muted">Department</span>
+                                        <span className="text-text-muted">{t('profile.department')}</span>
                                         <span className="text-text font-medium">{formData.department}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-text-muted">Joined</span>
+                                        <span className="text-text-muted">{t('profile.joined')}</span>
                                         <span className="text-text font-medium">March 2024</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-text-muted">Equipment Assigned</span>
-                                        <span className="text-text font-medium">5 items</span>
+                                        <span className="text-text-muted">{t('profile.equipmentAssigned')}</span>
+                                        <span className="text-text font-medium">5 {t('profile.items')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -99,20 +110,20 @@ const ProfilePage = ({ user }) => {
                     {/* Personal Information */}
                     <Card>
                         <CardHeader 
-                            title="Personal Information"
+                            title={t('profile.personalInfo')}
                             action={
                                 isEditing ? (
                                     <div className="flex gap-2">
                                         <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>
-                                            Cancel
+                                            {t('common.cancel')}
                                         </Button>
                                         <Button size="sm" onClick={handleSave}>
-                                            Save
+                                            {t('common.save')}
                                         </Button>
                                     </div>
                                 ) : (
                                     <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-                                        Edit
+                                        {t('common.edit')}
                                     </Button>
                                 )
                             }
@@ -120,26 +131,26 @@ const ProfilePage = ({ user }) => {
                         <CardBody>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Input
-                                    label="Full Name"
+                                    label={t('profile.fullName')}
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     disabled={!isEditing}
                                 />
                                 <Input
-                                    label="Email Address"
+                                    label={t('profile.email')}
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     disabled={!isEditing}
                                 />
                                 <Input
-                                    label="Phone Number"
+                                    label={t('profile.phone')}
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     disabled={!isEditing}
                                 />
                                 <Input
-                                    label="Department"
+                                    label={t('profile.department')}
                                     value={formData.department}
                                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                                     disabled={!isEditing}
@@ -150,11 +161,11 @@ const ProfilePage = ({ user }) => {
 
                     {/* Recent Activity */}
                     <Card>
-                        <CardHeader title="Recent Activity" />
+                        <CardHeader title={t('profile.recentActivity')} />
                         <CardBody>
                             {recentActivity.length === 0 ? (
                                 <div className="text-center py-8 text-text-muted">
-                                    <p>No recent activity</p>
+                                    <p>{t('profile.noRecentActivity')}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -170,7 +181,7 @@ const ProfilePage = ({ user }) => {
                                             <div className="flex items-center gap-3">
                                                 <span className="text-sm text-text-light">{activity.date}</span>
                                                 <Badge variant={getStatusVariant(activity.status)} size="sm">
-                                                    {activity.status}
+                                                    {getStatusLabel(activity.status)}
                                                 </Badge>
                                             </div>
                                         </div>

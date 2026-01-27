@@ -188,8 +188,9 @@ class RequestValidationTest extends TestCase
     /** @test */
     public function asset_loan_request_rejects_inactive_asset()
     {
+        // Use 'retired' status - inactive but not locked (locked = off_service or maintenance)
         $inactiveAsset = Asset::factory()->create([
-            'status' => Asset::STATUS_MAINTENANCE,
+            'status' => Asset::STATUS_RETIRED,
         ]);
 
         $response = $this->actingAs($this->doctor)

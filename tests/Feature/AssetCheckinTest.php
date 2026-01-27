@@ -154,7 +154,7 @@ class AssetCheckinTest extends TestCase
 
         $response->assertForbidden()
             ->assertJson([
-                'error_code' => 'NOT_ASSIGNEE',
+                'error' => 'NOT_ASSIGNEE',
             ]);
     }
 
@@ -169,7 +169,7 @@ class AssetCheckinTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJson([
-                'error_code' => 'ASSET_OFF_SERVICE',
+                'error' => 'ASSET_LOCKED',
             ]);
     }
 

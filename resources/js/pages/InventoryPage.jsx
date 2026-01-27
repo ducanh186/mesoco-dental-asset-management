@@ -11,10 +11,10 @@ import {
     Table,
     TablePagination,
     Modal,
-    useToast,
-    LoadingSpinner
+    useToast
 } from '../components/ui';
 import { inventoryApi, handleApiError } from '../services/api';
+import PrintableAssetLabel from '../components/PrintableAssetLabel';
 
 /**
  * InventoryPage - Full equipment inventory with search and filters (Phase 6)
@@ -41,18 +41,25 @@ const InventoryPage = ({ user }) => {
     const [categoryFilter, setCategoryFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [locationFilter, setLocationFilter] = useState('');
+    const [warrantyExpiringSoonFilter, setWarrantyExpiringSoonFilter] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
 
     // Detail modal
     const [selectedItem, setSelectedItem] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
-
+    
+    // Print label modal
+    const [printLabelItem, setPrintLabelItem] = useState(null);
+    const [isPrintLabelOpen, setIsPrintLabelOpen] = useState(false);
     // View mode: 'inventory' | 'valuation'
     const [viewMode, setViewMode] = useState('inventory');
 
     // Valuation data
     const [valuationData, setValuationData] = useState([]);
     const [valuationLoading, setValuationLoading] = useState(false);
+    
+    // Export loading state
+    const [exportLoading, setExportLoading] = useState(false);
 
     // Fetch summary data
     const fetchSummary = useCallback(async () => {
@@ -78,6 +85,7 @@ const InventoryPage = ({ user }) => {
                 category: categoryFilter || undefined,
                 status: statusFilter || undefined,
                 location: locationFilter || undefined,
+                warranty_expiring_soon: warrantyExpiringSoonFilter || undefined,
             };
             
             const data = await inventoryApi.assets(params);
@@ -89,7 +97,7 @@ const InventoryPage = ({ user }) => {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, searchQuery, categoryFilter, statusFilter, locationFilter, toast]);
+    }, [currentPage, searchQuery, categoryFilter, statusFilter, locationFilter, warrantyExpiringSoonFilter, toast]);
 
     // Fetch valuation data
     const fetchValuation = useCallback(async () => {
@@ -111,6 +119,39 @@ const InventoryPage = ({ user }) => {
             setValuationLoading(false);
         }
     }, [currentPage, searchQuery, categoryFilter, toast]);
+    
+    // Handle CSV export
+    const handleExportCsv = async () => {
+        try {
+            setExportLoading(true);
+            const params = {
+                search: searchQuery || undefined,
+                category: categoryFilter || undefined,
+                status: statusFilter || undefined,
+                location: locationFilter || undefined,
+                warranty_expiring_soon: warrantyExpiringSoonFilter || undefined,
+            };
+            
+            const response = await inventoryApi.exportCsv(params);
+            
+            // Create download link
+            const blob = new Blob([response.data], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `inventory_export_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            toast.success('Export downloaded successfully');
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setExportLoading(false);
+        }
+    };
 
     // Initial load
     useEffect(() => {
@@ -129,7 +170,7 @@ const InventoryPage = ({ user }) => {
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, categoryFilter, statusFilter, locationFilter, viewMode]);
+    }, [searchQuery, categoryFilter, statusFilter, locationFilter, warrantyExpiringSoonFilter, viewMode]);
 
     const formatCurrency = (value) => {
         if (value === null || value === undefined) return '—';
@@ -185,16 +226,31 @@ const InventoryPage = ({ user }) => {
             label: '',
             align: 'right',
             render: (_, row) => (
-                <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => {
-                        setSelectedItem(row);
-                        setIsDetailOpen(true);
-                    }}
-                >
-                    View
-                </Button>
+                <div className="flex gap-1 justify-end">
+                    <Button 
+                        size="sm" 
+                        variant="ghost"
+                        title="Print Label"
+                        onClick={() => {
+                            setPrintLabelItem(row);
+                            setIsPrintLabelOpen(true);
+                        }}
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                    </Button>
+                    <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => {
+                            setSelectedItem(row);
+                            setIsDetailOpen(true);
+                        }}
+                    >
+                        View
+                    </Button>
+                </div>
             )
         }
     ];
@@ -290,7 +346,7 @@ const InventoryPage = ({ user }) => {
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {summaryLoading ? (
                     <div className="col-span-5 flex justify-center py-8">
-                        <LoadingSpinner />
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
                 ) : summary && (
                     <>
@@ -338,11 +394,49 @@ const InventoryPage = ({ user }) => {
                 )}
             </div>
 
+            {/* Warranty Alert Widget */}
+            {!summaryLoading && summary?.warranty?.expiring_soon_count > 0 && (
+                <Card className="border-warning bg-warning/5">
+                    <CardBody>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-text">
+                                        {summary.warranty.expiring_soon_count} asset{summary.warranty.expiring_soon_count > 1 ? 's' : ''} with warranty expiring soon
+                                    </p>
+                                    <p className="text-sm text-text-muted">
+                                        Within {summary.warranty.threshold_days} days
+                                        {summary.warranty.expired_count > 0 && (
+                                            <span className="text-error ml-2">• {summary.warranty.expired_count} expired</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                            <Button 
+                                size="sm" 
+                                variant={warrantyExpiringSoonFilter ? "primary" : "outline"}
+                                onClick={() => {
+                                    setWarrantyExpiringSoonFilter(!warrantyExpiringSoonFilter);
+                                    setViewMode('inventory');
+                                }}
+                            >
+                                {warrantyExpiringSoonFilter ? 'Show All' : 'Show Expiring'}
+                            </Button>
+                        </div>
+                    </CardBody>
+                </Card>
+            )}
+
             {/* Main Content Card */}
             <Card>
                 <CardHeader 
                     title={viewMode === 'inventory' ? 'Equipment Inventory' : 'Asset Valuation Report'}
-                    subtitle={`${pagination.total} total items`}
+                    subtitle={`${pagination.total} total items${warrantyExpiringSoonFilter ? ' (warranty expiring soon)' : ''}`}
                     action={
                         <div className="flex gap-2">
                             <div className="flex rounded-lg border border-border overflow-hidden">
@@ -367,8 +461,13 @@ const InventoryPage = ({ user }) => {
                                     Valuation
                                 </button>
                             </div>
-                            <Button size="sm" variant="outline" onClick={() => toast.info('Export coming soon')}>
-                                Export
+                            <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={handleExportCsv}
+                                disabled={exportLoading}
+                            >
+                                {exportLoading ? 'Exporting...' : 'Export CSV'}
                             </Button>
                         </div>
                     }
@@ -419,7 +518,7 @@ const InventoryPage = ({ user }) => {
                     {/* Table */}
                     {isLoading ? (
                         <div className="flex justify-center py-12">
-                            <LoadingSpinner size="lg" />
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                         </div>
                     ) : (
                         <>
@@ -516,6 +615,27 @@ const InventoryPage = ({ user }) => {
                             </Button>
                         </div>
                     </div>
+                )}
+            </Modal>
+
+            {/* Print Label Modal */}
+            <Modal
+                isOpen={isPrintLabelOpen}
+                onClose={() => {
+                    setIsPrintLabelOpen(false);
+                    setPrintLabelItem(null);
+                }}
+                title="Print Asset Label"
+                size="md"
+            >
+                {printLabelItem && (
+                    <PrintableAssetLabel
+                        asset={printLabelItem}
+                        onClose={() => {
+                            setIsPrintLabelOpen(false);
+                            setPrintLabelItem(null);
+                        }}
+                    />
                 )}
             </Modal>
         </div>

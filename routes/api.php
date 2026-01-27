@@ -1,13 +1,18 @@
 <?php
 
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AssetOffServiceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CheckinController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MaintenanceEventController;
 use App\Http\Controllers\MyAssetHistoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QrController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\ReviewRequestController;
 use App\Http\Controllers\ShiftController;
@@ -20,15 +25,15 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | 
 | RBAC Matrix:
-| ┌─────────────┬────────────────────────────────────────────────────────────┐
-| │ Role        │ Permissions                                                │
-| ├─────────────┼────────────────────────────────────────────────────────────┤
-| │ admin       │ Full access + System Settings + Users + Roles + Inventory  │
-| │ hr          │ Assets + Assign + Review + Reports + Users + Inventory     │
-| │ doctor      │ My Equipment + Requests + Check-in + My Asset History      │
-| │ technician  │ My Equipment + Maintenance + Requests + My Asset History   │
-| │ staff       │ My Equipment + Basic Requests + Check-in + My Asset History│
-| └─────────────┴────────────────────────────────────────────────────────────┘
+| ┌─────────────┬────────────────────────────────────────────────────────────────────┐
+| │ Role        │ Permissions                                                        │
+| ├─────────────┼────────────────────────────────────────────────────────────────────┤
+| │ admin       │ Full access + System Settings + Users + Roles + Inventory + Maint. │
+| │ hr          │ Assets + Assign + Review + Reports + Users + Inventory + Maint.    │
+| │ technician  │ My Equipment + Maintenance CRUD + Requests + My Asset History      │
+| │ doctor      │ My Equipment + Requests + Check-in + My Asset History              │
+| │ staff       │ My Equipment + Basic Requests + Check-in + My Asset History        │
+| └─────────────┴────────────────────────────────────────────────────────────────────┘
 */
 
 /**
@@ -116,6 +121,21 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | FEEDBACK ROUTES - All authenticated users (Phase 8)
+    |--------------------------------------------------------------------------
+    | Users can create and view their own feedback
+    | Managers can view all and manage status
+    */
+    Route::get('/feedbacks', [FeedbackController::class, 'index']);
+    Route::get('/feedbacks/summary', [FeedbackController::class, 'summary']);
+    Route::post('/feedbacks', [FeedbackController::class, 'store']);
+    Route::get('/feedbacks/{feedback}', [FeedbackController::class, 'show']);
+    Route::put('/feedbacks/{feedback}', [FeedbackController::class, 'update']);
+    Route::patch('/feedbacks/{feedback}/status', [FeedbackController::class, 'updateStatus']);
+    Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'destroy']);
+
+    /*
+    |--------------------------------------------------------------------------
     | ADMIN ONLY ROUTES
     |--------------------------------------------------------------------------
     | Full system access: Users + Roles + System Settings
@@ -166,24 +186,59 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
         |----------------------------------------------------------------------
         | Inventory Management (Phase 6)
         |----------------------------------------------------------------------
-        | Dashboard, asset list with filters, valuation reports
+        | Dashboard, asset list with filters, valuation reports, CSV export
         */
         Route::get('/inventory/summary', [InventoryController::class, 'summary']);
         Route::get('/inventory/assets', [InventoryController::class, 'assets']);
         Route::get('/inventory/valuation', [InventoryController::class, 'valuation']);
+        Route::get('/inventory/export', [InventoryController::class, 'export']);
+
+        /*
+        |----------------------------------------------------------------------
+        | Location Management (Phase 6)
+        |----------------------------------------------------------------------
+        | CRUD for physical locations
+        */
+        Route::get('/locations/dropdown', [LocationController::class, 'dropdown']);
+        Route::apiResource('locations', LocationController::class);
+
+        /*
+        |----------------------------------------------------------------------
+        | Reports (Phase 8)
+        |----------------------------------------------------------------------
+        | System-wide summary reports for management
+        */
+        Route::get('/reports/summary', [ReportController::class, 'summary']);
+        Route::get('/reports/export', [ReportController::class, 'export']);
     });
 
     /*
     |--------------------------------------------------------------------------
-    | TECHNICIAN ROUTES (Future: Maintenance)
+    | TECHNICIAN + ADMIN + HR ROUTES
     |--------------------------------------------------------------------------
-    | Technicians can manage maintenance tickets
+    | Maintenance scheduling, tracking, and off-service management (Phase 7)
     */
-    // Route::middleware('role:admin,hr,technician')->group(function () {
-    //     Route::get('/maintenance', [MaintenanceController::class, 'index']);
-    //     Route::post('/maintenance', [MaintenanceController::class, 'store']);
-    //     Route::patch('/maintenance/{id}', [MaintenanceController::class, 'update']);
-    // });
+    Route::middleware('role:admin,hr,technician')->group(function () {
+        // Maintenance Events CRUD
+        Route::get('/maintenance-events', [MaintenanceEventController::class, 'index']);
+        Route::get('/maintenance-events/summary', [MaintenanceEventController::class, 'summary']);
+        Route::post('/maintenance-events', [MaintenanceEventController::class, 'store']);
+        Route::get('/maintenance-events/{maintenanceEvent}', [MaintenanceEventController::class, 'show']);
+        Route::put('/maintenance-events/{maintenanceEvent}', [MaintenanceEventController::class, 'update']);
+        Route::delete('/maintenance-events/{maintenanceEvent}', [MaintenanceEventController::class, 'destroy']);
+        
+        // State transitions
+        Route::post('/maintenance-events/{maintenanceEvent}/start', [MaintenanceEventController::class, 'start']);
+        Route::post('/maintenance-events/{maintenanceEvent}/complete', [MaintenanceEventController::class, 'complete']);
+        Route::post('/maintenance-events/{maintenanceEvent}/cancel', [MaintenanceEventController::class, 'cancel']);
+        
+        // Manual off-service lock/unlock
+        Route::post('/assets/{asset}/lock', [AssetOffServiceController::class, 'lock']);
+        Route::post('/assets/{asset}/unlock', [AssetOffServiceController::class, 'unlock']);
+    });
+
+    // Lock status is viewable by all authenticated users
+    Route::get('/assets/{asset}/lock-status', [AssetOffServiceController::class, 'status']);
 });
 
 /**

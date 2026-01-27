@@ -6,10 +6,14 @@ use App\Models\Asset;
 use App\Models\AssetCheckin;
 use App\Models\AssetRequest;
 use App\Models\Employee;
+use App\Models\Feedback;
+use App\Models\MaintenanceEvent;
 use App\Models\User;
 use App\Policies\AssetCheckinPolicy;
 use App\Policies\AssetRequestPolicy;
 use App\Policies\EmployeePolicy;
+use App\Policies\FeedbackPolicy;
+use App\Policies\MaintenanceEventPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request as HttpRequest;
@@ -45,9 +49,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(AssetCheckin::class, AssetCheckinPolicy::class);
         Gate::policy(AssetRequest::class, AssetRequestPolicy::class);
+        Gate::policy(MaintenanceEvent::class, MaintenanceEventPolicy::class);
+        Gate::policy(Feedback::class, FeedbackPolicy::class);
 
         // Register checkIn ability for Asset (used via Gate::inspect)
         Gate::define('checkIn', [AssetCheckinPolicy::class, 'checkIn']);
+        
+        // Register manageOffService gate for manual lock/unlock
+        Gate::define('manageOffService', [MaintenanceEventPolicy::class, 'manageOffService']);
     }
 
     /**
