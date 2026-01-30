@@ -2,8 +2,22 @@
 
 namespace App\Providers;
 
+use App\Models\Asset;
+use App\Models\AssetCheckin;
+use App\Models\AssetRequest;
+use App\Models\Employee;
+use App\Models\Feedback;
+use App\Models\MaintenanceEvent;
+use App\Models\User;
+use App\Policies\AssetCheckinPolicy;
+use App\Policies\AssetRequestPolicy;
+use App\Policies\EmployeePolicy;
+use App\Policies\FeedbackPolicy;
+use App\Policies\MaintenanceEventPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,6 +37,26 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+        $this->registerPolicies();
+    }
+
+    /**
+     * Register authorization policies.
+     */
+    protected function registerPolicies(): void
+    {
+        Gate::policy(Employee::class, EmployeePolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(AssetCheckin::class, AssetCheckinPolicy::class);
+        Gate::policy(AssetRequest::class, AssetRequestPolicy::class);
+        Gate::policy(MaintenanceEvent::class, MaintenanceEventPolicy::class);
+        Gate::policy(Feedback::class, FeedbackPolicy::class);
+
+        // Register checkIn ability for Asset (used via Gate::inspect)
+        Gate::define('checkIn', [AssetCheckinPolicy::class, 'checkIn']);
+        
+        // Register manageOffService gate for manual lock/unlock
+        Gate::define('manageOffService', [MaintenanceEventPolicy::class, 'manageOffService']);
     }
 
     /**
@@ -31,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configureRateLimiting(): void
     {
         // POST /login: 5/min per IP + employee_code keying
-        RateLimiter::for('login', function (Request $request) {
+        RateLimiter::for('login', function (HttpRequest $request) {
             $employeeCode = $request->input('employee_code', '');
             $key = $request->ip() . '|' . $employeeCode;
             
@@ -39,7 +73,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // POST /forgot-password/request: 3/min per IP + 1/min per email
-        RateLimiter::for('forgot-password-request', function (Request $request) {
+        RateLimiter::for('forgot-password-request', function (HttpRequest $request) {
             $ip = $request->ip();
             $email = strtolower($request->input('email', ''));
 
@@ -52,7 +86,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // POST /forgot-password/reset: 5/min per IP + 5/min per email
-        RateLimiter::for('forgot-password-reset', function (Request $request) {
+        RateLimiter::for('forgot-password-reset', function (HttpRequest $request) {
             $ip = $request->ip();
             $email = strtolower($request->input('email', ''));
 

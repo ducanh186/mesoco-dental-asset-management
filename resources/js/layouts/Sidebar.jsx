@@ -1,62 +1,150 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useI18n } from '../i18n';
 
 /**
  * Sidebar - OrangeHRM-inspired collapsible sidebar navigation
+ * 
+ * RBAC Menu Visibility:
+ * ┌─────────────┬──────────────────────────────────────────────────────┐
+ * │ Role        │ Menu Items                                           │
+ * ├─────────────┼──────────────────────────────────────────────────────┤
+ * │ admin       │ Dashboard, My Equipment, Equipment Catalog,          │
+ * │             │ Inventory & Valuation, Requests, Review Requests,    │
+ * │             │ Maintenance, Reports, Users, Locations, Admin,       │
+ * │             │ Settings                                             │
+ * │ hr          │ Dashboard, My Equipment, Equipment Catalog,          │
+ * │             │ Inventory & Valuation, Requests, Review Requests,    │
+ * │             │ Maintenance, Reports, Users, Locations, Settings     │
+ * │ doctor      │ Dashboard, My Equipment, Requests, My Asset History, │
+ * │             │ Settings                                             │
+ * │ technician  │ Dashboard, My Equipment, Requests, Maintenance,      │
+ * │             │ My Asset History, Settings                           │
+ * │ staff       │ Dashboard, My Equipment, Requests, My Asset History, │
+ * │             │ Settings                                             │
+ * └─────────────┴──────────────────────────────────────────────────────┘
  */
-const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
+const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const location = useLocation();
+    const { t } = useI18n();
     const [expandedMenus, setExpandedMenus] = useState({});
 
-    // Navigation items with optional children for submenus
+    // Role helpers
+    const isAdmin = user?.role === 'admin';
+    const isHr = user?.role === 'hr';
+    const isTechnician = user?.role === 'technician';
+    const isDoctor = user?.role === 'doctor';
+    const isEmployee = user?.role === 'employee';
+    const isAdminOrHr = isAdmin || isHr;
+    const isNonAdminRole = isDoctor || isTechnician || isEmployee;
+
+    // Navigation items with role-based visibility
     const navItems = [
+        // All users - Dashboard
         { 
             id: 'dashboard',
             path: '/dashboard', 
-            label: 'Dashboard', 
+            labelKey: 'nav.dashboard', 
             icon: 'dashboard'
         },
+        // All users - My Equipment
         { 
-            id: 'equipment',
-            path: '/equipment', 
-            label: 'Equipment', 
-            icon: 'equipment',
-            children: [
-                { path: '/equipment', label: 'All Equipment' },
-                { path: '/equipment/assigned', label: 'Assigned' },
-                { path: '/equipment/available', label: 'Available' },
-            ]
+            id: 'my-assets',
+            path: '/my-assets', 
+            labelKey: 'nav.myEquipment', 
+            icon: 'myAssets'
         },
+        // All users - QR Scanner
+        { 
+            id: 'qr-scan',
+            path: '/qr-scan', 
+            labelKey: 'nav.qrScan', 
+            icon: 'qrScan'
+        },
+        // Admin/HR only - Equipment Catalog (Danh mục thiết bị)
+        ...(isAdminOrHr ? [{
+            id: 'assets',
+            path: '/assets', 
+            labelKey: 'nav.equipmentCatalog', 
+            icon: 'assets'
+        }] : []),
+        // Admin/HR only - Inventory & Valuation (Kho & định giá)
+        ...(isAdminOrHr ? [{
+            id: 'inventory',
+            path: '/inventory', 
+            labelKey: 'nav.inventoryValuation', 
+            icon: 'inventory'
+        }] : []),
+        // All users - Requests
         { 
             id: 'requests',
             path: '/requests', 
-            label: 'Requests', 
+            labelKey: 'nav.requests', 
             icon: 'requests'
         },
-        { 
+        // Admin/HR only - Review Requests
+        ...(isAdminOrHr ? [{
+            id: 'review-requests',
+            path: '/review-requests', 
+            labelKey: 'nav.reviewRequests', 
+            icon: 'reviewRequests'
+        }] : []),
+        // Technician + Admin/HR - Maintenance
+        ...((isTechnician || isAdminOrHr) ? [{
             id: 'maintenance',
             path: '/maintenance', 
-            label: 'Maintenance', 
+            labelKey: 'nav.maintenance', 
             icon: 'maintenance'
-        },
+        }] : []),
+        // All users - Feedback
         { 
+            id: 'feedback',
+            path: '/feedback', 
+            labelKey: 'nav.feedback', 
+            icon: 'feedback'
+        },
+        // Non-admin roles only - My Asset History
+        ...(isNonAdminRole ? [{
+            id: 'my-asset-history',
+            path: '/my-asset-history', 
+            labelKey: 'nav.myAssetHistory', 
+            icon: 'history'
+        }] : []),
+        // Admin/HR only - Reports
+        ...(isAdminOrHr ? [{
             id: 'reports',
             path: '/reports', 
-            label: 'Reports', 
+            labelKey: 'nav.reports', 
             icon: 'reports'
-        },
-        { 
-            id: 'users',
-            path: '/users', 
-            label: 'Users', 
-            icon: 'users'
-        },
-        { 
-            id: 'settings',
-            path: '/settings', 
-            label: 'Settings', 
-            icon: 'settings'
-        },
+        }] : []),
+        // Admin/HR only - Employees (Nhân viên)
+        ...(isAdminOrHr ? [{
+            id: 'employees',
+            path: '/employees', 
+            labelKey: 'nav.employees', 
+            icon: 'employees'
+        }] : []),
+        // Admin/HR only - Locations
+        ...(isAdminOrHr ? [{
+            id: 'locations',
+            path: '/locations', 
+            labelKey: 'nav.locations', 
+            icon: 'locations'
+        }] : []),
+        // Admin only - Contracts (legacy, can be removed later since Employee page has contract tab)
+        ...(isAdmin ? [{
+            id: 'contracts',
+            path: '/contracts', 
+            labelKey: 'nav.contracts', 
+            icon: 'contracts'
+        }] : []),
+        // Admin only - System Administration
+        ...(isAdmin ? [{
+            id: 'admin',
+            path: '/admin', 
+            labelKey: 'nav.admin', 
+            icon: 'admin'
+        }] : []),
     ];
 
     const isActive = (path) => {
@@ -83,6 +171,20 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                     <rect x="14" y="14" width="7" height="7" rx="1" />
                 </svg>
             ),
+            myAssets: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+            ),
+            assets: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                </svg>
+            ),
             equipment: (
                 <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
@@ -94,6 +196,13 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                     <rect x="9" y="3" width="6" height="4" rx="1" />
                     <path d="M9 12h6" />
                     <path d="M9 16h6" />
+                </svg>
+            ),
+            reviewRequests: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                    <path d="M9 14l2 2 4-4" />
                 </svg>
             ),
             maintenance: (
@@ -118,10 +227,66 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
             ),
+            admin: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12l2 2 4-4" />
+                </svg>
+            ),
             settings: (
                 <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="3" />
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+            ),
+            // New icons for additional menu items
+            inventory: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            ),
+            locations: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                </svg>
+            ),
+            history: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+            ),
+            qrScan: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                </svg>
+            ),
+            feedback: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    <line x1="9" y1="9" x2="15" y2="9" />
+                    <line x1="9" y1="13" x2="12" y2="13" />
+                </svg>
+            ),
+            contracts: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <line x1="10" y1="9" x2="8" y2="9" />
+                </svg>
+            ),
+            employees: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
             ),
         };
@@ -144,7 +309,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                         {renderIcon(item.icon)}
                         {!collapsed && (
                             <>
-                                <span className="nav-label">{item.label}</span>
+                                <span className="nav-label">{t(item.labelKey)}</span>
                                 <svg 
                                     className={`nav-arrow ${isExpanded ? 'expanded' : ''}`} 
                                     viewBox="0 0 24 24" 
@@ -183,7 +348,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                 onClick={onMobileClose}
             >
                 {renderIcon(item.icon)}
-                {!collapsed && <span className="nav-label">{item.label}</span>}
+                {!collapsed && <span className="nav-label">{t(item.labelKey)}</span>}
             </Link>
         );
     };
@@ -233,7 +398,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {
                     >
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
-                    {!collapsed && <span>Collapse</span>}
+                    {!collapsed && <span>{t('nav.collapse')}</span>}
                 </button>
             </div>
         </aside>
