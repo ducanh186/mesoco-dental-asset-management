@@ -5,6 +5,7 @@ use App\Http\Controllers\AssetOffServiceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CheckinController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeContractController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocationController;
@@ -147,6 +148,19 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
         
         // Delete users - Only admin
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
+        /*
+        |----------------------------------------------------------------------
+        | Employee Contracts (Admin Only)
+        |----------------------------------------------------------------------
+        | Manage employee contracts with PDF upload/view
+        */
+        Route::get('/employees/{employee}/contracts', [EmployeeContractController::class, 'index']);
+        Route::post('/employees/{employee}/contracts', [EmployeeContractController::class, 'store']);
+        Route::get('/contracts/{contract}', [EmployeeContractController::class, 'show']);
+        Route::put('/contracts/{contract}', [EmployeeContractController::class, 'update']);
+        Route::delete('/contracts/{contract}', [EmployeeContractController::class, 'destroy']);
+        Route::get('/contracts/{contract}/file', [EmployeeContractController::class, 'streamFile']);
     });
 
     /*

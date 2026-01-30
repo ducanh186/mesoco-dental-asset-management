@@ -8,6 +8,7 @@ export default {
     // ========================================================================
     common: {
         save: 'Save',
+        saving: 'Saving...',
         cancel: 'Cancel',
         delete: 'Delete',
         edit: 'Edit',
@@ -92,6 +93,8 @@ export default {
         locations: 'Locations',
         myAssetHistory: 'My Asset History',
         equipmentLookup: 'Equipment Lookup',
+        qrScan: 'QR Scanner',
+        contracts: 'Contracts',
         logout: 'Logout',
         collapse: 'Collapse',
         expand: 'Expand',
@@ -152,10 +155,42 @@ export default {
         passwordRequirements: 'Must be at least 8 characters with uppercase, lowercase, number, and symbol',
         resetting: 'Resetting...',
         resetPasswordBtn: 'Reset Password',
-        verificationCodeResent: 'Verification code resent successfully.',
+        verificationCodeResent: 'A new verification code has been sent.',
         failedToSendCode: 'Failed to send verification code. Please try again.',
         failedToResetPassword: 'Failed to reset password. Please try again.',
         failedToResendCode: 'Failed to resend code. Please try again.',
+        // New validation messages
+        employeeIdRequired: 'Employee ID is required.',
+        passwordRequired: 'Password is required.',
+        emailRequired: 'Email address is required.',
+        emailInvalid: 'Please enter a valid email address.',
+        codeRequired: 'Verification code is required.',
+        passwordTooShort: 'Password must be at least 8 characters.',
+        confirmPasswordRequired: 'Please confirm your password.',
+        passwordMismatch: 'Passwords do not match.',
+        // Generic error messages (security)
+        invalidCredentialsGeneric: 'Invalid employee ID or password.',
+        codeSentGeneric: 'If the email is registered, we\'ve sent a verification code to your inbox. Please check your email.',
+        passwordResetSuccess: 'Password reset successful. Redirecting to login...',
+        // Password visibility
+        showPassword: 'Show password',
+        hidePassword: 'Hide password',
+    },
+
+    // ========================================================================
+    // Change Password Page
+    // ========================================================================
+    changePassword: {
+        currentPasswordRequired: 'Current password is required.',
+        newPasswordRequired: 'New password is required.',
+        confirmPasswordRequired: 'Confirm new password is required.',
+        currentPasswordIncorrect: 'Current password is incorrect.',
+        passwordsDoNotMatch: 'Passwords do not match.',
+        newPasswordSameAsCurrent: 'New password must be different from current password.',
+        enterCurrentPassword: 'Enter your current password',
+        success: 'Your password has been changed successfully.',
+        genericError: 'Failed to change password.',
+        changing: 'Changing...',
     },
 
     // ========================================================================
@@ -163,6 +198,7 @@ export default {
     // ========================================================================
     roles: {
         staff: 'Staff',
+        employee: 'Staff', // DB value 'employee' displays as 'Staff'
         doctor: 'Doctor',
         nurse: 'Nurse',
         technician: 'Technician',
@@ -457,6 +493,7 @@ export default {
     // ========================================================================
     profile: {
         title: 'My Profile',
+        personalDetails: 'Personal Details',
         personalInfo: 'Personal Information',
         security: 'Security',
         preferences: 'Preferences',
@@ -464,15 +501,24 @@ export default {
         changeAvatar: 'Change Avatar',
         updateProfile: 'Update Profile',
         updateSuccess: 'Profile updated successfully',
+        updateError: 'Failed to update profile. Please try again.',
+        loadError: 'Failed to load profile. Please try again.',
         employeeId: 'Employee ID',
+        employeeFullName: 'Employee Full Name',
         fullName: 'Full Name',
         phone: 'Phone',
+        phoneNumber: 'Phone Number',
         department: 'Department',
         position: 'Position',
+        dateOfBirth: 'Date of Birth',
+        gender: 'Gender',
+        male: 'Male',
+        female: 'Female',
         email: 'Email',
         address: 'Address',
         emergencyContact: 'Emergency Contact',
         disabledFieldHint: 'This field cannot be edited',
+        unnamed: 'Unnamed User',
         recentActivity: 'Recent Activity',
         noRecentActivity: 'No recent activity',
         joined: 'Joined',
@@ -842,6 +888,166 @@ export default {
     },
 
     // ========================================================================
+    // QR Scanner
+    // ========================================================================
+    qrScan: {
+        title: 'QR Scanner',
+        subtitle: 'Scan or enter QR code to lookup equipment',
+        scannerTitle: 'Asset QR Scanner',
+        enterPayload: 'Please enter a QR payload',
+        inputPlaceholder: 'Enter QR payload (e.g., MESOCO|ASSET|v1|uuid)',
+        inputHint: 'Scan the QR code on equipment or paste the payload above',
+        expectedFormat: 'Format: MESOCO|ASSET|v1|<uuid>',
+        viewfinderHint: 'Point camera at QR code',
+        resolve: 'Lookup',
+        
+        // Camera controls
+        useCamera: 'Camera',
+        manualInput: 'Manual',
+        startScanning: 'Start Scanning',
+        stopScanning: 'Stop Scanning',
+        scanning: 'Scanning...',
+        resolving: 'Looking up...',
+        tapToStart: 'Tap "Start Scanning" to begin',
+        noCameraAvailable: 'No camera available on this device',
+        cameraPermissionDenied: 'Camera access denied. Please use manual input.',
+        
+        // Results
+        assetFound: 'Asset found!',
+        assetResolved: 'Asset Identified',
+        identified: 'Identified',
+        offService: 'Off Service',
+        scanAnother: 'Scan Another',
+        
+        // Error messages - matching checklist
+        invalidFormat: 'Invalid QR code.',
+        assetNotFound: 'Asset not found.',
+        unsupportedVersion: 'Unsupported QR version.',
+        resolveFailed: 'Failed to resolve QR code',
+        notFound: 'Not Found',
+        
+        // Off-service warning
+        offServiceWarning: 'This asset is off-service. Do not use.',
+        offServiceDetail: 'This equipment is currently unavailable for use. Contact a technician for more information.',
+        
+        // Check-in blocked reasons
+        blockedReason: {
+            ASSET_OFF_SERVICE: 'Asset is off-service',
+            ASSET_NOT_ASSIGNED: 'Asset is not assigned to anyone',
+            NO_ACTIVE_SHIFT: 'No active shift right now',
+            ALREADY_CHECKED_IN: 'Already checked in today',
+            NOT_ASSIGNEE: 'You are not the assignee',
+        },
+        
+        // Instructions
+        instructions: 'Usage Instructions',
+        viewInstructions: 'View Instructions',
+        instructionsNotAvailable: 'No instructions available for this asset',
+        
+        // Actions
+        viewAsset: 'View Asset',
+        checkinFromMyAssets: 'Please use My Equipment page to check-in',
+        
+        // Help
+        helpTitle: 'How to use QR Scanner',
+        helpDesc: 'Scan the QR code on equipment using your phone camera or paste the payload manually.',
+        helpStep1: 'Click "Start Scanning" and point camera at QR code',
+        helpStep2: 'Or switch to Manual mode and paste the payload',
+        helpStep3: 'View asset details and check-in if assigned to you',
+    },
+
+    // ========================================================================
+    // Contracts
+    // ========================================================================
+    contracts: {
+        title: 'Employee Contracts',
+        subtitle: 'Manage employee contracts and documents',
+        contractId: 'Contract ID',
+        employee: 'Employee',
+        type: 'Contract Type',
+        department: 'Department',
+        departmentPlaceholder: 'e.g., Dental, Admin, etc.',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        indefinite: 'Indefinite',
+        pdfFile: 'Contract PDF',
+        pdfHint: 'Upload contract document (PDF only, max 10MB)',
+        viewPdf: 'View PDF',
+        pdfNotAvailable: 'PDF file not available',
+        addContract: 'Add Contract',
+        contractDetails: 'Contract Details',
+        selectEmployee: 'Select an employee',
+        selectEmployeeFirst: 'Select an Employee',
+        selectEmployeeHint: 'Choose an employee from the dropdown above to view their contracts',
+        startDateRequired: 'Start date is required',
+        noContracts: 'No contracts found',
+        noContractsHint: 'Add a contract for this employee',
+        createSuccess: 'Contract created successfully',
+        updateSuccess: 'Contract updated successfully',
+        deleteSuccess: 'Contract deleted successfully',
+        deleteConfirm: 'Are you sure you want to delete this contract?',
+        types: {
+            fullTime: 'Full Time',
+            partTime: 'Part Time',
+            intern: 'Intern',
+            outsource: 'Outsource',
+        },
+        statuses: {
+            active: 'Active',
+            expired: 'Expired',
+            terminated: 'Terminated',
+            pending: 'Pending',
+        },
+    },
+
+    // ========================================================================
+    // Employees
+    // ========================================================================
+    employees: {
+        title: 'Employee Management',
+        subtitle: 'Manage employee records and contracts',
+        addEmployee: 'Add Employee',
+        editEmployee: 'Edit Employee',
+        employeeCode: 'Employee Code',
+        fullName: 'Full Name',
+        position: 'Position',
+        noPosition: 'No position',
+        dob: 'Date of Birth',
+        gender: 'Gender',
+        phone: 'Phone',
+        address: 'Address',
+        userAccount: 'User Account',
+        hasUser: 'Has Account',
+        noUser: 'No Account',
+        viewContracts: 'View Contracts',
+        codeNotEditable: 'Employee code cannot be changed',
+        emailNotEditable: 'Email cannot be changed',
+        requiredFields: 'Employee code and full name are required',
+        createSuccess: 'Employee created successfully',
+        updateSuccess: 'Employee updated successfully',
+        deleteSuccess: 'Employee deleted successfully',
+        deleteConfirm: 'Are you sure you want to delete {{name}}?',
+        noEmployees: 'No employees found',
+        noEmployeesHint: 'Add your first employee to get started',
+        searchPlaceholder: 'Search by code or name...',
+        selectEmployeeFirst: 'Select an Employee',
+        selectEmployeeHint: 'Click "View Contracts" on an employee row to see their contracts',
+        tabs: {
+            general: 'General Information',
+            contract: 'Contract',
+        },
+        statuses: {
+            active: 'Active',
+            inactive: 'Inactive',
+        },
+        genders: {
+            male: 'Male',
+            female: 'Female',
+            other: 'Other',
+        },
+    },
+
+    // ========================================================================
     // Errors
     // ========================================================================
     errors: {
@@ -953,5 +1159,17 @@ export default {
         
         // Audit
         auditComingSoon: 'Audit log coming soon.',
+    },
+
+    // ========================================================================
+    // Validation Messages
+    // ========================================================================
+    validation: {
+        required: 'This field is required',
+        email: 'Please enter a valid email address',
+        phone: 'Please enter a valid phone number',
+        date: 'Please enter a valid date',
+        minLength: 'Must be at least {min} characters',
+        maxLength: 'Must not exceed {max} characters',
     },
 };

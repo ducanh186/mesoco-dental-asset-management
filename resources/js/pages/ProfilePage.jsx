@@ -1,196 +1,350 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { 
     Card, 
     CardHeader, 
     CardBody, 
     Button, 
-    Input, 
+    Input,
+    Textarea,
     Badge,
-    useToast 
+    useToast,
+    LoadingSpinner
 } from '../components/ui';
 import { useI18n } from '../i18n';
 
 /**
- * ProfilePage - User profile with personal info and settings
+ * ProfilePage - Personal Details form (OrangeHRM-style)
+ * 
+ * Fields:
+ * - Employee Full Name (editable)
+ * - Employee Id (disabled)
+ * - Position (editable)
+ * - Date of Birth (editable)
+ * - Gender (editable - radio)
+ * - Phone number (editable)
+ * - Email (disabled)
+ * - Address (editable - textarea)
  */
 const ProfilePage = ({ user }) => {
     const toast = useToast();
     const { t } = useI18n();
-    const [isEditing, setIsEditing] = useState(false);
+    
+    // Loading states
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    
+    // Form data
     const [formData, setFormData] = useState({
-        name: user?.name || 'John Doe',
-        email: user?.email || 'john.doe@mesoco.com',
-        phone: user?.phone || '+84 123 456 789',
-        department: user?.department || 'Dental Operations',
+        full_name: '',
+        employee_code: '',
+        position: '',
+        dob: '',
+        gender: '',
+        phone: '',
+        email: '',
+        address: '',
     });
+    
+    // Field errors
+    const [fieldErrors, setFieldErrors] = useState({});
+    
+    // Refs for focus management
+    const fullNameRef = useRef(null);
+    const positionRef = useRef(null);
+    const dobRef = useRef(null);
+    const phoneRef = useRef(null);
+    const addressRef = useRef(null);
 
-    // Mock activity data
-    const recentActivity = [
-        { id: 1, action: t('profile.borrowedEquipment'), item: 'Dental X-Ray Machine', date: '2026-01-22', status: 'active' },
-        { id: 2, action: t('profile.returnedEquipment'), item: 'Ultrasonic Scaler', date: '2026-01-20', status: 'completed' },
-        { id: 3, action: t('profile.maintenanceRequest'), item: 'Autoclave Sterilizer', date: '2026-01-18', status: 'pending' },
-        { id: 4, action: t('profile.borrowedEquipment'), item: 'LED Curing Light', date: '2026-01-15', status: 'completed' },
-    ];
+    // Fetch profile on mount
+    useEffect(() => {
+        fetchProfile();
+    }, []);
 
-    const handleSave = () => {
-        setIsEditing(false);
-        toast.success(t('profile.updateSuccess'));
-    };
-
-    const getStatusVariant = (status) => {
-        switch (status) {
-            case 'active': return 'primary';
-            case 'completed': return 'success';
-            case 'pending': return 'warning';
-            default: return 'default';
+    const fetchProfile = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get('/api/profile');
+            const profile = response.data.profile;
+            setFormData({
+                full_name: profile.full_name || '',
+                employee_code: profile.employee_code || '',
+                position: profile.position || '',
+                dob: profile.dob || '',
+                gender: profile.gender || '',
+                phone: profile.phone || '',
+                email: profile.email || '',
+                address: profile.address || '',
+            });
+        } catch (error) {
+            toast.error(error.response?.data?.message || t('profile.loadError'));
+        } finally {
+            setLoading(false);
         }
     };
 
-    const getStatusLabel = (status) => {
-        switch (status) {
-            case 'active': return t('profile.active');
-            case 'completed': return t('profile.completed');
-            case 'pending': return t('profile.pending');
-            default: return status;
+    const validateForm = () => {
+        const errors = {};
+        
+        // Full name is required
+        if (!formData.full_name.trim()) {
+            errors.full_name = t('validation.required');
+        }
+        
+        setFieldErrors(errors);
+        
+        // Focus first invalid field
+        if (errors.full_name) {
+            fullNameRef.current?.focus();
+        }
+        
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleFieldChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        // Clear error when user types
+        if (fieldErrors[field]) {
+            setFieldErrors(prev => ({ ...prev, [field]: null }));
+        }
+    };
+
+    const handleSave = async () => {
+        if (!validateForm()) {
+            return;
+        }
+
+        setSaving(true);
+        
+        try {
+            // Only send editable fields
+            const payload = {
+                full_name: formData.full_name.trim(),
+                position: formData.position?.trim() || null,
+                dob: formData.dob || null,
+                gender: formData.gender || null,
+                phone: formData.phone?.trim() || null,
+                address: formData.address?.trim() || null,
+            };
+
+            const response = await axios.put('/api/profile', payload);
+            
+            // Update form with response data
+            if (response.data.profile) {
+                const profile = response.data.profile;
+                setFormData(prev => ({
+                    ...prev,
+                    full_name: profile.full_name || '',
+                    position: profile.position || '',
+                    dob: profile.dob || '',
+                    gender: profile.gender || '',
+                    phone: profile.phone || '',
+                    address: profile.address || '',
+                }));
+            }
+            
+            toast.success(t('profile.updateSuccess'));
+        } catch (error) {
+            const errors = error.response?.data?.errors;
+            
+            if (errors) {
+                // Map backend errors to field errors
+                const mappedErrors = {};
+                Object.keys(errors).forEach(key => {
+                    mappedErrors[key] = errors[key][0];
+                });
+                setFieldErrors(mappedErrors);
+                
+                // Focus first error field
+                const firstErrorField = Object.keys(mappedErrors)[0];
+                const refMap = {
+                    full_name: fullNameRef,
+                    position: positionRef,
+                    dob: dobRef,
+                    phone: phoneRef,
+                    address: addressRef,
+                };
+                refMap[firstErrorField]?.current?.focus();
+            }
+            
+            toast.error(error.response?.data?.message || t('profile.updateError'));
+        } finally {
+            setSaving(false);
         }
     };
 
     const getUserInitials = () => {
-        if (!user?.name) return 'JD';
-        const names = user.name.split(' ');
-        return names.length >= 2 
-            ? `${names[0][0]}${names[1][0]}`.toUpperCase()
-            : user.name.substring(0, 2).toUpperCase();
+        const name = formData.full_name || user?.name;
+        if (!name) return 'U';
+        const names = name.split(' ');
+        if (names.length >= 2) {
+            return `${names[0][0]}${names[1][0]}`.toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
     };
+
+    if (loading) {
+        return (
+            <div className="profile-page flex items-center justify-center min-h-[400px]">
+                <LoadingSpinner size="lg" />
+            </div>
+        );
+    }
 
     return (
         <div className="profile-page">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Profile Card */}
-                <div className="lg:col-span-1">
-                    <Card>
-                        <CardBody>
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-24 h-24 rounded-full bg-primary text-text-invert flex items-center justify-center text-3xl font-semibold mb-4">
-                                    {getUserInitials()}
-                                </div>
-                                <h2 className="text-xl font-semibold text-text mb-1">
-                                    {user?.name || 'John Doe'}
+            <div className="max-w-4xl mx-auto">
+                {/* Profile Header Card */}
+                <Card className="mb-6">
+                    <CardBody>
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 rounded-full bg-primary text-text-invert flex items-center justify-center text-2xl font-semibold flex-shrink-0">
+                                {getUserInitials()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-xl font-semibold text-text truncate">
+                                    {formData.full_name || user?.name || t('profile.unnamed')}
                                 </h2>
-                                <p className="text-text-muted mb-3">
-                                    {user?.employee_code || 'EMP-001'}
+                                <p className="text-text-muted">
+                                    {formData.employee_code}
                                 </p>
-                                <Badge variant="primary" size="md">
+                                <Badge variant="primary" size="sm" className="mt-2">
                                     {user?.role || 'Staff'}
                                 </Badge>
                             </div>
+                        </div>
+                    </CardBody>
+                </Card>
 
-                            <div className="mt-6 pt-6 border-t border-border">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-text-muted">{t('profile.department')}</span>
-                                        <span className="text-text font-medium">{formData.department}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-text-muted">{t('profile.joined')}</span>
-                                        <span className="text-text font-medium">March 2024</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-text-muted">{t('profile.equipmentAssigned')}</span>
-                                        <span className="text-text font-medium">5 {t('profile.items')}</span>
-                                    </div>
+                {/* Personal Details Form */}
+                <Card>
+                    <CardHeader title={t('profile.personalDetails')} />
+                    <CardBody>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Employee Full Name - Editable */}
+                            <Input
+                                ref={fullNameRef}
+                                label={t('profile.employeeFullName')}
+                                value={formData.full_name}
+                                onChange={(e) => handleFieldChange('full_name', e.target.value)}
+                                error={fieldErrors.full_name}
+                                required
+                                disabled={saving}
+                            />
+
+                            {/* Employee Id - Disabled */}
+                            <Input
+                                label={t('profile.employeeId')}
+                                value={formData.employee_code}
+                                disabled
+                                helper={t('profile.disabledFieldHint')}
+                            />
+
+                            {/* Position - Editable */}
+                            <Input
+                                ref={positionRef}
+                                label={t('profile.position')}
+                                value={formData.position}
+                                onChange={(e) => handleFieldChange('position', e.target.value)}
+                                error={fieldErrors.position}
+                                disabled={saving}
+                            />
+
+                            {/* Date of Birth - Editable */}
+                            <Input
+                                ref={dobRef}
+                                label={t('profile.dateOfBirth')}
+                                type="date"
+                                value={formData.dob}
+                                onChange={(e) => handleFieldChange('dob', e.target.value)}
+                                error={fieldErrors.dob}
+                                disabled={saving}
+                            />
+
+                            {/* Gender - Editable (Radio) */}
+                            <div className="ui-input-wrapper">
+                                <label className="ui-input-label">{t('profile.gender')}</label>
+                                <div className="flex items-center gap-6 mt-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="gender"
+                                            value="male"
+                                            checked={formData.gender === 'male'}
+                                            onChange={(e) => handleFieldChange('gender', e.target.value)}
+                                            disabled={saving}
+                                            className="w-4 h-4 text-primary focus:ring-primary border-border"
+                                        />
+                                        <span className="text-text">{t('profile.male')}</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="gender"
+                                            value="female"
+                                            checked={formData.gender === 'female'}
+                                            onChange={(e) => handleFieldChange('gender', e.target.value)}
+                                            disabled={saving}
+                                            className="w-4 h-4 text-primary focus:ring-primary border-border"
+                                        />
+                                        <span className="text-text">{t('profile.female')}</span>
+                                    </label>
                                 </div>
+                                {fieldErrors.gender && (
+                                    <p className="ui-input-error-text mt-1">{fieldErrors.gender}</p>
+                                )}
                             </div>
-                        </CardBody>
-                    </Card>
-                </div>
 
-                {/* Details & Activity */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Personal Information */}
-                    <Card>
-                        <CardHeader 
-                            title={t('profile.personalInfo')}
-                            action={
-                                isEditing ? (
-                                    <div className="flex gap-2">
-                                        <Button size="sm" variant="secondary" onClick={() => setIsEditing(false)}>
-                                            {t('common.cancel')}
-                                        </Button>
-                                        <Button size="sm" onClick={handleSave}>
-                                            {t('common.save')}
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-                                        {t('common.edit')}
-                                    </Button>
-                                )
-                            }
-                        />
-                        <CardBody>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input
-                                    label={t('profile.fullName')}
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    disabled={!isEditing}
-                                />
-                                <Input
-                                    label={t('profile.email')}
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    disabled={!isEditing}
-                                />
-                                <Input
-                                    label={t('profile.phone')}
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    disabled={!isEditing}
-                                />
-                                <Input
-                                    label={t('profile.department')}
-                                    value={formData.department}
-                                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                    disabled={!isEditing}
+                            {/* Phone Number - Editable */}
+                            <Input
+                                ref={phoneRef}
+                                label={t('profile.phoneNumber')}
+                                type="tel"
+                                value={formData.phone}
+                                onChange={(e) => handleFieldChange('phone', e.target.value)}
+                                error={fieldErrors.phone}
+                                disabled={saving}
+                            />
+
+                            {/* Email - Disabled */}
+                            <Input
+                                label={t('profile.email')}
+                                type="email"
+                                value={formData.email}
+                                disabled
+                                helper={t('profile.disabledFieldHint')}
+                            />
+
+                            {/* Address - Editable (full width) */}
+                            <div className="md:col-span-2">
+                                <Textarea
+                                    ref={addressRef}
+                                    label={t('profile.address')}
+                                    value={formData.address}
+                                    onChange={(e) => handleFieldChange('address', e.target.value)}
+                                    error={fieldErrors.address}
+                                    rows={3}
+                                    disabled={saving}
                                 />
                             </div>
-                        </CardBody>
-                    </Card>
+                        </div>
 
-                    {/* Recent Activity */}
-                    <Card>
-                        <CardHeader title={t('profile.recentActivity')} />
-                        <CardBody>
-                            {recentActivity.length === 0 ? (
-                                <div className="text-center py-8 text-text-muted">
-                                    <p>{t('profile.noRecentActivity')}</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {recentActivity.map((activity) => (
-                                        <div 
-                                            key={activity.id} 
-                                            className="flex items-center justify-between py-3 border-b border-border last:border-0"
-                                        >
-                                            <div className="flex-1">
-                                                <p className="text-text font-medium">{activity.action}</p>
-                                                <p className="text-sm text-text-muted">{activity.item}</p>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-sm text-text-light">{activity.date}</span>
-                                                <Badge variant={getStatusVariant(activity.status)} size="sm">
-                                                    {getStatusLabel(activity.status)}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </CardBody>
-                    </Card>
-                </div>
+                        {/* Save Button */}
+                        <div className="flex justify-end mt-6 pt-4 border-t border-border">
+                            <Button
+                                onClick={handleSave}
+                                disabled={saving}
+                            >
+                                {saving ? (
+                                    <>
+                                        <span className="btn-spinner mr-2"></span>
+                                        {t('common.saving')}
+                                    </>
+                                ) : t('common.save')}
+                            </Button>
+                        </div>
+                    </CardBody>
+                </Card>
             </div>
         </div>
     );

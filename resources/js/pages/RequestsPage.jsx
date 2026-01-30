@@ -682,7 +682,7 @@ const RequestsPage = ({ user }) => {
             <Modal
                 isOpen={isDetailOpen}
                 onClose={() => { setIsDetailOpen(false); setSelectedRequest(null); }}
-                title={selectedRequest?.code || t('requests.requestDetail')}}
+                title={selectedRequest?.code || t('requests.requestDetail')}
                 size="lg"
             >
                 {selectedRequest && (

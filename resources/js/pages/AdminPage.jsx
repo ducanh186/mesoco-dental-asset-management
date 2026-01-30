@@ -49,7 +49,7 @@ const AdminPage = ({ user }) => {
     const [employees, setEmployees] = useState([]);
     const [createForm, setCreateForm] = useState({
         employee_id: '',
-        role: 'staff',
+        role: 'employee',
         default_password: ''
     });
     const [newRole, setNewRole] = useState('');
@@ -113,7 +113,7 @@ const AdminPage = ({ user }) => {
             await usersApi.create(createForm);
             toast.success(t('admin.userCreated'));
             setCreateModalOpen(false);
-            setCreateForm({ employee_id: '', role: 'staff', default_password: '' });
+            setCreateForm({ employee_id: '', role: 'employee', default_password: '' });
             fetchUsers();
         } catch (error) {
             handleApiError(error, toast);
@@ -166,7 +166,7 @@ const AdminPage = ({ user }) => {
         { value: 'hr', label: t('roles.hr') },
         { value: 'doctor', label: t('roles.doctor') },
         { value: 'technician', label: t('roles.technician') },
-        { value: 'staff', label: t('roles.staff') },
+        { value: 'employee', label: t('roles.employee') },
     ];
 
     const roleSelectOptions = roleOptions.filter(r => r.value !== '');
@@ -249,7 +249,7 @@ const AdminPage = ({ user }) => {
             hr: 'primary',
             doctor: 'success',
             technician: 'warning',
-            staff: 'default'
+            employee: 'default'
         };
         return variants[role] || 'default';
     };
@@ -358,14 +358,14 @@ const AdminPage = ({ user }) => {
                                     <th className="text-center py-3 px-4 font-medium text-text-muted">{t('roles.hr')}</th>
                                     <th className="text-center py-3 px-4 font-medium text-text-muted">{t('roles.doctor')}</th>
                                     <th className="text-center py-3 px-4 font-medium text-text-muted">{t('roles.technician')}</th>
-                                    <th className="text-center py-3 px-4 font-medium text-text-muted">{t('roles.staff')}</th>
+                                    <th className="text-center py-3 px-4 font-medium text-text-muted">{t('roles.employee')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {rbacMatrix.map((row, idx) => (
                                     <tr key={idx} className="border-b border-border/50 hover:bg-surface-hover">
                                         <td className="py-3 px-4 text-text">{row.permission}</td>
-                                        {['admin', 'hr', 'doctor', 'technician', 'staff'].map(role => (
+                                        {['admin', 'hr', 'doctor', 'technician', 'employee'].map(role => (
                                             <td key={role} className="py-3 px-4 text-center">
                                                 {row[role] ? (
                                                     <span className="text-success">✓</span>
@@ -495,19 +495,19 @@ const AdminPage = ({ user }) => {
     // Static Data
     // ========================================================================
     const rbacMatrix = [
-        { permission: 'Thiết bị của tôi (My Equipment)', admin: true, hr: true, doctor: true, technician: true, staff: true },
-        { permission: 'Quét QR / Check-in', admin: true, hr: true, doctor: true, technician: true, staff: true },
-        { permission: 'Phiếu yêu cầu (tạo/xem)', admin: true, hr: true, doctor: true, technician: true, staff: true },
-        { permission: 'Quản lý thiết bị', admin: true, hr: true, doctor: false, technician: false, staff: false },
-        { permission: 'Giao/Thu hồi thiết bị', admin: true, hr: true, doctor: false, technician: false, staff: false },
-        { permission: 'Duyệt phiếu', admin: true, hr: true, doctor: false, technician: false, staff: false },
-        { permission: 'Bảo trì (xem/sửa)', admin: true, hr: true, doctor: false, technician: true, staff: false },
-        { permission: 'Báo cáo', admin: true, hr: true, doctor: false, technician: false, staff: false },
-        { permission: 'Quản lý nhân sự', admin: true, hr: true, doctor: false, technician: false, staff: false },
-        { permission: 'Tạo tài khoản (role=staff)', admin: true, hr: true, doctor: false, technician: false, staff: false },
-        { permission: 'Gán/Đổi quyền (Role)', admin: true, hr: false, doctor: false, technician: false, staff: false },
-        { permission: 'Xóa tài khoản', admin: true, hr: false, doctor: false, technician: false, staff: false },
-        { permission: 'Cài đặt hệ thống', admin: true, hr: false, doctor: false, technician: false, staff: false },
+        { permission: 'Thiết bị của tôi (My Equipment)', admin: true, hr: true, doctor: true, technician: true, employee: true },
+        { permission: 'Quét QR / Check-in', admin: true, hr: true, doctor: true, technician: true, employee: true },
+        { permission: 'Phiếu yêu cầu (tạo/xem)', admin: true, hr: true, doctor: true, technician: true, employee: true },
+        { permission: 'Quản lý thiết bị', admin: true, hr: true, doctor: false, technician: false, employee: false },
+        { permission: 'Giao/Thu hồi thiết bị', admin: true, hr: true, doctor: false, technician: false, employee: false },
+        { permission: 'Duyệt phiếu', admin: true, hr: true, doctor: false, technician: false, employee: false },
+        { permission: 'Bảo trì (xem/sửa)', admin: true, hr: true, doctor: false, technician: true, employee: false },
+        { permission: 'Báo cáo', admin: true, hr: true, doctor: false, technician: false, employee: false },
+        { permission: 'Quản lý nhân sự', admin: true, hr: true, doctor: false, technician: false, employee: false },
+        { permission: 'Tạo tài khoản', admin: true, hr: true, doctor: false, technician: false, employee: false },
+        { permission: 'Gán/Đổi quyền (Role)', admin: true, hr: false, doctor: false, technician: false, employee: false },
+        { permission: 'Xóa tài khoản', admin: true, hr: false, doctor: false, technician: false, employee: false },
+        { permission: 'Cài đặt hệ thống', admin: true, hr: false, doctor: false, technician: false, employee: false },
     ];
 
     const roleDescriptions = [
@@ -515,7 +515,7 @@ const AdminPage = ({ user }) => {
         { id: 'hr', icon: '👔', bgColor: 'bg-primary/10', textColor: 'text-primary', description: 'Quản lý nhân sự, thiết bị, duyệt phiếu, xem báo cáo' },
         { id: 'doctor', icon: '🩺', bgColor: 'bg-success/10', textColor: 'text-success', description: 'Xem thiết bị được giao, tạo phiếu yêu cầu' },
         { id: 'technician', icon: '🔧', bgColor: 'bg-warning/10', textColor: 'text-warning', description: 'Xem thiết bị, bảo trì, báo sự cố thiết bị' },
-        { id: 'staff', icon: '👤', bgColor: 'bg-surface', textColor: 'text-text', description: 'Xem thiết bị được giao, tạo phiếu cơ bản' },
+        { id: 'employee', icon: '👤', bgColor: 'bg-surface', textColor: 'text-text', description: 'Xem thiết bị được giao, tạo phiếu cơ bản' },
     ];
 
     // ========================================================================

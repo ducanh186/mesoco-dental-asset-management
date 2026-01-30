@@ -253,7 +253,7 @@ const RecentEquipmentTable = ({
                     {isAdminOrHr ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
                 </h3>
                 <Link 
-                    to={isAdminOrHr ? '/assets' : '/my-equipment'} 
+                    to={isAdminOrHr ? '/assets' : '/my-assets'} 
                     className="view-all-link text-sm text-primary hover:text-primary-hover flex items-center gap-1"
                 >
                     {t('dashboard.viewAll')}

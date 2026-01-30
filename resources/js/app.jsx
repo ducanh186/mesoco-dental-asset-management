@@ -12,6 +12,7 @@ import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './pages/Dashboard';
 import UIKit from './pages/UIKit';
 import ProfilePage from './pages/ProfilePage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import MyEquipmentPage from './pages/MyEquipmentPage';
 import AssetsPage from './pages/AssetsPage';
 import MyAssetsPage from './pages/MyAssetsPage';
@@ -22,6 +23,11 @@ import InventoryPage from './pages/InventoryPage';
 import LocationsPage from './pages/LocationsPage';
 import AdminPage from './pages/AdminPage';
 import MyAssetHistoryPage from './pages/MyAssetHistoryPage';
+import FeedbackPage from './pages/FeedbackPage';
+import ReportPage from './pages/ReportPage';
+import QRScanPage from './pages/QRScanPage';
+import ContractsPage from './pages/ContractsPage';
+import EmployeesPage from './pages/EmployeesPage';
 
 // UI Components
 import { ToastProvider } from './components/ui';
@@ -132,6 +138,25 @@ const AdminOnlyRoute = ({ children }) => {
      return children;
 };
 
+const AdminHrRoute = ({ children }) => {
+     const { user, loading } = useAuth();
+     const location = useLocation();
+
+     if (loading) {
+          return <LoadingScreen />;
+     }
+
+     if (!user) {
+          return <Navigate to="/login" state={{ from: location }} replace />;
+     }
+
+     if (user.role !== 'admin' && user.role !== 'hr') {
+          return <Navigate to="/dashboard" replace />;
+     }
+
+     return children;
+};
+
 // ============================================================================
 // Loading Screen
 // ============================================================================
@@ -176,15 +201,31 @@ const AdminLayoutWrapper = ({ children, title, breadcrumbs }) => {
 const ForgotPasswordPage = () => {
      const [step, setStep] = useState(1); // 1 = request code, 2 = verify & reset
      const [email, setEmail] = useState('');
-     const [verificationCode, setVerificationCode] = useState('');
+     const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
      const [password, setPassword] = useState('');
      const [passwordConfirmation, setPasswordConfirmation] = useState('');
+     const [showPassword, setShowPassword] = useState(false);
+     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
      const [error, setError] = useState(null);
+     const [fieldErrors, setFieldErrors] = useState({});
      const [isLoading, setIsLoading] = useState(false);
      const [successMessage, setSuccessMessage] = useState(null);
      const [countdown, setCountdown] = useState(0);
      const { t } = useI18n();
      const navigate = useNavigate();
+     
+     // Refs for focus management
+     const emailRef = React.useRef(null);
+     const codeRefs = [
+          React.useRef(null),
+          React.useRef(null),
+          React.useRef(null),
+          React.useRef(null),
+          React.useRef(null),
+          React.useRef(null),
+     ];
+     const passwordRef = React.useRef(null);
+     const confirmPasswordRef = React.useRef(null);
 
      useEffect(() => {
           if (countdown > 0) {
@@ -193,22 +234,76 @@ const ForgotPasswordPage = () => {
           }
      }, [countdown]);
 
+     const validateEmailStep = () => {
+          const errors = {};
+          if (!email.trim()) {
+               errors.email = t('auth.emailRequired');
+          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+               errors.email = t('auth.emailInvalid');
+          }
+          setFieldErrors(errors);
+          if (errors.email) {
+               emailRef.current?.focus();
+          }
+          return Object.keys(errors).length === 0;
+     };
+
+     const validateResetStep = () => {
+          const errors = {};
+          const codeString = verificationCode.join('');
+          
+          if (codeString.length !== 6) {
+               errors.verificationCode = t('auth.codeRequired');
+          }
+          if (!password) {
+               errors.password = t('auth.passwordRequired');
+          } else if (password.length < 8) {
+               errors.password = t('auth.passwordTooShort');
+          }
+          if (!passwordConfirmation) {
+               errors.passwordConfirmation = t('auth.confirmPasswordRequired');
+          } else if (password && passwordConfirmation !== password) {
+               errors.passwordConfirmation = t('auth.passwordMismatch');
+               errors.password = t('auth.passwordMismatch');
+          }
+          
+          setFieldErrors(errors);
+          
+          // Focus first invalid field
+          if (errors.verificationCode) {
+               codeRefs[0].current?.focus();
+          } else if (errors.password && !errors.passwordConfirmation) {
+               passwordRef.current?.focus();
+          } else if (errors.passwordConfirmation) {
+               confirmPasswordRef.current?.focus();
+          }
+          
+          return Object.keys(errors).length === 0;
+     };
+
      const handleRequestCode = async (e) => {
           e.preventDefault();
           setError(null);
           setSuccessMessage(null);
+          setFieldErrors({});
+
+          if (!validateEmailStep()) {
+               return;
+          }
+
           setIsLoading(true);
 
           try {
-               const response = await axios.post('/forgot-password/request', { email });
-               setSuccessMessage(response.data.message);
+               await axios.post('/forgot-password/request', { email });
+               // Always show generic success message (don't leak email existence)
+               setSuccessMessage(t('auth.codeSentGeneric'));
                setStep(2);
-               setCountdown(60); // 60 second cooldown for resend
+               setCountdown(60);
           } catch (err) {
-               const message = err.response?.data?.message ||
-                    err.response?.data?.errors?.email?.[0] ||
-                    t('auth.failedToSendCode');
-               setError(message);
+               // Generic error - don't leak email existence
+               setSuccessMessage(t('auth.codeSentGeneric'));
+               setStep(2);
+               setCountdown(60);
           } finally {
                setIsLoading(false);
           }
@@ -218,84 +313,148 @@ const ForgotPasswordPage = () => {
           e.preventDefault();
           setError(null);
           setSuccessMessage(null);
+          setFieldErrors({});
+
+          if (!validateResetStep()) {
+               return;
+          }
+
           setIsLoading(true);
 
           try {
                const response = await axios.post('/forgot-password/reset', {
                     email,
-                    verification_code: verificationCode,
+                    verification_code: verificationCode.join(''),
                     password,
                     password_confirmation: passwordConfirmation,
                });
-               setSuccessMessage(response.data.message);
+               setSuccessMessage(response.data.message || t('auth.passwordResetSuccess'));
                setTimeout(() => {
                     navigate('/login');
                }, 2000);
           } catch (err) {
                const errors = err.response?.data?.errors;
-               const message = err.response?.data?.message ||
-                    errors?.verification_code?.[0] ||
-                    errors?.password?.[0] ||
-                    errors?.email?.[0] ||
-                    t('auth.failedToResetPassword');
-               setError(message);
+               if (errors?.verification_code) {
+                    setFieldErrors({ verificationCode: errors.verification_code[0] });
+                    codeRefs[0].current?.focus();
+               } else if (errors?.password) {
+                    setFieldErrors({ password: errors.password[0] });
+                    passwordRef.current?.focus();
+               } else {
+                    setError(err.response?.data?.message || t('auth.failedToResetPassword'));
+               }
           } finally {
                setIsLoading(false);
           }
      };
 
      const handleResendCode = async () => {
-          if (countdown > 0) return;
+          if (countdown > 0 || isLoading) return;
           
           setError(null);
-          setSuccessMessage(null);
           setIsLoading(true);
 
           try {
-               const response = await axios.post('/forgot-password/request', { email });
+               await axios.post('/forgot-password/request', { email });
                setSuccessMessage(t('auth.verificationCodeResent'));
                setCountdown(60);
           } catch (err) {
-               setError(t('auth.failedToResendCode'));
+               // Still show success to not leak email existence
+               setSuccessMessage(t('auth.verificationCodeResent'));
+               setCountdown(60);
           } finally {
                setIsLoading(false);
+          }
+     };
+
+     // OTP-style input handlers
+     const handleCodeChange = (index, value) => {
+          // Only allow digits
+          const digit = value.replace(/\D/g, '').slice(-1);
+          const newCode = [...verificationCode];
+          newCode[index] = digit;
+          setVerificationCode(newCode);
+          
+          // Clear field error on change
+          if (fieldErrors.verificationCode) {
+               setFieldErrors(prev => ({ ...prev, verificationCode: null }));
+          }
+          
+          // Auto-focus next input
+          if (digit && index < 5) {
+               codeRefs[index + 1].current?.focus();
+          }
+     };
+
+     const handleCodeKeyDown = (index, e) => {
+          if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+               codeRefs[index - 1].current?.focus();
+          }
+     };
+
+     const handleCodePaste = (e) => {
+          e.preventDefault();
+          const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+          const newCode = [...verificationCode];
+          for (let i = 0; i < 6; i++) {
+               newCode[i] = pastedData[i] || '';
+          }
+          setVerificationCode(newCode);
+          // Focus last filled or first empty
+          const focusIndex = Math.min(pastedData.length, 5);
+          codeRefs[focusIndex].current?.focus();
+     };
+
+     const handleFieldChange = (field, value, setter) => {
+          setter(value);
+          if (fieldErrors[field]) {
+               setFieldErrors(prev => ({ ...prev, [field]: null }));
+          }
+          if (error) {
+               setError(null);
           }
      };
 
      return (
           <div className="auth-layout">
                <div className="auth-card">
-                    <div className="auth-header">
-                         <h1 className="auth-logo">BlueOC</h1>
-                         <p className="auth-subtitle">Asset Management</p>
+                    <div className="auth-header auth-header-logo">
+                         <img 
+                              src="/images/mesoco_logo.png" 
+                              alt="Mesoco Logo" 
+                              className="auth-logo-image"
+                         />
                     </div>
 
                     {step === 1 ? (
                          <form onSubmit={handleRequestCode} className="auth-form">
-                              <h2 className="auth-title">{t('auth.forgotPassword')}</h2>
+                              <h2 className="auth-title text-center">{t('auth.forgotPassword')}</h2>
                               <p className="auth-description text-center mb-6 text-sm text-gray-500">
                                    {t('auth.forgotPasswordDesc')}
                               </p>
 
                               {error && (
-                                   <div className="alert alert-error">{error}</div>
-                              )}
-                              {successMessage && (
-                                   <div className="alert alert-success">{successMessage}</div>
+                                   <div className="alert alert-error mb-4">{error}</div>
                               )}
 
                               <div className="form-group">
-                                   <label htmlFor="email">{t('auth.emailAddress')}</label>
+                                   <label htmlFor="email">{t('auth.emailAddress')} <span className="text-error">*</span></label>
                                    <input
+                                        ref={emailRef}
                                         id="email"
                                         type="email"
-                                        className="form-input"
+                                        className={`form-input ${fieldErrors.email ? 'form-input-error' : ''}`}
                                         value={email}
-                                        onChange={e => setEmail(e.target.value)}
+                                        onChange={e => handleFieldChange('email', e.target.value, setEmail)}
                                         placeholder={t('auth.enterEmail')}
-                                        required
                                         autoFocus
+                                        disabled={isLoading}
+                                        aria-invalid={!!fieldErrors.email}
+                                        aria-describedby={fieldErrors.email ? 'email_error' : undefined}
                                    />
+                                   {fieldErrors.email && (
+                                        <p id="email_error" className="form-error-text">{fieldErrors.email}</p>
+                                   )}
                               </div>
 
                               <button
@@ -303,43 +462,141 @@ const ForgotPasswordPage = () => {
                                    className="btn btn-primary btn-block mb-4"
                                    disabled={isLoading}
                               >
-                                   {isLoading ? t('auth.sending') : t('auth.sendVerificationCode')}
+                                   {isLoading ? (
+                                        <>
+                                             <span className="btn-spinner"></span>
+                                             {t('auth.sending')}
+                                        </>
+                                   ) : t('auth.continue')}
                               </button>
 
                               <div className="text-center">
-                                   <Link to="/login" className="text-sm text-primary hover:text-primary-hover hover:underline">
+                                   <Link 
+                                        to="/login" 
+                                        className="text-sm text-primary hover:text-primary-hover hover:underline"
+                                        tabIndex={isLoading ? -1 : 0}
+                                   >
                                         {t('auth.backToLogin')}
                                    </Link>
                               </div>
                          </form>
                     ) : (
                          <form onSubmit={handleResetPassword} className="auth-form">
-                              <h2 className="auth-title">{t('auth.resetPassword')}</h2>
-                              <p className="auth-description text-center mb-6 text-sm text-gray-500">
-                                   {t('auth.resetPasswordDesc')}
-                              </p>
+                              <h2 className="auth-title text-center">{t('auth.resetPassword')}</h2>
+                              
+                              {successMessage && (
+                                   <div className="alert alert-success mb-4">{successMessage}</div>
+                              )}
 
                               {error && (
-                                   <div className="alert alert-error">{error}</div>
-                              )}
-                              {successMessage && (
-                                   <div className="alert alert-success">{successMessage}</div>
+                                   <div className="alert alert-error mb-4">{error}</div>
                               )}
 
                               <div className="form-group">
-                                   <label htmlFor="verification_code">{t('auth.verificationCode')}</label>
-                                   <input
-                                        id="verification_code"
-                                        type="text"
-                                        className="form-input text-center text-2xl tracking-widest"
-                                        value={verificationCode}
-                                        onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                        placeholder="000000"
-                                        maxLength="6"
-                                        pattern="\d{6}"
-                                        required
-                                        autoFocus
-                                   />
+                                   <label htmlFor="password">{t('auth.newPassword')} <span className="text-error">*</span></label>
+                                   <div className="form-input-wrapper">
+                                        <input
+                                             ref={passwordRef}
+                                             id="password"
+                                             type={showPassword ? 'text' : 'password'}
+                                             className={`form-input form-input-with-icon ${fieldErrors.password ? 'form-input-error' : ''}`}
+                                             value={password}
+                                             onChange={e => handleFieldChange('password', e.target.value, setPassword)}
+                                             placeholder={t('auth.enterNewPassword')}
+                                             disabled={isLoading}
+                                             aria-invalid={!!fieldErrors.password}
+                                             aria-describedby={fieldErrors.password ? 'password_error' : 'password_hint'}
+                                        />
+                                        <button
+                                             type="button"
+                                             className="form-input-icon-btn"
+                                             onClick={() => setShowPassword(!showPassword)}
+                                             aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                                             tabIndex={-1}
+                                        >
+                                             {showPassword ? (
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                                  </svg>
+                                             ) : (
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                  </svg>
+                                             )}
+                                        </button>
+                                   </div>
+                                   {fieldErrors.password ? (
+                                        <p id="password_error" className="form-error-text">{fieldErrors.password}</p>
+                                   ) : (
+                                        <p id="password_hint" className="text-xs text-gray-500 mt-1">
+                                             {t('auth.passwordRequirements')}
+                                        </p>
+                                   )}
+                              </div>
+
+                              <div className="form-group">
+                                   <label htmlFor="password_confirmation">{t('auth.confirmPassword')} <span className="text-error">*</span></label>
+                                   <div className="form-input-wrapper">
+                                        <input
+                                             ref={confirmPasswordRef}
+                                             id="password_confirmation"
+                                             type={showConfirmPassword ? 'text' : 'password'}
+                                             className={`form-input form-input-with-icon ${fieldErrors.passwordConfirmation ? 'form-input-error' : ''}`}
+                                             value={passwordConfirmation}
+                                             onChange={e => handleFieldChange('passwordConfirmation', e.target.value, setPasswordConfirmation)}
+                                             placeholder={t('auth.confirmNewPassword')}
+                                             disabled={isLoading}
+                                             aria-invalid={!!fieldErrors.passwordConfirmation}
+                                             aria-describedby={fieldErrors.passwordConfirmation ? 'confirm_password_error' : undefined}
+                                        />
+                                        <button
+                                             type="button"
+                                             className="form-input-icon-btn"
+                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                             aria-label={showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                                             tabIndex={-1}
+                                        >
+                                             {showConfirmPassword ? (
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                                  </svg>
+                                             ) : (
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                  </svg>
+                                             )}
+                                        </button>
+                                   </div>
+                                   {fieldErrors.passwordConfirmation && (
+                                        <p id="confirm_password_error" className="form-error-text">{fieldErrors.passwordConfirmation}</p>
+                                   )}
+                              </div>
+
+                              <div className="form-group">
+                                   <label>{t('auth.verificationCode')} <span className="text-error">*</span></label>
+                                   <div className="otp-input-group" onPaste={handleCodePaste}>
+                                        {verificationCode.map((digit, index) => (
+                                             <input
+                                                  key={index}
+                                                  ref={codeRefs[index]}
+                                                  type="text"
+                                                  inputMode="numeric"
+                                                  maxLength="1"
+                                                  className={`otp-input ${fieldErrors.verificationCode ? 'otp-input-error' : ''}`}
+                                                  value={digit}
+                                                  onChange={e => handleCodeChange(index, e.target.value)}
+                                                  onKeyDown={e => handleCodeKeyDown(index, e)}
+                                                  disabled={isLoading}
+                                                  aria-label={`${t('auth.verificationCode')} digit ${index + 1}`}
+                                                  aria-invalid={!!fieldErrors.verificationCode}
+                                             />
+                                        ))}
+                                   </div>
+                                   {fieldErrors.verificationCode && (
+                                        <p className="form-error-text text-center">{fieldErrors.verificationCode}</p>
+                                   )}
                                    <div className="text-center mt-2">
                                         {countdown > 0 ? (
                                              <span className="text-xs text-gray-500">
@@ -358,41 +615,17 @@ const ForgotPasswordPage = () => {
                                    </div>
                               </div>
 
-                              <div className="form-group">
-                                   <label htmlFor="password">{t('auth.newPassword')}</label>
-                                   <input
-                                        id="password"
-                                        type="password"
-                                        className="form-input"
-                                        value={password}
-                                        onChange={e => setPassword(e.target.value)}
-                                        placeholder={t('auth.enterNewPassword')}
-                                        required
-                                   />
-                                   <p className="text-xs text-gray-500 mt-1">
-                                        {t('auth.passwordRequirements')}
-                                   </p>
-                              </div>
-
-                              <div className="form-group">
-                                   <label htmlFor="password_confirmation">{t('auth.confirmPassword')}</label>
-                                   <input
-                                        id="password_confirmation"
-                                        type="password"
-                                        className="form-input"
-                                        value={passwordConfirmation}
-                                        onChange={e => setPasswordConfirmation(e.target.value)}
-                                        placeholder={t('auth.confirmNewPassword')}
-                                        required
-                                   />
-                              </div>
-
                               <button
                                    type="submit"
                                    className="btn btn-primary btn-block mb-4"
                                    disabled={isLoading}
                               >
-                                   {isLoading ? t('auth.resetting') : t('auth.resetPasswordBtn')}
+                                   {isLoading ? (
+                                        <>
+                                             <span className="btn-spinner"></span>
+                                             {t('auth.resetting')}
+                                        </>
+                                   ) : t('auth.resetPasswordBtn')}
                               </button>
 
                               <div className="text-center">
@@ -414,75 +647,148 @@ const ForgotPasswordPage = () => {
 const LoginPage = () => {
      const [employeeCode, setEmployeeCode] = useState('');
      const [password, setPassword] = useState('');
+     const [showPassword, setShowPassword] = useState(false);
      const [remember, setRemember] = useState(false);
      const [error, setError] = useState(null);
+     const [fieldErrors, setFieldErrors] = useState({});
      const [isLoading, setIsLoading] = useState(false);
      const { login } = useAuth();
      const { t } = useI18n();
      const navigate = useNavigate();
      const location = useLocation();
+     const employeeCodeRef = React.useRef(null);
+     const passwordRef = React.useRef(null);
 
      const from = location.state?.from?.pathname || '/dashboard';
+
+     const validateFields = () => {
+          const errors = {};
+          if (!employeeCode.trim()) {
+               errors.employeeCode = t('auth.employeeIdRequired');
+          }
+          if (!password) {
+               errors.password = t('auth.passwordRequired');
+          }
+          setFieldErrors(errors);
+          
+          // Focus first invalid field
+          if (errors.employeeCode) {
+               employeeCodeRef.current?.focus();
+          } else if (errors.password) {
+               passwordRef.current?.focus();
+          }
+          
+          return Object.keys(errors).length === 0;
+     };
 
      const handleSubmit = async (e) => {
           e.preventDefault();
           setError(null);
+          setFieldErrors({});
+
+          if (!validateFields()) {
+               return;
+          }
+
           setIsLoading(true);
 
           try {
                await login(employeeCode, password, remember);
                navigate(from, { replace: true });
           } catch (err) {
-               const message = err.response?.data?.message ||
-                    err.response?.data?.errors?.employee_code?.[0] ||
-                    t('auth.loginFailed');
-               setError(message);
+               // Generic error message - do not leak user existence
+               setError(t('auth.invalidCredentialsGeneric'));
           } finally {
                setIsLoading(false);
+          }
+     };
+
+     const handleFieldChange = (field, value, setter) => {
+          setter(value);
+          if (fieldErrors[field]) {
+               setFieldErrors(prev => ({ ...prev, [field]: null }));
+          }
+          if (error) {
+               setError(null);
           }
      };
 
      return (
           <div className="auth-layout">
                <div className="auth-card">
-                    <div className="auth-header">
-                         <h1 className="auth-logo">BlueOC</h1>
-                         <p className="auth-subtitle">Asset Management</p>
+                    <div className="auth-header auth-header-logo">
+                         <img 
+                              src="/images/mesoco_logo.png" 
+                              alt="Mesoco Logo" 
+                              className="auth-logo-image"
+                         />
                     </div>
 
                     <form onSubmit={handleSubmit} className="auth-form">
-                         <h2 className="auth-title">{t('auth.welcomeBack')}</h2>
+                         <h2 className="auth-title text-center">{t('auth.welcomeBack')}</h2>
                          <p className="auth-description text-center mb-6 text-sm text-gray-500">{t('auth.signInToContinue')}</p>
 
                          {error && (
-                              <div className="alert alert-error">{error}</div>
+                              <div className="alert alert-error mb-4">{error}</div>
                          )}
 
                          <div className="form-group">
                               <label htmlFor="employee_code">{t('auth.employeeId')}</label>
                               <input
+                                   ref={employeeCodeRef}
                                    id="employee_code"
                                    type="text"
-                                   className="form-input"
+                                   className={`form-input ${fieldErrors.employeeCode ? 'form-input-error' : ''}`}
                                    value={employeeCode}
-                                   onChange={e => setEmployeeCode(e.target.value)}
+                                   onChange={e => handleFieldChange('employeeCode', e.target.value, setEmployeeCode)}
                                    placeholder={t('auth.enterEmployeeId')}
-                                   required
                                    autoFocus
+                                   disabled={isLoading}
+                                   aria-invalid={!!fieldErrors.employeeCode}
+                                   aria-describedby={fieldErrors.employeeCode ? 'employee_code_error' : undefined}
                               />
+                              {fieldErrors.employeeCode && (
+                                   <p id="employee_code_error" className="form-error-text">{fieldErrors.employeeCode}</p>
+                              )}
                          </div>
 
                          <div className="form-group">
                               <label htmlFor="password">{t('auth.password')}</label>
-                              <input
-                                   id="password"
-                                   type="password"
-                                   className="form-input"
-                                   value={password}
-                                   onChange={e => setPassword(e.target.value)}
-                                   placeholder={t('auth.enterPassword')}
-                                   required
-                              />
+                              <div className="form-input-wrapper">
+                                   <input
+                                        ref={passwordRef}
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        className={`form-input form-input-with-icon ${fieldErrors.password ? 'form-input-error' : ''}`}
+                                        value={password}
+                                        onChange={e => handleFieldChange('password', e.target.value, setPassword)}
+                                        placeholder={t('auth.enterPassword')}
+                                        disabled={isLoading}
+                                        aria-invalid={!!fieldErrors.password}
+                                        aria-describedby={fieldErrors.password ? 'password_error' : undefined}
+                                   />
+                                   <button
+                                        type="button"
+                                        className="form-input-icon-btn"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                                        tabIndex={-1}
+                                   >
+                                        {showPassword ? (
+                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                             </svg>
+                                        ) : (
+                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                             </svg>
+                                        )}
+                                   </button>
+                              </div>
+                              {fieldErrors.password && (
+                                   <p id="password_error" className="form-error-text">{fieldErrors.password}</p>
+                              )}
                          </div>
 
                          <div className="form-group flex items-center justify-between mb-6">
@@ -492,24 +798,31 @@ const LoginPage = () => {
                                         className="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
                                         checked={remember}
                                         onChange={e => setRemember(e.target.checked)}
+                                        disabled={isLoading}
                                    />
                                    <span className="text-sm text-gray-600">{t('auth.rememberMe')}</span>
                               </label>
+                              <Link 
+                                   to="/forgot-password" 
+                                   className="text-sm text-primary hover:text-primary-hover hover:underline"
+                                   tabIndex={isLoading ? -1 : 0}
+                              >
+                                   {t('auth.forgotPassword')}?
+                              </Link>
                          </div>
 
                          <button
                               type="submit"
-                              className="btn btn-primary btn-block mb-4"
+                              className="btn btn-primary btn-block"
                               disabled={isLoading}
                          >
-                              {isLoading ? t('auth.signingIn') : t('auth.continue')}
+                              {isLoading ? (
+                                   <>
+                                        <span className="btn-spinner"></span>
+                                        {t('auth.signingIn')}
+                                   </>
+                              ) : t('auth.continue')}
                          </button>
-
-                         <div className="text-center">
-                              <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-hover hover:underline">
-                                   {t('auth.forgotPassword')}?
-                              </Link>
-                         </div>
                     </form>
                </div>
           </div>
@@ -543,6 +856,30 @@ const ProfilePageWrapper = () => {
                breadcrumbs={[{ label: 'Profile' }]}
           >
                <ProfilePage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const ChangePasswordPageWrapper = () => {
+     const { user, logout } = useAuth();
+     const { t } = useI18n();
+     const navigate = useNavigate();
+
+     const handleLogout = async () => {
+          try {
+               await logout();
+               navigate('/login');
+          } catch (error) {
+               console.error('Logout failed', error);
+          }
+     };
+
+     return (
+          <AdminLayoutWrapper 
+               title={t('auth.changePassword')} 
+               breadcrumbs={[{ label: t('auth.changePassword') }]}
+          >
+               <ChangePasswordPage user={user} onLogout={handleLogout} />
           </AdminLayoutWrapper>
      );
 };
@@ -602,24 +939,18 @@ const EquipmentPage = () => (
      </AdminLayoutWrapper>
 );
 
-const QRScanPage = () => (
-     <AdminLayoutWrapper 
-          title="QR Scanner" 
-          breadcrumbs={[{ label: 'QR Scanner' }]}
-     >
-          <div className="placeholder-state">
-               <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-               </svg>
-               <h3>Scan Equipment QR Code</h3>
-               <p>Use your camera to scan equipment QR codes.</p>
-               <span className="coming-soon">Coming in Phase 1</span>
-          </div>
-     </AdminLayoutWrapper>
-);
+const QRScanPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.qrScan')}
+               breadcrumbs={[{ label: t('nav.qrScan') }]}
+          >
+               <QRScanPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
 
 const RequestsPageWrapper = () => {
      const { user } = useAuth();
@@ -694,24 +1025,83 @@ const MyAssetHistoryPageWrapper = () => {
      );
 };
 
-const ReportsPage = () => (
-     <AdminLayoutWrapper 
-          title="Reports" 
-          breadcrumbs={[{ label: 'Reports' }]}
-     >
-          <div className="placeholder-state">
-               <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M3 3v18h18" />
-                    <path d="M18 17V9" />
-                    <path d="M13 17V5" />
-                    <path d="M8 17v-3" />
-               </svg>
-               <h3>Analytics & Reports</h3>
-               <p>View equipment usage statistics and reports.</p>
-               <span className="coming-soon">Coming in Phase 1</span>
-          </div>
-     </AdminLayoutWrapper>
-);
+const ReportPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.reports')}
+               breadcrumbs={[{ label: t('nav.reports') }]}
+          >
+               <ReportPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const FeedbackPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.feedback')}
+               breadcrumbs={[{ label: t('nav.feedback') }]}
+          >
+               <FeedbackPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const ContractsPageWrapper = () => {
+     const { user } = useAuth();
+     const navigate = useNavigate();
+     const { t } = useI18n();
+     
+     // RBAC check - only admin can access
+     useEffect(() => {
+          if (user && user.role !== 'admin') {
+               navigate('/dashboard', { replace: true });
+          }
+     }, [user, navigate]);
+     
+     if (!user || user.role !== 'admin') {
+          return null;
+     }
+     
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.contracts')}
+               breadcrumbs={[{ label: t('nav.contracts') }]}
+          >
+               <ContractsPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const EmployeesPageWrapper = () => {
+     const { user } = useAuth();
+     const navigate = useNavigate();
+     const { t } = useI18n();
+     
+     // RBAC check - only admin/hr can access
+     useEffect(() => {
+          if (user && user.role !== 'admin' && user.role !== 'hr') {
+               navigate('/dashboard', { replace: true });
+          }
+     }, [user, navigate]);
+     
+     if (!user || (user.role !== 'admin' && user.role !== 'hr')) {
+          return null;
+     }
+     
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.employees')}
+               breadcrumbs={[{ label: t('nav.employees') }]}
+          >
+               <EmployeesPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
 
 const UsersPage = () => (
      <AdminLayoutWrapper 
@@ -814,6 +1204,11 @@ const App = () => {
                                         <ProfilePageWrapper />
                                    </ProtectedRoute>
                               } />
+                              <Route path="/change-password" element={
+                                   <ProtectedRoute>
+                                        <ChangePasswordPageWrapper />
+                                   </ProtectedRoute>
+                              } />
 
                          <Route path="/assets" element={
                               <ProtectedRoute>
@@ -837,7 +1232,7 @@ const App = () => {
                          } />
                          <Route path="/qr-scan" element={
                               <ProtectedRoute>
-                                   <QRScanPage />
+                                   <QRScanPageWrapper />
                               </ProtectedRoute>
                          } />
                          <Route path="/requests" element={
@@ -877,8 +1272,23 @@ const App = () => {
                          } />
                          <Route path="/reports" element={
                               <ProtectedRoute>
-                                   <ReportsPage />
+                                   <ReportPageWrapper />
                               </ProtectedRoute>
+                         } />
+                         <Route path="/feedback" element={
+                              <ProtectedRoute>
+                                   <FeedbackPageWrapper />
+                              </ProtectedRoute>
+                         } />
+                         <Route path="/contracts" element={
+                              <AdminOnlyRoute>
+                                   <ContractsPageWrapper />
+                              </AdminOnlyRoute>
+                         } />
+                         <Route path="/employees" element={
+                              <AdminHrRoute>
+                                   <EmployeesPageWrapper />
+                              </AdminHrRoute>
                          } />
                          <Route path="/users" element={
                               <ProtectedRoute>

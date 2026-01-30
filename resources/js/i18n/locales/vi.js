@@ -12,6 +12,7 @@ export default {
     // ========================================================================
     common: {
         save: 'Lưu',
+        saving: 'Đang lưu...',
         cancel: 'Hủy',
         delete: 'Xóa',
         edit: 'Chỉnh sửa',
@@ -96,6 +97,8 @@ export default {
         locations: 'Vị trí',
         myAssetHistory: 'Lịch sử thiết bị',
         equipmentLookup: 'Tra cứu thiết bị',
+        qrScan: 'Quét QR',
+        contracts: 'Hợp đồng',
         logout: 'Đăng xuất',
         collapse: 'Thu gọn',
         expand: 'Mở rộng',
@@ -156,10 +159,42 @@ export default {
         passwordRequirements: 'Tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt',
         resetting: 'Đang đặt lại...',
         resetPasswordBtn: 'Đặt lại mật khẩu',
-        verificationCodeResent: 'Đã gửi lại mã xác thực.',
+        verificationCodeResent: 'Đã gửi mã xác thực mới.',
         failedToSendCode: 'Gửi mã xác thực thất bại. Vui lòng thử lại.',
         failedToResetPassword: 'Đặt lại mật khẩu thất bại. Vui lòng thử lại.',
         failedToResendCode: 'Gửi lại mã thất bại. Vui lòng thử lại.',
+        // New validation messages
+        employeeIdRequired: 'Vui lòng nhập mã nhân viên.',
+        passwordRequired: 'Vui lòng nhập mật khẩu.',
+        emailRequired: 'Vui lòng nhập địa chỉ email.',
+        emailInvalid: 'Vui lòng nhập email hợp lệ.',
+        codeRequired: 'Vui lòng nhập mã xác thực.',
+        passwordTooShort: 'Mật khẩu phải có ít nhất 8 ký tự.',
+        confirmPasswordRequired: 'Vui lòng xác nhận mật khẩu.',
+        passwordMismatch: 'Mật khẩu không khớp.',
+        // Generic error messages (security)
+        invalidCredentialsGeneric: 'Mã nhân viên hoặc mật khẩu không đúng.',
+        codeSentGeneric: 'Nếu email đã đăng ký, chúng tôi đã gửi mã xác thực. Vui lòng kiểm tra hộp thư.',
+        passwordResetSuccess: 'Đặt lại mật khẩu thành công. Đang chuyển về trang đăng nhập...',
+        // Password visibility
+        showPassword: 'Hiện mật khẩu',
+        hidePassword: 'Ẩn mật khẩu',
+    },
+
+    // ========================================================================
+    // Change Password / Đổi mật khẩu
+    // ========================================================================
+    changePassword: {
+        currentPasswordRequired: 'Vui lòng nhập mật khẩu hiện tại.',
+        newPasswordRequired: 'Vui lòng nhập mật khẩu mới.',
+        confirmPasswordRequired: 'Vui lòng xác nhận mật khẩu mới.',
+        currentPasswordIncorrect: 'Mật khẩu hiện tại không đúng.',
+        passwordsDoNotMatch: 'Mật khẩu không khớp.',
+        newPasswordSameAsCurrent: 'Mật khẩu mới không được trùng với mật khẩu hiện tại.',
+        enterCurrentPassword: 'Nhập mật khẩu hiện tại',
+        success: 'Đổi mật khẩu thành công.',
+        genericError: 'Đổi mật khẩu thất bại.',
+        changing: 'Đang xử lý...',
     },
 
     // ========================================================================
@@ -167,6 +202,7 @@ export default {
     // ========================================================================
     roles: {
         staff: 'Nhân viên',
+        employee: 'Nhân viên', // DB value 'employee' displays as 'Nhân viên'
         doctor: 'Bác sĩ',
         nurse: 'Y tá',
         technician: 'Kỹ thuật viên',
@@ -461,22 +497,32 @@ export default {
     // ========================================================================
     profile: {
         title: 'Hồ sơ cá nhân',
+        personalDetails: 'Thông tin cá nhân',
         personalInfo: 'Thông tin cá nhân',
         security: 'Bảo mật',
         preferences: 'Tùy chọn',
         language: 'Ngôn ngữ',
         changeAvatar: 'Đổi ảnh đại diện',
         updateProfile: 'Cập nhật hồ sơ',
-        updateSuccess: 'Đã cập nhật hồ sơ',
+        updateSuccess: 'Đã cập nhật hồ sơ thành công',
+        updateError: 'Cập nhật hồ sơ thất bại. Vui lòng thử lại.',
+        loadError: 'Không thể tải hồ sơ. Vui lòng thử lại.',
         employeeId: 'Mã nhân viên',
+        employeeFullName: 'Họ và tên nhân viên',
         fullName: 'Họ và tên',
         phone: 'Số điện thoại',
+        phoneNumber: 'Số điện thoại',
         department: 'Bộ phận',
-        position: 'Vị trí',
+        position: 'Chức vụ',
+        dateOfBirth: 'Ngày sinh',
+        gender: 'Giới tính',
+        male: 'Nam',
+        female: 'Nữ',
         email: 'Email',
         address: 'Địa chỉ',
         emergencyContact: 'Liên hệ khẩn cấp',
         disabledFieldHint: 'Trường này không thể chỉnh sửa',
+        unnamed: 'Người dùng chưa đặt tên',
         recentActivity: 'Hoạt động gần đây',
         noRecentActivity: 'Không có hoạt động nào',
         joined: 'Ngày tham gia',
@@ -986,5 +1032,223 @@ export default {
         
         // Audit
         auditComingSoon: 'Nhật ký hệ thống sẽ sớm ra mắt.',
+    },
+
+    // ========================================================================
+    // QR Scan / Quét QR
+    // ========================================================================
+    qrScan: {
+        title: 'Quét mã QR',
+        subtitle: 'Hướng camera vào mã QR thiết bị hoặc nhập thủ công',
+        scannerTitle: 'Quét QR thiết bị',
+        enterPayload: 'Vui lòng nhập mã QR',
+        inputPlaceholder: 'Nhập mã QR (vd: MESOCO|ASSET|v1|uuid)',
+        inputHint: 'Quét mã QR trên thiết bị hoặc dán mã vào ô trên',
+        expectedFormat: 'Định dạng: MESOCO|ASSET|v1|<uuid>',
+        viewfinderHint: 'Hướng camera vào mã QR',
+        resolve: 'Tra cứu',
+        
+        // Camera controls
+        useCamera: 'Camera',
+        manualInput: 'Thủ công',
+        startScanning: 'Bắt đầu quét',
+        stopScanning: 'Dừng quét',
+        scanning: 'Đang quét...',
+        resolving: 'Đang tra cứu...',
+        tapToStart: 'Nhấn "Bắt đầu quét" để bắt đầu',
+        noCameraAvailable: 'Thiết bị không có camera',
+        cameraPermissionDenied: 'Không có quyền truy cập camera. Vui lòng nhập thủ công.',
+        
+        // Results
+        assetFound: 'Đã tìm thấy thiết bị!',
+        assetResolved: 'Thiết bị được xác định',
+        identified: 'Đã xác định',
+        offService: 'Ngừng hoạt động',
+        scanAnother: 'Quét mã khác',
+        
+        // Error messages - matching checklist
+        invalidFormat: 'Mã QR không hợp lệ.',
+        assetNotFound: 'Không tìm thấy thiết bị.',
+        unsupportedVersion: 'Phiên bản QR không được hỗ trợ.',
+        resolveFailed: 'Không thể tra cứu mã QR',
+        notFound: 'Không tìm thấy',
+        
+        // Off-service warning
+        offServiceWarning: 'Thiết bị này đang ngừng hoạt động. Không sử dụng.',
+        offServiceDetail: 'Thiết bị này hiện không khả dụng. Liên hệ kỹ thuật viên để biết thêm thông tin.',
+        
+        // Check-in blocked reasons
+        blockedReason: {
+            ASSET_OFF_SERVICE: 'Thiết bị đang ngừng hoạt động',
+            ASSET_NOT_ASSIGNED: 'Thiết bị chưa được phân công',
+            NO_ACTIVE_SHIFT: 'Không có ca làm việc hiện tại',
+            ALREADY_CHECKED_IN: 'Đã check-in hôm nay',
+            NOT_ASSIGNEE: 'Bạn không phải người được phân công',
+        },
+        
+        // Instructions
+        instructions: 'Hướng dẫn sử dụng',
+        viewInstructions: 'Xem hướng dẫn',
+        instructionsNotAvailable: 'Không có hướng dẫn cho thiết bị này',
+        
+        // Actions
+        viewAsset: 'Xem thiết bị',
+        viewDetails: 'Xem chi tiết',
+        assetInfo: 'Thông tin thiết bị',
+        checkinFromMyAssets: 'Vui lòng sử dụng trang Thiết bị của tôi để check-in',
+        
+        // Help
+        helpTitle: 'Cách sử dụng',
+        helpDesc: 'Quét mã QR trên thiết bị bằng camera điện thoại hoặc nhập mã thủ công.',
+        helpStep1: 'Nhấn "Bắt đầu quét" và hướng camera vào mã QR',
+        helpStep2: 'Hoặc chuyển sang chế độ Thủ công và dán mã',
+        helpStep3: 'Xem thông tin thiết bị và check-in nếu được phân công',
+        
+        // Legacy keys for backwards compatibility
+        tryAgain: 'Thử lại',
+        found: 'Đã tìm thấy',
+        noResult: 'Không tìm thấy thiết bị',
+        noResultMessage: 'Mã QR không hợp lệ hoặc thiết bị không tồn tại trong hệ thống.',
+        processing: 'Đang xử lý...',
+    },
+
+    // ========================================================================
+    // Contracts / Hợp đồng
+    // ========================================================================
+    contracts: {
+        title: 'Quản lý Hợp đồng',
+        subtitle: 'Hợp đồng lao động nhân viên',
+        create: 'Tạo hợp đồng',
+        edit: 'Sửa hợp đồng',
+        view: 'Xem hợp đồng',
+        delete: 'Xóa hợp đồng',
+        noContracts: 'Chưa có hợp đồng',
+        noContractsHint: 'Thêm hợp đồng cho nhân viên này',
+        noContractsForEmployee: 'Nhân viên này chưa có hợp đồng',
+        selectEmployee: 'Chọn nhân viên',
+        selectEmployeePlaceholder: '-- Chọn nhân viên --',
+        allEmployees: 'Tất cả nhân viên',
+        addContract: 'Thêm hợp đồng',
+        contractId: 'Mã hợp đồng',
+        contractDetails: 'Chi tiết hợp đồng',
+        indefinite: 'Không thời hạn',
+        department: 'Phòng ban',
+        departmentPlaceholder: 'VD: Nha khoa, Hành chính...',
+        pdfFile: 'Tệp PDF',
+        pdfHint: 'Tải hợp đồng (chỉ PDF, tối đa 10MB)',
+        viewPdf: 'Xem PDF',
+        pdfNotAvailable: 'Không có tệp PDF',
+        startDateRequired: 'Ngày bắt đầu là bắt buộc',
+        createSuccess: 'Tạo hợp đồng thành công',
+        updateSuccess: 'Cập nhật hợp đồng thành công',
+        deleteSuccess: 'Xóa hợp đồng thành công',
+        
+        // Form fields
+        contractType: 'Loại hợp đồng',
+        startDate: 'Ngày bắt đầu',
+        endDate: 'Ngày kết thúc',
+        notes: 'Ghi chú',
+        document: 'Tài liệu đính kèm',
+        uploadDocument: 'Tải tài liệu lên',
+        viewDocument: 'Xem tài liệu',
+        downloadDocument: 'Tải xuống',
+        noDocument: 'Không có tài liệu',
+        
+        // Types
+        types: {
+            probation: 'Thử việc',
+            fixed_term: 'Có thời hạn',
+            indefinite: 'Không thời hạn',
+            seasonal: 'Thời vụ',
+            contractor: 'Cộng tác viên',
+            fullTime: 'Toàn thời gian',
+            partTime: 'Bán thời gian',
+            intern: 'Thực tập',
+            outsource: 'Thuê ngoài',
+        },
+        
+        // Statuses
+        statuses: {
+            active: 'Đang hiệu lực',
+            expired: 'Hết hạn',
+            terminated: 'Đã chấm dứt',
+            pending: 'Chờ duyệt',
+        },
+        
+        // Table headers
+        employee: 'Nhân viên',
+        type: 'Loại',
+        status: 'Trạng thái',
+        period: 'Thời hạn',
+        actions: 'Thao tác',
+        
+        // Messages
+        created: 'Đã tạo hợp đồng',
+        updated: 'Đã cập nhật hợp đồng',
+        deleted: 'Đã xóa hợp đồng',
+        deleteConfirm: 'Bạn có chắc muốn xóa hợp đồng này?',
+        uploadSuccess: 'Đã tải tài liệu lên',
+        uploadError: 'Lỗi tải tài liệu',
+        invalidFileType: 'Loại tệp không hợp lệ. Chỉ chấp nhận PDF.',
+        fileTooLarge: 'Tệp quá lớn. Dung lượng tối đa: 5MB.',
+    },
+
+    // ========================================================================
+    // Employees / Nhân viên
+    // ========================================================================
+    employees: {
+        title: 'Quản lý Nhân viên',
+        subtitle: 'Quản lý hồ sơ nhân viên và hợp đồng',
+        addEmployee: 'Thêm nhân viên',
+        editEmployee: 'Sửa thông tin nhân viên',
+        employeeCode: 'Mã nhân viên',
+        fullName: 'Họ và tên',
+        position: 'Chức vụ',
+        noPosition: 'Chưa có chức vụ',
+        dob: 'Ngày sinh',
+        gender: 'Giới tính',
+        phone: 'Số điện thoại',
+        address: 'Địa chỉ',
+        userAccount: 'Tài khoản',
+        hasUser: 'Có tài khoản',
+        noUser: 'Chưa có tài khoản',
+        viewContracts: 'Xem hợp đồng',
+        codeNotEditable: 'Mã nhân viên không thể thay đổi',
+        emailNotEditable: 'Email không thể thay đổi',
+        requiredFields: 'Mã nhân viên và họ tên là bắt buộc',
+        createSuccess: 'Thêm nhân viên thành công',
+        updateSuccess: 'Cập nhật nhân viên thành công',
+        deleteSuccess: 'Xóa nhân viên thành công',
+        deleteConfirm: 'Bạn có chắc muốn xóa {{name}}?',
+        noEmployees: 'Chưa có nhân viên',
+        noEmployeesHint: 'Thêm nhân viên đầu tiên để bắt đầu',
+        searchPlaceholder: 'Tìm theo mã hoặc tên...',
+        selectEmployeeFirst: 'Chọn một nhân viên',
+        selectEmployeeHint: 'Nhấn "Xem hợp đồng" trên dòng nhân viên để xem hợp đồng của họ',
+        tabs: {
+            general: 'Thông tin chung',
+            contract: 'Hợp đồng',
+        },
+        statuses: {
+            active: 'Đang làm việc',
+            inactive: 'Nghỉ việc',
+        },
+        genders: {
+            male: 'Nam',
+            female: 'Nữ',
+            other: 'Khác',
+        },
+    },
+
+    // ========================================================================
+    // Validation Messages / Thông báo xác thực
+    // ========================================================================
+    validation: {
+        required: 'Trường này là bắt buộc',
+        email: 'Vui lòng nhập email hợp lệ',
+        phone: 'Vui lòng nhập số điện thoại hợp lệ',
+        date: 'Vui lòng nhập ngày hợp lệ',
+        minLength: 'Phải có ít nhất {min} ký tự',
+        maxLength: 'Không được vượt quá {max} ký tự',
     },
 };

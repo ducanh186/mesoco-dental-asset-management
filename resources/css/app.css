@@ -207,6 +207,22 @@ body {
     text-align: center;
 }
 
+.auth-header.auth-header-logo {
+    background: white;
+    padding: 2rem 2rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-logo-image {
+    max-width: 180px;
+    max-height: 80px;
+    height: auto;
+    width: auto;
+    object-fit: contain;
+}
+
 .auth-logo {
     font-size: 1.75rem;
     font-weight: 700;
@@ -226,8 +242,16 @@ body {
 .auth-title {
     font-size: 1.25rem;
     font-weight: 600;
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 0.5rem 0;
     color: var(--color-text);
+}
+
+.auth-title.text-center {
+    text-align: center;
+}
+
+.auth-description {
+    margin: 0 0 1.5rem 0;
 }
 
 /* ============================================================================
@@ -1484,6 +1508,123 @@ body {
 
 .form-input::placeholder {
     color: var(--color-text-light);
+}
+
+.form-input:disabled {
+    background: var(--color-surface-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Error state for form inputs */
+.form-input-error {
+    border-color: var(--color-error);
+}
+
+.form-input-error:focus {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.15);
+}
+
+.form-error-text {
+    color: var(--color-error);
+    font-size: 0.75rem;
+    margin-top: 0.375rem;
+    margin-bottom: 0;
+}
+
+/* Password input with toggle */
+.form-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.form-input-with-icon {
+    padding-right: 2.75rem;
+}
+
+.form-input-icon-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast);
+}
+
+.form-input-icon-btn:hover {
+    color: var(--color-text);
+}
+
+.form-input-icon-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* OTP Input Group */
+.otp-input-group {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.otp-input {
+    width: 2.75rem;
+    height: 3rem;
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    background: var(--color-surface);
+    transition: var(--transition-fast);
+}
+
+.otp-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(255, 123, 28, 0.15);
+}
+
+.otp-input:disabled {
+    background: var(--color-surface-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.otp-input-error {
+    border-color: var(--color-error);
+}
+
+.otp-input-error:focus {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.15);
+}
+
+/* Button Spinner */
+.btn-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 0.5rem;
+}
+
+/* Text error color utility */
+.text-error {
+    color: var(--color-error);
 }
 
 /* ============================================================================
@@ -3015,5 +3156,100 @@ hr {
     .ui-toast-container {
         padding: 0.5rem;
         max-width: 100%;
+    }
+}
+
+/* ============================================================================
+   Change Password Page
+   ============================================================================ */
+.change-password-page {
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.change-password-page .page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.change-password-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+.change-password-page .btn-back:hover {
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+}
+
+.change-password-page .page-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.change-password-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+}
+
+.change-password-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.change-password-form .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--color-text);
+}
+
+.change-password-form .form-label .required {
+    color: var(--color-error);
+    margin-left: 0.125rem;
+}
+
+.change-password-form .form-input-wrapper {
+    position: relative;
+}
+
+.change-password-form .form-input-wrapper .form-input {
+    padding-right: 2.75rem;
+}
+
+.change-password-form .form-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    margin-top: 0.375rem;
+    margin-bottom: 0;
+}
+
+.change-password-form .form-actions {
+    margin-top: 1.5rem;
+}
+
+.change-password-form .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+}
+
+@media (max-width: 640px) {
+    .change-password-page {
+        padding: 1rem;
+    }
+    
+    .change-password-card {
+        padding: 1rem;
     }
 }
