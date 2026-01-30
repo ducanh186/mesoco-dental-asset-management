@@ -277,7 +277,7 @@ const AssetsPage = ({ user }) => {
         },
         {
             key: 'status',
-            label: t('common.status'),
+            label: t('common.status.label'),
             width: '120px',
             render: (value) => <StatusBadge status={value} />
         },
@@ -542,7 +542,7 @@ const AssetsPage = ({ user }) => {
                             <Card>
                                 <CardBody className="py-4">
                                     <div className="flex justify-between items-center mb-3">
-                                        <span className="text-xs font-semibold text-text-muted uppercase">{t('common.status')}</span>
+                                        <span className="text-xs font-semibold text-text-muted uppercase">{t('common.status.label')}</span>
                                         <StatusBadge status={selectedAsset.status} />
                                     </div>
                                     <div className="flex justify-between items-center">

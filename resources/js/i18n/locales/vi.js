@@ -41,7 +41,15 @@ export default {
         all: 'Tất cả',
         none: 'Không có',
         actions: 'Thao tác',
-        status: 'Trạng thái',
+        status: {
+            label: 'Trạng thái',
+            active: 'Hoạt động',
+            maintenance: 'Bảo trì',
+            offService: 'Tạm ngưng',
+            off_service: 'Tạm ngưng',
+            available: 'Sẵn sàng',
+            retired: 'Đã thanh lý'
+        },
         type: 'Loại',
         name: 'Tên',
         description: 'Mô tả',

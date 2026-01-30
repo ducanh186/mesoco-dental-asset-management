@@ -58,7 +58,7 @@ const RecentEquipmentTable = ({
         const baseColumns = [
             { key: 'name', label: t('dashboard.equipmentName') },
             { key: 'code', label: t('dashboard.code') },
-            { key: 'status', label: t('common.status') },
+            { key: 'status', label: t('common.status.label') },
         ];
 
         if (isAdminOrHr) {

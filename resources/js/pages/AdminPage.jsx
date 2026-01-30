@@ -205,7 +205,7 @@ const AdminPage = ({ user }) => {
         },
         {
             key: 'status',
-            label: t('common.status'),
+            label: t('common.status.label'),
             width: '100px',
             render: (value) => <StatusBadge status={value} />
         },

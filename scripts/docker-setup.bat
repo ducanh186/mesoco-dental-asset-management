@@ -1,79 +1,83 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo 🚀 SETUP BAN ĐẦU - MESOCO DENTAL
+echo  MESOCO DENTAL - DOCKER SETUP
 echo ========================================
 echo.
-echo Hướng dẫn cho người mới / máy mới:
-echo 1. Cài Docker Desktop (phải đang chạy)
-echo 2. Chạy file này
-echo 3. Đợi 2-3 phút
-echo 4. Xong!
+echo  Mode: Local development with Docker
+echo  No ngrok required - runs on localhost
+echo.
+echo  Prerequisites:
+echo  1. Docker Desktop must be running
+echo  2. Run this script
+echo  3. Wait 2-3 minutes
+echo  4. Done!
 echo ========================================
 echo.
 
-REM Kiểm tra Docker có chạy không
+REM Check if Docker is running
 docker info >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ LỖI: Docker Desktop chưa chạy!
+    echo [ERROR] Docker Desktop is not running!
     echo.
-    echo 📝 Hướng dẫn:
-    echo    1. Mở Docker Desktop
-    echo    2. Đợi Docker khởi động xong
-    echo    3. Chạy lại file này
+    echo Please:
+    echo    1. Open Docker Desktop
+    echo    2. Wait for Docker to start
+    echo    3. Run this script again
     echo.
     pause
     exit /b 1
 )
 
-echo ✅ Docker đã sẵn sàng!
+echo [OK] Docker is ready!
 echo.
 
 cd /d "%~dp0.."
 cd docker
 
-echo [1/5] 🗑️  Dọn dẹp containers cũ (nếu có)...
+echo [1/5] Cleaning up old containers (if any)...
 docker compose down -v 2>nul
 
 echo.
-echo [2/5] 🏗️  Build Docker images...
-echo (Lần đầu sẽ mất 2-3 phút, lần sau nhanh hơn)
+echo [2/5] Building Docker images...
+echo (First time takes 2-3 minutes, subsequent runs are faster)
 docker compose build
 
 echo.
-echo [3/5] 🚀 Khởi động containers...
+echo [3/5] Starting containers...
 docker compose up -d
 
 echo.
-echo [4/5] ⏳ Đợi MySQL khởi động hoàn toàn (15 giây)...
+echo [4/5] Waiting for MySQL to be ready (15 seconds)...
 timeout /t 15 /nobreak >nul
 
 echo.
-echo [5/5] 🗃️  Tạo database + dữ liệu demo...
+echo [5/5] Creating database + demo data...
 docker compose exec app php artisan migrate:fresh --seed
 
 echo.
 echo ========================================
-echo ✅ SETUP HOÀN TẤT!
+echo  SETUP COMPLETE!
 echo ========================================
 echo.
-echo 🌐 Mở trình duyệt và truy cập:
-echo    👉 http://localhost:8000
+echo  Open browser and go to:
+echo     http://localhost:8000
 echo.
-echo 👤 Đăng nhập với tài khoản demo:
-echo    Employee Code: E0001
-echo    Password:      password
+echo  Test Accounts:
+echo  +-----------+---------------+----------+
+echo  ^| Role      ^| Employee Code ^| Password ^|
+echo  +-----------+---------------+----------+
+echo  ^| Admin     ^| E0001         ^| password ^|
+echo  ^| HR        ^| E0002         ^| password ^|
+echo  ^| Doctor    ^| E0003         ^| password ^|
+echo  ^| Technician^| E0004         ^| password ^|
+echo  ^| Staff     ^| E0005         ^| password ^|
+echo  +-----------+---------------+----------+
 echo.
-echo 📌 Tài khoản khác:
-echo    - E0002 / password (Bác sĩ)
-echo    - E0003 / password (Kỹ thuật viên)
-echo.
-echo ========================================
-echo 🔧 Các lệnh hữu ích:
-echo ========================================
-echo    scripts\docker-start.bat  - Khởi động nhanh
-echo    scripts\docker-stop.bat   - Dừng containers
-echo    scripts\docker-reset.bat  - Reset toàn bộ
+echo  Useful commands:
+echo     scripts\docker-start.bat  - Quick start
+echo     scripts\docker-stop.bat   - Stop containers
+echo     scripts\docker-reset.bat  - Reset everything
 echo ========================================
 echo.
 

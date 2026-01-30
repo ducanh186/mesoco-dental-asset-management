@@ -37,7 +37,15 @@ export default {
         all: 'All',
         none: 'None',
         actions: 'Actions',
-        status: 'Status',
+        status: {
+            label: 'Status',
+            active: 'Active',
+            maintenance: 'Maintenance',
+            offService: 'Off Service',
+            off_service: 'Off Service',
+            available: 'Available',
+            retired: 'Retired'
+        },
         type: 'Type',
         name: 'Name',
         description: 'Description',
