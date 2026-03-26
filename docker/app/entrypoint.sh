@@ -28,9 +28,9 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Install Node dependencies (if node_modules missing)
+# Install Node dependencies (if node_modules missing or empty)
 # -----------------------------------------------------------------------------
-if [ ! -d "node_modules" ]; then
+if [ ! -f "node_modules/.package-lock.json" ]; then
     echo "[2/3] Installing Node dependencies (npm install)..."
     npm install
 else
@@ -41,8 +41,8 @@ fi
 # Build frontend assets (fallback until Vite dev server starts)
 # -----------------------------------------------------------------------------
 if [ ! -f "public/build/manifest.json" ]; then
-    echo "[2.5/3] Building frontend assets (npm run build)..."
-    npm run build
+    echo "[2.5/3] Building frontend assets (npx vite build)..."
+    npx vite build || echo "[WARN] Frontend build failed, Vite dev server will handle it"
 else
     echo "[2.5/3] Frontend assets already built ✓"
 fi
