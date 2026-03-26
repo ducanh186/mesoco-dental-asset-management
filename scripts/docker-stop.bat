@@ -1,7 +1,6 @@
 @echo off
-chcp 65001 >nul
 echo ========================================
-echo 🛑 Dừng Docker containers...
+echo  Mesoco Dental - Docker Stop
 echo ========================================
 echo.
 
@@ -10,8 +9,8 @@ cd docker
 docker compose down
 
 echo.
-echo ✅ Đã dừng tất cả containers!
+echo  All containers stopped.
 echo.
-echo 🚀 Để khởi động lại: scripts\docker-start.bat
+echo  To start again: scripts\docker-start.bat
 echo ========================================
 cd ..

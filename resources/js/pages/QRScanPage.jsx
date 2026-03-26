@@ -432,7 +432,7 @@ const QRScanPage = ({ user }) => {
                                     <p className="font-medium capitalize">{resolvedAsset.asset?.type || '-'}</p>
                                 </div>
                                 <div>
-                                    <span className="text-sm text-text-muted">{t('common.status')}</span>
+                                    <span className="text-sm text-text-muted">{t('common.status.label')}</span>
                                     <p><StatusBadge status={resolvedAsset.asset?.status || 'active'} /></p>
                                 </div>
                                 <div>

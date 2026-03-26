@@ -241,7 +241,7 @@ const ContractsPage = ({ user }) => {
         },
         {
             key: 'status',
-            label: t('common.status'),
+            label: t('common.status.label'),
             render: (value) => {
                 const variants = {
                     active: 'success',
@@ -496,7 +496,7 @@ const ContractsPage = ({ user }) => {
                                 <p className="font-medium">C-{String(selectedContract.id).padStart(4, '0')}</p>
                             </div>
                             <div>
-                                <span className="text-sm text-text-muted">{t('common.status')}</span>
+                                <span className="text-sm text-text-muted">{t('common.status.label')}</span>
                                 <p><Badge variant={selectedContract.status === 'active' ? 'success' : 'warning'}>
                                     {t(`contracts.statuses.${selectedContract.status}`)}
                                 </Badge></p>

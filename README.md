@@ -41,11 +41,11 @@ Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
 
 | Vai trò | Mã Nhân Viên | Email | Mật Khẩu | Quyền | Mô tả |
 |---------|--------------|-------|----------|-------|-------|
-| **Quản trị viên-Admin** | `E0001` | `admin@mesoco.vn` | `password` | `admin` | Toàn quyền hệ thống |
-| **Nhân sự-HR** | `E0002` | `hr@mesoco.vn` | `password` | `hr` | Quản lý tài sản + nhân viên |
-| **Bác sĩ-Doctor** | `E0003` | `doctor@mesoco.vn` | `password` | `doctor` | Tài sản cá nhân + Yêu cầu thiết bị |
-| **Kỹ thuật viên-Technican** | `E0004` | `technician@mesoco.vn` | `password` | `technician` | Tài sản cá nhân + Bảo trì |
-| **Nhân viên-Staff** | `E0005` | `staff@mesoco.vn` | `password` | `staff` | Chỉ xem tài sản cá nhân |
+| **Quản trị viên-Admin** | `E0001` | `admin@mesoco.vn` | `Password123!` | `admin` | Toàn quyền hệ thống |
+| **Nhân sự-HR** | `E0002` | `hr@mesoco.vn` | `Password123!` | `hr` | Quản lý tài sản + nhân viên |
+| **Bác sĩ-Doctor** | `E0003` | `doctor@mesoco.vn` | `Password123!` | `doctor` | Tài sản cá nhân + Yêu cầu thiết bị |
+| **Kỹ thuật viên-Technican** | `E0004` | `tech@mesoco.vn` | `Password123!` | `technician` | Tài sản cá nhân + Bảo trì |
+| **Nhân viên-Staff** | `E0005` | `staff@mesoco.vn` | `Password123!` | `employee` | Chỉ xem tài sản cá nhân |
 
 ### 🎯 Tính Năng Theo Role
 
@@ -93,7 +93,7 @@ Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
 - Mật khẩu: `password`
 
 **Bằng Email (Quên mật khẩu):**
-- Email: `admin@mesoco.vn`, `hr@mesoco.vn`, `doctor@mesoco.vn`, `technician@mesoco.vn`, `staff@mesoco.vn`
+- Email: `admin@mesoco.vn`, `hr@mesoco.vn`, `doctor@mesoco.vn`, `tech@mesoco.vn`, `staff@mesoco.vn`
 - Dùng cho tính năng khôi phục mật khẩu
 
 ### 🔐 Database Details
@@ -106,14 +106,14 @@ Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
 | `full_name` | string | Tên nhân viên |
 | `email` | string | Email (unique) |
 | `employee_code` | string | Mã NV (unique) - Dùng để login |
-| `password` | string | Bcrypt hash của `password` |
-| `role` | enum | `admin`, `hr`, `doctor`, `technician`, `staff` |
+| `password` | string | Bcrypt hash của `Password123!` |
+| `role` | enum | `admin`, `hr`, `doctor`, `technician`, `employee` |
 | `status` | enum | `active`, `inactive` (default: `active`) |
 | `must_change_password` | boolean | Force change pass (default: `true`) |
 
 **Password Hash Example:**
 ```
-Plain: password
+Plain: Password123!
 Hash: $2y$12$abcd...xyz (bcrypt, 60 chars)
 ```
 
@@ -121,11 +121,11 @@ Hash: $2y$12$abcd...xyz (bcrypt, 60 chars)
 
 **Trang Đăng Nhập:** Dùng `mã_nhân_viên` + `mật_khẩu`
 ```
-Quản trị viên-Admin: E0001 / password
-Nhân sự-HR: E0002 / password  
-Bác sĩ-Doctor: E0003 / password
-Kỹ thuật viên-Technican: E0004 / password
-Nhân viên: E0005 / password
+Quản trị viên-Admin: E0001 / Password123!
+Nhân sự-HR: E0002 / Password123!  
+Bác sĩ-Doctor: E0003 / Password123!
+Kỹ thuật viên-Technican: E0004 / Password123!
+Nhân viên: E0005 / Password123!
 ```
 
 **Quên Mật Khẩu:** Dùng `email`

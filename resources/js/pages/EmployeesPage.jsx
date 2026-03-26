@@ -388,7 +388,7 @@ const EmployeesPage = ({ user }) => {
         },
         {
             key: 'status',
-            label: t('common.status'),
+            label: t('common.status.label'),
             render: (value) => (
                 <Badge variant={value === 'active' ? 'success' : 'warning'} size="sm">
                     {t(`employees.statuses.${value}`)}
@@ -469,7 +469,7 @@ const EmployeesPage = ({ user }) => {
         },
         {
             key: 'status',
-            label: t('common.status'),
+            label: t('common.status.label'),
             render: (value) => {
                 const variants = {
                     active: 'success',
@@ -845,7 +845,7 @@ const EmployeesPage = ({ user }) => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text mb-1">
-                                {t('common.status')}
+                                {t('common.status.label')}
                             </label>
                             <Select
                                 value={formData.status}
@@ -973,7 +973,7 @@ const EmployeesPage = ({ user }) => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text mb-1">
-                                {t('common.status')}
+                                {t('common.status.label')}
                             </label>
                             <Select
                                 value={formData.status}

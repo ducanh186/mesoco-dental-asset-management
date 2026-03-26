@@ -158,7 +158,7 @@ const MyAssetsPage = ({ user }) => {
         },
         {
             key: 'status',
-            label: t('common.status'),
+            label: t('common.status.label'),
             width: '120px',
             render: (value) => <StatusBadge status={value} />
         },
@@ -410,7 +410,7 @@ const MyAssetsPage = ({ user }) => {
                                             <span className="font-medium capitalize">{resolvedData.asset.type}</span>
                                         </div>
                                         <div className="bg-surface-muted rounded-lg p-3">
-                                            <span className="text-xs text-text-muted block mb-1">{t('common.status')}</span>
+                                            <span className="text-xs text-text-muted block mb-1">{t('common.status.label')}</span>
                                             <StatusBadge status={resolvedData.asset.status} />
                                         </div>
                                     </div>
