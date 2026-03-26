@@ -225,5 +225,14 @@ Các tài liệu cũ đã lỗi thời:
 
 ---
 
-**Phase hiện tại:** Phase 0.5 - Devpack Complete ✅
-**Cập nhật:** Jan 23, 2026
+**Phase hiện tại:** Phase 7 - Maintenance + Off-Service Lock ✅
+**Cập nhật:** Jan 27, 2026
+
+---
+
+## 📋 Phase Documentation
+
+| Phase | API Doc | Pack | Regression |
+|-------|---------|------|------------|
+| 6 - Inventory & Valuation | [API_PHASE6.md](API_PHASE6.md) | [PHASE6_PACK.md](PHASE6_PACK.md) | [REGRESSION_PHASE6.md](REGRESSION_PHASE6.md) |
+| 7 - Maintenance + Lock | [API_PHASE7.md](API_PHASE7.md) | [PHASE7_PACK.md](PHASE7_PACK.md) | [REGRESSION_PHASE7.md](REGRESSION_PHASE7.md) |

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     Card, 
     CardHeader, 
@@ -7,177 +7,360 @@ import {
     Input, 
     Select,
     Badge,
-    StatusBadge,
     Table,
     TablePagination,
     Modal,
     useToast 
 } from '../components/ui';
 import { useI18n } from '../i18n';
+import { requestsApi, assetsApi, myAssetsApi, shiftsApi, handleApiError } from '../services/api';
 
-/**
- * RequestsPage - Equipment borrow/return/maintenance requests
- */
+// ============================================================================
+// Constants
+// ============================================================================
+const REQUEST_TYPES = {
+    JUSTIFICATION: 'JUSTIFICATION',
+    ASSET_LOAN: 'ASSET_LOAN',
+    CONSUMABLE_REQUEST: 'CONSUMABLE_REQUEST',
+};
+
+const REQUEST_STATUSES = {
+    SUBMITTED: 'SUBMITTED',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
+    CANCELLED: 'CANCELLED',
+};
+
+const SEVERITIES = {
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    critical: 'critical',
+};
+
+// ============================================================================
+// RequestsPage - Equipment requests (Staff view)
+// ============================================================================
 const RequestsPage = ({ user }) => {
     const { t } = useI18n();
     const toast = useToast();
+    
+    // List state
+    const [requests, setRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
+    
+    // Filters
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
+    
+    // Modal states
     const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
-
-    // Mock data - requests
-    const mockRequests = [
-        { 
-            id: 'REQ-001', 
-            type: 'Borrow',
-            equipment: 'Portable Dental Unit',
-            requestDate: '2026-01-22',
-            status: 'pending',
-            priority: 'normal',
-            requester: 'John Doe',
-            notes: 'Needed for offsite clinic visit'
-        },
-        { 
-            id: 'REQ-002', 
-            type: 'Maintenance',
-            equipment: 'Dental X-Ray Machine',
-            requestDate: '2026-01-21',
-            status: 'approved',
-            priority: 'high',
-            requester: 'John Doe',
-            notes: 'Calibration required'
-        },
-        { 
-            id: 'REQ-003', 
-            type: 'Return',
-            equipment: 'Ultrasonic Scaler',
-            requestDate: '2026-01-20',
-            status: 'completed',
-            priority: 'normal',
-            requester: 'Jane Smith',
-            notes: ''
-        },
-        { 
-            id: 'REQ-004', 
-            type: 'Borrow',
-            equipment: 'LED Curing Light',
-            requestDate: '2026-01-19',
-            status: 'rejected',
-            priority: 'low',
-            requester: 'Bob Wilson',
-            notes: 'Equipment not available'
-        },
-        { 
-            id: 'REQ-005', 
-            type: 'Maintenance',
-            equipment: 'Autoclave Sterilizer',
-            requestDate: '2026-01-18',
-            status: 'pending',
-            priority: 'high',
-            requester: 'Alice Brown',
-            notes: 'Temperature issues'
-        },
-        { 
-            id: 'REQ-006', 
-            type: 'Borrow',
-            equipment: 'Intraoral Camera',
-            requestDate: '2026-01-17',
-            status: 'approved',
-            priority: 'normal',
-            requester: 'John Doe',
-            notes: 'Patient documentation'
-        },
-    ];
-
-    const typeOptions = [
-        { value: '', label: t('requests.types.all') },
-        { value: 'Borrow', label: t('requests.types.borrow') },
-        { value: 'Return', label: t('requests.types.return') },
-        { value: 'Maintenance', label: t('requests.types.maintenance') },
-    ];
-
-    const statusOptions = [
-        { value: '', label: t('assets.statuses.all') },
-        { value: 'pending', label: t('requests.pending') },
-        { value: 'approved', label: t('requests.approved') },
-        { value: 'rejected', label: t('requests.rejected') },
-        { value: 'completed', label: t('requests.completed') },
-    ];
-
-    // Filter data
-    const filteredData = mockRequests.filter(item => {
-        const matchesSearch = !searchQuery || 
-            item.equipment.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.id.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesType = !typeFilter || item.type === typeFilter;
-        const matchesStatus = !statusFilter || item.status === statusFilter;
-        return matchesSearch && matchesType && matchesStatus;
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    
+    // Form state
+    const [formType, setFormType] = useState(REQUEST_TYPES.JUSTIFICATION);
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        severity: SEVERITIES.medium,
+        incident_at: '',
+        suspected_cause: '',
+        items: [],
     });
+    const [submitting, setSubmitting] = useState(false);
+    
+    // Asset/Shift options for form
+    const [assetOptions, setAssetOptions] = useState([]);
+    const [shiftOptions, setShiftOptions] = useState([]);
+
+    // ========================================
+    // Data Fetching
+    // ========================================
+    const fetchRequests = useCallback(async (page = 1) => {
+        setLoading(true);
+        try {
+            const params = {
+                mine: 1, // Staff always sees their own requests
+                page,
+                per_page: 10,
+            };
+            if (typeFilter) params.type = typeFilter;
+            if (statusFilter) params.status = statusFilter;
+            if (searchQuery) params.search = searchQuery;
+
+            const data = await requestsApi.list(params);
+            setRequests(data.requests || []);
+            setPagination(data.pagination || { current_page: 1, last_page: 1, total: 0 });
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setLoading(false);
+        }
+    }, [typeFilter, statusFilter, searchQuery, toast]);
+
+    const fetchAssets = async () => {
+        // This is deprecated - use fetchAssetsForType instead
+        try {
+            const data = await assetsApi.list({ per_page: 100 });
+            setAssetOptions((data.assets || []).map(a => ({
+                value: a.id,
+                label: `${a.asset_code} - ${a.name}`,
+            })));
+        } catch (error) {
+            console.error('Failed to fetch assets', error);
+        }
+    };
+
+    const fetchAssetsForType = async (requestType) => {
+        try {
+            let response;
+            const isAdminOrHr = user && ['admin', 'hr'].includes(user.role);
+            
+            if (requestType === REQUEST_TYPES.JUSTIFICATION) {
+                if (isAdminOrHr) {
+                    // Admin/HR can create justification for any active asset
+                    response = await assetsApi.list({ per_page: 200, status: 'active' });
+                    setAssetOptions((response.assets || []).map(a => ({
+                        value: a.id,
+                        label: a.asset_code ? `${a.asset_code} - ${a.name}` : `${a.name} (ID: ${a.id})`,
+                    })));
+                } else {
+                    // Regular users: only their assigned assets
+                    response = await myAssetsApi.dropdown();
+                    // API returns { data: [...] }
+                    setAssetOptions(response.data || []);
+                }
+            } else if (requestType === REQUEST_TYPES.ASSET_LOAN) {
+                // For Asset Loan: get available (unassigned) assets
+                response = await myAssetsApi.availableForLoan();
+                // API returns { data: [...] }
+                setAssetOptions(response.data || []);
+            } else {
+                // Fallback to old behavior for other types (CONSUMABLE)
+                response = await assetsApi.list({ per_page: 100 });
+                setAssetOptions((response.assets || []).map(a => ({
+                    value: a.id,
+                    label: a.asset_code ? `${a.asset_code} - ${a.name}` : `${a.name} (ID: ${a.id})`,
+                })));
+            }
+        } catch (error) {
+            console.error('Failed to fetch assets for type:', requestType, error);
+            handleApiError(error, toast);
+        }
+    };
+
+    const fetchShifts = async () => {
+        try {
+            const data = await shiftsApi.list();
+            setShiftOptions((data.data || []).map(s => ({
+                value: s.id,
+                label: `${s.code} - ${s.name} (${s.time_range})`,
+            })));
+        } catch (error) {
+            console.error('Failed to fetch shifts', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchRequests();
+    }, [fetchRequests]);
+
+    useEffect(() => {
+        fetchAssetsForType(formType);
+        fetchShifts();
+    }, []);
+
+    // Re-fetch assets when form type changes
+    useEffect(() => {
+        fetchAssetsForType(formType);
+    }, [formType]);
+
+    // ========================================
+    // Actions
+    // ========================================
+    const handleViewDetail = async (request) => {
+        try {
+            const data = await requestsApi.get(request.id);
+            setSelectedRequest(data.request);
+            setIsDetailOpen(true);
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
+    const handleCancel = async (request) => {
+        if (!confirm('Are you sure you want to cancel this request?')) return;
+        
+        try {
+            await requestsApi.cancel(request.id);
+            toast.success(t('requests.cancelSuccess'));
+            fetchRequests(pagination.current_page);
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
+    const handleSubmitRequest = async () => {
+        setSubmitting(true);
+        try {
+            const payload = {
+                type: formType,
+                title: formData.title,
+                description: formData.description,
+                items: formData.items,
+            };
+
+            if (formType === REQUEST_TYPES.JUSTIFICATION) {
+                payload.severity = formData.severity;
+                if (formData.incident_at) payload.incident_at = formData.incident_at;
+                if (formData.suspected_cause) payload.suspected_cause = formData.suspected_cause;
+            }
+
+            await requestsApi.create(payload);
+            toast.success(t('requests.submitSuccess'));
+            setIsNewRequestOpen(false);
+            resetForm();
+            fetchRequests(1);
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const resetForm = () => {
+        setFormType(REQUEST_TYPES.JUSTIFICATION);
+        setFormData({
+            title: '',
+            description: '',
+            severity: SEVERITIES.medium,
+            incident_at: '',
+            suspected_cause: '',
+            items: [],
+        });
+    };
+
+    const addItem = () => {
+        const newItem = formType === REQUEST_TYPES.CONSUMABLE_REQUEST
+            ? { item_kind: 'CONSUMABLE', name: '', qty: 1, unit: '' }
+            : { item_kind: 'ASSET', asset_id: '', from_shift_id: '', to_shift_id: '', from_date: '', to_date: '' };
+        
+        setFormData(prev => ({
+            ...prev,
+            items: [...prev.items, newItem],
+        }));
+    };
+
+    const updateItem = (index, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            items: prev.items.map((item, i) => 
+                i === index ? { ...item, [field]: value } : item
+            ),
+        }));
+    };
+
+    const removeItem = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            items: prev.items.filter((_, i) => i !== index),
+        }));
+    };
+
+    // ========================================
+    // UI Helpers
+    // ========================================
+    const getTypeLabel = (type) => {
+        switch (type) {
+            case REQUEST_TYPES.JUSTIFICATION: return t('requests.types.JUSTIFICATION');
+            case REQUEST_TYPES.ASSET_LOAN: return t('requests.types.ASSET_LOAN');
+            case REQUEST_TYPES.CONSUMABLE_REQUEST: return t('requests.types.CONSUMABLE_REQUEST');
+            default: return type;
+        }
+    };
 
     const getTypeVariant = (type) => {
         switch (type) {
-            case 'Borrow': return 'primary';
-            case 'Return': return 'info';
-            case 'Maintenance': return 'warning';
+            case REQUEST_TYPES.JUSTIFICATION: return 'warning';
+            case REQUEST_TYPES.ASSET_LOAN: return 'primary';
+            case REQUEST_TYPES.CONSUMABLE_REQUEST: return 'info';
             default: return 'default';
         }
     };
 
-    const getPriorityVariant = (priority) => {
-        switch (priority) {
-            case 'high': return 'danger';
-            case 'normal': return 'default';
-            case 'low': return 'info';
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case REQUEST_STATUSES.SUBMITTED: return 'warning';
+            case REQUEST_STATUSES.APPROVED: return 'success';
+            case REQUEST_STATUSES.REJECTED: return 'danger';
+            case REQUEST_STATUSES.CANCELLED: return 'default';
             default: return 'default';
         }
     };
 
+    const getSeverityVariant = (severity) => {
+        switch (severity) {
+            case SEVERITIES.critical: return 'danger';
+            case SEVERITIES.high: return 'warning';
+            case SEVERITIES.medium: return 'info';
+            case SEVERITIES.low: return 'default';
+            default: return 'default';
+        }
+    };
+
+    // ========================================
+    // Table Columns
+    // ========================================
     const columns = [
         { 
-            key: 'id', 
+            key: 'code', 
             label: t('requests.requestId'),
             render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>
         },
         { 
             key: 'type', 
-            label: t('common.type'),
-            render: (value) => <Badge variant={getTypeVariant(value)} size="sm">{value}</Badge>
+            label: 'Type',
+            render: (value) => <Badge variant={getTypeVariant(value)} size="sm">{getTypeLabel(value)}</Badge>
         },
         { 
-            key: 'equipment', 
-            label: t('requests.equipment'),
+            key: 'title', 
+            label: 'Title',
             render: (value, row) => (
                 <div>
                     <p className="font-medium text-text">{value}</p>
-                    {row.notes && <p className="text-sm text-text-muted truncate max-w-[200px]">{row.notes}</p>}
+                    {row.severity && (
+                        <Badge variant={getSeverityVariant(row.severity)} size="sm" outline className="mt-1">
+                            {row.severity}
+                        </Badge>
+                    )}
                 </div>
             )
         },
-        { key: 'requestDate', label: t('requests.requestDate') },
         { 
-            key: 'priority', 
-            label: t('requests.priority'),
-            render: (value) => <Badge variant={getPriorityVariant(value)} size="sm" outline>{value}</Badge>
+            key: 'created_at', 
+            label: 'Date',
+            render: (value) => value ? new Date(value).toLocaleDateString() : '-'
         },
         { 
             key: 'status', 
-            label: t('common.status'),
-            render: (value) => <StatusBadge status={value} />
+            label: 'Status',
+            render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>
         },
         {
             key: 'actions',
-            label: t('common.actions'),
+            label: 'Actions',
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-2 justify-end">
-                    <Button size="sm" variant="ghost" onClick={() => toast.info(`Viewing ${row.id}`)}>
-                        {t('requests.view')}
+                    <Button size="sm" variant="ghost" onClick={() => handleViewDetail(row)}>
+                        View
                     </Button>
-                    {row.status === 'pending' && (
-                        <Button size="sm" variant="outline" onClick={() => toast.warning(`Cancelling ${row.id}`)}>
-                            {t('requests.cancel')}
+                    {row.can_be_cancelled && (
+                        <Button size="sm" variant="outline" onClick={() => handleCancel(row)}>
+                            Cancel
                         </Button>
                     )}
                 </div>
@@ -185,21 +368,40 @@ const RequestsPage = ({ user }) => {
         }
     ];
 
+    // Type & Status options for filters
+    const typeOptions = [
+        { value: '', label: 'All Types' },
+        { value: REQUEST_TYPES.JUSTIFICATION, label: 'Justification' },
+        { value: REQUEST_TYPES.ASSET_LOAN, label: 'Asset Loan' },
+        { value: REQUEST_TYPES.CONSUMABLE_REQUEST, label: 'Consumable' },
+    ];
+
+    const statusOptions = [
+        { value: '', label: 'All Statuses' },
+        { value: REQUEST_STATUSES.SUBMITTED, label: 'Submitted' },
+        { value: REQUEST_STATUSES.APPROVED, label: 'Approved' },
+        { value: REQUEST_STATUSES.REJECTED, label: 'Rejected' },
+        { value: REQUEST_STATUSES.CANCELLED, label: 'Cancelled' },
+    ];
+
     // Stats
     const stats = {
-        pending: mockRequests.filter(r => r.status === 'pending').length,
-        approved: mockRequests.filter(r => r.status === 'approved').length,
-        completed: mockRequests.filter(r => r.status === 'completed').length,
+        total: pagination.total,
+        submitted: requests.filter(r => r.status === REQUEST_STATUSES.SUBMITTED).length,
+        approved: requests.filter(r => r.status === REQUEST_STATUSES.APPROVED).length,
     };
 
+    // ========================================
+    // Render
+    // ========================================
     return (
         <div className="requests-page space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card>
                     <CardBody>
                         <div className="text-center">
-                            <p className="text-3xl font-bold text-text">{mockRequests.length}</p>
+                            <p className="text-3xl font-bold text-text">{stats.total}</p>
                             <p className="text-sm text-text-muted">{t('requests.totalRequests')}</p>
                         </div>
                     </CardBody>
@@ -207,8 +409,8 @@ const RequestsPage = ({ user }) => {
                 <Card>
                     <CardBody>
                         <div className="text-center">
-                            <p className="text-3xl font-bold text-warning">{stats.pending}</p>
-                            <p className="text-sm text-text-muted">{t('requests.pending')}</p>
+                            <p className="text-3xl font-bold text-warning">{stats.submitted}</p>
+                            <p className="text-sm text-text-muted">{t('requests.pendingReview')}</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -220,21 +422,13 @@ const RequestsPage = ({ user }) => {
                         </div>
                     </CardBody>
                 </Card>
-                <Card>
-                    <CardBody>
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-info">{stats.completed}</p>
-                            <p className="text-sm text-text-muted">{t('requests.completed')}</p>
-                        </div>
-                    </CardBody>
-                </Card>
             </div>
 
             {/* Requests Table */}
             <Card>
                 <CardHeader 
-                    title={t('requests.allRequests')}
-                    subtitle={t('requests.subtitle')}
+                    title={t('requests.myRequests')}
+                    subtitle={t('requests.myRequestsSubtitle')}
                     action={
                         <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>
                             {t('requests.newRequest')}
@@ -257,14 +451,14 @@ const RequestsPage = ({ user }) => {
                                 }
                             />
                         </div>
-                        <div className="w-full sm:w-40">
+                        <div className="w-full sm:w-48">
                             <Select
                                 options={typeOptions}
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value)}
                             />
                         </div>
-                        <div className="w-full sm:w-40">
+                        <div className="w-full sm:w-48">
                             <Select
                                 options={statusOptions}
                                 value={statusFilter}
@@ -274,33 +468,40 @@ const RequestsPage = ({ user }) => {
                     </div>
 
                     {/* Table */}
-                    <Table
-                        columns={columns}
-                        data={filteredData}
-                        emptyMessage={t('requests.noRequests')}
-                        emptyState={
-                            <div className="text-center py-12">
-                                <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                                    <rect x="9" y="3" width="6" height="4" rx="1" />
-                                </svg>
-                                <h3 className="mt-3 text-sm font-medium text-text">{t('requests.noRequests')}</h3>
-                                <p className="mt-1 text-sm text-text-muted">{t('requests.noRequestsHint')}</p>
-                                <div className="mt-4">
-                                    <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>{t('requests.newRequest')}</Button>
+                    {loading ? (
+                        <div className="text-center py-12">
+                            <div className="loading-spinner mx-auto"></div>
+                            <p className="mt-2 text-text-muted">Loading requests...</p>
+                        </div>
+                    ) : (
+                        <Table
+                            columns={columns}
+                            data={requests}
+                            emptyMessage="No requests found"
+                            emptyState={
+                                <div className="text-center py-12">
+                                    <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                                        <rect x="9" y="3" width="6" height="4" rx="1" />
+                                    </svg>
+                                    <h3 className="mt-3 text-sm font-medium text-text">No requests yet</h3>
+                                    <p className="mt-1 text-sm text-text-muted">Create your first request to get started</p>
+                                    <div className="mt-4">
+                                        <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>New Request</Button>
+                                    </div>
                                 </div>
-                            </div>
-                        }
-                    />
+                            }
+                        />
+                    )}
 
                     {/* Pagination */}
-                    {filteredData.length > 0 && (
+                    {requests.length > 0 && (
                         <TablePagination
-                            currentPage={currentPage}
-                            totalPages={1}
-                            totalItems={filteredData.length}
+                            currentPage={pagination.current_page}
+                            totalPages={pagination.last_page}
+                            totalItems={pagination.total}
                             pageSize={10}
-                            onPageChange={setCurrentPage}
+                            onPageChange={(page) => fetchRequests(page)}
                         />
                     )}
                 </CardBody>
@@ -309,56 +510,298 @@ const RequestsPage = ({ user }) => {
             {/* New Request Modal */}
             <Modal
                 isOpen={isNewRequestOpen}
-                onClose={() => setIsNewRequestOpen(false)}
-                title={t('requests.newRequest')}
-                size="md"
+                onClose={() => { setIsNewRequestOpen(false); resetForm(); }}
+                title={t('requests.createNewRequest')}
+                size="lg"
                 footer={
                     <div className="flex gap-3">
-                        <Button variant="secondary" onClick={() => setIsNewRequestOpen(false)}>
+                        <Button variant="secondary" onClick={() => { setIsNewRequestOpen(false); resetForm(); }}>
                             {t('common.cancel')}
                         </Button>
-                        <Button onClick={() => {
-                            toast.success(t('requests.requestSubmitted'));
-                            setIsNewRequestOpen(false);
-                        }}>
-                            {t('requests.submitRequest')}
+                        <Button onClick={handleSubmitRequest} disabled={submitting || !formData.title || formData.items.length === 0}>
+                            {submitting ? t('requests.submitting') : t('requests.submitRequest')}
                         </Button>
                     </div>
                 }
             >
                 <div className="space-y-4">
-                    <Select
-                        label={t('requests.requestType')}
-                        options={[
-                            { value: 'borrow', label: t('requests.types.borrow') },
-                            { value: 'return', label: t('requests.types.return') },
-                            { value: 'maintenance', label: t('requests.types.maintenance') },
-                        ]}
-                        required
-                    />
-                    <Select
-                        label={t('requests.equipment')}
-                        options={[
-                            { value: '1', label: 'Dental X-Ray Machine (EQ-001)' },
-                            { value: '2', label: 'Ultrasonic Scaler (EQ-015)' },
-                            { value: '3', label: 'LED Curing Light (EQ-023)' },
-                            { value: '4', label: 'Intraoral Camera (EQ-034)' },
-                        ]}
-                        required
-                    />
-                    <Select
-                        label={t('requests.priority')}
-                        options={[
-                            { value: 'low', label: t('requests.priorities.low') },
-                            { value: 'normal', label: t('requests.priorities.normal') },
-                            { value: 'high', label: t('requests.priorities.high') },
-                        ]}
-                    />
+                    {/* Request Type Tabs */}
+                    <div className="flex gap-2 border-b border-border pb-3">
+                        {Object.entries(REQUEST_TYPES).map(([key, value]) => (
+                            <Button
+                                key={key}
+                                variant={formType === value ? 'primary' : 'ghost'}
+                                size="sm"
+                                onClick={() => {
+                                    setFormType(value);
+                                    setFormData(prev => ({ ...prev, items: [] }));
+                                }}
+                            >
+                                {getTypeLabel(value)}
+                            </Button>
+                        ))}
+                    </div>
+
                     <Input
-                        label={t('requests.notes')}
-                        placeholder={t('requests.addDetails')}
+                        label={t('requests.title')}
+                        placeholder={t('requests.titlePlaceholder')}
+                        value={formData.title}
+                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        required
                     />
+
+                    <div>
+                        <label className="block text-sm font-medium text-text mb-1">{t('requests.description')}</label>
+                        <textarea
+                            className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-surface text-text"
+                            rows={3}
+                            placeholder={t('requests.descriptionPlaceholder')}
+                            value={formData.description}
+                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        />
+                    </div>
+
+                    {/* Justification-specific fields */}
+                    {formType === REQUEST_TYPES.JUSTIFICATION && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <Select
+                                label={t('requests.severity')}
+                                options={[
+                                    { value: SEVERITIES.low, label: t('requests.severities.low') },
+                                    { value: SEVERITIES.medium, label: t('requests.severities.medium') },
+                                    { value: SEVERITIES.high, label: t('requests.severities.high') },
+                                    { value: SEVERITIES.critical, label: t('requests.severities.critical') },
+                                ]}
+                                value={formData.severity}
+                                onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value }))}
+                            />
+                            <Select
+                                label={t('requests.suspectedCause')}
+                                options={[
+                                    { value: '', label: t('requests.suspectedCauses.unknown') },
+                                    { value: 'wear', label: t('requests.suspectedCauses.wear') },
+                                    { value: 'operation', label: t('requests.suspectedCauses.operation') },
+                                ]}
+                                value={formData.suspected_cause}
+                                onChange={(e) => setFormData(prev => ({ ...prev, suspected_cause: e.target.value }))}
+                            />
+                        </div>
+                    )}
+
+                    {/* Items Section */}
+                    <div className="border-t border-border pt-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-medium text-text">
+                                {formType === REQUEST_TYPES.CONSUMABLE_REQUEST ? t('requests.consumableItems') : t('requests.assets')}
+                            </h4>
+                            <Button size="sm" variant="outline" onClick={addItem}>
+                                {t('requests.addItem')}
+                            </Button>
+                        </div>
+
+                        {formData.items.length === 0 && (
+                            <p className="text-sm text-text-muted text-center py-4">
+                                No items added yet. Click "Add Item" to start.
+                            </p>
+                        )}
+
+                        {formData.items.map((item, index) => (
+                            <div key={index} className="flex gap-3 items-start mb-3 p-3 bg-surface-muted rounded-md">
+                                {formType === REQUEST_TYPES.CONSUMABLE_REQUEST ? (
+                                    <>
+                                        <div className="flex-1">
+                                            <Input
+                                                placeholder={t('requests.itemName')}
+                                                value={item.name}
+                                                onChange={(e) => updateItem(index, 'name', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="w-20">
+                                            <Input
+                                                type="number"
+                                                placeholder={t('requests.quantity')}
+                                                value={item.qty}
+                                                onChange={(e) => updateItem(index, 'qty', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="w-24">
+                                            <Input
+                                                placeholder={t('requests.unit')}
+                                                value={item.unit}
+                                                onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex-1">
+                                            <Select
+                                                placeholder={t('requests.selectAsset')}
+                                                options={assetOptions}
+                                                value={item.asset_id}
+                                                onChange={(e) => updateItem(index, 'asset_id', e.target.value)}
+                                            />
+                                        </div>
+                                        {formType === REQUEST_TYPES.ASSET_LOAN && (
+                                            <>
+                                                <div className="w-40">
+                                                    <Select
+                                                        placeholder={t('requests.fromShift')}
+                                                        options={shiftOptions}
+                                                        value={item.from_shift_id}
+                                                        onChange={(e) => updateItem(index, 'from_shift_id', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="w-40">
+                                                    <Select
+                                                        placeholder={t('requests.toShift')}
+                                                        options={shiftOptions}
+                                                        value={item.to_shift_id}
+                                                        onChange={(e) => updateItem(index, 'to_shift_id', e.target.value)}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                                <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="text-danger"
+                                    onClick={() => removeItem(index)}
+                                >
+                                    ✕
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+            </Modal>
+
+            {/* Request Detail Modal */}
+            <Modal
+                isOpen={isDetailOpen}
+                onClose={() => { setIsDetailOpen(false); setSelectedRequest(null); }}
+                title={selectedRequest?.code || t('requests.requestDetail')}
+                size="lg"
+            >
+                {selectedRequest && (
+                    <div className="space-y-4">
+                        {/* Status & Type */}
+                        <div className="flex gap-3">
+                            <Badge variant={getTypeVariant(selectedRequest.type)} size="lg">
+                                {getTypeLabel(selectedRequest.type)}
+                            </Badge>
+                            <Badge variant={getStatusVariant(selectedRequest.status)} size="lg">
+                                {selectedRequest.status}
+                            </Badge>
+                            {selectedRequest.severity && (
+                                <Badge variant={getSeverityVariant(selectedRequest.severity)} outline>
+                                    {selectedRequest.severity}
+                                </Badge>
+                            )}
+                        </div>
+
+                        {/* Title & Description */}
+                        <div>
+                            <h3 className="text-lg font-semibold text-text">{selectedRequest.title}</h3>
+                            {selectedRequest.description && (
+                                <p className="mt-1 text-text-muted">{selectedRequest.description}</p>
+                            )}
+                        </div>
+
+                        {/* Meta Info */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-text-muted">{t('requests.requestedBy')}:</span>
+                                <span className="ml-2 text-text">{selectedRequest.requester?.full_name}</span>
+                            </div>
+                            <div>
+                                <span className="text-text-muted">{t('common.createdAt')}:</span>
+                                <span className="ml-2 text-text">
+                                    {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString() : '-'}
+                                </span>
+                            </div>
+                            {selectedRequest.reviewer && (
+                                <>
+                                    <div>
+                                        <span className="text-text-muted">{t('requests.reviewedBy')}:</span>
+                                        <span className="ml-2 text-text">{selectedRequest.reviewer.name}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-text-muted">{t('requests.reviewedAt')}:</span>
+                                        <span className="ml-2 text-text">
+                                            {selectedRequest.reviewed_at ? new Date(selectedRequest.reviewed_at).toLocaleString() : '-'}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Review Note */}
+                        {selectedRequest.review_note && (
+                            <div className="p-3 bg-surface-muted rounded-md">
+                                <span className="text-sm font-medium text-text">{t('requests.reviewNote')}:</span>
+                                <p className="text-sm text-text-muted mt-1">{selectedRequest.review_note}</p>
+                            </div>
+                        )}
+
+                        {/* Items */}
+                        {selectedRequest.items && selectedRequest.items.length > 0 && (
+                            <div>
+                                <h4 className="font-medium text-text mb-2">{t('requests.items')}</h4>
+                                <div className="space-y-2">
+                                    {selectedRequest.items.map((item, index) => (
+                                        <div key={index} className="p-3 bg-surface-muted rounded-md flex justify-between">
+                                            <div>
+                                                {item.item_kind === 'ASSET' ? (
+                                                    <span className="text-text">
+                                                        {item.asset?.asset_code} - {item.asset?.name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-text">
+                                                        {item.name} {item.sku && `(${item.sku})`}
+                                                    </span>
+                                                )}
+                                                {item.note && (
+                                                    <p className="text-sm text-text-muted">{item.note}</p>
+                                                )}
+                                            </div>
+                                            {item.qty && (
+                                                <span className="text-text-muted">
+                                                    {item.qty} {item.unit}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Events Timeline */}
+                        {selectedRequest.events && selectedRequest.events.length > 0 && (
+                            <div>
+                                <h4 className="font-medium text-text mb-2">{t('requests.activity')}</h4>
+                                <div className="space-y-2">
+                                    {selectedRequest.events.map((event, index) => (
+                                        <div key={index} className="flex gap-3 text-sm">
+                                            <div className="w-2 h-2 mt-2 rounded-full bg-border"></div>
+                                            <div>
+                                                <span className="text-text">{event.event_type}</span>
+                                                {event.actor && (
+                                                    <span className="text-text-muted"> by {event.actor.name}</span>
+                                                )}
+                                                <span className="text-text-muted block text-xs">
+                                                    {event.created_at ? new Date(event.created_at).toLocaleString() : ''}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Modal>
         </div>
     );

@@ -15,7 +15,8 @@ return new class extends Migration {
     {
         Schema::create('assets', function (Blueprint $table) {
             $table->id();
-            $table->string('asset_code')->unique();
+            // asset_code is nullable - can be auto-generated if not provided
+            $table->string('asset_code', 50)->nullable()->unique();
             $table->string('name');
             $table->enum('type', ['tray', 'machine', 'tool', 'equipment', 'other'])->default('equipment');
             $table->enum('status', ['active', 'off_service', 'maintenance', 'retired'])->default('active');

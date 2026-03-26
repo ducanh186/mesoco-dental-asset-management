@@ -13,18 +13,21 @@ use Illuminate\Support\Facades\Hash;
 /**
  * UserController
  * 
- * Handles user account management (Roles & Permission screen - Admin/HR only).
+ * Handles user account management.
+ * 
+ * RBAC:
+ * - Admin: Full access (list, create, update role, delete)
+ * - HR: List, Create, View only (cannot change roles or delete)
  * 
  * Features:
  * - List users with filtering by employee_code/name/role
  * - Create user account from existing employee
- * - Update user role (only role is editable)
- * - Delete user account
+ * - Update user role (Admin only)
+ * - Delete user account (Admin only)
  * 
  * Authorization enforced via:
- * 1. Route middleware: role:admin,hr
- * 2. Form Request authorize() methods
- * 3. Policy checks
+ * 1. Route middleware: role:admin (for role changes, delete)
+ * 2. Route middleware: role:admin,hr (for list, create, view)
  */
 class UserController extends Controller
 {
@@ -86,20 +89,26 @@ class UserController extends Controller
      * POST /api/users
      * Create a new user account from an existing employee.
      * 
+     * RBAC:
+     * - Admin: Can set any role during creation
+     * - HR: Creates user with role='staff' (cannot set role)
+     *       Admin must assign proper role later via PATCH /users/{id}/role
+     * 
      * After creation, user can login with employee_code + default_password.
      * must_change_password is set to true.
      */
     public function store(StoreUserRequest $request): JsonResponse
     {
-        $employee = Employee::findOrFail($request->employee_id);
+        $validated = $request->validated();
+        $employee = Employee::findOrFail($validated['employee_id']);
 
         $user = User::create([
             'employee_id' => $employee->id,
             'employee_code' => $employee->employee_code,
             'name' => $employee->full_name,
             'email' => $employee->email,
-            'role' => $request->role,
-            'password' => Hash::make($request->default_password),
+            'role' => $validated['role'], // Admin sets role, HR gets default 'staff'
+            'password' => Hash::make($validated['default_password']),
             'must_change_password' => true,
             'status' => 'active',
         ]);

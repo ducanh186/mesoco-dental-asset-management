@@ -48,10 +48,12 @@ class CheckinController extends Controller
         $response = Gate::inspect('checkIn', [AssetCheckin::class, $asset]);
         if ($response->denied()) {
             $code = $response->code() ?? 'CHECK_IN_DENIED';
+            // ASSET_LOCKED includes both off_service and maintenance
+            $isLockError = in_array($code, ['ASSET_OFF_SERVICE', 'ASSET_LOCKED']);
             return response()->json([
                 'message' => $response->message(),
-                'error_code' => $code,
-            ], $code === 'ASSET_OFF_SERVICE' ? 422 : 403);
+                'error' => $code,
+            ], $isLockError ? 422 : 403);
         }
 
         // Determine shift_date (default: today)
@@ -69,7 +71,7 @@ class CheckinController extends Controller
                 if (!$firstShift) {
                     return response()->json([
                         'message' => 'No active shifts configured.',
-                        'error_code' => 'NO_ACTIVE_SHIFTS',
+                        'error' => 'NO_ACTIVE_SHIFTS',
                     ], 422);
                 }
                 $shiftId = $firstShift->id;

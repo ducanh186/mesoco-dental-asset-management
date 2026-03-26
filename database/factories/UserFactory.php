@@ -61,6 +61,46 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user is HR.
+     */
+    public function hr(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'hr',
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a technician.
+     */
+    public function technician(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'technician',
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a doctor.
+     */
+    public function doctor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'doctor',
+        ]);
+    }
+
+    /**
+     * Indicate that the user is staff.
+     */
+    public function staff(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'staff',
+        ]);
+    }
+
+    /**
      * Indicate that the user is inactive.
      */
     public function inactive(): static

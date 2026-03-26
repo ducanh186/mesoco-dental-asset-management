@@ -9,3 +9,4 @@ export { default as Badge, StatusBadge } from './Badge';
 export { default as Table, TableCard, TablePagination } from './Table';
 export { default as Modal, ConfirmModal } from './Modal';
 export { default as ToastProvider, useToast } from './Toast';
+export { default as LoadingSpinner } from './LoadingSpinner';

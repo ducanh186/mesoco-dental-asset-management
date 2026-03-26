@@ -16,16 +16,17 @@ use Illuminate\Http\Request;
 class AssetController extends Controller
 {
     /**
-     * Display a listing of assets.
-     * Admin/HR: see all assets
-     * Non-admin: see only assets assigned to them
+     * Display a listing of all assets.
      * 
-     * GET /api/assets (or /api/my-assets)
+     * SECURITY: This endpoint is protected by route middleware (role:admin,hr).
+     * DO NOT add auto-filtering logic here - that's a security footgun.
+     * Use myAssets() for user's own assets instead.
+     * 
+     * GET /api/assets (Admin/HR only via route middleware)
      * Query params: search, type, status, per_page, include_checkin_status
      */
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
         $perPage = min($request->input('per_page', 15), 100);
         $includeCheckinStatus = $request->boolean('include_checkin_status', false);
 
@@ -34,28 +35,18 @@ class AssetController extends Controller
             ->byType($request->input('type'))
             ->byStatus($request->input('status'));
 
-        // Non-admin users can only see their assigned assets
-        if (!$user->isAdmin()) {
-            $employeeId = $user->employee?->id;
-            if ($employeeId) {
-                $query->assignedTo($employeeId);
+        // Filter by assignment status if provided
+        if ($request->has('assigned')) {
+            if ($request->boolean('assigned')) {
+                $query->whereHas('currentAssignment');
             } else {
-                // User has no employee record, return empty
-                return response()->json([
-                    'assets' => [],
-                    'pagination' => [
-                        'current_page' => 1,
-                        'last_page' => 1,
-                        'per_page' => $perPage,
-                        'total' => 0,
-                    ],
-                ]);
+                $query->whereDoesntHave('currentAssignment');
             }
         }
 
         $assets = $query->orderBy('asset_code')->paginate($perPage);
 
-        // Phase 4: Batch load check-in status to avoid N+1 queries
+        // Phase 4: Batch load check-in status
         $checkinMap = [];
         $currentShift = null;
         if ($includeCheckinStatus) {
@@ -74,7 +65,6 @@ class AssetController extends Controller
             }
         }
 
-        // Transform to consistent structure, optionally with check-in status
         $transformedAssets = collect($assets->items())->map(
             fn($asset) => $this->transformAsset(
                 $asset, 
@@ -99,6 +89,129 @@ class AssetController extends Controller
     }
 
     /**
+     * Display assets assigned to the current user (All authenticated users).
+     * 
+     * GET /api/my-assets
+     * Query params: search, type, status, per_page, include_checkin_status
+     */
+    public function myAssets(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $perPage = min($request->input('per_page', 15), 100);
+        $includeCheckinStatus = $request->boolean('include_checkin_status', false);
+
+        $employeeId = $user->employee?->id;
+        
+        // User has no employee record, return empty
+        if (!$employeeId) {
+            return response()->json([
+                'assets' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                ],
+            ]);
+        }
+
+        $query = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+            ->assignedTo($employeeId)
+            ->search($request->input('search'))
+            ->byType($request->input('type'))
+            ->byStatus($request->input('status'));
+
+        $assets = $query->orderBy('asset_code')->paginate($perPage);
+
+        // Phase 4: Batch load check-in status
+        $checkinMap = [];
+        $currentShift = null;
+        if ($includeCheckinStatus) {
+            $currentShift = Shift::getCurrentShift();
+            if ($currentShift) {
+                $assetIds = collect($assets->items())->pluck('id');
+                $today = now()->toDateString();
+                
+                $checkins = AssetCheckin::whereIn('asset_id', $assetIds)
+                    ->where('shift_id', $currentShift->id)
+                    ->where('shift_date', $today)
+                    ->get()
+                    ->keyBy('asset_id');
+                
+                $checkinMap = $checkins->toArray();
+            }
+        }
+
+        $transformedAssets = collect($assets->items())->map(
+            fn($asset) => $this->transformAsset(
+                $asset, 
+                false, 
+                $includeCheckinStatus,
+                $currentShift,
+                $checkinMap[$asset->id] ?? null
+            )
+        );
+
+        return response()->json([
+            'assets' => $transformedAssets,
+            'pagination' => [
+                'current_page' => $assets->currentPage(),
+                'last_page' => $assets->lastPage(),
+                'per_page' => $assets->perPage(),
+                'total' => $assets->total(),
+            ],
+            'available_types' => Asset::TYPES,
+            'available_statuses' => Asset::STATUSES,
+        ]);
+    }
+
+    /**
+     * Get user's assigned assets in dropdown format for Justification requests.
+     * All authenticated users can view their assigned assets.
+     * 
+     * GET /api/my-assigned-assets/dropdown
+     * 
+     * @return JsonResponse { data: [{ value, label, asset_code, name, type }] }
+     */
+    public function myAssignedAssetsDropdown(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $employeeId = $user->employee?->id;
+        
+        // User has no employee record, return empty
+        if (!$employeeId) {
+            return response()->json([
+                'data' => [],
+            ]);
+        }
+
+        $assets = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+            ->assignedTo($employeeId)
+            ->where('status', Asset::STATUS_ACTIVE)
+            ->orderBy('asset_code')
+            ->get();
+
+        // Transform to dropdown format with null-safe label
+        $dropdownAssets = $assets->map(function($asset) {
+            $label = $asset->asset_code 
+                ? $asset->asset_code . ' - ' . $asset->name 
+                : $asset->name . ' (ID: ' . $asset->id . ')';
+            
+            return [
+                'value' => $asset->id,
+                'label' => $label,
+                'asset_code' => $asset->asset_code,
+                'name' => $asset->name,
+                'type' => $asset->type,
+            ];
+        });
+
+        return response()->json([
+            'data' => $dropdownAssets,
+        ]);
+    }
+
+    /**
      * Store a newly created asset.
      * Admin/HR only.
      * 
@@ -106,7 +219,14 @@ class AssetController extends Controller
      */
     public function store(StoreAssetRequest $request): JsonResponse
     {
-        $asset = Asset::create($request->validated());
+        $validatedData = $request->validated();
+
+        // Auto-generate asset_code if not provided
+        if (empty($validatedData['asset_code'])) {
+            $validatedData['asset_code'] = $this->generateAssetCode();
+        }
+
+        $asset = Asset::create($validatedData);
 
         // Auto-generate QR identity for new asset
         $qrIdentity = AssetQrIdentity::create([
@@ -208,7 +328,16 @@ class AssetController extends Controller
             // Lock the asset row for update to prevent race conditions
             $lockedAsset = Asset::where('id', $asset->id)->lockForUpdate()->first();
 
-            // Check if asset status allows assignment
+            // Check if asset is locked (off_service or maintenance)
+            if ($lockedAsset->isLocked()) {
+                return response()->json([
+                    'message' => $lockedAsset->getLockReason() ?? 'Asset is currently unavailable.',
+                    'error' => 'ASSET_LOCKED',
+                    'asset_status' => $lockedAsset->status,
+                ], 422);
+            }
+
+            // Check if asset status allows assignment (must be active)
             if ($lockedAsset->status !== Asset::STATUS_ACTIVE) {
                 return response()->json([
                     'message' => 'Cannot assign asset that is not active.',
@@ -312,6 +441,41 @@ class AssetController extends Controller
 
         return response()->json([
             'assets' => $assets->map(fn($asset) => $this->transformAsset($asset)),
+        ]);
+    }
+
+    /**
+     * Get assets available for loan (unassigned and movable).
+     * All authenticated users can view for creating Asset Loan requests.
+     * 
+     * GET /api/assets/available-for-loan
+     * 
+     * @return JsonResponse { data: [{ value, label, asset_code, name, type }] }
+     */
+    public function availableForLoan(Request $request): JsonResponse
+    {
+        $assets = Asset::with(['qrIdentity', 'currentAssignment'])
+            ->availableForLoan()
+            ->orderBy('asset_code')
+            ->get();
+
+        // Transform to dropdown format with null-safe label
+        $dropdownAssets = $assets->map(function($asset) {
+            $label = $asset->asset_code 
+                ? $asset->asset_code . ' - ' . $asset->name 
+                : $asset->name . ' (ID: ' . $asset->id . ')';
+            
+            return [
+                'value' => $asset->id,
+                'label' => $label,
+                'asset_code' => $asset->asset_code,
+                'name' => $asset->name,
+                'type' => $asset->type,
+            ];
+        });
+
+        return response()->json([
+            'data' => $dropdownAssets,
         ]);
     }
 
@@ -439,5 +603,18 @@ class AssetController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * Generate a unique asset code using sequence table.
+     * Uses atomic increment to prevent race conditions.
+     * 
+     * Format: EQUIP-YYYYMM-NNNN
+     * 
+     * @return string Generated unique asset code
+     */
+    private function generateAssetCode(): string
+    {
+        return \App\Models\AssetCodeSequence::generateNextCode('EQUIP');
     }
 }
