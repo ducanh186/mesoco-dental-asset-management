@@ -47,21 +47,37 @@ Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
 
 ### 📋 Danh Sách Test Accounts
 
-| Vai trò | Mã Nhân Viên | Email | Mật Khẩu | Role |
-|---------|--------------|-------|----------|------|
-| **Admin** | `E0001` | `admin@mesoco.vn` | `password` | `admin` |
-| **Bác sĩ** | `E0002` | `doctor@mesoco.vn` | `password` | `doctor` |
-| **Kỹ thuật viên** | `E0003` | `tech@mesoco.vn` | `password` | `technician` |
+| Vai trò | Mã Nhân Viên | Email | Mật Khẩu | Role | Quyền truy cập |
+|---------|--------------|-------|----------|------|----------------|
+| **Admin** | `E0001` | `admin@mesoco.vn` | `password` | `admin` | Toàn quyền |
+| **HR** | `E0002` | `hr@mesoco.vn` | `password` | `hr` | Quản lý asset + nhân sự |
+| **Bác sĩ** | `E0003` | `doctor@mesoco.vn` | `password` | `doctor` | My Assets + Requests |
+| **Kỹ thuật viên** | `E0004` | `technician@mesoco.vn` | `password` | `technician` | My Assets + Maintenance |
+| **Nhân viên** | `E0005` | `staff@mesoco.vn` | `password` | `staff` | My Assets cơ bản |
 
 ### 🔑 Cách Đăng Nhập
 
 **Bằng Employee ID:**
-- Employee ID: `E0001`
+- Employee ID: `E0001` (Admin) / `E0002` (HR) / `E0003` (Doctor) / `E0004` (Technician) / `E0005` (Staff)
 - Password: `password`
 
 **Bằng Email (Forgot Password):**
-- Email: `admin@mesoco.vn`
+- Email: `admin@mesoco.vn`, `hr@mesoco.vn`, `doctor@mesoco.vn`, `technician@mesoco.vn`, `staff@mesoco.vn`
 - Dùng cho tính năng reset password
+
+### 🎯 Phase 3 - Asset Management Features
+
+**My Assets (Tất cả roles):** `/my-assets`
+- Xem tài sản được gán
+- QR code lookup/resolve
+- Lịch sử assignment
+
+**Asset Management (Admin/HR only):** `/assets`
+- CRUD asset master data
+- Assign/Unassign assets
+- Generate/Regenerate QR codes
+- Assignment history
+- Asset search & filters
 
 ### 🔐 Database Details
 
@@ -70,12 +86,13 @@ Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `id` | bigint | Auto increment |
-| `name` | string | Tên nhân viên |
+| `full_name` | string | Tên nhân viên |
 | `email` | string | Email (unique) |
 | `employee_code` | string | Mã NV (unique) - Dùng để login |
 | `password` | string | Bcrypt hash của `password` |
-| `role` | enum | `admin`, `doctor`, `technician` |
+| `role` | enum | `admin`, `hr`, `doctor`, `technician`, `staff` |
 | `status` | enum | `active`, `inactive` (default: `active`) |
+| `must_change_password` | boolean | Force change pass (default: `true`) |
 
 **Password Hash Example:**
 ```
@@ -87,12 +104,16 @@ Hash: $2y$12$abcd...xyz (bcrypt, 60 chars)
 
 **Login Page:** Dùng `employee_code` + `password`
 ```
-E0001 / password
+Admin: E0001 / password
+HR: E0002 / password  
+Doctor: E0003 / password
+Technician: E0004 / password
+Staff: E0005 / password
 ```
 
 **Forgot Password:** Dùng `email`
 ```
-admin@mesoco.vn
+admin@mesoco.vn / hr@mesoco.vn / doctor@mesoco.vn / technician@mesoco.vn / staff@mesoco.vn
 → Nhận mã 6 số trong storage/logs/laravel.log
 → Reset password
 ```
@@ -230,19 +251,23 @@ docker compose logs app --tail=100 > error.txt
 
 ## 🏗️ Phase Hiện Tại
 
-**Phase 0.5 - Devpack Complete** ✅
+**Phase 3 - Asset Management Complete** ✅
 - [x] Docker containerization
-- [x] Auto-setup scripts
+- [x] Auto-setup scripts  
 - [x] Authentication (Sanctum SPA)
-- [x] Demo accounts
-- [x] Basic UI shell
+- [x] Demo accounts với RBAC
+- [x] Asset master data (CRUD)
+- [x] QR identity system
+- [x] Assignment management
+- [x] My Assets UI + QR resolve
+- [x] Admin Asset Management UI
 
-**Phase 1 - MVP (Coming Next)**
-- [ ] Asset management (CRUD)
-- [ ] QR code generation
+**Phase 4 - Equipment Requests (Coming Next)**
+- [ ] Request workflow
+- [ ] Approval system  
 - [ ] Maintenance tracking
-- [ ] Request system
+- [ ] Reports & analytics
 
 ---
 
-**Cập nhật:** Jan 23, 2026 - Phase 0.5 Devpack
+**Cập nhật:** Jan 26, 2026 - Phase 3 Asset Management Complete

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\CheckMustChangePassword;
+use App\Http\Middleware\CheckRole;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +17,20 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        
+        // Disable CSRF for specific routes (testing purposes)
+        $middleware->validateCsrfTokens(except: [
+            '/login',
+            '/logout', 
+            'forgot-password/*',
+            'api/*'
+        ]);
+        
+        // Register custom middleware aliases
+        $middleware->alias([
+            'role' => CheckRole::class,
+            'must_change_password' => CheckMustChangePassword::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle unauthenticated requests for API - return JSON 401, not redirect

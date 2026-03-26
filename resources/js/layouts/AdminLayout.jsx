@@ -52,6 +52,7 @@ const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {
                 mobileOpen={sidebarMobileOpen}
                 onToggle={toggleSidebar}
                 onMobileClose={() => setSidebarMobileOpen(false)}
+                user={user}
             />
 
             {/* Main Content Area */}

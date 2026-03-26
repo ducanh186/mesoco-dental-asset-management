@@ -20,24 +20,18 @@ class AuthController extends Controller
 
     /**
      * POST /login
-     * Login with email OR employee_code + password.
+     * Login with employee_code + password.
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $login = $request->login;
-        $password = $request->password;
-
-        // Determine if login is email or employee_code
-        $fieldType = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'employee_code';
-        
         $credentials = [
-            $fieldType => $login,
-            'password' => $password,
+            'employee_code' => $request->employee_code,
+            'password' => $request->password,
         ];
 
         if (!Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'login' => ['The provided credentials are incorrect.'],
+                'employee_code' => ['The provided credentials are incorrect.'],
             ]);
         }
 
@@ -46,7 +40,7 @@ class AuthController extends Controller
         if ($user->status !== 'active') {
             Auth::logout();
             throw ValidationException::withMessages([
-                'login' => ['Your account has been deactivated.'],
+                'employee_code' => ['Your account has been deactivated.'],
             ]);
         }
 
@@ -75,7 +69,13 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        Auth::logout();
+        // For Sanctum SPA authentication
+        if ($request->user()) {
+            // Delete all personal access tokens for the user
+            $request->user()->tokens()->delete();
+        }
+        
+        // Invalidate session
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
