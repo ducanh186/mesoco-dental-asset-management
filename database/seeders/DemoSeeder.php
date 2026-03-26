@@ -83,12 +83,12 @@ class DemoSeeder extends Seeder
             User::where('employee_code', $account['code'])
                 ->update([
                     'email' => $account['email'],
-                    'password' => Hash::make('Password123!'),
+                    'password' => Hash::make('password'),
                     'must_change_password' => false,
                 ]);
         }
 
-        $this->command->info('    ✓ Demo accounts updated with Password123!');
+        $this->command->info('    ✓ Demo accounts updated with password: password');
     }
 
     /**

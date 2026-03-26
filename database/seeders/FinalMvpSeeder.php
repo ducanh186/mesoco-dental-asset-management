@@ -44,7 +44,7 @@ class FinalMvpSeeder extends Seeder
     /**
      * Default password for all demo users.
      */
-    private const DEFAULT_PASSWORD = 'Password123!';
+    private const DEFAULT_PASSWORD = 'password';
 
     /**
      * Cached references for cross-seeding.
