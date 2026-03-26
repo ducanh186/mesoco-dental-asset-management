@@ -41,11 +41,11 @@ Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
 
 | Vai trò | Mã Nhân Viên | Email | Mật Khẩu | Quyền | Mô tả |
 |---------|--------------|-------|----------|-------|-------|
-| **Quản trị viên-Admin** | `E0001` | `admin@mesoco.vn` | `Password123!` | `admin` | Toàn quyền hệ thống |
-| **Nhân sự-HR** | `E0002` | `hr@mesoco.vn` | `Password123!` | `hr` | Quản lý tài sản + nhân viên |
-| **Bác sĩ-Doctor** | `E0003` | `doctor@mesoco.vn` | `Password123!` | `doctor` | Tài sản cá nhân + Yêu cầu thiết bị |
-| **Kỹ thuật viên-Technican** | `E0004` | `tech@mesoco.vn` | `Password123!` | `technician` | Tài sản cá nhân + Bảo trì |
-| **Nhân viên-Staff** | `E0005` | `staff@mesoco.vn` | `Password123!` | `employee` | Chỉ xem tài sản cá nhân |
+| **Quản trị viên-Admin** | `E0001` | `admin@mesoco.vn` | `password` | `admin` | Toàn quyền hệ thống |
+| **Nhân sự-HR** | `E0002` | `hr@mesoco.vn` | `password` | `hr` | Quản lý tài sản + nhân viên |
+| **Bác sĩ-Doctor** | `E0003` | `doctor@mesoco.vn` | `password` | `doctor` | Tài sản cá nhân + Yêu cầu thiết bị |
+| **Kỹ thuật viên-Technican** | `E0004` | `tech@mesoco.vn` | `password` | `technician` | Tài sản cá nhân + Bảo trì |
+| **Nhân viên-Staff** | `E0005` | `staff@mesoco.vn` | `password` | `employee` | Chỉ xem tài sản cá nhân |
 
 ### 🎯 Tính Năng Theo Role
 
@@ -106,14 +106,14 @@ Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
 | `full_name` | string | Tên nhân viên |
 | `email` | string | Email (unique) |
 | `employee_code` | string | Mã NV (unique) - Dùng để login |
-| `password` | string | Bcrypt hash của `Password123!` |
+| `password` | string | Bcrypt hash của `password` |
 | `role` | enum | `admin`, `hr`, `doctor`, `technician`, `employee` |
 | `status` | enum | `active`, `inactive` (default: `active`) |
 | `must_change_password` | boolean | Force change pass (default: `true`) |
 
 **Password Hash Example:**
 ```
-Plain: Password123!
+Plain: password
 Hash: $2y$12$abcd...xyz (bcrypt, 60 chars)
 ```
 
@@ -121,11 +121,11 @@ Hash: $2y$12$abcd...xyz (bcrypt, 60 chars)
 
 **Trang Đăng Nhập:** Dùng `mã_nhân_viên` + `mật_khẩu`
 ```
-Quản trị viên-Admin: E0001 / Password123!
-Nhân sự-HR: E0002 / Password123!  
-Bác sĩ-Doctor: E0003 / Password123!
-Kỹ thuật viên-Technican: E0004 / Password123!
-Nhân viên: E0005 / Password123!
+Quản trị viên-Admin: E0001 / password
+Nhân sự-HR: E0002 / password  
+Bác sĩ-Doctor: E0003 / password
+Kỹ thuật viên-Technican: E0004 / password
+Nhân viên: E0005 / password
 ```
 
 **Quên Mật Khẩu:** Dùng `email`
@@ -165,6 +165,37 @@ admin@mesoco.vn / hr@mesoco.vn / doctor@mesoco.vn / technician@mesoco.vn / staff
 - `vendor/**` - PHP dependencies
 - `node_modules/**` - Node dependencies
 - `docker/**` - Docker config
+
+---
+
+## 🔄 Cập Nhật Code Mới Nhất
+
+### Lần đầu clone về
+```powershell
+git clone https://github.com/ducanh186/mesoco-dental-asset-management.git
+cd mesoco-dental-asset-management
+```
+
+### Cập nhật code từ remote
+```powershell
+# Nếu có file untracked bị conflict, xóa trước:
+# del database\migrations\<tên_file_bị_lỗi>.php
+
+git pull origin main
+```
+
+### Sau khi pull — chạy migration + seed lại
+```powershell
+# Nếu dùng Docker:
+cd docker
+docker compose exec app php artisan migrate:fresh --seed
+
+# Nếu chạy local (không Docker):
+php artisan migrate:fresh --seed
+```
+
+> **Lưu ý:** `migrate:fresh` xóa toàn bộ dữ liệu cũ và tạo lại từ đầu.  
+> Chỉ dùng khi muốn reset DB về trạng thái demo ban đầu.
 
 ---
 
