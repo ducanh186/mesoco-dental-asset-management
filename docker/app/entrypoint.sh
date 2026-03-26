@@ -38,6 +38,16 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# Build frontend assets (fallback until Vite dev server starts)
+# -----------------------------------------------------------------------------
+if [ ! -f "public/build/manifest.json" ]; then
+    echo "[2.5/3] Building frontend assets (npm run build)..."
+    npm run build
+else
+    echo "[2.5/3] Frontend assets already built ✓"
+fi
+
+# -----------------------------------------------------------------------------
 # Environment setup
 # -----------------------------------------------------------------------------
 if [ ! -f ".env" ]; then

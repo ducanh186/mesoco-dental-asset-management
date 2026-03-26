@@ -1,17 +1,10 @@
 @echo off
-chcp 65001 >nul
 echo ========================================
 echo  MESOCO DENTAL - DOCKER SETUP
 echo ========================================
 echo.
 echo  Mode: Local development with Docker
-echo  No ngrok required - runs on localhost
-echo.
-echo  Prerequisites:
-echo  1. Docker Desktop must be running
-echo  2. Run this script
-echo  3. Wait 2-3 minutes
-echo  4. Done!
+echo  Prerequisites: Docker Desktop must be running
 echo ========================================
 echo.
 
@@ -42,26 +35,57 @@ echo.
 echo [2/5] Building Docker images...
 echo (First time takes 2-3 minutes, subsequent runs are faster)
 docker compose build
+if %errorlevel% neq 0 (
+    echo [ERROR] Docker build failed!
+    pause
+    exit /b 1
+)
 
 echo.
 echo [3/5] Starting containers...
 docker compose up -d
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to start containers!
+    pause
+    exit /b 1
+)
 
 echo.
-echo [4/5] Waiting for MySQL to be ready (15 seconds)...
-timeout /t 15 /nobreak >nul
+echo [4/5] Waiting for MySQL to be ready...
+set RETRIES=0
+:wait_db
+set /a RETRIES+=1
+if %RETRIES% gtr 30 (
+    echo [ERROR] MySQL did not become ready after 30 attempts.
+    pause
+    exit /b 1
+)
+docker compose exec app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception \$e) { exit(1); }" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo    Waiting for MySQL... attempt %RETRIES%/30
+    timeout /t 3 /nobreak >nul
+    goto wait_db
+)
+echo    MySQL is ready!
 
 echo.
 echo [5/5] Creating database + demo data...
 docker compose exec app php artisan migrate:fresh --seed
+if %errorlevel% neq 0 (
+    echo [ERROR] Migration or seeding failed!
+    echo Try running manually: docker compose exec app php artisan migrate:fresh --seed
+    pause
+    exit /b 1
+)
 
 echo.
 echo ========================================
 echo  SETUP COMPLETE!
 echo ========================================
 echo.
-echo  Open browser and go to:
-echo     http://localhost:8000
+echo  Open browser:
+echo     Frontend:  http://localhost:5173
+echo     Backend:   http://localhost:8000
 echo.
 echo  Test Accounts:
 echo  +-----------+---------------+----------+
