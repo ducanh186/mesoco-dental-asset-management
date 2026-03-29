@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../../i18n';
 
 /**
  * Table Component - OrangeHRM-inspired data table
@@ -18,12 +19,14 @@ const Table = ({
     hoverable = true,
     loading = false,
     emptyState,
-    emptyMessage = 'No data available',
+    emptyMessage,
     className = '',
     onRowClick,
     ...props
 }) => {
+    const { t } = useI18n();
     const isEmpty = !loading && data.length === 0;
+    const resolvedEmptyMessage = emptyMessage || t('common.noData');
 
     const tableClasses = [
         'ui-table',
@@ -63,7 +66,7 @@ const Table = ({
                             <td colSpan={columns.length} className="ui-table-loading">
                                 <div className="ui-table-loading-content">
                                     <span className="ui-table-spinner" />
-                                    <span>Loading...</span>
+                                    <span>{t('common.loading')}</span>
                                 </div>
                             </td>
                         </tr>
@@ -83,7 +86,7 @@ const Table = ({
                                             <line x1="8" y1="21" x2="16" y2="21" />
                                             <line x1="12" y1="17" x2="12" y2="21" />
                                         </svg>
-                                        <p className="ui-table-empty-message">{emptyMessage}</p>
+                                        <p className="ui-table-empty-message">{resolvedEmptyMessage}</p>
                                     </div>
                                 )}
                             </td>
@@ -148,33 +151,34 @@ export const TablePagination = ({
     onPageChange,
     className = '',
 }) => {
+    const { t, locale } = useI18n();
     const startItem = (currentPage - 1) * pageSize + 1;
     const endItem = Math.min(currentPage * pageSize, totalItems);
 
     return (
         <div className={`ui-table-pagination ${className}`}>
             <span className="ui-table-pagination-info">
-                Showing {startItem} to {endItem} of {totalItems} entries
+                {t('pagination.showing', { from: startItem, to: endItem, total: totalItems })}
             </span>
             <div className="ui-table-pagination-controls">
                 <button
                     className="ui-table-pagination-btn"
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage <= 1}
-                    aria-label="Previous page"
+                    aria-label={locale === 'vi' ? 'Trang trước' : 'Previous page'}
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
                 </button>
                 <span className="ui-table-pagination-pages">
-                    Page {currentPage} of {totalPages}
+                    {t('pagination.page', { page: currentPage, total: totalPages })}
                 </span>
                 <button
                     className="ui-table-pagination-btn"
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage >= totalPages}
-                    aria-label="Next page"
+                    aria-label={locale === 'vi' ? 'Trang sau' : 'Next page'}
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="9 18 15 12 9 6" />

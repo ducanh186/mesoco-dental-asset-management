@@ -13,6 +13,7 @@ import {
     LoadingSpinner
 } from '../components/ui';
 import { myAssetHistoryApi, handleApiError } from '../services/api';
+import { useI18n } from '../i18n';
 
 /**
  * MyAssetHistoryPage - Personal asset history timeline (Phase 6)
@@ -20,6 +21,7 @@ import { myAssetHistoryApi, handleApiError } from '../services/api';
  */
 const MyAssetHistoryPage = ({ user }) => {
     const toast = useToast();
+    const { t } = useI18n();
     
     // State
     const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ const MyAssetHistoryPage = ({ user }) => {
             ),
             color: 'text-success',
             bgColor: 'bg-success/10',
-            label: 'Assigned'
+            label: 'Đã giao'
         },
         unassigned: {
             icon: (
@@ -64,7 +66,7 @@ const MyAssetHistoryPage = ({ user }) => {
             ),
             color: 'text-warning',
             bgColor: 'bg-warning/10',
-            label: 'Unassigned'
+            label: 'Đã thu hồi'
         },
         checkin: {
             icon: (
@@ -75,7 +77,7 @@ const MyAssetHistoryPage = ({ user }) => {
             ),
             color: 'text-primary',
             bgColor: 'bg-primary/10',
-            label: 'Check-in'
+            label: 'Nhận thiết bị'
         },
         checkout: {
             icon: (
@@ -87,7 +89,7 @@ const MyAssetHistoryPage = ({ user }) => {
             ),
             color: 'text-info',
             bgColor: 'bg-info/10',
-            label: 'Check-out'
+            label: 'Trả thiết bị'
         }
     };
 
@@ -142,7 +144,7 @@ const MyAssetHistoryPage = ({ user }) => {
 
     const formatDateTime = (dateString) => {
         if (!dateString) return '—';
-        return new Date(dateString).toLocaleString('en-US', {
+        return new Date(dateString).toLocaleString('vi-VN', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -153,7 +155,7 @@ const MyAssetHistoryPage = ({ user }) => {
 
     const formatDate = (dateString) => {
         if (!dateString) return '—';
-        return new Date(dateString).toLocaleDateString('en-US', {
+        return new Date(dateString).toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: 'short',
             day: 'numeric'
@@ -161,11 +163,11 @@ const MyAssetHistoryPage = ({ user }) => {
     };
 
     const eventTypeOptions = [
-        { value: '', label: 'All Events' },
-        { value: 'assigned', label: 'Assigned' },
-        { value: 'unassigned', label: 'Unassigned' },
-        { value: 'checkin', label: 'Check-in' },
-        { value: 'checkout', label: 'Check-out' },
+        { value: '', label: 'Tất cả sự kiện' },
+        { value: 'assigned', label: 'Đã giao' },
+        { value: 'unassigned', label: 'Đã thu hồi' },
+        { value: 'checkin', label: 'Nhận thiết bị' },
+        { value: 'checkout', label: 'Trả thiết bị' },
     ];
 
     const clearFilters = () => {
@@ -173,6 +175,19 @@ const MyAssetHistoryPage = ({ user }) => {
         setDateFrom('');
         setDateTo('');
     };
+
+    const getAssetTypeLabel = useCallback((type) => {
+        const normalizedType = String(type || '').trim().toLowerCase();
+
+        if (!normalizedType) {
+            return t('common.unknown');
+        }
+
+        const supportedTypes = ['tray', 'machine', 'tool', 'equipment', 'other'];
+        const typeKey = supportedTypes.includes(normalizedType) ? normalizedType : 'other';
+
+        return t(`assets.types.${typeKey}`);
+    }, [t]);
 
     return (
         <div className="my-asset-history-page space-y-6">
@@ -188,7 +203,7 @@ const MyAssetHistoryPage = ({ user }) => {
                             <CardBody>
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-primary">{summary.current_assignments}</p>
-                                    <p className="text-sm text-text-muted">Current Assignments</p>
+                                    <p className="text-sm text-text-muted">Thiết bị đang giữ</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -196,7 +211,7 @@ const MyAssetHistoryPage = ({ user }) => {
                             <CardBody>
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-text">{summary.total_assignments}</p>
-                                    <p className="text-sm text-text-muted">Total Assignments</p>
+                                    <p className="text-sm text-text-muted">Tổng lượt được giao</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -204,7 +219,7 @@ const MyAssetHistoryPage = ({ user }) => {
                             <CardBody>
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-success">{summary.total_checkins}</p>
-                                    <p className="text-sm text-text-muted">Total Check-ins</p>
+                                    <p className="text-sm text-text-muted">Tổng lượt nhận thiết bị</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -212,7 +227,7 @@ const MyAssetHistoryPage = ({ user }) => {
                             <CardBody>
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-info">{summary.checkins_this_month}</p>
-                                    <p className="text-sm text-text-muted">Check-ins This Month</p>
+                                    <p className="text-sm text-text-muted">Lượt nhận trong tháng</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -223,8 +238,8 @@ const MyAssetHistoryPage = ({ user }) => {
             {/* History Timeline */}
             <Card>
                 <CardHeader 
-                    title="My Asset History"
-                    subtitle="Timeline of your asset assignments and check-ins"
+                    title="Lịch sử thiết bị của tôi"
+                    subtitle="Dòng thời gian các lần được giao, nhận và trả thiết bị"
                     action={
                         <Button 
                             size="sm" 
@@ -232,7 +247,7 @@ const MyAssetHistoryPage = ({ user }) => {
                             onClick={clearFilters}
                             disabled={!eventTypeFilter && !dateFrom && !dateTo}
                         >
-                            Clear Filters
+                            Xóa bộ lọc
                         </Button>
                     }
                 />
@@ -249,7 +264,7 @@ const MyAssetHistoryPage = ({ user }) => {
                         <div className="w-full sm:w-44">
                             <Input
                                 type="date"
-                                placeholder="From date"
+                                placeholder="Từ ngày"
                                 value={dateFrom}
                                 onChange={(e) => setDateFrom(e.target.value)}
                             />
@@ -257,7 +272,7 @@ const MyAssetHistoryPage = ({ user }) => {
                         <div className="w-full sm:w-44">
                             <Input
                                 type="date"
-                                placeholder="To date"
+                                placeholder="Đến ngày"
                                 value={dateTo}
                                 onChange={(e) => setDateTo(e.target.value)}
                             />
@@ -274,11 +289,11 @@ const MyAssetHistoryPage = ({ user }) => {
                             <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                 <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                             </svg>
-                            <h3 className="mt-3 text-sm font-medium text-text">No history found</h3>
+                            <h3 className="mt-3 text-sm font-medium text-text">Không có lịch sử phù hợp</h3>
                             <p className="mt-1 text-sm text-text-muted">
                                 {eventTypeFilter || dateFrom || dateTo 
-                                    ? 'Try adjusting your filters.'
-                                    : 'Your asset history will appear here.'}
+                                    ? 'Thử điều chỉnh lại bộ lọc.'
+                                    : 'Lịch sử thiết bị của bạn sẽ hiển thị tại đây.'}
                             </p>
                         </div>
                     ) : (
@@ -318,24 +333,24 @@ const MyAssetHistoryPage = ({ user }) => {
                                                 <div className="flex items-start gap-3">
                                                     <div className="flex-1">
                                                         <p className="font-medium text-text">
-                                                            {event.asset?.name || 'Unknown Asset'}
+                                                            {event.asset?.name || 'Thiết bị không xác định'}
                                                         </p>
                                                         <p className="text-sm text-text-muted">
-                                                            Code: {event.asset?.asset_code || '—'} • Type: {event.asset?.type || '—'}
+                                                            Mã: {event.asset?.asset_code || '—'} • Loại: {getAssetTypeLabel(event.asset?.type)}
                                                         </p>
                                                         
                                                         {/* Event-specific details */}
                                                         {event.details && (
                                                             <div className="mt-2 text-sm text-text-muted">
                                                                 {event.event_type === 'assigned' && event.details.assigned_by && (
-                                                                    <p>Assigned by: {event.details.assigned_by}</p>
+                                                                    <p>Người giao: {event.details.assigned_by}</p>
                                                                 )}
                                                                 {(event.event_type === 'checkin' || event.event_type === 'checkout') && (
                                                                     <>
-                                                                        {event.details.shift && <p>Shift: {event.details.shift}</p>}
-                                                                        {event.details.shift_date && <p>Date: {formatDate(event.details.shift_date)}</p>}
-                                                                        {event.details.source && <p>Source: {event.details.source}</p>}
-                                                                        {event.details.notes && <p>Notes: {event.details.notes}</p>}
+                                                                        {event.details.shift && <p>Ca: {event.details.shift}</p>}
+                                                                        {event.details.shift_date && <p>Ngày: {formatDate(event.details.shift_date)}</p>}
+                                                                        {event.details.source && <p>Nguồn: {event.details.source}</p>}
+                                                                        {event.details.notes && <p>Ghi chú: {event.details.notes}</p>}
                                                                     </>
                                                                 )}
                                                             </div>

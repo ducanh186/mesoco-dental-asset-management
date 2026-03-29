@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { 
     Card, 
     CardHeader, 
@@ -27,61 +26,61 @@ const MyEquipmentPage = ({ user }) => {
     const mockEquipment = [
         { 
             id: 1, 
-            name: 'Dental X-Ray Machine', 
+            name: 'Máy X-quang nha khoa', 
             code: 'EQ-001', 
-            category: 'Imaging',
+            category: 'Chẩn đoán hình ảnh',
             assignedDate: '2025-11-15',
-            condition: 'Good',
+            condition: 'Tốt',
             status: 'active',
             nextMaintenance: '2026-02-15'
         },
         { 
             id: 2, 
-            name: 'Ultrasonic Scaler', 
+            name: 'Máy cạo vôi siêu âm', 
             code: 'EQ-015', 
-            category: 'Cleaning',
+            category: 'Làm sạch',
             assignedDate: '2025-12-01',
-            condition: 'Excellent',
+            condition: 'Rất tốt',
             status: 'active',
             nextMaintenance: '2026-03-01'
         },
         { 
             id: 3, 
-            name: 'LED Curing Light', 
+            name: 'Đèn quang trùng hợp LED', 
             code: 'EQ-023', 
-            category: 'Treatment',
+            category: 'Điều trị',
             assignedDate: '2026-01-05',
-            condition: 'Good',
+            condition: 'Tốt',
             status: 'active',
             nextMaintenance: '2026-04-05'
         },
         { 
             id: 4, 
-            name: 'Intraoral Camera', 
+            name: 'Camera nội soi trong miệng', 
             code: 'EQ-034', 
-            category: 'Imaging',
+            category: 'Chẩn đoán hình ảnh',
             assignedDate: '2026-01-10',
-            condition: 'Fair',
+            condition: 'Tạm ổn',
             status: 'maintenance',
             nextMaintenance: '2026-01-25'
         },
         { 
             id: 5, 
-            name: 'Dental Handpiece', 
+            name: 'Tay khoan nha khoa', 
             code: 'EQ-042', 
-            category: 'Treatment',
+            category: 'Điều trị',
             assignedDate: '2025-10-20',
-            condition: 'Good',
+            condition: 'Tốt',
             status: 'active',
             nextMaintenance: '2026-01-30'
         },
     ];
 
     const statusOptions = [
-        { value: '', label: 'All Status' },
-        { value: 'active', label: 'Active' },
-        { value: 'maintenance', label: 'In Maintenance' },
-        { value: 'pending', label: 'Pending Return' },
+        { value: '', label: 'Tất cả trạng thái' },
+        { value: 'active', label: 'Đang hoạt động' },
+        { value: 'maintenance', label: 'Đang bảo trì' },
+        { value: 'pending', label: 'Chờ trả' },
     ];
 
     // Filter data
@@ -96,7 +95,7 @@ const MyEquipmentPage = ({ user }) => {
     const columns = [
         { 
             key: 'name', 
-            label: 'Equipment',
+            label: 'Thiết bị',
             render: (value, row) => (
                 <div>
                     <p className="font-medium text-text">{value}</p>
@@ -104,33 +103,33 @@ const MyEquipmentPage = ({ user }) => {
                 </div>
             )
         },
-        { key: 'category', label: 'Category' },
-        { key: 'assignedDate', label: 'Assigned Date' },
+        { key: 'category', label: 'Nhóm' },
+        { key: 'assignedDate', label: 'Ngày được giao' },
         { 
             key: 'condition', 
-            label: 'Condition',
+            label: 'Tình trạng',
             render: (value) => {
-                const variant = value === 'Excellent' ? 'success' : value === 'Good' ? 'info' : 'warning';
+                const variant = value === 'Rất tốt' ? 'success' : value === 'Tốt' ? 'info' : 'warning';
                 return <Badge variant={variant} size="sm">{value}</Badge>;
             }
         },
         { 
             key: 'status', 
-            label: 'Status',
+            label: 'Trạng thái',
             render: (value) => <StatusBadge status={value} />
         },
-        { key: 'nextMaintenance', label: 'Next Maintenance' },
+        { key: 'nextMaintenance', label: 'Bảo trì kế tiếp' },
         {
             key: 'actions',
-            label: 'Actions',
+            label: 'Thao tác',
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-2 justify-end">
-                    <Button size="sm" variant="ghost" onClick={() => toast.info(`Viewing ${row.name}`)}>
-                        View
+                    <Button size="sm" variant="ghost" onClick={() => toast.info(`Đang xem ${row.name}`)}>
+                        Xem
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.info(`Request return for ${row.name}`)}>
-                        Return
+                    <Button size="sm" variant="outline" onClick={() => toast.info(`Đã gửi yêu cầu trả cho ${row.name}`)}>
+                        Trả
                     </Button>
                 </div>
             )
@@ -138,7 +137,7 @@ const MyEquipmentPage = ({ user }) => {
     ];
 
     const handleRequestEquipment = () => {
-        toast.info('Opening equipment request form...');
+        toast.info('Đang mở biểu mẫu yêu cầu thiết bị...');
     };
 
     return (
@@ -155,7 +154,7 @@ const MyEquipmentPage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-text">{mockEquipment.length}</p>
-                                <p className="text-sm text-text-muted">Total Assigned</p>
+                                <p className="text-sm text-text-muted">Tổng thiết bị được giao</p>
                             </div>
                         </div>
                     </CardBody>
@@ -172,7 +171,7 @@ const MyEquipmentPage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-text">{mockEquipment.filter(e => e.status === 'active').length}</p>
-                                <p className="text-sm text-text-muted">Active</p>
+                                <p className="text-sm text-text-muted">Đang hoạt động</p>
                             </div>
                         </div>
                     </CardBody>
@@ -189,7 +188,7 @@ const MyEquipmentPage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-text">{mockEquipment.filter(e => e.status === 'maintenance').length}</p>
-                                <p className="text-sm text-text-muted">In Maintenance</p>
+                                <p className="text-sm text-text-muted">Đang bảo trì</p>
                             </div>
                         </div>
                     </CardBody>
@@ -199,11 +198,11 @@ const MyEquipmentPage = ({ user }) => {
             {/* Filters & Table */}
             <Card>
                 <CardHeader 
-                    title="My Equipment"
-                    subtitle={`${filteredData.length} items assigned to you`}
+                    title="Thiết bị của tôi"
+                    subtitle={`${filteredData.length} thiết bị đang được giao cho bạn`}
                     action={
                         <Button size="sm" onClick={handleRequestEquipment}>
-                            Request Equipment
+                            Yêu cầu thiết bị
                         </Button>
                     }
                 />
@@ -212,7 +211,7 @@ const MyEquipmentPage = ({ user }) => {
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Input
-                                placeholder="Search by name or code..."
+                                placeholder="Tìm theo tên hoặc mã..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 leftIcon={
@@ -228,7 +227,7 @@ const MyEquipmentPage = ({ user }) => {
                                 options={statusOptions}
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                placeholder="Filter by status"
+                                placeholder="Lọc theo trạng thái"
                             />
                         </div>
                     </div>
@@ -237,16 +236,16 @@ const MyEquipmentPage = ({ user }) => {
                     <Table
                         columns={columns}
                         data={filteredData}
-                        emptyMessage="No equipment assigned to you yet"
+                        emptyMessage="Bạn chưa được giao thiết bị nào"
                         emptyState={
                             <div className="text-center py-12">
                                 <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                                 </svg>
-                                <h3 className="mt-3 text-sm font-medium text-text">No equipment assigned</h3>
-                                <p className="mt-1 text-sm text-text-muted">Get started by requesting equipment.</p>
+                                <h3 className="mt-3 text-sm font-medium text-text">Bạn chưa được giao thiết bị nào</h3>
+                                <p className="mt-1 text-sm text-text-muted">Bắt đầu bằng cách gửi yêu cầu thiết bị.</p>
                                 <div className="mt-4">
-                                    <Button size="sm" onClick={handleRequestEquipment}>Request Equipment</Button>
+                                    <Button size="sm" onClick={handleRequestEquipment}>Yêu cầu thiết bị</Button>
                                 </div>
                             </div>
                         }

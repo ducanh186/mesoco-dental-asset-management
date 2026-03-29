@@ -12,6 +12,14 @@ const LanguageSwitcher = ({ variant = 'compact' }) => {
 
     const currentLanguage = languages.find(l => l.code === locale) || languages[0];
 
+    const getLanguageLabel = (langCode) => {
+        if (langCode === 'vi') {
+            return locale === 'vi' ? 'Tiếng Việt' : 'Vietnamese';
+        }
+
+        return locale === 'vi' ? 'Tiếng Anh' : 'English';
+    };
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -34,7 +42,7 @@ const LanguageSwitcher = ({ variant = 'compact' }) => {
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-surface-muted transition-colors text-sm"
-                    title="Change language"
+                    title={locale === 'vi' ? 'Đổi ngôn ngữ' : 'Change language'}
                 >
                     <span className="text-base">{currentLanguage.flag}</span>
                     <span className="hidden sm:inline text-text-muted font-medium">
@@ -62,7 +70,7 @@ const LanguageSwitcher = ({ variant = 'compact' }) => {
                                 }`}
                             >
                                 <span className="text-base">{lang.flag}</span>
-                                <span>{lang.name}</span>
+                                <span>{getLanguageLabel(lang.code)}</span>
                                 {lang.code === locale && (
                                     <svg className="w-4 h-4 ml-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <polyline points="20 6 9 17 4 12" />
@@ -94,7 +102,7 @@ const LanguageSwitcher = ({ variant = 'compact' }) => {
                         }`}
                     >
                         <span className="text-lg">{lang.flag}</span>
-                        <span className="font-medium">{lang.name}</span>
+                        <span className="font-medium">{getLanguageLabel(lang.code)}</span>
                     </button>
                 ))}
             </div>

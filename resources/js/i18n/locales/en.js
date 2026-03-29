@@ -13,9 +13,12 @@ export default {
         delete: 'Delete',
         edit: 'Edit',
         create: 'Create',
+        update: 'Update',
         add: 'Add',
         remove: 'Remove',
         search: 'Search',
+        searchPlaceholder: 'Search...',
+        selectOption: 'Select an option...',
         filter: 'Filter',
         sort: 'Sort',
         clear: 'Clear',
@@ -23,28 +26,48 @@ export default {
         submit: 'Submit',
         confirm: 'Confirm',
         close: 'Close',
+        closeSidebar: 'Close sidebar',
+        closeModal: 'Close modal',
         back: 'Back',
         next: 'Next',
         previous: 'Previous',
         loading: 'Loading...',
+        processing: 'Processing...',
         noData: 'No data',
         error: 'Error',
         success: 'Success',
         warning: 'Warning',
         info: 'Info',
+        unknown: 'Unknown',
         yes: 'Yes',
         no: 'No',
         all: 'All',
         none: 'None',
         actions: 'Actions',
+        openMenu: 'Open menu',
+        user: 'User',
+        print: 'Print',
         status: {
             label: 'Status',
             active: 'Active',
+            inactive: 'Inactive',
+            pending: 'Pending',
+            approved: 'Approved',
+            rejected: 'Rejected',
+            submitted: 'Submitted',
+            cancelled: 'Cancelled',
             maintenance: 'Maintenance',
+            inProgress: 'In Progress',
+            in_progress: 'In Progress',
             offService: 'Off Service',
             off_service: 'Off Service',
             available: 'Available',
-            retired: 'Retired'
+            assigned: 'Assigned',
+            overdue: 'Overdue',
+            expired: 'Expired',
+            terminated: 'Terminated',
+            retired: 'Retired',
+            draft: 'Draft'
         },
         type: 'Type',
         name: 'Name',
@@ -164,6 +187,7 @@ export default {
         resetting: 'Resetting...',
         resetPasswordBtn: 'Reset Password',
         verificationCodeResent: 'A new verification code has been sent.',
+        invalidVerificationCode: 'The verification code is invalid.',
         failedToSendCode: 'Failed to send verification code. Please try again.',
         failedToResetPassword: 'Failed to reset password. Please try again.',
         failedToResendCode: 'Failed to resend code. Please try again.',
@@ -684,6 +708,7 @@ export default {
         reviewQueue: 'Review Queue',
         viewQueue: 'View Review Queue',
         reviewRequest: 'Review Request',
+        reviewQueueSubtitle: 'Approve or reject pending requests',
         approveConfirm: 'Confirm approval of this request?',
         rejectConfirm: 'Confirm rejection of this request?',
         approveSuccess: 'Request approved successfully',
@@ -691,11 +716,41 @@ export default {
         pendingCount: '{count} pending',
         noPendingRequests: 'No pending requests',
         allProcessed: 'All requests have been processed',
+        totalMatchingRequests: 'Total Matching Requests',
+        highPriority: 'High Priority',
+        allCaughtUp: 'All caught up!',
+        noPendingRequestsHint: 'No pending requests to review',
+        loadingRequests: 'Loading requests...',
+        noRequestsFound: 'No requests found',
+        noRequestsYet: 'No requests yet',
+        noItemsAddedYet: 'No items added yet. Click "Add Item" to start.',
+        cancelConfirm: 'Are you sure you want to cancel this request?',
+        approveRequestTitle: 'Approve Request',
+        rejectRequestTitle: 'Reject Request',
+        approveRequestConfirm: 'Are you sure you want to approve this request?',
+        rejectRequestConfirm: 'Are you sure you want to reject this request?',
+        noteLabel: 'Note',
+        approveNotePlaceholder: 'Optional: Add a note for the requester...',
+        rejectNotePlaceholder: 'Please provide a reason for rejection...',
+        performedBy: 'by {name}',
+        shiftLabel: 'Shift',
+        severitySuffix: 'severity',
 
         // Empty states
         noRequests: 'No requests',
         noRequestsHint: 'Get started by creating a new request.',
         searchPlaceholder: 'Search by request code or requester...',
+        createNewRequest: 'Create New Request',
+        myRequestsSubtitle: 'View and manage your equipment requests',
+        pendingReview: 'Pending Review',
+        titlePlaceholder: 'Briefly describe your request',
+        descriptionPlaceholder: 'Provide additional details...',
+        submitting: 'Submitting...',
+        assets: 'Assets',
+        consumableItems: 'Consumable Items',
+        requestDetail: 'Request Detail',
+        requestedBy: 'Requested By',
+        activity: 'Activity',
         requestSubmitted: 'Request submitted successfully!',
         addDetails: 'Add any additional details...',
         cannotCancelFinal: 'Cannot cancel a finalized request',
@@ -709,6 +764,14 @@ export default {
         items: 'Items',
         noItems: 'No items added',
         comingSoon: 'Coming Soon',
+        suspectedCauses: {
+            unknown: 'Unknown cause',
+            wear: 'Natural wear and tear',
+            operation: 'Operational error',
+            electrical: 'Electrical issue',
+            mechanical: 'Mechanical issue',
+            software: 'Software issue',
+        },
     },
 
     // ========================================================================
@@ -954,14 +1017,23 @@ export default {
         
         // Actions
         viewAsset: 'View Asset',
+        viewDetails: 'View Details',
+        assetInfo: 'Asset Info',
         checkinFromMyAssets: 'Please use My Equipment page to check-in',
-        
+
         // Help
         helpTitle: 'How to use QR Scanner',
         helpDesc: 'Scan the QR code on equipment using your phone camera or paste the payload manually.',
         helpStep1: 'Click "Start Scanning" and point camera at QR code',
         helpStep2: 'Or switch to Manual mode and paste the payload',
         helpStep3: 'View asset details and check-in if assigned to you',
+
+        // Legacy keys for backwards compatibility
+        tryAgain: 'Try Again',
+        found: 'Found',
+        noResult: 'No asset found',
+        noResultMessage: 'The QR code is invalid or the asset does not exist in the system.',
+        processing: 'Processing...',
     },
 
     // ========================================================================
@@ -970,9 +1042,15 @@ export default {
     contracts: {
         title: 'Employee Contracts',
         subtitle: 'Manage employee contracts and documents',
+        create: 'Create Contract',
+        edit: 'Edit Contract',
+        view: 'View Contract',
+        delete: 'Delete Contract',
+        allEmployees: 'All Employees',
         contractId: 'Contract ID',
         employee: 'Employee',
         type: 'Contract Type',
+        contractType: 'Contract Type',
         department: 'Department',
         departmentPlaceholder: 'e.g., Dental, Admin, etc.',
         startDate: 'Start Date',
@@ -987,18 +1065,38 @@ export default {
         selectEmployee: 'Select an employee',
         selectEmployeeFirst: 'Select an Employee',
         selectEmployeeHint: 'Choose an employee from the dropdown above to view their contracts',
+        selectEmployeePlaceholder: '-- Select Employee --',
         startDateRequired: 'Start date is required',
         noContracts: 'No contracts found',
         noContractsHint: 'Add a contract for this employee',
+        noContractsForEmployee: 'This employee has no contracts yet',
         createSuccess: 'Contract created successfully',
         updateSuccess: 'Contract updated successfully',
         deleteSuccess: 'Contract deleted successfully',
+        created: 'Contract created',
+        updated: 'Contract updated',
+        deleted: 'Contract deleted',
         deleteConfirm: 'Are you sure you want to delete this contract?',
+
+        // Form fields
+        notes: 'Notes',
+        document: 'Attached Document',
+        uploadDocument: 'Upload Document',
+        viewDocument: 'View Document',
+        downloadDocument: 'Download',
+        noDocument: 'No document available',
+
         types: {
+            probation: 'Probation',
+            fixed_term: 'Fixed-term',
+            indefinite: 'Indefinite',
+            seasonal: 'Seasonal',
+            contractor: 'Contractor',
             fullTime: 'Full Time',
             partTime: 'Part Time',
             intern: 'Intern',
             outsource: 'Outsource',
+            other: 'Other',
         },
         statuses: {
             active: 'Active',
@@ -1006,6 +1104,13 @@ export default {
             terminated: 'Terminated',
             pending: 'Pending',
         },
+        status: 'Status',
+        period: 'Period',
+        actions: 'Actions',
+        uploadSuccess: 'Document uploaded successfully',
+        uploadError: 'Failed to upload document',
+        invalidFileType: 'Invalid file type. PDF only.',
+        fileTooLarge: 'File is too large. Maximum size: 5MB.',
     },
 
     // ========================================================================
@@ -1167,6 +1272,167 @@ export default {
         
         // Audit
         auditComingSoon: 'Audit log coming soon.',
+    },
+
+    // ========================================================================
+    // Topbar
+    // ========================================================================
+    topbar: {
+        searchPlaceholder: 'Search...',
+    },
+
+    // ========================================================================
+    // Printable Label
+    // ========================================================================
+    printableLabel: {
+        title: 'Asset Label',
+        popupBlocked: 'Please allow popups to print the label',
+        unnamedAsset: 'Unnamed Asset',
+        qrAlt: 'QR Code',
+        noQr: 'No QR',
+        scanInstruction: 'Scan QR code to view asset details',
+    },
+
+    // ========================================================================
+    // Locations Page
+    // ========================================================================
+    locationsPage: {
+        title: 'Locations',
+        subtitle: 'Manage physical locations for assets',
+        addLocation: 'Add Location',
+        editLocation: 'Edit Location',
+        searchPlaceholder: 'Search by location name...',
+        showInactive: 'Show inactive locations',
+        noLocations: 'No locations found',
+        locationName: 'Location Name',
+        locationNamePlaceholder: 'e.g., Clinic Floor 1',
+        descriptionPlaceholder: 'Optional description...',
+        address: 'Address',
+        addressPlaceholder: 'Optional address...',
+    },
+
+    // ========================================================================
+    // Inventory Page
+    // ========================================================================
+    inventoryPage: {
+        title: 'Inventory & Valuation',
+        totalAssets: 'Total Assets',
+        assigned: 'Assigned',
+        totalBookValue: 'Total Book Value',
+        warrantyExpiringSoon: '{count} assets with warranty expiring soon',
+        withinDays: 'Within {count} days',
+        expiredCount: '{count} expired',
+        showAll: 'Show All',
+        showExpiring: 'Show Expiring',
+        equipmentInventory: 'Equipment Inventory',
+        assetValuationReport: 'Asset Valuation Report',
+        totalItems: '{count} total items',
+        warrantyFilterSuffix: ' (warranty expiring soon)',
+        inventoryTab: 'Inventory',
+        valuationTab: 'Valuation',
+        exportCsv: 'Export CSV',
+        exporting: 'Exporting...',
+        noAssetsFound: 'No assets found',
+        adjustFilters: 'Try adjusting your search or filters.',
+        code: 'Code',
+        equipment: 'Equipment',
+        bookValue: 'Book Value',
+        fullyDepreciated: 'Fully Depr.',
+        detailTitle: 'Asset Details',
+        purchaseDate: 'Purchase Date',
+        warrantyExpiry: 'Warranty Expiry',
+        purchaseCost: 'Purchase Cost',
+        currentBookValue: 'Current Book Value',
+        printLabel: 'Print Label',
+        exportSuccess: 'Export downloaded successfully',
+    },
+
+    // ========================================================================
+    // My Equipment Page
+    // ========================================================================
+    myEquipmentPage: {
+        title: 'My Equipment',
+        subtitle: '{count} items assigned to you',
+        totalAssigned: 'Total Assigned',
+        inMaintenance: 'In Maintenance',
+        requestEquipment: 'Request Equipment',
+        searchPlaceholder: 'Search by name or code...',
+        filterByStatus: 'Filter by status',
+        noEquipment: 'No equipment assigned',
+        noEquipmentHint: 'Get started by requesting equipment.',
+        openRequestForm: 'Opening equipment request form...',
+        view: 'View',
+        return: 'Return',
+        viewing: 'Viewing {name}',
+        requestReturn: 'Request return for {name}',
+        columns: {
+            equipment: 'Equipment',
+            category: 'Category',
+            assignedDate: 'Assigned Date',
+            condition: 'Condition',
+            status: 'Status',
+            nextMaintenance: 'Next Maintenance',
+            actions: 'Actions',
+        },
+        conditions: {
+            excellent: 'Excellent',
+            good: 'Good',
+            fair: 'Fair',
+        },
+        statusFilters: {
+            all: 'All Status',
+            active: 'Active',
+            maintenance: 'In Maintenance',
+            pending: 'Pending Return',
+        },
+    },
+
+    // ========================================================================
+    // My Asset History Page
+    // ========================================================================
+    myAssetHistoryPage: {
+        title: 'My Asset History',
+        subtitle: 'Timeline of your asset assignments and check-ins',
+        currentAssignments: 'Current Assignments',
+        totalAssignments: 'Total Assignments',
+        totalCheckIns: 'Total Check-ins',
+        checkInsThisMonth: 'Check-ins This Month',
+        clearFilters: 'Clear Filters',
+        fromDate: 'From date',
+        toDate: 'To date',
+        noHistoryFound: 'No history found',
+        adjustFilters: 'Try adjusting your filters.',
+        historyWillAppear: 'Your asset history will appear here.',
+        allEvents: 'All Events',
+        performedBy: 'by {name}',
+        eventTypes: {
+            assigned: 'Assigned',
+            unassigned: 'Unassigned',
+            checkin: 'Check-in',
+            checkout: 'Check-out',
+        },
+    },
+
+    // ========================================================================
+    // Placeholder Pages
+    // ========================================================================
+    placeholderPages: {
+        equipmentTitle: 'Equipment Management',
+        equipmentDescription: 'Manage all dental equipment and devices.',
+        usersTitle: 'User Management',
+        usersDescription: 'Manage users and access permissions.',
+        settingsTitle: 'System Settings',
+        settingsDescription: 'Configure application preferences.',
+        comingSoon: 'Coming in Phase 1',
+    },
+
+    // ========================================================================
+    // Not Found
+    // ========================================================================
+    notFound: {
+        title: 'Page Not Found',
+        message: "The page you're looking for doesn't exist or has been moved.",
+        backToDashboard: 'Back to Dashboard',
     },
 
     // ========================================================================

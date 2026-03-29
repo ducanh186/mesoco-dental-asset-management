@@ -368,7 +368,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 <button 
                     className="sidebar-close-btn text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
                     onClick={onMobileClose}
-                    aria-label="Close sidebar"
+                    aria-label={t('common.closeSidebar')}
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18" />
@@ -387,7 +387,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 <button 
                     className="collapse-btn text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
                     onClick={onToggle}
-                    aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
                 >
                     <svg 
                         className={`collapse-icon ${collapsed ? 'collapsed' : ''}`}

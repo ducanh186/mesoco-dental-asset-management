@@ -42,8 +42,9 @@ const SEVERITIES = {
 // ReviewRequestsPage - Review queue for Admin/HR
 // ============================================================================
 const ReviewRequestsPage = ({ user }) => {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const toast = useToast();
+    const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
     
     // List state
     const [requests, setRequests] = useState([]);
@@ -117,7 +118,7 @@ const ReviewRequestsPage = ({ user }) => {
         setSubmitting(true);
         try {
             await requestsApi.review(selectedRequest.id, reviewAction, reviewNote || null);
-            toast.success(`Request ${reviewAction === 'APPROVE' ? 'approved' : 'rejected'} successfully`);
+            toast.success(reviewAction === 'APPROVE' ? t('review.approveSuccess') : t('review.rejectSuccess'));
             setIsReviewOpen(false);
             setIsDetailOpen(false);
             setSelectedRequest(null);
@@ -134,9 +135,9 @@ const ReviewRequestsPage = ({ user }) => {
     // ========================================
     const getTypeLabel = (type) => {
         switch (type) {
-            case REQUEST_TYPES.JUSTIFICATION: return 'Justification';
-            case REQUEST_TYPES.ASSET_LOAN: return 'Asset Loan';
-            case REQUEST_TYPES.CONSUMABLE_REQUEST: return 'Consumable';
+            case REQUEST_TYPES.JUSTIFICATION: return t('requests.types.JUSTIFICATION');
+            case REQUEST_TYPES.ASSET_LOAN: return t('requests.types.ASSET_LOAN');
+            case REQUEST_TYPES.CONSUMABLE_REQUEST: return t('requests.types.CONSUMABLE_REQUEST');
             default: return type;
         }
     };
@@ -160,6 +161,16 @@ const ReviewRequestsPage = ({ user }) => {
         }
     };
 
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case REQUEST_STATUSES.SUBMITTED: return t('requests.statuses.SUBMITTED');
+            case REQUEST_STATUSES.APPROVED: return t('requests.statuses.APPROVED');
+            case REQUEST_STATUSES.REJECTED: return t('requests.statuses.REJECTED');
+            case REQUEST_STATUSES.CANCELLED: return t('requests.statuses.CANCELLED');
+            default: return status;
+        }
+    };
+
     const getSeverityVariant = (severity) => {
         switch (severity) {
             case SEVERITIES.critical: return 'danger';
@@ -170,29 +181,50 @@ const ReviewRequestsPage = ({ user }) => {
         }
     };
 
+    const getSeverityLabel = (severity) => {
+        switch (severity) {
+            case SEVERITIES.critical: return t('requests.severities.critical');
+            case SEVERITIES.high: return t('requests.severities.high');
+            case SEVERITIES.medium: return t('requests.severities.medium');
+            case SEVERITIES.low: return t('requests.severities.low');
+            default: return severity;
+        }
+    };
+
+    const getEventLabel = (eventType) => {
+        switch (eventType) {
+            case 'CREATED': return 'Tạo phiếu';
+            case 'SUBMITTED': return 'Gửi phiếu';
+            case 'APPROVED': return 'Duyệt phiếu';
+            case 'REJECTED': return 'Từ chối phiếu';
+            case 'CANCELLED': return 'Hủy phiếu';
+            default: return eventType;
+        }
+    };
+
     // ========================================
     // Table Columns
     // ========================================
     const columns = [
         { 
             key: 'code', 
-            label: 'Request ID',
+            label: t('requests.requestId'),
             render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>
         },
         { 
             key: 'type', 
-            label: 'Type',
+            label: t('requests.requestType'),
             render: (value) => <Badge variant={getTypeVariant(value)} size="sm">{getTypeLabel(value)}</Badge>
         },
         { 
             key: 'title', 
-            label: 'Title',
+            label: 'Tiêu đề',
             render: (value, row) => (
                 <div>
                     <p className="font-medium text-text">{value}</p>
                     {row.severity && (
                         <Badge variant={getSeverityVariant(row.severity)} size="sm" outline className="mt-1">
-                            {row.severity}
+                            {getSeverityLabel(row.severity)}
                         </Badge>
                     )}
                 </div>
@@ -200,27 +232,27 @@ const ReviewRequestsPage = ({ user }) => {
         },
         {
             key: 'requester',
-            label: 'Requester',
+            label: t('requests.requester'),
             render: (value) => value?.full_name || '-'
         },
         { 
             key: 'created_at', 
-            label: 'Date',
-            render: (value) => value ? new Date(value).toLocaleDateString() : '-'
+            label: t('requests.requestDate'),
+            render: (value) => value ? new Date(value).toLocaleDateString(dateLocale) : '-'
         },
         { 
             key: 'status', 
-            label: 'Status',
-            render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>
+            label: t('requests.requestStatus'),
+            render: (value) => <Badge variant={getStatusVariant(value)}>{getStatusLabel(value)}</Badge>
         },
         {
             key: 'actions',
-            label: 'Actions',
+            label: t('common.actions'),
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => handleViewDetail(row)}>
-                        View
+                        {t('common.view')}
                     </Button>
                     {row.can_be_reviewed && (
                         <>
@@ -229,14 +261,14 @@ const ReviewRequestsPage = ({ user }) => {
                                 variant="success" 
                                 onClick={() => openReviewModal(row, 'APPROVE')}
                             >
-                                Approve
+                                {t('review.approve')}
                             </Button>
                             <Button 
                                 size="sm" 
                                 variant="danger" 
                                 onClick={() => openReviewModal(row, 'REJECT')}
                             >
-                                Reject
+                                {t('review.reject')}
                             </Button>
                         </>
                     )}
@@ -247,18 +279,18 @@ const ReviewRequestsPage = ({ user }) => {
 
     // Type & Status options for filters
     const typeOptions = [
-        { value: '', label: 'All Types' },
-        { value: REQUEST_TYPES.JUSTIFICATION, label: 'Justification' },
-        { value: REQUEST_TYPES.ASSET_LOAN, label: 'Asset Loan' },
-        { value: REQUEST_TYPES.CONSUMABLE_REQUEST, label: 'Consumable' },
+        { value: '', label: t('requests.types.all') },
+        { value: REQUEST_TYPES.JUSTIFICATION, label: t('requests.types.JUSTIFICATION') },
+        { value: REQUEST_TYPES.ASSET_LOAN, label: t('requests.types.ASSET_LOAN') },
+        { value: REQUEST_TYPES.CONSUMABLE_REQUEST, label: t('requests.types.CONSUMABLE_REQUEST') },
     ];
 
     const statusOptions = [
-        { value: REQUEST_STATUSES.SUBMITTED, label: 'Pending (SUBMITTED)' },
-        { value: '', label: 'All Statuses' },
-        { value: REQUEST_STATUSES.APPROVED, label: 'Approved' },
-        { value: REQUEST_STATUSES.REJECTED, label: 'Rejected' },
-        { value: REQUEST_STATUSES.CANCELLED, label: 'Cancelled' },
+        { value: REQUEST_STATUSES.SUBMITTED, label: t('requests.statuses.SUBMITTED') },
+        { value: '', label: t('requests.statuses.all') },
+        { value: REQUEST_STATUSES.APPROVED, label: t('requests.statuses.APPROVED') },
+        { value: REQUEST_STATUSES.REJECTED, label: t('requests.statuses.REJECTED') },
+        { value: REQUEST_STATUSES.CANCELLED, label: t('requests.statuses.CANCELLED') },
     ];
 
     // ========================================
@@ -274,8 +306,8 @@ const ReviewRequestsPage = ({ user }) => {
                             <p className="text-3xl font-bold text-warning">{pagination.total}</p>
                             <p className="text-sm text-text-muted">
                                 {statusFilter === REQUEST_STATUSES.SUBMITTED 
-                                    ? 'Pending Review' 
-                                    : 'Total Matching Requests'}
+                                    ? 'Phiếu chờ duyệt' 
+                                    : 'Tổng số phiếu phù hợp'}
                             </p>
                         </div>
                     </CardBody>
@@ -286,7 +318,7 @@ const ReviewRequestsPage = ({ user }) => {
                             <p className="text-3xl font-bold text-danger">
                                 {requests.filter(r => r.severity === 'critical' || r.severity === 'high').length}
                             </p>
-                            <p className="text-sm text-text-muted">High Priority</p>
+                            <p className="text-sm text-text-muted">Ưu tiên cao</p>
                         </div>
                     </CardBody>
                 </Card>
@@ -295,15 +327,15 @@ const ReviewRequestsPage = ({ user }) => {
             {/* Review Queue */}
             <Card>
                 <CardHeader 
-                    title="Review Requests"
-                    subtitle="Approve or reject pending requests"
+                    title={t('review.title')}
+                    subtitle="Duyệt hoặc từ chối các phiếu đang chờ xử lý"
                 />
                 <CardBody>
                     {/* Filter Bar */}
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Input
-                                placeholder="Search by code or title..."
+                                placeholder="Tìm theo mã phiếu hoặc tiêu đề..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 leftIcon={
@@ -334,20 +366,20 @@ const ReviewRequestsPage = ({ user }) => {
                     {loading ? (
                         <div className="text-center py-12">
                             <div className="loading-spinner mx-auto"></div>
-                            <p className="mt-2 text-text-muted">Loading requests...</p>
+                            <p className="mt-2 text-text-muted">{t('common.loading')}</p>
                         </div>
                     ) : (
                         <Table
                             columns={columns}
                             data={requests}
-                            emptyMessage="No requests found"
+                            emptyMessage={t('requests.noRequests')}
                             emptyState={
                                 <div className="text-center py-12">
                                     <svg className="mx-auto h-12 w-12 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <h3 className="mt-3 text-sm font-medium text-text">All caught up!</h3>
-                                    <p className="mt-1 text-sm text-text-muted">No pending requests to review</p>
+                                    <h3 className="mt-3 text-sm font-medium text-text">Không còn phiếu tồn đọng</h3>
+                                    <p className="mt-1 text-sm text-text-muted">Hiện không có phiếu nào cần duyệt</p>
                                 </div>
                             }
                         />
@@ -370,7 +402,7 @@ const ReviewRequestsPage = ({ user }) => {
             <Modal
                 isOpen={isDetailOpen}
                 onClose={() => { setIsDetailOpen(false); setSelectedRequest(null); }}
-                title={selectedRequest?.code || 'Request Detail'}
+                title={selectedRequest?.code || 'Chi tiết phiếu'}
                 size="lg"
                 footer={selectedRequest?.can_be_reviewed && (
                     <div className="flex gap-3">
@@ -378,13 +410,13 @@ const ReviewRequestsPage = ({ user }) => {
                             variant="danger" 
                             onClick={() => openReviewModal(selectedRequest, 'REJECT')}
                         >
-                            Reject
+                            {t('review.reject')}
                         </Button>
                         <Button 
                             variant="success" 
                             onClick={() => openReviewModal(selectedRequest, 'APPROVE')}
                         >
-                            Approve
+                            {t('review.approve')}
                         </Button>
                     </div>
                 )}
@@ -397,11 +429,11 @@ const ReviewRequestsPage = ({ user }) => {
                                 {getTypeLabel(selectedRequest.type)}
                             </Badge>
                             <Badge variant={getStatusVariant(selectedRequest.status)} size="lg">
-                                {selectedRequest.status}
+                                {getStatusLabel(selectedRequest.status)}
                             </Badge>
                             {selectedRequest.severity && (
                                 <Badge variant={getSeverityVariant(selectedRequest.severity)} outline>
-                                    {selectedRequest.severity} severity
+                                    {getSeverityLabel(selectedRequest.severity)}
                                 </Badge>
                             )}
                         </div>
@@ -417,7 +449,7 @@ const ReviewRequestsPage = ({ user }) => {
                         {/* Meta Info */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <span className="text-text-muted">Requested by:</span>
+                                <span className="text-text-muted">Người yêu cầu:</span>
                                 <span className="ml-2 text-text font-medium">
                                     {selectedRequest.requester?.full_name} 
                                     {selectedRequest.requester?.employee_code && (
@@ -428,22 +460,22 @@ const ReviewRequestsPage = ({ user }) => {
                                 </span>
                             </div>
                             <div>
-                                <span className="text-text-muted">Created:</span>
+                                <span className="text-text-muted">Ngày tạo:</span>
                                 <span className="ml-2 text-text">
-                                    {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString() : '-'}
+                                    {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString(dateLocale) : '-'}
                                 </span>
                             </div>
                             {selectedRequest.incident_at && (
                                 <div>
-                                    <span className="text-text-muted">Incident at:</span>
+                                    <span className="text-text-muted">Thời điểm xảy ra:</span>
                                     <span className="ml-2 text-text">
-                                        {new Date(selectedRequest.incident_at).toLocaleString()}
+                                        {new Date(selectedRequest.incident_at).toLocaleString(dateLocale)}
                                     </span>
                                 </div>
                             )}
                             {selectedRequest.suspected_cause && (
                                 <div>
-                                    <span className="text-text-muted">Suspected cause:</span>
+                                    <span className="text-text-muted">Nguyên nhân nghi ngờ:</span>
                                     <span className="ml-2 text-text">{selectedRequest.suspected_cause}</span>
                                 </div>
                             )}
@@ -452,7 +484,7 @@ const ReviewRequestsPage = ({ user }) => {
                         {/* Review Note (if already reviewed) */}
                         {selectedRequest.review_note && (
                             <div className="p-3 bg-surface-muted rounded-md">
-                                <span className="text-sm font-medium text-text">Review Note:</span>
+                                <span className="text-sm font-medium text-text">{t('requests.reviewNote')}:</span>
                                 <p className="text-sm text-text-muted mt-1">{selectedRequest.review_note}</p>
                             </div>
                         )}
@@ -460,7 +492,7 @@ const ReviewRequestsPage = ({ user }) => {
                         {/* Items */}
                         {selectedRequest.items && selectedRequest.items.length > 0 && (
                             <div>
-                                <h4 className="font-medium text-text mb-2">Items</h4>
+                                <h4 className="font-medium text-text mb-2">{t('requests.items')}</h4>
                                 <div className="space-y-2">
                                     {selectedRequest.items.map((item, index) => (
                                         <div key={index} className="p-3 bg-surface-muted rounded-md flex justify-between">
@@ -479,7 +511,7 @@ const ReviewRequestsPage = ({ user }) => {
                                                 )}
                                                 {item.from_shift && item.to_shift && (
                                                     <p className="text-sm text-text-muted">
-                                                        Shift: {item.from_shift.name} → {item.to_shift.name}
+                                                        Ca: {item.from_shift.name} → {item.to_shift.name}
                                                     </p>
                                                 )}
                                             </div>
@@ -497,18 +529,18 @@ const ReviewRequestsPage = ({ user }) => {
                         {/* Events Timeline */}
                         {selectedRequest.events && selectedRequest.events.length > 0 && (
                             <div>
-                                <h4 className="font-medium text-text mb-2">Activity</h4>
+                                <h4 className="font-medium text-text mb-2">{t('requests.activity')}</h4>
                                 <div className="space-y-2">
                                     {selectedRequest.events.map((event, index) => (
                                         <div key={index} className="flex gap-3 text-sm">
                                             <div className="w-2 h-2 mt-2 rounded-full bg-border"></div>
                                             <div>
-                                                <span className="text-text">{event.event_type}</span>
+                                                <span className="text-text">{getEventLabel(event.event_type)}</span>
                                                 {event.actor && (
-                                                    <span className="text-text-muted"> by {event.actor.name}</span>
+                                                    <span className="text-text-muted"> bởi {event.actor.name}</span>
                                                 )}
                                                 <span className="text-text-muted block text-xs">
-                                                    {event.created_at ? new Date(event.created_at).toLocaleString() : ''}
+                                                    {event.created_at ? new Date(event.created_at).toLocaleString(dateLocale) : ''}
                                                 </span>
                                             </div>
                                         </div>
@@ -524,19 +556,19 @@ const ReviewRequestsPage = ({ user }) => {
             <Modal
                 isOpen={isReviewOpen}
                 onClose={() => { setIsReviewOpen(false); setReviewNote(''); }}
-                title={`${reviewAction === 'APPROVE' ? 'Approve' : 'Reject'} Request`}
+                title={`${reviewAction === 'APPROVE' ? t('review.approve') : t('review.reject')} phiếu`}
                 size="sm"
                 footer={
                     <div className="flex gap-3">
                         <Button variant="secondary" onClick={() => { setIsReviewOpen(false); setReviewNote(''); }}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button 
                             variant={reviewAction === 'APPROVE' ? 'success' : 'danger'}
                             onClick={handleReview}
                             disabled={submitting}
                         >
-                            {submitting ? 'Processing...' : (reviewAction === 'APPROVE' ? 'Approve' : 'Reject')}
+                            {submitting ? 'Đang xử lý...' : (reviewAction === 'APPROVE' ? t('review.approve') : t('review.reject'))}
                         </Button>
                     </div>
                 }
@@ -544,8 +576,8 @@ const ReviewRequestsPage = ({ user }) => {
                 <div className="space-y-4">
                     <p className="text-text-muted">
                         {reviewAction === 'APPROVE' 
-                            ? 'Are you sure you want to approve this request?' 
-                            : 'Are you sure you want to reject this request?'}
+                            ? 'Bạn có chắc muốn duyệt phiếu này không?' 
+                            : 'Bạn có chắc muốn từ chối phiếu này không?'}
                     </p>
                     
                     {selectedRequest && (
@@ -557,14 +589,14 @@ const ReviewRequestsPage = ({ user }) => {
 
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">
-                            Note {reviewAction === 'REJECT' && <span className="text-danger">*</span>}
+                            Ghi chú {reviewAction === 'REJECT' && <span className="text-danger">*</span>}
                         </label>
                         <textarea
                             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-surface text-text"
                             rows={3}
                             placeholder={reviewAction === 'APPROVE' 
-                                ? 'Optional: Add a note for the requester...'
-                                : 'Please provide a reason for rejection...'}
+                                ? 'Có thể thêm ghi chú cho người yêu cầu...'
+                                : 'Vui lòng nhập lý do từ chối...'}
                             value={reviewNote}
                             onChange={(e) => setReviewNote(e.target.value)}
                         />

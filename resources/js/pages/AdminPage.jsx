@@ -451,21 +451,21 @@ const AdminPage = ({ user }) => {
                                 <div className="font-medium text-text">{t('admin.assetCodeFormat')}</div>
                                 <div className="text-sm text-text-muted">EQUIP-XXXX</div>
                             </div>
-                            <Badge variant="primary">Active</Badge>
+                            <Badge variant="primary">Đang dùng</Badge>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
                             <div>
                                 <div className="font-medium text-text">{t('admin.employeeCodeFormat')}</div>
                                 <div className="text-sm text-text-muted">NV-XXXX</div>
                             </div>
-                            <Badge variant="primary">Active</Badge>
+                            <Badge variant="primary">Đang dùng</Badge>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-surface rounded-lg">
                             <div>
                                 <div className="font-medium text-text">{t('admin.requestCodeFormat')}</div>
                                 <div className="text-sm text-text-muted">REQ-YYYYMMDD-XXXX</div>
                             </div>
-                            <Badge variant="primary">Active</Badge>
+                            <Badge variant="primary">Đang dùng</Badge>
                         </div>
                     </div>
                 </CardBody>
@@ -495,8 +495,8 @@ const AdminPage = ({ user }) => {
     // Static Data
     // ========================================================================
     const rbacMatrix = [
-        { permission: 'Thiết bị của tôi (My Equipment)', admin: true, hr: true, doctor: true, technician: true, employee: true },
-        { permission: 'Quét QR / Check-in', admin: true, hr: true, doctor: true, technician: true, employee: true },
+        { permission: 'Thiết bị của tôi', admin: true, hr: true, doctor: true, technician: true, employee: true },
+        { permission: 'Quét QR / nhận thiết bị', admin: true, hr: true, doctor: true, technician: true, employee: true },
         { permission: 'Phiếu yêu cầu (tạo/xem)', admin: true, hr: true, doctor: true, technician: true, employee: true },
         { permission: 'Quản lý thiết bị', admin: true, hr: true, doctor: false, technician: false, employee: false },
         { permission: 'Giao/Thu hồi thiết bị', admin: true, hr: true, doctor: false, technician: false, employee: false },

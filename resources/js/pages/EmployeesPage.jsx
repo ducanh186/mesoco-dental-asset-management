@@ -29,7 +29,8 @@ import { employeesApi, contractsApi, handleApiError } from '../services/api';
  */
 const EmployeesPage = ({ user }) => {
     const toast = useToast();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
 
     // Tab state
     const [activeTab, setActiveTab] = useState('general'); // 'general' | 'contract'
@@ -460,12 +461,12 @@ const EmployeesPage = ({ user }) => {
         {
             key: 'start_date',
             label: t('contracts.startDate'),
-            render: (value) => value ? new Date(value).toLocaleDateString() : '-'
+            render: (value) => value ? new Date(value).toLocaleDateString(dateLocale) : '-'
         },
         {
             key: 'end_date',
             label: t('contracts.endDate'),
-            render: (value) => value ? new Date(value).toLocaleDateString() : t('contracts.indefinite')
+            render: (value) => value ? new Date(value).toLocaleDateString(dateLocale) : t('contracts.indefinite')
         },
         {
             key: 'status',
@@ -542,7 +543,7 @@ const EmployeesPage = ({ user }) => {
 
                     {/* Tabs */}
                     <div className="mt-4 border-b border-border">
-                        <nav className="flex gap-4" aria-label="Tabs">
+                        <nav className="flex gap-4" aria-label="Các tab">
                             <button
                                 onClick={() => {
                                     setActiveTab('general');

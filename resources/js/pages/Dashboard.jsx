@@ -281,7 +281,7 @@ const Dashboard = ({ user }) => {
             {/* Welcome Section */}
             <div className="welcome-section bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
                 <h2 className="text-xl font-semibold text-text mb-1">
-                    {t('dashboard.welcome', { name: user?.name || 'User' })}
+                    {t('dashboard.welcome', { name: user?.name || 'Bạn' })}
                 </h2>
                 <p className="text-text-muted">
                     {isAdminOrHr 

@@ -42,8 +42,9 @@ const SEVERITIES = {
 // RequestsPage - Equipment requests (Staff view)
 // ============================================================================
 const RequestsPage = ({ user }) => {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const toast = useToast();
+    const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
     
     // List state
     const [requests, setRequests] = useState([]);
@@ -192,7 +193,7 @@ const RequestsPage = ({ user }) => {
     };
 
     const handleCancel = async (request) => {
-        if (!confirm('Are you sure you want to cancel this request?')) return;
+        if (!confirm('Bạn có chắc muốn hủy phiếu này không?')) return;
         
         try {
             await requestsApi.cancel(request.id);
@@ -301,6 +302,37 @@ const RequestsPage = ({ user }) => {
         }
     };
 
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case REQUEST_STATUSES.SUBMITTED: return t('requests.statuses.SUBMITTED');
+            case REQUEST_STATUSES.APPROVED: return t('requests.statuses.APPROVED');
+            case REQUEST_STATUSES.REJECTED: return t('requests.statuses.REJECTED');
+            case REQUEST_STATUSES.CANCELLED: return t('requests.statuses.CANCELLED');
+            default: return status;
+        }
+    };
+
+    const getSeverityLabel = (severity) => {
+        switch (severity) {
+            case SEVERITIES.low: return t('requests.severities.low');
+            case SEVERITIES.medium: return t('requests.severities.medium');
+            case SEVERITIES.high: return t('requests.severities.high');
+            case SEVERITIES.critical: return t('requests.severities.critical');
+            default: return severity;
+        }
+    };
+
+    const getEventLabel = (eventType) => {
+        switch (eventType) {
+            case 'CREATED': return 'Tạo phiếu';
+            case 'SUBMITTED': return 'Gửi phiếu';
+            case 'APPROVED': return 'Duyệt phiếu';
+            case 'REJECTED': return 'Từ chối phiếu';
+            case 'CANCELLED': return 'Hủy phiếu';
+            default: return eventType;
+        }
+    };
+
     const getSeverityVariant = (severity) => {
         switch (severity) {
             case SEVERITIES.critical: return 'danger';
@@ -322,18 +354,18 @@ const RequestsPage = ({ user }) => {
         },
         { 
             key: 'type', 
-            label: 'Type',
+            label: t('requests.requestType'),
             render: (value) => <Badge variant={getTypeVariant(value)} size="sm">{getTypeLabel(value)}</Badge>
         },
         { 
             key: 'title', 
-            label: 'Title',
+            label: 'Tiêu đề',
             render: (value, row) => (
                 <div>
                     <p className="font-medium text-text">{value}</p>
                     {row.severity && (
                         <Badge variant={getSeverityVariant(row.severity)} size="sm" outline className="mt-1">
-                            {row.severity}
+                            {getSeverityLabel(row.severity)}
                         </Badge>
                     )}
                 </div>
@@ -341,26 +373,26 @@ const RequestsPage = ({ user }) => {
         },
         { 
             key: 'created_at', 
-            label: 'Date',
-            render: (value) => value ? new Date(value).toLocaleDateString() : '-'
+            label: t('requests.requestDate'),
+            render: (value) => value ? new Date(value).toLocaleDateString(dateLocale) : '-'
         },
         { 
             key: 'status', 
-            label: 'Status',
-            render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>
+            label: t('requests.requestStatus'),
+            render: (value) => <Badge variant={getStatusVariant(value)}>{getStatusLabel(value)}</Badge>
         },
         {
             key: 'actions',
-            label: 'Actions',
+            label: t('common.actions'),
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="ghost" onClick={() => handleViewDetail(row)}>
-                        View
+                        {t('common.view')}
                     </Button>
                     {row.can_be_cancelled && (
                         <Button size="sm" variant="outline" onClick={() => handleCancel(row)}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                     )}
                 </div>
@@ -370,18 +402,18 @@ const RequestsPage = ({ user }) => {
 
     // Type & Status options for filters
     const typeOptions = [
-        { value: '', label: 'All Types' },
-        { value: REQUEST_TYPES.JUSTIFICATION, label: 'Justification' },
-        { value: REQUEST_TYPES.ASSET_LOAN, label: 'Asset Loan' },
-        { value: REQUEST_TYPES.CONSUMABLE_REQUEST, label: 'Consumable' },
+        { value: '', label: t('requests.types.all') },
+        { value: REQUEST_TYPES.JUSTIFICATION, label: t('requests.types.JUSTIFICATION') },
+        { value: REQUEST_TYPES.ASSET_LOAN, label: t('requests.types.ASSET_LOAN') },
+        { value: REQUEST_TYPES.CONSUMABLE_REQUEST, label: t('requests.types.CONSUMABLE_REQUEST') },
     ];
 
     const statusOptions = [
-        { value: '', label: 'All Statuses' },
-        { value: REQUEST_STATUSES.SUBMITTED, label: 'Submitted' },
-        { value: REQUEST_STATUSES.APPROVED, label: 'Approved' },
-        { value: REQUEST_STATUSES.REJECTED, label: 'Rejected' },
-        { value: REQUEST_STATUSES.CANCELLED, label: 'Cancelled' },
+        { value: '', label: t('requests.statuses.all') },
+        { value: REQUEST_STATUSES.SUBMITTED, label: t('requests.statuses.SUBMITTED') },
+        { value: REQUEST_STATUSES.APPROVED, label: t('requests.statuses.APPROVED') },
+        { value: REQUEST_STATUSES.REJECTED, label: t('requests.statuses.REJECTED') },
+        { value: REQUEST_STATUSES.CANCELLED, label: t('requests.statuses.CANCELLED') },
     ];
 
     // Stats
@@ -471,23 +503,23 @@ const RequestsPage = ({ user }) => {
                     {loading ? (
                         <div className="text-center py-12">
                             <div className="loading-spinner mx-auto"></div>
-                            <p className="mt-2 text-text-muted">Loading requests...</p>
+                            <p className="mt-2 text-text-muted">{t('common.loading')}</p>
                         </div>
                     ) : (
                         <Table
                             columns={columns}
                             data={requests}
-                            emptyMessage="No requests found"
+                            emptyMessage={t('requests.noRequests')}
                             emptyState={
                                 <div className="text-center py-12">
                                     <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                         <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
                                         <rect x="9" y="3" width="6" height="4" rx="1" />
                                     </svg>
-                                    <h3 className="mt-3 text-sm font-medium text-text">No requests yet</h3>
-                                    <p className="mt-1 text-sm text-text-muted">Create your first request to get started</p>
+                                    <h3 className="mt-3 text-sm font-medium text-text">Chưa có phiếu nào</h3>
+                                    <p className="mt-1 text-sm text-text-muted">Tạo phiếu đầu tiên để bắt đầu</p>
                                     <div className="mt-4">
-                                        <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>New Request</Button>
+                                        <Button size="sm" onClick={() => setIsNewRequestOpen(true)}>{t('requests.newRequest')}</Button>
                                     </div>
                                 </div>
                             }
@@ -601,7 +633,7 @@ const RequestsPage = ({ user }) => {
 
                         {formData.items.length === 0 && (
                             <p className="text-sm text-text-muted text-center py-4">
-                                No items added yet. Click "Add Item" to start.
+                                Chưa có mục nào. Nhấn "Thêm dòng" để bắt đầu.
                             </p>
                         )}
 
@@ -693,11 +725,11 @@ const RequestsPage = ({ user }) => {
                                 {getTypeLabel(selectedRequest.type)}
                             </Badge>
                             <Badge variant={getStatusVariant(selectedRequest.status)} size="lg">
-                                {selectedRequest.status}
+                                {getStatusLabel(selectedRequest.status)}
                             </Badge>
                             {selectedRequest.severity && (
                                 <Badge variant={getSeverityVariant(selectedRequest.severity)} outline>
-                                    {selectedRequest.severity}
+                                    {getSeverityLabel(selectedRequest.severity)}
                                 </Badge>
                             )}
                         </div>
@@ -719,7 +751,7 @@ const RequestsPage = ({ user }) => {
                             <div>
                                 <span className="text-text-muted">{t('common.createdAt')}:</span>
                                 <span className="ml-2 text-text">
-                                    {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString() : '-'}
+                                    {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString(dateLocale) : '-'}
                                 </span>
                             </div>
                             {selectedRequest.reviewer && (
@@ -731,7 +763,7 @@ const RequestsPage = ({ user }) => {
                                     <div>
                                         <span className="text-text-muted">{t('requests.reviewedAt')}:</span>
                                         <span className="ml-2 text-text">
-                                            {selectedRequest.reviewed_at ? new Date(selectedRequest.reviewed_at).toLocaleString() : '-'}
+                                            {selectedRequest.reviewed_at ? new Date(selectedRequest.reviewed_at).toLocaleString(dateLocale) : '-'}
                                         </span>
                                     </div>
                                 </>
@@ -787,12 +819,12 @@ const RequestsPage = ({ user }) => {
                                         <div key={index} className="flex gap-3 text-sm">
                                             <div className="w-2 h-2 mt-2 rounded-full bg-border"></div>
                                             <div>
-                                                <span className="text-text">{event.event_type}</span>
+                                                <span className="text-text">{getEventLabel(event.event_type)}</span>
                                                 {event.actor && (
-                                                    <span className="text-text-muted"> by {event.actor.name}</span>
+                                                    <span className="text-text-muted"> bởi {event.actor.name}</span>
                                                 )}
                                                 <span className="text-text-muted block text-xs">
-                                                    {event.created_at ? new Date(event.created_at).toLocaleString() : ''}
+                                                    {event.created_at ? new Date(event.created_at).toLocaleString(dateLocale) : ''}
                                                 </span>
                                             </div>
                                         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { 
+import {
     Card, 
     CardHeader, 
     CardBody, 
@@ -12,6 +12,7 @@ import {
     LoadingSpinner
 } from '../components/ui';
 import { useI18n } from '../i18n';
+import { preferLocalizedMessage } from '../services/api';
 
 /**
  * ProfilePage - Personal Details form (OrangeHRM-style)
@@ -77,7 +78,7 @@ const ProfilePage = ({ user }) => {
                 address: profile.address || '',
             });
         } catch (error) {
-            toast.error(error.response?.data?.message || t('profile.loadError'));
+            toast.error(preferLocalizedMessage(error.response?.data?.message, t('profile.loadError')));
         } finally {
             setLoading(false);
         }
@@ -151,7 +152,7 @@ const ProfilePage = ({ user }) => {
                 // Map backend errors to field errors
                 const mappedErrors = {};
                 Object.keys(errors).forEach(key => {
-                    mappedErrors[key] = errors[key][0];
+                    mappedErrors[key] = preferLocalizedMessage(errors[key][0], t('profile.updateError'));
                 });
                 setFieldErrors(mappedErrors);
                 
@@ -167,7 +168,7 @@ const ProfilePage = ({ user }) => {
                 refMap[firstErrorField]?.current?.focus();
             }
             
-            toast.error(error.response?.data?.message || t('profile.updateError'));
+            toast.error(preferLocalizedMessage(error.response?.data?.message, t('profile.updateError')));
         } finally {
             setSaving(false);
         }
@@ -181,6 +182,12 @@ const ProfilePage = ({ user }) => {
             return `${names[0][0]}${names[1][0]}`.toUpperCase();
         }
         return name.substring(0, 2).toUpperCase();
+    };
+
+    const getRoleLabel = () => {
+        if (!user?.role) return t('roles.staff');
+        const label = t(`roles.${user.role}`);
+        return label === `roles.${user.role}` ? user.role : label;
     };
 
     if (loading) {
@@ -209,7 +216,7 @@ const ProfilePage = ({ user }) => {
                                     {formData.employee_code}
                                 </p>
                                 <Badge variant="primary" size="sm" className="mt-2">
-                                    {user?.role || 'Staff'}
+                                    {getRoleLabel()}
                                 </Badge>
                             </div>
                         </div>

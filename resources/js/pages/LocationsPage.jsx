@@ -127,10 +127,10 @@ const LocationsPage = () => {
         try {
             if (editingLocation) {
                 await locationsApi.update(editingLocation.id, formData);
-                toast.success('Location updated successfully');
+                toast.success('Cập nhật vị trí thành công');
             } else {
                 await locationsApi.create(formData);
-                toast.success('Location created successfully');
+                toast.success('Tạo vị trí thành công');
             }
             setIsModalOpen(false);
             fetchLocations(pagination.current_page);
@@ -147,13 +147,17 @@ const LocationsPage = () => {
 
     // Delete location
     const handleDelete = async (location) => {
-        if (!window.confirm(`Are you sure you want to delete "${location.name}"?`)) {
+        if (!window.confirm(`Bạn có chắc muốn xóa vị trí "${location.name}" không?`)) {
             return;
         }
 
         try {
             const response = await locationsApi.delete(location.id);
-            toast.success(response.message);
+            toast.success(
+                response.data?.is_active === false
+                    ? 'Đã ngưng sử dụng vị trí vì vẫn còn thiết bị đang gắn với vị trí này'
+                    : 'Xóa vị trí thành công'
+            );
             fetchLocations(pagination.current_page);
         } catch (error) {
             handleApiError(error, toast);
@@ -164,13 +168,13 @@ const LocationsPage = () => {
     const columns = [
         {
             key: 'name',
-            label: 'Location Name',
+            label: 'Tên vị trí',
             render: (value, row) => (
                 <div>
                     <span className="font-medium text-text">{value}</span>
                     {!row.is_active && (
                         <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                            Inactive
+                            Ngưng sử dụng
                         </span>
                     )}
                 </div>
@@ -178,21 +182,21 @@ const LocationsPage = () => {
         },
         {
             key: 'description',
-            label: 'Description',
+            label: 'Mô tả',
             render: (value) => (
                 <span className="text-text-muted">{value || '—'}</span>
             ),
         },
         {
             key: 'address',
-            label: 'Address',
+            label: 'Địa chỉ',
             render: (value) => (
                 <span className="text-text-muted">{value || '—'}</span>
             ),
         },
         {
             key: 'assets_count',
-            label: 'Assets',
+            label: 'Thiết bị',
             align: 'center',
             render: (value) => (
                 <span className="font-medium">{value ?? '—'}</span>
@@ -209,7 +213,7 @@ const LocationsPage = () => {
                         variant="ghost"
                         onClick={() => handleEdit(row)}
                     >
-                        Edit
+                        Sửa
                     </Button>
                     <Button
                         size="sm"
@@ -217,7 +221,7 @@ const LocationsPage = () => {
                         className="text-red-600 hover:text-red-700"
                         onClick={() => handleDelete(row)}
                     >
-                        Delete
+                        Xóa
                     </Button>
                 </div>
             ),
@@ -229,14 +233,14 @@ const LocationsPage = () => {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-text">Locations</h1>
-                    <p className="text-text-muted mt-1">Manage physical locations for assets</p>
+                    <h1 className="text-2xl font-bold text-text">Vị trí</h1>
+                    <p className="text-text-muted mt-1">Quản lý vị trí sử dụng và lưu trữ thiết bị</p>
                 </div>
                 <Button onClick={handleCreate}>
                     <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Add Location
+                    Thêm vị trí
                 </Button>
             </div>
 
@@ -245,7 +249,7 @@ const LocationsPage = () => {
                 <div className="flex gap-4 items-center flex-wrap">
                     <div className="flex-1 min-w-[200px]">
                         <Input
-                            placeholder="Search by name..."
+                            placeholder="Tìm theo tên vị trí..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -257,7 +261,7 @@ const LocationsPage = () => {
                             onChange={(e) => setShowInactive(e.target.checked)}
                             className="rounded border-border text-primary focus:ring-primary"
                         />
-                        Show inactive locations
+                        Hiển thị cả vị trí ngưng sử dụng
                     </label>
                 </div>
             </Card>
@@ -268,7 +272,7 @@ const LocationsPage = () => {
                     columns={columns}
                     data={locations}
                     loading={loading}
-                    emptyMessage="No locations found"
+                    emptyMessage="Không có vị trí nào"
                 />
                 
                 {pagination.last_page > 1 && (
@@ -286,31 +290,31 @@ const LocationsPage = () => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={editingLocation ? 'Edit Location' : 'Add Location'}
+                title={editingLocation ? 'Chỉnh sửa vị trí' : 'Thêm vị trí'}
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">
-                            Location Name <span className="text-red-500">*</span>
+                            Tên vị trí <span className="text-red-500">*</span>
                         </label>
                         <Input
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
-                            placeholder="e.g., Phòng khám Tầng 1"
+                            placeholder="VD: Phòng khám Tầng 1"
                             error={formErrors.name?.[0]}
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">
-                            Description
+                            Mô tả
                         </label>
                         <textarea
                             name="description"
                             value={formData.description}
                             onChange={handleInputChange}
-                            placeholder="Optional description..."
+                            placeholder="Mô tả thêm nếu cần"
                             rows={3}
                             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-surface text-text"
                         />
@@ -321,13 +325,13 @@ const LocationsPage = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">
-                            Address
+                            Địa chỉ
                         </label>
                         <Input
                             name="address"
                             value={formData.address}
                             onChange={handleInputChange}
-                            placeholder="Optional address..."
+                            placeholder="Địa chỉ (không bắt buộc)"
                             error={formErrors.address?.[0]}
                         />
                     </div>
@@ -342,7 +346,7 @@ const LocationsPage = () => {
                                     onChange={handleInputChange}
                                     className="rounded border-border text-primary focus:ring-primary"
                                 />
-                                <span className="text-sm text-text">Active</span>
+                                <span className="text-sm text-text">Đang hoạt động</span>
                             </label>
                         </div>
                     )}
@@ -352,14 +356,14 @@ const LocationsPage = () => {
                             type="submit"
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? 'Saving...' : (editingLocation ? 'Update' : 'Create')}
+                            {isSubmitting ? 'Đang lưu...' : (editingLocation ? 'Cập nhật' : 'Tạo mới')}
                         </Button>
                         <Button
                             type="button"
                             variant="outline"
                             onClick={() => setIsModalOpen(false)}
                         >
-                            Cancel
+                            Hủy
                         </Button>
                     </div>
                 </form>

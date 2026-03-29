@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Button, Card, CardBody } from './ui';
+import { useI18n } from '../i18n';
 
 /**
  * PrintableAssetLabel - Generates a printable asset label with QR code
@@ -8,6 +9,7 @@ import { Button, Card, CardBody } from './ui';
  * QR code is generated using a simple SVG-based approach without external libs.
  */
 const PrintableAssetLabel = ({ asset, onClose }) => {
+    const { t } = useI18n();
     const printRef = useRef(null);
 
     // Generate QR code as a data URI using Google Charts API (lightweight fallback)
@@ -25,7 +27,7 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
 
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
-            alert('Please allow popups to print the label');
+            alert(t('printableLabel.popupBlocked'));
             return;
         }
 
@@ -33,7 +35,7 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Asset Label - ${asset.asset_code || 'N/A'}</title>
+                <title>${t('printableLabel.title')} - ${asset.asset_code || 'N/A'}</title>
                 <style>
                     * {
                         margin: 0;
@@ -152,35 +154,35 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
                         {asset.asset_code || 'N/A'}
                     </div>
                     <div className="asset-name text-sm text-center mb-3 text-text-muted">
-                        {asset.name || 'Unnamed Asset'}
+                        {asset.name || t('printableLabel.unnamedAsset')}
                     </div>
                     <div className="qr-container flex justify-center mb-2">
                         {qrUrl ? (
                             <img 
                                 src={qrUrl} 
-                                alt="QR Code" 
+                                alt={t('printableLabel.qrAlt')}
                                 className="w-24 h-24"
                                 crossOrigin="anonymous"
                             />
                         ) : (
                             <div className="w-24 h-24 bg-surface-muted flex items-center justify-center text-text-light text-xs">
-                                No QR
+                                {t('printableLabel.noQr')}
                             </div>
                         )}
                     </div>
                     <div className="scan-instruction text-[8px] text-center text-text-light">
-                        Scan QR code to view asset details
+                        {t('printableLabel.scanInstruction')}
                     </div>
                     <div className="asset-details mt-2 pt-2 border-t border-dashed border-border text-[9px]">
                         {asset.category && (
                             <div className="detail-row flex justify-between mb-1">
-                                <span className="detail-label text-text-muted">Category:</span>
+                                <span className="detail-label text-text-muted">{t('assets.category')}:</span>
                                 <span>{asset.category}</span>
                             </div>
                         )}
                         {asset.location && (
                             <div className="detail-row flex justify-between mb-1">
-                                <span className="detail-label text-text-muted">Location:</span>
+                                <span className="detail-label text-text-muted">{t('assets.location')}:</span>
                                 <span>{asset.location}</span>
                             </div>
                         )}
@@ -191,13 +193,13 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
             {/* Actions */}
             <div className="flex justify-center gap-3">
                 <Button variant="outline" onClick={onClose}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button onClick={handlePrint}>
                     <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
-                    Print Label
+                    {t('common.print')}
                 </Button>
             </div>
         </div>

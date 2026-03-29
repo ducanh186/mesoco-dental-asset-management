@@ -26,7 +26,25 @@ import { contractsApi, employeesApi, handleApiError } from '../services/api';
  */
 const ContractsPage = ({ user }) => {
     const toast = useToast();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
+
+    const getContractTypeLabel = useCallback((type) => {
+        const normalizedType = String(type || '').trim().toUpperCase();
+        const typeLabels = {
+            FULL_TIME: t('contracts.types.fullTime'),
+            PART_TIME: t('contracts.types.partTime'),
+            INTERN: t('contracts.types.intern'),
+            OUTSOURCE: t('contracts.types.outsource'),
+            PROBATION: t('contracts.types.probation'),
+            FIXED_TERM: t('contracts.types.fixed_term'),
+            INDEFINITE: t('contracts.types.indefinite'),
+            SEASONAL: t('contracts.types.seasonal'),
+            CONTRACTOR: t('contracts.types.contractor'),
+        };
+
+        return typeLabels[normalizedType] || t('contracts.types.other');
+    }, [t]);
 
     // State
     const [contracts, setContracts] = useState([]);
@@ -214,15 +232,7 @@ const ContractsPage = ({ user }) => {
         {
             key: 'contract_type',
             label: t('contracts.type'),
-            render: (value) => {
-                const typeLabels = {
-                    FULL_TIME: t('contracts.types.fullTime'),
-                    PART_TIME: t('contracts.types.partTime'),
-                    INTERN: t('contracts.types.intern'),
-                    OUTSOURCE: t('contracts.types.outsource'),
-                };
-                return <Badge variant="info" size="sm">{typeLabels[value] || value}</Badge>;
-            }
+            render: (value) => <Badge variant="info" size="sm">{getContractTypeLabel(value)}</Badge>
         },
         {
             key: 'department',
@@ -232,12 +242,12 @@ const ContractsPage = ({ user }) => {
         {
             key: 'start_date',
             label: t('contracts.startDate'),
-            render: (value) => value ? new Date(value).toLocaleDateString() : '-'
+            render: (value) => value ? new Date(value).toLocaleDateString(dateLocale) : '-'
         },
         {
             key: 'end_date',
             label: t('contracts.endDate'),
-            render: (value) => value ? new Date(value).toLocaleDateString() : t('contracts.indefinite')
+            render: (value) => value ? new Date(value).toLocaleDateString(dateLocale) : t('contracts.indefinite')
         },
         {
             key: 'status',
@@ -503,7 +513,7 @@ const ContractsPage = ({ user }) => {
                             </div>
                             <div>
                                 <span className="text-sm text-text-muted">{t('contracts.type')}</span>
-                                <p className="font-medium">{t(`contracts.types.${selectedContract.contract_type?.toLowerCase()}`) || selectedContract.contract_type}</p>
+                                <p className="font-medium">{getContractTypeLabel(selectedContract.contract_type)}</p>
                             </div>
                             <div>
                                 <span className="text-sm text-text-muted">{t('contracts.department')}</span>
@@ -511,11 +521,11 @@ const ContractsPage = ({ user }) => {
                             </div>
                             <div>
                                 <span className="text-sm text-text-muted">{t('contracts.startDate')}</span>
-                                <p className="font-medium">{selectedContract.start_date ? new Date(selectedContract.start_date).toLocaleDateString() : '-'}</p>
+                                <p className="font-medium">{selectedContract.start_date ? new Date(selectedContract.start_date).toLocaleDateString(dateLocale) : '-'}</p>
                             </div>
                             <div>
                                 <span className="text-sm text-text-muted">{t('contracts.endDate')}</span>
-                                <p className="font-medium">{selectedContract.end_date ? new Date(selectedContract.end_date).toLocaleDateString() : t('contracts.indefinite')}</p>
+                                <p className="font-medium">{selectedContract.end_date ? new Date(selectedContract.end_date).toLocaleDateString(dateLocale) : t('contracts.indefinite')}</p>
                             </div>
                         </div>
                         

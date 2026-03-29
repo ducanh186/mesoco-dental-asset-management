@@ -40,6 +40,12 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
         }
     };
 
+    const getRoleLabel = () => {
+        if (!user?.role) return t('roles.staff');
+        const label = t(`roles.${user.role}`);
+        return label === `roles.${user.role}` ? user.role : label;
+    };
+
     const getUserInitials = () => {
         if (!user?.name) return 'U';
         const names = user.name.split(' ');
@@ -56,7 +62,7 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                 <button 
                     className="topbar-menu-btn mobile-only text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
                     onClick={onMenuClick}
-                    aria-label="Open menu"
+                    aria-label={t('common.openMenu')}
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="3" y1="6" x2="21" y2="6" />
@@ -69,7 +75,7 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                 <button 
                     className="topbar-menu-btn desktop-only text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
                     onClick={onToggleSidebar}
-                    aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="3" y1="6" x2="21" y2="6" />
@@ -86,7 +92,7 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                     </svg>
                     <input 
                         type="text" 
-                        placeholder="Search..." 
+                        placeholder={t('topbar.searchPlaceholder')}
                         className="search-input bg-surface-muted border-border text-text placeholder:text-text-light focus:border-primary focus:ring-primary"
                     />
                 </div>
@@ -108,8 +114,8 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                             {getUserInitials()}
                         </div>
                         <div className="user-info desktop-only">
-                            <span className="user-name text-text">{user?.name || 'User'}</span>
-                            <span className="user-role text-text-muted">{user?.role || 'Staff'}</span>
+                            <span className="user-name text-text">{user?.name || t('common.user')}</span>
+                            <span className="user-role text-text-muted">{getRoleLabel()}</span>
                         </div>
                         <svg 
                             className={`dropdown-arrow text-text-muted ${userDropdownOpen ? 'open' : ''}`}
@@ -129,8 +135,8 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                                     {getUserInitials()}
                                 </div>
                                 <div className="dropdown-user-info">
-                                    <span className="user-name text-text">{user?.name || 'User'}</span>
-                                    <span className="user-email text-text-muted">{user?.email || 'user@example.com'}</span>
+                                    <span className="user-name text-text">{user?.name || t('common.user')}</span>
+                                    <span className="user-email text-text-muted">{user?.email || '—'}</span>
                                     <span className="user-code text-text-light">{user?.employee_code}</span>
                                 </div>
                             </div>

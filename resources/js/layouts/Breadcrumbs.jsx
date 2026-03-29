@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../i18n';
 
 /**
  * Breadcrumbs - OrangeHRM-inspired breadcrumb navigation
@@ -8,10 +9,12 @@ import { Link } from 'react-router-dom';
  *                        Last item should not have a path (current page)
  */
 const Breadcrumbs = ({ items = [] }) => {
+    const { locale } = useI18n();
+
     if (items.length === 0) return null;
 
     return (
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <nav className="breadcrumbs" aria-label={locale === 'vi' ? 'Điều hướng phân cấp' : 'Breadcrumb'}>
             <ol className="breadcrumbs-list">
                 {/* Home is always first */}
                 <li className="breadcrumb-item">

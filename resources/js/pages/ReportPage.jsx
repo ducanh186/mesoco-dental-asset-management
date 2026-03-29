@@ -16,6 +16,17 @@ import { reportsApi, handleApiError } from '../services/api';
  */
 const ReportPage = ({ user }) => {
     const toast = useToast();
+
+    const maintenanceTypeLabels = {
+        inspection: 'Kiểm tra',
+        sterilization: 'Khử trùng',
+        calibration: 'Hiệu chuẩn',
+        repair: 'Sửa chữa',
+        cleaning: 'Vệ sinh',
+        filter_change: 'Thay bộ lọc',
+        replacement: 'Thay thế linh kiện',
+        other: 'Khác',
+    };
     
     // State
     const [loading, setLoading] = useState(true);
@@ -257,7 +268,7 @@ const ReportPage = ({ user }) => {
                             {Object.entries(maintenance.by_type).map(([type, count]) => (
                                 <div key={type} className="text-center p-3 bg-surface-muted rounded-lg">
                                     <p className="text-xl font-bold text-text">{count}</p>
-                                    <p className="text-xs text-text-muted capitalize">{type.replace('_', ' ')}</p>
+                                    <p className="text-xs text-text-muted">{maintenanceTypeLabels[type] || 'Khác'}</p>
                                 </div>
                             ))}
                         </div>

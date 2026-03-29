@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { preferLocalizedMessage } from './services/api';
 
 // Layout Components
 import AdminLayout from './layouts/AdminLayout';
@@ -160,12 +161,16 @@ const AdminHrRoute = ({ children }) => {
 // ============================================================================
 // Loading Screen
 // ============================================================================
-const LoadingScreen = () => (
-     <div className="loading-screen">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
-     </div>
-);
+const LoadingScreen = () => {
+     const { t } = useI18n();
+
+     return (
+          <div className="loading-screen">
+               <div className="loading-spinner"></div>
+               <p>{t('common.loading')}</p>
+          </div>
+     );
+};
 
 // ============================================================================
 // Admin Layout Wrapper - Connects Auth Context with AdminLayout
@@ -328,20 +333,24 @@ const ForgotPasswordPage = () => {
                     password,
                     password_confirmation: passwordConfirmation,
                });
-               setSuccessMessage(response.data.message || t('auth.passwordResetSuccess'));
+               setSuccessMessage(preferLocalizedMessage(response.data.message, t('auth.passwordResetSuccess')));
                setTimeout(() => {
                     navigate('/login');
                }, 2000);
           } catch (err) {
                const errors = err.response?.data?.errors;
                if (errors?.verification_code) {
-                    setFieldErrors({ verificationCode: errors.verification_code[0] });
+                    setFieldErrors({
+                         verificationCode: preferLocalizedMessage(errors.verification_code[0], t('auth.invalidVerificationCode')),
+                    });
                     codeRefs[0].current?.focus();
                } else if (errors?.password) {
-                    setFieldErrors({ password: errors.password[0] });
+                    setFieldErrors({
+                         password: preferLocalizedMessage(errors.password[0], t('auth.passwordRequirements')),
+                    });
                     passwordRef.current?.focus();
                } else {
-                    setError(err.response?.data?.message || t('auth.failedToResetPassword'));
+                    setError(preferLocalizedMessage(err.response?.data?.message, t('auth.failedToResetPassword')));
                }
           } finally {
                setIsLoading(false);
@@ -421,7 +430,7 @@ const ForgotPasswordPage = () => {
                     <div className="auth-header auth-header-logo">
                          <img 
                               src="/images/mesoco_logo.png" 
-                              alt="Mesoco Logo" 
+                              alt="Logo Mesoco" 
                               className="auth-logo-image"
                          />
                     </div>
@@ -589,7 +598,7 @@ const ForgotPasswordPage = () => {
                                                   onChange={e => handleCodeChange(index, e.target.value)}
                                                   onKeyDown={e => handleCodeKeyDown(index, e)}
                                                   disabled={isLoading}
-                                                  aria-label={`${t('auth.verificationCode')} digit ${index + 1}`}
+                                                  aria-label={`${t('auth.verificationCode')} ${index + 1}`}
                                                   aria-invalid={!!fieldErrors.verificationCode}
                                              />
                                         ))}
@@ -719,7 +728,7 @@ const LoginPage = () => {
                     <div className="auth-header auth-header-logo">
                          <img 
                               src="/images/mesoco_logo.png" 
-                              alt="Mesoco Logo" 
+                              alt="Logo Mesoco" 
                               className="auth-logo-image"
                          />
                     </div>
@@ -834,11 +843,12 @@ const LoginPage = () => {
 // ============================================================================
 const DashboardPage = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
 
      return (
           <AdminLayoutWrapper 
-               title="Dashboard" 
-               breadcrumbs={[{ label: 'Dashboard' }]}
+               title={t('nav.dashboard')} 
+               breadcrumbs={[{ label: t('nav.dashboard') }]}
           >
                <Dashboard user={user} />
           </AdminLayoutWrapper>
@@ -850,10 +860,11 @@ const DashboardPage = () => {
 // ============================================================================
 const ProfilePageWrapper = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="My Profile" 
-               breadcrumbs={[{ label: 'Profile' }]}
+               title={t('nav.profile')} 
+               breadcrumbs={[{ label: t('nav.profile') }]}
           >
                <ProfilePage user={user} />
           </AdminLayoutWrapper>
@@ -923,21 +934,25 @@ const MyAssetsPageWrapper = () => {
      );
 };
 
-const EquipmentPage = () => (
-     <AdminLayoutWrapper 
-          title="Equipment" 
-          breadcrumbs={[{ label: 'Equipment' }]}
-     >
-          <div className="placeholder-state">
-               <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-               </svg>
-               <h3>Equipment Management</h3>
-               <p>Manage all dental equipment and devices.</p>
-               <span className="coming-soon">Coming in Phase 1</span>
-          </div>
-     </AdminLayoutWrapper>
-);
+const EquipmentPage = () => {
+     const { t } = useI18n();
+
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.equipment')} 
+               breadcrumbs={[{ label: t('nav.equipment') }]}
+          >
+               <div className="placeholder-state">
+                    <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                    <h3>{t('placeholderPages.equipmentTitle')}</h3>
+                    <p>{t('placeholderPages.equipmentDescription')}</p>
+                    <span className="coming-soon">{t('placeholderPages.comingSoon')}</span>
+               </div>
+          </AdminLayoutWrapper>
+     );
+};
 
 const QRScanPageWrapper = () => {
      const { user } = useAuth();
@@ -954,10 +969,11 @@ const QRScanPageWrapper = () => {
 
 const RequestsPageWrapper = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="Requests" 
-               breadcrumbs={[{ label: 'Requests' }]}
+               title={t('nav.requests')} 
+               breadcrumbs={[{ label: t('nav.requests') }]}
           >
                <RequestsPage user={user} />
           </AdminLayoutWrapper>
@@ -966,10 +982,11 @@ const RequestsPageWrapper = () => {
 
 const ReviewRequestsPageWrapper = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="Review Requests" 
-               breadcrumbs={[{ label: 'Review Requests' }]}
+               title={t('nav.reviewRequests')} 
+               breadcrumbs={[{ label: t('nav.reviewRequests') }]}
           >
                <ReviewRequestsPage user={user} />
           </AdminLayoutWrapper>
@@ -978,10 +995,11 @@ const ReviewRequestsPageWrapper = () => {
 
 const MaintenancePageWrapper = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="Maintenance" 
-               breadcrumbs={[{ label: 'Maintenance' }]}
+               title={t('nav.maintenance')} 
+               breadcrumbs={[{ label: t('nav.maintenance') }]}
           >
                <MaintenancePage user={user} />
           </AdminLayoutWrapper>
@@ -990,10 +1008,11 @@ const MaintenancePageWrapper = () => {
 
 const InventoryPageWrapper = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="Inventory" 
-               breadcrumbs={[{ label: 'Inventory' }]}
+               title={t('nav.inventory')} 
+               breadcrumbs={[{ label: t('nav.inventory') }]}
           >
                <InventoryPage user={user} />
           </AdminLayoutWrapper>
@@ -1002,10 +1021,11 @@ const InventoryPageWrapper = () => {
 
 const LocationsPageWrapper = () => {
      const { user } = useAuth();
+     const { t } = useI18n();
      return (
           <AdminLayoutWrapper 
-               title="Locations" 
-               breadcrumbs={[{ label: 'Locations' }]}
+               title={t('nav.locations')} 
+               breadcrumbs={[{ label: t('nav.locations') }]}
           >
                <LocationsPage user={user} />
           </AdminLayoutWrapper>
@@ -1103,24 +1123,28 @@ const EmployeesPageWrapper = () => {
      );
 };
 
-const UsersPage = () => (
-     <AdminLayoutWrapper 
-          title="Users" 
-          breadcrumbs={[{ label: 'Users' }]}
-     >
-          <div className="placeholder-state">
-               <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-               </svg>
-               <h3>User Management</h3>
-               <p>Manage users and access permissions.</p>
-               <span className="coming-soon">Coming in Phase 1</span>
-          </div>
-     </AdminLayoutWrapper>
-);
+const UsersPage = () => {
+     const { t } = useI18n();
+
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.users')} 
+               breadcrumbs={[{ label: t('nav.users') }]}
+          >
+               <div className="placeholder-state">
+                    <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                         <circle cx="9" cy="7" r="4" />
+                         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <h3>{t('placeholderPages.usersTitle')}</h3>
+                    <p>{t('placeholderPages.usersDescription')}</p>
+                    <span className="coming-soon">{t('placeholderPages.comingSoon')}</span>
+               </div>
+          </AdminLayoutWrapper>
+     );
+};
 
 const AdminPageWrapper = () => {
      const { user } = useAuth();
@@ -1135,35 +1159,43 @@ const AdminPageWrapper = () => {
      );
 };
 
-const SettingsPage = () => (
-     <AdminLayoutWrapper 
-          title="Settings" 
-          breadcrumbs={[{ label: 'Settings' }]}
-     >
-          <div className="placeholder-state">
-               <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4" />
-               </svg>
-               <h3>System Settings</h3>
-               <p>Configure application preferences.</p>
-               <span className="coming-soon">Coming in Phase 1</span>
-          </div>
-     </AdminLayoutWrapper>
-);
+const SettingsPage = () => {
+     const { t } = useI18n();
 
-const NotFoundPage = () => (
-     <div className="error-page">
-          <div className="error-content">
-               <h1 className="error-code">404</h1>
-               <h2 className="error-title">Page Not Found</h2>
-               <p className="error-message">The page you're looking for doesn't exist or has been moved.</p>
-               <Link to="/dashboard" className="btn btn-primary">
-                    Back to Dashboard
-               </Link>
+     return (
+          <AdminLayoutWrapper 
+               title={t('nav.settings')} 
+               breadcrumbs={[{ label: t('nav.settings') }]}
+          >
+               <div className="placeholder-state">
+                    <svg className="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                         <circle cx="12" cy="12" r="3" />
+                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4" />
+                    </svg>
+                    <h3>{t('placeholderPages.settingsTitle')}</h3>
+                    <p>{t('placeholderPages.settingsDescription')}</p>
+                    <span className="coming-soon">{t('placeholderPages.comingSoon')}</span>
+               </div>
+          </AdminLayoutWrapper>
+     );
+};
+
+const NotFoundPage = () => {
+     const { t } = useI18n();
+
+     return (
+          <div className="error-page">
+               <div className="error-content">
+                    <h1 className="error-code">404</h1>
+                    <h2 className="error-title">{t('notFound.title')}</h2>
+                    <p className="error-message">{t('notFound.message')}</p>
+                    <Link to="/dashboard" className="btn btn-primary">
+                         {t('notFound.backToDashboard')}
+                    </Link>
+               </div>
           </div>
-     </div>
-);
+     );
+};
 
 // ============================================================================
 // App Router

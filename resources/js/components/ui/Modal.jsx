@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useI18n } from '../../i18n';
 
 /**
  * Modal Component - Accessible dialog
@@ -25,6 +26,7 @@ const Modal = ({
     className = '',
     ...props
 }) => {
+    const { t, locale } = useI18n();
     const modalRef = useRef(null);
     const previousActiveElement = useRef(null);
 
@@ -112,7 +114,7 @@ const Modal = ({
                                 type="button"
                                 className="ui-modal-close"
                                 onClick={onClose}
-                                aria-label="Close modal"
+                                aria-label={t('common.closeModal')}
                             >
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -146,41 +148,50 @@ export const ConfirmModal = ({
     isOpen,
     onClose,
     onConfirm,
-    title = 'Confirm Action',
-    message = 'Are you sure you want to proceed?',
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
+    title,
+    message,
+    confirmText,
+    cancelText,
     variant = 'danger',
     loading = false,
-}) => (
-    <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title={title}
-        size="sm"
-        footer={
-            <div className="ui-modal-footer-buttons">
-                <button 
-                    type="button"
-                    className="ui-btn ui-btn-secondary ui-btn-md"
-                    onClick={onClose}
-                    disabled={loading}
-                >
-                    {cancelText}
-                </button>
-                <button 
-                    type="button"
-                    className={`ui-btn ui-btn-${variant} ui-btn-md`}
-                    onClick={onConfirm}
-                    disabled={loading}
-                >
-                    {loading ? 'Loading...' : confirmText}
-                </button>
-            </div>
-        }
-    >
-        <p className="ui-modal-message">{message}</p>
-    </Modal>
-);
+}) => {
+    const { t, locale } = useI18n();
+
+    const resolvedTitle = title || (locale === 'vi' ? 'Xác nhận thao tác' : 'Confirm Action');
+    const resolvedMessage = message || (locale === 'vi' ? 'Bạn có chắc muốn tiếp tục không?' : 'Are you sure you want to proceed?');
+    const resolvedConfirmText = confirmText || t('common.confirm');
+    const resolvedCancelText = cancelText || t('common.cancel');
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={resolvedTitle}
+            size="sm"
+            footer={
+                <div className="ui-modal-footer-buttons">
+                    <button 
+                        type="button"
+                        className="ui-btn ui-btn-secondary ui-btn-md"
+                        onClick={onClose}
+                        disabled={loading}
+                    >
+                        {resolvedCancelText}
+                    </button>
+                    <button 
+                        type="button"
+                        className={`ui-btn ui-btn-${variant} ui-btn-md`}
+                        onClick={onConfirm}
+                        disabled={loading}
+                    >
+                        {loading ? t('common.loading') : resolvedConfirmText}
+                    </button>
+                </div>
+            }
+        >
+            <p className="ui-modal-message">{resolvedMessage}</p>
+        </Modal>
+    );
+};
 
 export default Modal;

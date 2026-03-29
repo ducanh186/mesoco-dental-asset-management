@@ -4,6 +4,34 @@
  */
 import axios from 'axios';
 
+const getCurrentLocale = () => {
+    if (typeof document === 'undefined') {
+        return 'vi';
+    }
+
+    return document.documentElement.lang || 'vi';
+};
+
+const looksEnglishMessage = (message) => {
+    if (typeof message !== 'string' || !message.trim()) {
+        return false;
+    }
+
+    return /[A-Za-z]/.test(message) && !/[À-ỹà-ỹ]/.test(message);
+};
+
+export const preferLocalizedMessage = (message, fallback) => {
+    if (!message) {
+        return fallback;
+    }
+
+    if (getCurrentLocale() === 'vi' && looksEnglishMessage(message)) {
+        return fallback;
+    }
+
+    return message;
+};
+
 // ============================================================================
 // Error Handler
 // ============================================================================
@@ -16,26 +44,26 @@ export const handleApiError = (error, toast) => {
             // Unauthenticated - will be handled by axios interceptor
             break;
         case 403:
-            toast?.error(data?.message || "You don't have permission to perform this action");
+            toast?.error(preferLocalizedMessage(data?.message, 'Bạn không có quyền thực hiện thao tác này'));
             break;
         case 404:
-            toast?.error(data?.message || 'Resource not found');
+            toast?.error(preferLocalizedMessage(data?.message, 'Không tìm thấy dữ liệu'));
             break;
         case 409:
             // MUST_CHANGE_PASSWORD - should redirect to change password
             if (data?.error === 'MUST_CHANGE_PASSWORD') {
                 window.location.href = '/change-password';
             } else {
-                toast?.error(data?.message || 'Conflict error');
+                toast?.error(preferLocalizedMessage(data?.message, 'Dữ liệu đang xung đột'));
             }
             break;
         case 422:
             // Validation errors - return for form handling
             const firstError = Object.values(data?.errors || {})[0]?.[0];
-            toast?.error(firstError || data?.message || 'Validation failed');
+            toast?.error(preferLocalizedMessage(firstError || data?.message, 'Dữ liệu không hợp lệ'));
             break;
         default:
-            toast?.error(data?.message || 'An unexpected error occurred');
+            toast?.error(preferLocalizedMessage(data?.message, 'Đã xảy ra lỗi ngoài dự kiến'));
     }
 
     return { status, data, error };

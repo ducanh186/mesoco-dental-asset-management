@@ -20,7 +20,8 @@ import axios from 'axios';
  */
 const MyAssetsPage = ({ user }) => {
     const toast = useToast();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
 
     // Assets State
     const [assets, setAssets] = useState([]);
@@ -36,6 +37,19 @@ const MyAssetsPage = ({ user }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('status');
     const [checkinLoading, setCheckinLoading] = useState(false);
+
+    const getAssetTypeLabel = useCallback((type) => {
+        const normalizedType = String(type || '').trim().toLowerCase();
+
+        if (!normalizedType) {
+            return t('common.unknown');
+        }
+
+        const supportedTypes = ['tray', 'machine', 'tool', 'equipment', 'other'];
+        const typeKey = supportedTypes.includes(normalizedType) ? normalizedType : 'other';
+
+        return t(`assets.types.${typeKey}`);
+    }, [t]);
 
     // ========================================================================
     // Data Fetching
@@ -105,7 +119,7 @@ const MyAssetsPage = ({ user }) => {
             await axios.post('/api/checkins', {
                 asset_id: resolvedData.asset.id,
             });
-            toast.success(t('assets.checkinSuccess') || 'Checked in successfully');
+            toast.success(t('assets.checkinSuccess'));
             // Refresh the resolved data to get updated status
             const data = await qrApi.resolve(qrInput.trim());
             setResolvedData(data);
@@ -123,7 +137,7 @@ const MyAssetsPage = ({ user }) => {
         setCheckinLoading(true);
         try {
             await axios.patch(`/api/checkins/${checkinId}/checkout`);
-            toast.success(t('assets.checkoutSuccess') || 'Checked out successfully');
+            toast.success(t('assets.checkoutSuccess'));
             // Refresh the resolved data to get updated status
             const data = await qrApi.resolve(qrInput.trim());
             setResolvedData(data);
@@ -152,7 +166,7 @@ const MyAssetsPage = ({ user }) => {
             render: (value, row) => (
                 <div>
                     <div className="font-medium text-text">{value}</div>
-                    <div className="text-xs text-text-muted capitalize">{t(`assets.types.${row.type}`)}</div>
+                    <div className="text-xs text-text-muted capitalize">{getAssetTypeLabel(row.type)}</div>
                 </div>
             )
         },
@@ -168,7 +182,7 @@ const MyAssetsPage = ({ user }) => {
             width: '140px',
             render: (value) => (
                 <span className="text-sm text-text-muted">
-                    {value ? new Date(value).toLocaleDateString() : '—'}
+                    {value ? new Date(value).toLocaleDateString(dateLocale) : '—'}
                 </span>
             )
         }
@@ -251,12 +265,12 @@ const MyAssetsPage = ({ user }) => {
                                     <div className="grid grid-cols-2 gap-2 text-sm">
                                         <div className="bg-surface/60 rounded p-2">
                                             <span className="text-xs text-text-muted block">{t('assets.columns.type')}</span>
-                                            <span className="font-medium capitalize">{resolvedData.asset.type}</span>
+                                            <span className="font-medium capitalize">{getAssetTypeLabel(resolvedData.asset.type)}</span>
                                         </div>
                                         <div className="bg-surface/60 rounded p-2">
-                                            <span className="text-xs text-text-muted block">{t('assets.checkinStatus') || 'Check-in'}</span>
+                                            <span className="text-xs text-text-muted block">{t('assets.checkinStatus')}</span>
                                             <span className={`font-medium ${resolvedData.checkin_status?.today_checkin ? 'text-success' : 'text-text-muted'}`}>
-                                                {resolvedData.checkin_status?.today_checkin ? (t('assets.checkedIn') || 'Checked In') : (t('assets.notCheckedIn') || 'Not Checked In')}
+                                                {resolvedData.checkin_status?.today_checkin ? t('assets.checkedIn') : t('assets.notCheckedIn')}
                                             </span>
                                         </div>
                                     </div>
@@ -267,7 +281,7 @@ const MyAssetsPage = ({ user }) => {
                                             variant="secondary"
                                             onClick={() => { setModalOpen(true); setActiveTab('status'); }}
                                         >
-                                            {t('assets.viewDetails') || 'View Details'}
+                                            {t('assets.viewDetails')}
                                         </Button>
                                         {resolvedData.checkin_status?.can_check_in && (
                                             <Button 
@@ -275,7 +289,7 @@ const MyAssetsPage = ({ user }) => {
                                                 onClick={handleCheckIn}
                                                 loading={checkinLoading}
                                             >
-                                                {t('assets.checkIn') || 'Check In'}
+                                                {t('assets.checkIn')}
                                             </Button>
                                         )}
                                         {resolvedData.checkin_status?.today_checkin && !resolvedData.checkin_status?.today_checkin?.checked_out_at && (
@@ -285,7 +299,7 @@ const MyAssetsPage = ({ user }) => {
                                                 onClick={handleCheckOut}
                                                 loading={checkinLoading}
                                             >
-                                                {t('assets.checkOut') || 'Check Out'}
+                                                {t('assets.checkOut')}
                                             </Button>
                                         )}
                                     </div>
@@ -385,7 +399,7 @@ const MyAssetsPage = ({ user }) => {
                                         : 'text-text-muted hover:text-text hover:bg-surface-muted'
                                 }`}
                             >
-                                {t('assets.statusTab') || 'Status'}
+                                {t('assets.statusTab')}
                             </button>
                             <button
                                 onClick={() => setActiveTab('instructions')}
@@ -395,7 +409,7 @@ const MyAssetsPage = ({ user }) => {
                                         : 'text-text-muted hover:text-text hover:bg-surface-muted'
                                 }`}
                             >
-                                {t('assets.instructionsTab') || 'Instructions'}
+                                {t('assets.instructionsTab')}
                             </button>
                         </div>
 
@@ -407,7 +421,7 @@ const MyAssetsPage = ({ user }) => {
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="bg-surface-muted rounded-lg p-3">
                                             <span className="text-xs text-text-muted block mb-1">{t('assets.columns.type')}</span>
-                                            <span className="font-medium capitalize">{resolvedData.asset.type}</span>
+                                            <span className="font-medium capitalize">{getAssetTypeLabel(resolvedData.asset.type)}</span>
                                         </div>
                                         <div className="bg-surface-muted rounded-lg p-3">
                                             <span className="text-xs text-text-muted block mb-1">{t('common.status.label')}</span>
@@ -435,11 +449,11 @@ const MyAssetsPage = ({ user }) => {
 
                                     {/* Check-in Status */}
                                     <div className="bg-surface-muted rounded-lg p-3">
-                                        <span className="text-xs text-text-muted block mb-2">{t('assets.checkinStatus') || 'Check-in Status'}</span>
+                                        <span className="text-xs text-text-muted block mb-2">{t('assets.checkinStatus')}</span>
                                         {resolvedData.checkin_status?.current_shift ? (
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-sm text-text-muted">{t('assets.currentShift') || 'Current Shift'}:</span>
+                                                    <span className="text-sm text-text-muted">{t('assets.currentShift')}:</span>
                                                     <span className="font-medium">{resolvedData.checkin_status.current_shift.name}</span>
                                                 </div>
                                                 {resolvedData.checkin_status.today_checkin ? (
@@ -449,7 +463,7 @@ const MyAssetsPage = ({ user }) => {
                                                             <path d="M22 4L12 14.01l-3-3" />
                                                         </svg>
                                                         <span className="text-sm font-medium">
-                                                            {t('assets.checkedInAt') || 'Checked in at'} {new Date(resolvedData.checkin_status.today_checkin.checked_in_at).toLocaleTimeString()}
+                                                            {t('assets.checkedInAt')} {new Date(resolvedData.checkin_status.today_checkin.checked_in_at).toLocaleTimeString(dateLocale)}
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -458,12 +472,12 @@ const MyAssetsPage = ({ user }) => {
                                                             <circle cx="12" cy="12" r="10" />
                                                             <path d="M12 6v6l4 2" />
                                                         </svg>
-                                                        <span className="text-sm">{t('assets.notCheckedInYet') || 'Not checked in yet'}</span>
+                                                        <span className="text-sm">{t('assets.notCheckedInYet')}</span>
                                                     </div>
                                                 )}
                                             </div>
                                         ) : (
-                                            <span className="text-text-muted text-sm">{t('assets.noActiveShift') || 'No active shift'}</span>
+                                            <span className="text-text-muted text-sm">{t('assets.noActiveShift')}</span>
                                         )}
                                     </div>
 
@@ -480,7 +494,7 @@ const MyAssetsPage = ({ user }) => {
                                     {resolvedData.asset.instructions?.available ? (
                                         <div className="space-y-4">
                                             <p className="text-sm text-text-muted">
-                                                {t('assets.instructionsDesc') || 'This asset has attached instructions. Click the button below to view them.'}
+                                                {t('assets.instructionsDesc')}
                                             </p>
                                             <a
                                                 href={resolvedData.asset.instructions.url}
@@ -493,7 +507,7 @@ const MyAssetsPage = ({ user }) => {
                                                     <polyline points="15,3 21,3 21,9" />
                                                     <line x1="10" y1="14" x2="21" y2="3" />
                                                 </svg>
-                                                {t('assets.openInstructions') || 'Open Instructions'}
+                                                {t('assets.openInstructions')}
                                             </a>
                                             <p className="text-xs text-text-muted text-center break-all">
                                                 {resolvedData.asset.instructions.url}
@@ -509,7 +523,7 @@ const MyAssetsPage = ({ user }) => {
                                                 <line x1="10" y1="9" x2="8" y2="9" />
                                             </svg>
                                             <p className="text-text-muted">
-                                                {t('assets.noInstructions') || 'No instructions available for this asset'}
+                                                {t('assets.noInstructions')}
                                             </p>
                                         </div>
                                     )}
@@ -524,12 +538,12 @@ const MyAssetsPage = ({ user }) => {
                             </Button>
                             {resolvedData.checkin_status?.can_check_in && (
                                 <Button onClick={handleCheckIn} loading={checkinLoading}>
-                                    {t('assets.checkIn') || 'Check In'}
+                                    {t('assets.checkIn')}
                                 </Button>
                             )}
                             {resolvedData.checkin_status?.today_checkin && !resolvedData.checkin_status?.today_checkin?.checked_out_at && (
                                 <Button variant="warning" onClick={handleCheckOut} loading={checkinLoading}>
-                                    {t('assets.checkOut') || 'Check Out'}
+                                    {t('assets.checkOut')}
                                 </Button>
                             )}
                         </div>

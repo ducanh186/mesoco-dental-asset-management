@@ -37,35 +37,35 @@ const UIKit = () => {
 
     // Sample data
     const selectOptions = [
-        { value: 'option1', label: 'Option 1' },
-        { value: 'option2', label: 'Option 2' },
-        { value: 'option3', label: 'Option 3' },
-        { value: 'disabled', label: 'Disabled Option', disabled: true },
+        { value: 'option1', label: 'Lựa chọn 1' },
+        { value: 'option2', label: 'Lựa chọn 2' },
+        { value: 'option3', label: 'Lựa chọn 3' },
+        { value: 'disabled', label: 'Lựa chọn bị khóa', disabled: true },
     ];
 
     const tableColumns = [
         { key: 'id', label: 'ID', width: '80px' },
-        { key: 'name', label: 'Name' },
+        { key: 'name', label: 'Họ và tên' },
         { key: 'email', label: 'Email' },
-        { key: 'status', label: 'Status', render: (value) => <StatusBadge status={value} /> },
+        { key: 'status', label: 'Trạng thái', render: (value) => <StatusBadge status={value} /> },
         { 
             key: 'actions', 
-            label: 'Actions', 
+            label: 'Thao tác', 
             align: 'right',
             render: (_, row) => (
-                <Button size="sm" variant="ghost" onClick={() => toast.info(`Clicked row ${row.id}`)}>
-                    View
+                <Button size="sm" variant="ghost" onClick={() => toast.info(`Đã chọn dòng ${row.id}`)}>
+                    Xem
                 </Button>
             )
         },
     ];
 
     const tableData = [
-        { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active' },
-        { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'pending' },
-        { id: 3, name: 'Bob Wilson', email: 'bob@example.com', status: 'inactive' },
-        { id: 4, name: 'Alice Brown', email: 'alice@example.com', status: 'active' },
-        { id: 5, name: 'Charlie Davis', email: 'charlie@example.com', status: 'rejected' },
+        { id: 1, name: 'Nguyễn Văn An', email: 'an@example.com', status: 'active' },
+        { id: 2, name: 'Trần Thị Bình', email: 'binh@example.com', status: 'pending' },
+        { id: 3, name: 'Lê Minh Châu', email: 'chau@example.com', status: 'inactive' },
+        { id: 4, name: 'Phạm Gia Hân', email: 'han@example.com', status: 'active' },
+        { id: 5, name: 'Võ Quốc Khánh', email: 'khanh@example.com', status: 'rejected' },
     ];
 
     const handleLoadingDemo = () => {
@@ -97,9 +97,9 @@ const UIKit = () => {
     return (
         <div className="ui-kit-page min-h-screen bg-background">
             <header className="ui-kit-header border-b border-border">
-                <h1 className="ui-kit-title text-text">UI Kit</h1>
+                <h1 className="ui-kit-title text-text">Bộ giao diện</h1>
                 <p className="ui-kit-subtitle text-text-muted">
-                    OrangeHRM-inspired component library built with React and Tailwind CSS
+                    Trang trình diễn các thành phần giao diện được xây dựng bằng React và Tailwind CSS
                 </p>
             </header>
 
@@ -107,36 +107,36 @@ const UIKit = () => {
                 {/* ============================================ */}
                 {/* BUTTONS */}
                 {/* ============================================ */}
-                <Section title="Buttons">
-                    <Subsection title="Variants">
+                <Section title="Nút bấm">
+                    <Subsection title="Biến thể">
                         <div className="ui-kit-row">
-                            <Button variant="primary">Primary</Button>
-                            <Button variant="secondary">Secondary</Button>
-                            <Button variant="danger">Danger</Button>
-                            <Button variant="ghost">Ghost</Button>
-                            <Button variant="outline">Outline</Button>
+                            <Button variant="primary">Chính</Button>
+                            <Button variant="secondary">Phụ</Button>
+                            <Button variant="danger">Nguy hiểm</Button>
+                            <Button variant="ghost">Ẩn nền</Button>
+                            <Button variant="outline">Viền</Button>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Sizes">
+                    <Subsection title="Kích thước">
                         <div className="ui-kit-row ui-kit-row-center">
-                            <Button size="sm">Small</Button>
-                            <Button size="md">Medium</Button>
-                            <Button size="lg">Large</Button>
+                            <Button size="sm">Nhỏ</Button>
+                            <Button size="md">Vừa</Button>
+                            <Button size="lg">Lớn</Button>
                         </div>
                     </Subsection>
 
-                    <Subsection title="States">
+                    <Subsection title="Trạng thái">
                         <div className="ui-kit-row">
-                            <Button>Default</Button>
-                            <Button disabled>Disabled</Button>
+                            <Button>Mặc định</Button>
+                            <Button disabled>Đã khóa</Button>
                             <Button loading={isLoading} onClick={handleLoadingDemo}>
-                                {isLoading ? 'Loading...' : 'Click to Load'}
+                                {isLoading ? 'Đang tải...' : 'Bấm để tải'}
                             </Button>
                         </div>
                     </Subsection>
 
-                    <Subsection title="With Icons">
+                    <Subsection title="Kèm biểu tượng">
                         <div className="ui-kit-row">
                             <Button 
                                 leftIcon={
@@ -146,7 +146,7 @@ const UIKit = () => {
                                     </svg>
                                 }
                             >
-                                Add Item
+                                Thêm mục
                             </Button>
                             <Button 
                                 variant="secondary"
@@ -156,92 +156,92 @@ const UIKit = () => {
                                     </svg>
                                 }
                             >
-                                Next
+                                Tiếp theo
                             </Button>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Button Group">
+                    <Subsection title="Nhóm nút">
                         <ButtonGroup>
-                            <Button variant="outline">Left</Button>
-                            <Button variant="outline">Center</Button>
-                            <Button variant="outline">Right</Button>
+                            <Button variant="outline">Trái</Button>
+                            <Button variant="outline">Giữa</Button>
+                            <Button variant="outline">Phải</Button>
                         </ButtonGroup>
                     </Subsection>
 
-                    <Subsection title="Full Width">
-                        <Button fullWidth>Full Width Button</Button>
+                    <Subsection title="Toàn chiều ngang">
+                        <Button fullWidth>Nút toàn chiều ngang</Button>
                     </Subsection>
                 </Section>
 
                 {/* ============================================ */}
                 {/* INPUTS */}
                 {/* ============================================ */}
-                <Section title="Inputs">
-                    <Subsection title="Basic Input">
+                <Section title="Ô nhập liệu">
+                    <Subsection title="Cơ bản">
                         <div className="ui-kit-form-grid">
                             <Input 
-                                label="Default Input" 
-                                placeholder="Enter text..."
+                                label="Ô nhập mặc định" 
+                                placeholder="Nhập nội dung..."
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                             />
                             <Input 
-                                label="Required Input" 
-                                placeholder="This is required"
+                                label="Ô bắt buộc" 
+                                placeholder="Trường này là bắt buộc"
                                 required 
                             />
                             <Input 
-                                label="With Helper" 
-                                placeholder="Enter email"
-                                helper="We'll never share your email"
+                                label="Có hướng dẫn" 
+                                placeholder="Nhập email"
+                                helper="Chúng tôi sẽ không chia sẻ email của bạn"
                             />
                             <Input 
-                                label="With Error" 
-                                placeholder="Invalid input"
-                                error="This field is required"
-                                value="bad value"
+                                label="Có lỗi" 
+                                placeholder="Dữ liệu không hợp lệ"
+                                error="Trường này là bắt buộc"
+                                value="giá trị lỗi"
                             />
                         </div>
                     </Subsection>
 
-                    <Subsection title="Input States">
+                    <Subsection title="Trạng thái ô nhập">
                         <div className="ui-kit-form-grid">
                             <Input 
-                                label="Disabled" 
-                                placeholder="Disabled input"
+                                label="Đã khóa" 
+                                placeholder="Ô nhập đã khóa"
                                 disabled 
                             />
                             <Input 
-                                label="Read Only" 
-                                value="Read only value"
+                                label="Chỉ đọc" 
+                                value="Giá trị chỉ đọc"
                                 readOnly 
                             />
                         </div>
                     </Subsection>
 
-                    <Subsection title="Input Sizes">
+                    <Subsection title="Kích thước ô nhập">
                         <div className="ui-kit-form-grid">
-                            <Input label="Small" size="sm" placeholder="Small input" />
-                            <Input label="Medium" size="md" placeholder="Medium input" />
-                            <Input label="Large" size="lg" placeholder="Large input" />
+                            <Input label="Nhỏ" size="sm" placeholder="Ô nhập nhỏ" />
+                            <Input label="Vừa" size="md" placeholder="Ô nhập vừa" />
+                            <Input label="Lớn" size="lg" placeholder="Ô nhập lớn" />
                         </div>
                     </Subsection>
 
-                    <Subsection title="Input Types">
+                    <Subsection title="Kiểu dữ liệu">
                         <div className="ui-kit-form-grid">
-                            <Input label="Password" type="password" placeholder="Enter password" />
+                            <Input label="Mật khẩu" type="password" placeholder="Nhập mật khẩu" />
                             <Input label="Email" type="email" placeholder="user@example.com" />
-                            <Input label="Number" type="number" placeholder="0" />
-                            <Input label="Date" type="date" />
+                            <Input label="Số" type="number" placeholder="0" />
+                            <Input label="Ngày" type="date" />
                         </div>
                     </Subsection>
 
-                    <Subsection title="With Icons">
+                    <Subsection title="Kèm biểu tượng">
                         <div className="ui-kit-form-grid">
                             <Input 
-                                label="Search" 
-                                placeholder="Search..."
+                                label="Tìm kiếm" 
+                                placeholder="Tìm kiếm..."
                                 leftIcon={
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                                         <circle cx="11" cy="11" r="8" />
@@ -251,7 +251,7 @@ const UIKit = () => {
                             />
                             <Input 
                                 label="Email" 
-                                placeholder="Enter email"
+                                placeholder="Nhập email"
                                 type="email"
                                 rightIcon={
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -263,17 +263,17 @@ const UIKit = () => {
                         </div>
                     </Subsection>
 
-                    <Subsection title="Textarea">
+                    <Subsection title="Vùng nhập văn bản">
                         <div className="ui-kit-form-grid">
                             <Textarea 
-                                label="Description" 
-                                placeholder="Enter description..."
-                                helper="Max 500 characters"
+                                label="Mô tả" 
+                                placeholder="Nhập mô tả..."
+                                helper="Tối đa 500 ký tự"
                             />
                             <Textarea 
-                                label="With Error" 
-                                placeholder="Invalid content"
-                                error="Description is too short"
+                                label="Có lỗi" 
+                                placeholder="Nội dung không hợp lệ"
+                                error="Mô tả quá ngắn"
                                 rows={3}
                             />
                         </div>
@@ -283,48 +283,48 @@ const UIKit = () => {
                 {/* ============================================ */}
                 {/* SELECT */}
                 {/* ============================================ */}
-                <Section title="Select">
-                    <Subsection title="Basic Select">
+                <Section title="Danh sách chọn">
+                    <Subsection title="Cơ bản">
                         <div className="ui-kit-form-grid">
                             <Select 
-                                label="Default Select"
+                                label="Danh sách mặc định"
                                 options={selectOptions}
                                 value={selectValue}
                                 onChange={(e) => setSelectValue(e.target.value)}
                             />
                             <Select 
-                                label="Required Select"
+                                label="Danh sách bắt buộc"
                                 options={selectOptions}
                                 required
                             />
                             <Select 
-                                label="With Helper"
+                                label="Có hướng dẫn"
                                 options={selectOptions}
-                                helper="Choose one option"
+                                helper="Chọn một mục"
                             />
                             <Select 
-                                label="With Error"
+                                label="Có lỗi"
                                 options={selectOptions}
-                                error="Please select an option"
+                                error="Vui lòng chọn một mục"
                             />
                         </div>
                     </Subsection>
 
-                    <Subsection title="Select States">
+                    <Subsection title="Trạng thái danh sách chọn">
                         <div className="ui-kit-form-grid">
                             <Select 
-                                label="Disabled"
+                                label="Đã khóa"
                                 options={selectOptions}
                                 disabled
                             />
                         </div>
                     </Subsection>
 
-                    <Subsection title="Select Sizes">
+                    <Subsection title="Kích thước danh sách chọn">
                         <div className="ui-kit-form-grid">
-                            <Select label="Small" size="sm" options={selectOptions} />
-                            <Select label="Medium" size="md" options={selectOptions} />
-                            <Select label="Large" size="lg" options={selectOptions} />
+                            <Select label="Nhỏ" size="sm" options={selectOptions} />
+                            <Select label="Vừa" size="md" options={selectOptions} />
+                            <Select label="Lớn" size="lg" options={selectOptions} />
                         </div>
                     </Subsection>
                 </Section>
@@ -332,50 +332,50 @@ const UIKit = () => {
                 {/* ============================================ */}
                 {/* CARDS */}
                 {/* ============================================ */}
-                <Section title="Cards">
-                    <Subsection title="Card Variants">
+                <Section title="Thẻ nội dung">
+                    <Subsection title="Biến thể thẻ">
                         <div className="ui-kit-card-grid">
                             <Card>
-                                <CardHeader title="Default Card" subtitle="Card subtitle" />
+                                <CardHeader title="Thẻ mặc định" subtitle="Phụ đề thẻ" />
                                 <CardBody>
-                                    <p>This is the default card variant with standard styling.</p>
+                                    <p>Đây là biến thể thẻ mặc định với kiểu hiển thị tiêu chuẩn.</p>
                                 </CardBody>
                                 <CardFooter>
-                                    <Button size="sm">Action</Button>
+                                    <Button size="sm">Thao tác</Button>
                                 </CardFooter>
                             </Card>
 
                             <Card variant="outlined">
-                                <CardHeader title="Outlined Card" />
+                                <CardHeader title="Thẻ có viền" />
                                 <CardBody>
-                                    <p>This card has a subtle border instead of a shadow.</p>
+                                    <p>Thẻ này dùng viền mảnh thay cho bóng đổ.</p>
                                 </CardBody>
                             </Card>
 
                             <Card variant="elevated">
-                                <CardHeader title="Elevated Card" />
+                                <CardHeader title="Thẻ nổi bật" />
                                 <CardBody>
-                                    <p>This card has a more prominent shadow.</p>
+                                    <p>Thẻ này có bóng đổ đậm hơn để nhấn mạnh.</p>
                                 </CardBody>
                             </Card>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Card with Action">
+                    <Subsection title="Thẻ có hành động">
                         <Card>
                             <CardHeader 
-                                title="Users" 
-                                subtitle="Manage your team members"
-                                action={<Button size="sm">Add User</Button>}
+                                title="Người dùng" 
+                                subtitle="Quản lý các thành viên trong nhóm"
+                                action={<Button size="sm">Thêm người dùng</Button>}
                             />
                             <CardBody>
-                                <p>Card content goes here with an action button in the header.</p>
+                                <p>Nội dung thẻ hiển thị tại đây cùng với nút hành động ở phần đầu thẻ.</p>
                             </CardBody>
                             <CardFooter align="between">
-                                <span className="text-sm text-gray-500">Last updated: Today</span>
+                                <span className="text-sm text-gray-500">Cập nhật gần nhất: Hôm nay</span>
                                 <div className="flex gap-2">
-                                    <Button size="sm" variant="ghost">Cancel</Button>
-                                    <Button size="sm">Save</Button>
+                                    <Button size="sm" variant="ghost">Hủy</Button>
+                                    <Button size="sm">Lưu</Button>
                                 </div>
                             </CardFooter>
                         </Card>
@@ -385,44 +385,44 @@ const UIKit = () => {
                 {/* ============================================ */}
                 {/* BADGES */}
                 {/* ============================================ */}
-                <Section title="Badges">
-                    <Subsection title="Variants">
+                <Section title="Huy hiệu">
+                    <Subsection title="Biến thể">
                         <div className="ui-kit-row">
-                            <Badge variant="default">Default</Badge>
-                            <Badge variant="primary">Primary</Badge>
-                            <Badge variant="success">Success</Badge>
-                            <Badge variant="warning">Warning</Badge>
-                            <Badge variant="danger">Danger</Badge>
-                            <Badge variant="info">Info</Badge>
+                            <Badge variant="default">Mặc định</Badge>
+                            <Badge variant="primary">Chính</Badge>
+                            <Badge variant="success">Thành công</Badge>
+                            <Badge variant="warning">Cảnh báo</Badge>
+                            <Badge variant="danger">Nguy hiểm</Badge>
+                            <Badge variant="info">Thông tin</Badge>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Sizes">
+                    <Subsection title="Kích thước">
                         <div className="ui-kit-row ui-kit-row-center">
-                            <Badge size="sm">Small</Badge>
-                            <Badge size="md">Medium</Badge>
-                            <Badge size="lg">Large</Badge>
+                            <Badge size="sm">Nhỏ</Badge>
+                            <Badge size="md">Vừa</Badge>
+                            <Badge size="lg">Lớn</Badge>
                         </div>
                     </Subsection>
 
-                    <Subsection title="With Dot Indicator">
+                    <Subsection title="Có chấm chỉ báo">
                         <div className="ui-kit-row">
-                            <Badge variant="success" dot>Online</Badge>
-                            <Badge variant="warning" dot>Away</Badge>
-                            <Badge variant="danger" dot>Busy</Badge>
-                            <Badge variant="default" dot>Offline</Badge>
+                            <Badge variant="success" dot>Đang hoạt động</Badge>
+                            <Badge variant="warning" dot>Tạm vắng</Badge>
+                            <Badge variant="danger" dot>Bận</Badge>
+                            <Badge variant="default" dot>Ngoại tuyến</Badge>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Outline Style">
+                    <Subsection title="Kiểu viền">
                         <div className="ui-kit-row">
-                            <Badge variant="primary" outline>Primary</Badge>
-                            <Badge variant="success" outline>Success</Badge>
-                            <Badge variant="danger" outline>Danger</Badge>
+                            <Badge variant="primary" outline>Chính</Badge>
+                            <Badge variant="success" outline>Thành công</Badge>
+                            <Badge variant="danger" outline>Nguy hiểm</Badge>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Status Badges (Predefined)">
+                    <Subsection title="Huy hiệu trạng thái có sẵn">
                         <div className="ui-kit-row">
                             <StatusBadge status="active" />
                             <StatusBadge status="pending" />
@@ -440,19 +440,19 @@ const UIKit = () => {
                 {/* ============================================ */}
                 {/* TABLE */}
                 {/* ============================================ */}
-                <Section title="Table">
-                    <Subsection title="Basic Table">
+                <Section title="Bảng dữ liệu">
+                    <Subsection title="Bảng cơ bản">
                         <Table 
                             columns={tableColumns}
                             data={tableData}
                         />
                     </Subsection>
 
-                    <Subsection title="Table with Card Wrapper">
+                    <Subsection title="Bảng kèm thẻ bao ngoài">
                         <TableCard
-                            title="Team Members"
-                            subtitle="Manage your organization's users"
-                            action={<Button size="sm">Add Member</Button>}
+                            title="Thành viên nhóm"
+                            subtitle="Quản lý người dùng trong tổ chức"
+                            action={<Button size="sm">Thêm thành viên</Button>}
                             columns={tableColumns}
                             data={tableData}
                         >
@@ -466,10 +466,10 @@ const UIKit = () => {
                         </TableCard>
                     </Subsection>
 
-                    <Subsection title="Loading State">
+                    <Subsection title="Trạng thái tải">
                         <div className="mb-4">
                             <Button size="sm" onClick={handleTableLoadingDemo}>
-                                Toggle Loading
+                                Bật/tắt tải
                             </Button>
                         </div>
                         <Table 
@@ -479,15 +479,15 @@ const UIKit = () => {
                         />
                     </Subsection>
 
-                    <Subsection title="Empty State">
+                    <Subsection title="Trạng thái rỗng">
                         <Table 
                             columns={tableColumns}
                             data={[]}
-                            emptyMessage="No team members found"
+                            emptyMessage="Không tìm thấy thành viên nào"
                         />
                     </Subsection>
 
-                    <Subsection title="Custom Empty State">
+                    <Subsection title="Trạng thái rỗng tùy biến">
                         <Table 
                             columns={tableColumns}
                             data={[]}
@@ -501,21 +501,21 @@ const UIKit = () => {
                                     >
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
-                                    <h3 className="mt-2 text-sm font-medium text-gray-900">No users</h3>
-                                    <p className="mt-1 text-sm text-gray-500">Get started by adding a new team member.</p>
+                                    <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có người dùng</h3>
+                                    <p className="mt-1 text-sm text-gray-500">Hãy bắt đầu bằng cách thêm một thành viên mới.</p>
                                     <div className="mt-4">
-                                        <Button size="sm">Add Team Member</Button>
+                                        <Button size="sm">Thêm thành viên</Button>
                                     </div>
                                 </div>
                             }
                         />
                     </Subsection>
 
-                    <Subsection title="Clickable Rows">
+                    <Subsection title="Dòng có thể bấm">
                         <Table 
                             columns={tableColumns.slice(0, 4)}
                             data={tableData}
-                            onRowClick={(row) => toast.info(`Clicked: ${row.name}`)}
+                            onRowClick={(row) => toast.info(`Đã chọn: ${row.name}`)}
                         />
                     </Subsection>
                 </Section>
@@ -523,38 +523,38 @@ const UIKit = () => {
                 {/* ============================================ */}
                 {/* MODAL */}
                 {/* ============================================ */}
-                <Section title="Modal">
-                    <Subsection title="Basic Modal">
+                <Section title="Hộp thoại">
+                    <Subsection title="Hộp thoại cơ bản">
                         <div className="ui-kit-row">
-                            <Button onClick={() => setIsModalOpen(true)}>Open Modal</Button>
+                            <Button onClick={() => setIsModalOpen(true)}>Mở hộp thoại</Button>
                             <Button variant="danger" onClick={() => setIsConfirmOpen(true)}>
-                                Open Confirm Dialog
+                                Mở hộp thoại xác nhận
                             </Button>
                         </div>
 
                         <Modal
                             isOpen={isModalOpen}
                             onClose={() => setIsModalOpen(false)}
-                            title="Example Modal"
+                            title="Hộp thoại mẫu"
                             footer={
                                 <div className="ui-modal-footer-buttons">
                                     <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
-                                        Cancel
+                                        Hủy
                                     </Button>
                                     <Button onClick={() => {
-                                        toast.success('Saved successfully!');
+                                        toast.success('Đã lưu thành công!');
                                         setIsModalOpen(false);
                                     }}>
-                                        Save Changes
+                                        Lưu thay đổi
                                     </Button>
                                 </div>
                             }
                         >
                             <div className="space-y-4">
-                                <p>This is a basic modal dialog with a title, body content, and footer actions.</p>
-                                <Input label="Name" placeholder="Enter your name" />
+                                <p>Đây là hộp thoại cơ bản với tiêu đề, nội dung và các nút thao tác ở chân hộp thoại.</p>
+                                <Input label="Họ và tên" placeholder="Nhập họ và tên" />
                                 <Select 
-                                    label="Category" 
+                                    label="Danh mục" 
                                     options={selectOptions}
                                 />
                             </div>
@@ -564,13 +564,13 @@ const UIKit = () => {
                             isOpen={isConfirmOpen}
                             onClose={() => setIsConfirmOpen(false)}
                             onConfirm={() => {
-                                toast.success('Action confirmed!');
+                                toast.success('Đã xác nhận thao tác!');
                                 setIsConfirmOpen(false);
                             }}
-                            title="Delete Item"
-                            message="Are you sure you want to delete this item? This action cannot be undone."
-                            confirmText="Delete"
-                            cancelText="Cancel"
+                            title="Xóa mục"
+                            message="Bạn có chắc muốn xóa mục này không? Thao tác này không thể hoàn tác."
+                            confirmText="Xóa"
+                            cancelText="Hủy"
                             variant="danger"
                         />
                     </Subsection>
@@ -579,63 +579,63 @@ const UIKit = () => {
                 {/* ============================================ */}
                 {/* TOAST */}
                 {/* ============================================ */}
-                <Section title="Toast Notifications">
-                    <Subsection title="Toast Types">
+                <Section title="Thông báo nổi">
+                    <Subsection title="Loại thông báo">
                         <div className="ui-kit-row">
                             <Button 
                                 variant="primary" 
-                                onClick={() => toast.success('Operation completed successfully!')}
+                                onClick={() => toast.success('Thao tác đã hoàn tất thành công!')}
                             >
-                                Success Toast
+                                Thành công
                             </Button>
                             <Button 
                                 variant="danger" 
-                                onClick={() => toast.error('Something went wrong. Please try again.')}
+                                onClick={() => toast.error('Đã xảy ra lỗi. Vui lòng thử lại.')}
                             >
-                                Error Toast
+                                Lỗi
                             </Button>
                             <Button 
                                 variant="secondary" 
-                                onClick={() => toast.warning('Please review your input before submitting.')}
+                                onClick={() => toast.warning('Vui lòng kiểm tra lại dữ liệu trước khi gửi.')}
                             >
-                                Warning Toast
+                                Cảnh báo
                             </Button>
                             <Button 
                                 variant="ghost" 
-                                onClick={() => toast.info('Here is some helpful information.')}
+                                onClick={() => toast.info('Đây là một thông tin hữu ích dành cho bạn.')}
                             >
-                                Info Toast
+                                Thông tin
                             </Button>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Toast with Title">
+                    <Subsection title="Thông báo có tiêu đề">
                         <div className="ui-kit-row">
                             <Button onClick={() => toast.addToast({
                                 type: 'success',
-                                title: 'Success!',
-                                message: 'Your changes have been saved successfully.',
+                                title: 'Thành công!',
+                                message: 'Các thay đổi của bạn đã được lưu thành công.',
                             })}>
-                                With Title
+                                Có tiêu đề
                             </Button>
                             <Button onClick={() => toast.addToast({
                                 type: 'error',
-                                title: 'Error',
-                                message: 'Failed to save changes. Please check your connection and try again.',
+                                title: 'Lỗi',
+                                message: 'Không thể lưu thay đổi. Vui lòng kiểm tra kết nối và thử lại.',
                                 duration: 10000,
                             })}>
-                                Long Duration (10s)
+                                Hiển thị lâu (10 giây)
                             </Button>
                         </div>
                     </Subsection>
 
-                    <Subsection title="Multiple Toasts">
+                    <Subsection title="Nhiều thông báo liên tiếp">
                         <Button onClick={() => {
-                            toast.success('First notification');
-                            setTimeout(() => toast.info('Second notification'), 500);
-                            setTimeout(() => toast.warning('Third notification'), 1000);
+                            toast.success('Thông báo đầu tiên');
+                            setTimeout(() => toast.info('Thông báo thứ hai'), 500);
+                            setTimeout(() => toast.warning('Thông báo thứ ba'), 1000);
                         }}>
-                            Show Multiple Toasts
+                            Hiển thị nhiều thông báo
                         </Button>
                     </Subsection>
                 </Section>

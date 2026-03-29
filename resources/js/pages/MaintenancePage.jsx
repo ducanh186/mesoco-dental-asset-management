@@ -240,7 +240,7 @@ const MaintenancePage = ({ user }) => {
 
     const getTypeLabel = (type) => {
         const found = typeOptions.find(o => o.value === type);
-        return found?.label || type;
+        return found?.label || 'Khác';
     };
 
     const getStatusVariant = (status) => {
@@ -255,7 +255,7 @@ const MaintenancePage = ({ user }) => {
 
     const getStatusLabel = (status) => {
         const found = statusOptions.find(o => o.value === status);
-        return found?.label || status;
+        return found?.label || 'Không xác định';
     };
 
     const getPriorityVariant = (priority) => {
@@ -313,7 +313,7 @@ const MaintenancePage = ({ user }) => {
             label: 'Ưu tiên',
             render: (value) => {
                 const labels = { urgent: 'Khẩn', high: 'Cao', normal: 'TB', low: 'Thấp' };
-                return <Badge variant={getPriorityVariant(value)} size="sm" outline>{labels[value] || value}</Badge>;
+                return <Badge variant={getPriorityVariant(value)} size="sm" outline>{labels[value] || 'Không xác định'}</Badge>;
             }
         },
         { 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useI18n } from '../i18n';
 import { useToast } from '../components/ui';
+import { preferLocalizedMessage } from '../services/api';
 
 /**
  * Change Password Page
@@ -155,8 +156,7 @@ const ChangePasswordPage = ({ user, onLogout }) => {
                         newFieldErrors.confirmPassword = t('changePassword.passwordsDoNotMatch');
                         confirmPasswordRef.current?.focus();
                     } else {
-                        // Password policy error - show the server message
-                        newFieldErrors.newPassword = passwordError;
+                        newFieldErrors.newPassword = preferLocalizedMessage(passwordError, t('auth.passwordRequirements'));
                         newPasswordRef.current?.focus();
                     }
                 }

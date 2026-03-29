@@ -182,7 +182,7 @@ const FeedbackPage = ({ user }) => {
 
     const getTypeLabel = (type) => {
         const labels = { issue: 'Sự cố', suggestion: 'Đề xuất', praise: 'Khen ngợi', other: 'Khác' };
-        return labels[type] || type;
+        return labels[type] || 'Khác';
     };
 
     const getStatusVariant = (status) => {
@@ -196,7 +196,7 @@ const FeedbackPage = ({ user }) => {
 
     const getStatusLabel = (status) => {
         const labels = { new: 'Mới', in_progress: 'Đang xử lý', resolved: 'Đã giải quyết' };
-        return labels[status] || status;
+        return labels[status] || 'Không xác định';
     };
 
     const getTypeVariant = (type) => {

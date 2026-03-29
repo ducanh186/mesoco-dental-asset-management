@@ -1,4 +1,5 @@
 import React, { forwardRef, useId } from 'react';
+import { useI18n } from '../../i18n';
 
 /**
  * Select Component - OrangeHRM-inspired
@@ -17,7 +18,7 @@ const Select = forwardRef(({
     error,
     required = false,
     disabled = false,
-    placeholder = 'Select an option...',
+    placeholder,
     options = [],
     size = 'md',
     className = '',
@@ -26,10 +27,12 @@ const Select = forwardRef(({
     onChange,
     ...props
 }, ref) => {
+    const { t } = useI18n();
     const generatedId = useId();
     const id = providedId || generatedId;
     const helperId = `${id}-helper`;
     const errorId = `${id}-error`;
+    const resolvedPlaceholder = placeholder ?? t('common.selectOption');
 
     const hasError = Boolean(error);
     const hasHelper = Boolean(helper) && !hasError;
@@ -68,9 +71,9 @@ const Select = forwardRef(({
                     onChange={onChange}
                     {...props}
                 >
-                    {placeholder && (
+                    {resolvedPlaceholder && (
                         <option value="" disabled>
-                            {placeholder}
+                            {resolvedPlaceholder}
                         </option>
                     )}
                     {options.map((option) => (

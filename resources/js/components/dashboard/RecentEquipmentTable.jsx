@@ -44,11 +44,11 @@ const RecentEquipmentTable = ({
     const getStatusLabel = (status) => {
         const statusLower = (status || '').toLowerCase();
         switch (statusLower) {
-            case 'active': return t('common.status.active') || 'Active';
-            case 'maintenance': return t('common.status.maintenance') || 'Maintenance';
-            case 'off_service': return t('common.status.offService') || 'Off Service';
-            case 'available': return t('common.status.available') || 'Available';
-            case 'retired': return t('common.status.retired') || 'Retired';
+            case 'active': return t('common.status.active');
+            case 'maintenance': return t('common.status.maintenance');
+            case 'off_service': return t('common.status.offService');
+            case 'available': return t('common.status.available');
+            case 'retired': return t('common.status.retired');
             default: return status;
         }
     };

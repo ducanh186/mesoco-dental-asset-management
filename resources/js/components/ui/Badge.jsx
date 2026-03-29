@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../../i18n';
 
 /**
  * Badge Component - OrangeHRM-inspired status pill
@@ -51,21 +52,31 @@ const Badge = ({
 
 // Status Badge - Predefined status mappings
 export const StatusBadge = ({ status, className = '', ...props }) => {
+    const { t } = useI18n();
+    const normalizedStatus = status?.toLowerCase();
     const statusConfig = {
-        active: { variant: 'success', label: 'Active' },
-        inactive: { variant: 'default', label: 'Inactive' },
-        pending: { variant: 'warning', label: 'Pending' },
-        approved: { variant: 'success', label: 'Approved' },
-        rejected: { variant: 'danger', label: 'Rejected' },
-        maintenance: { variant: 'warning', label: 'Maintenance' },
-        available: { variant: 'info', label: 'Available' },
-        assigned: { variant: 'primary', label: 'Assigned' },
-        overdue: { variant: 'danger', label: 'Overdue' },
+        active: { variant: 'success', label: t('common.status.active') },
+        inactive: { variant: 'default', label: t('common.status.inactive') },
+        pending: { variant: 'warning', label: t('common.status.pending') },
+        approved: { variant: 'success', label: t('common.status.approved') },
+        rejected: { variant: 'danger', label: t('common.status.rejected') },
+        submitted: { variant: 'warning', label: t('common.status.submitted') },
+        cancelled: { variant: 'default', label: t('common.status.cancelled') },
+        maintenance: { variant: 'warning', label: t('common.status.maintenance') },
+        in_progress: { variant: 'info', label: t('common.status.in_progress') },
+        off_service: { variant: 'danger', label: t('common.status.off_service') },
+        available: { variant: 'info', label: t('common.status.available') },
+        assigned: { variant: 'primary', label: t('common.status.assigned') },
+        overdue: { variant: 'danger', label: t('common.status.overdue') },
+        expired: { variant: 'warning', label: t('common.status.expired') },
+        terminated: { variant: 'danger', label: t('common.status.terminated') },
+        retired: { variant: 'default', label: t('common.status.retired') },
+        draft: { variant: 'default', label: t('common.status.draft') },
     };
 
-    const config = statusConfig[status?.toLowerCase()] || { 
+    const config = statusConfig[normalizedStatus] || {
         variant: 'default', 
-        label: status || 'Unknown' 
+        label: t('common.unknown'),
     };
 
     return (

@@ -9,7 +9,7 @@ import {
     StatusBadge,
     useToast
 } from '../components/ui';
-import { qrApi, handleApiError } from '../services/api';
+import { qrApi, handleApiError, preferLocalizedMessage } from '../services/api';
 import { useI18n } from '../i18n';
 import { useQRScanner, parseQRPayload } from '../hooks/useQRScanner';
 
@@ -85,7 +85,7 @@ const QRScanPage = ({ user }) => {
                 setError({
                     type: 'notFound',
                     message: t('qrScan.assetNotFound'),
-                    detail: err.response?.data?.message || ''
+                    detail: preferLocalizedMessage(err.response?.data?.message, t('qrScan.noResultMessage'))
                 });
                 toast.error(t('qrScan.assetNotFound'));
             } else if (err.response?.status === 422) {
@@ -93,7 +93,7 @@ const QRScanPage = ({ user }) => {
                 setError({
                     type: 'invalidFormat',
                     message: t('qrScan.invalidFormat'),
-                    detail: err.response?.data?.message || ''
+                    detail: preferLocalizedMessage(err.response?.data?.message, t('qrScan.expectedFormat'))
                 });
                 toast.error(t('qrScan.invalidFormat'));
             } else {
@@ -174,6 +174,32 @@ const QRScanPage = ({ user }) => {
     const handleSwitchToCamera = () => {
         setMode('camera');
     };
+
+    const getAssetTypeLabel = useCallback((type) => {
+        const normalizedType = String(type || '').trim().toLowerCase();
+
+        if (!normalizedType) {
+            return t('common.unknown');
+        }
+
+        const supportedTypes = ['tray', 'machine', 'tool', 'equipment', 'other'];
+        const typeKey = supportedTypes.includes(normalizedType) ? normalizedType : 'other';
+
+        return t(`assets.types.${typeKey}`);
+    }, [t]);
+
+    const getBlockedReasonLabel = useCallback((reason) => {
+        const normalizedReason = String(reason || '').trim();
+
+        if (!normalizedReason) {
+            return t('common.unknown');
+        }
+
+        const translationKey = `qrScan.blockedReason.${normalizedReason}`;
+        const translation = t(translationKey);
+
+        return translation === translationKey ? t('common.unknown') : translation;
+    }, [t]);
 
     // Determine if check-in is allowed
     const canCheckIn = resolvedAsset?.checkin_status?.can_check_in === true;
@@ -429,7 +455,7 @@ const QRScanPage = ({ user }) => {
                                 </div>
                                 <div>
                                     <span className="text-sm text-text-muted">{t('assets.assetType')}</span>
-                                    <p className="font-medium capitalize">{resolvedAsset.asset?.type || '-'}</p>
+                                    <p className="font-medium capitalize">{getAssetTypeLabel(resolvedAsset.asset?.type)}</p>
                                 </div>
                                 <div>
                                     <span className="text-sm text-text-muted">{t('common.status.label')}</span>
@@ -461,7 +487,7 @@ const QRScanPage = ({ user }) => {
                                         </Badge>
                                         {!canCheckIn && checkInBlockedReason && (
                                             <span className="text-sm text-text-muted">
-                                                {t(`qrScan.blockedReason.${checkInBlockedReason}`, checkInBlockedReason)}
+                                                {getBlockedReasonLabel(checkInBlockedReason)}
                                             </span>
                                         )}
                                     </div>

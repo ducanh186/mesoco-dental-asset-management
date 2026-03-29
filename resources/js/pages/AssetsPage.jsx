@@ -23,7 +23,8 @@ import { useI18n } from '../i18n';
  */
 const AssetsPage = ({ user }) => {
     const toast = useToast();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
 
     // Data State
     const [assets, setAssets] = useState([]);
@@ -86,6 +87,19 @@ const AssetsPage = ({ user }) => {
         { value: 'assigned', label: t('assets.assigned') },
         { value: 'unassigned', label: t('assets.unassigned') },
     ];
+
+    const getAssetTypeLabel = useCallback((type) => {
+        const normalizedType = String(type || '').trim().toLowerCase();
+
+        if (!normalizedType) {
+            return t('common.unknown');
+        }
+
+        const supportedTypes = ['tray', 'machine', 'tool', 'equipment', 'other'];
+        const typeKey = supportedTypes.includes(normalizedType) ? normalizedType : 'other';
+
+        return t(`assets.types.${typeKey}`);
+    }, [t]);
 
     // ========================================================================
     // Data Fetching
@@ -271,7 +285,7 @@ const AssetsPage = ({ user }) => {
             render: (value, row) => (
                 <div>
                     <div className="font-medium text-text">{value}</div>
-                    <div className="text-xs text-text-muted capitalize">{t(`assets.types.${row.type}`)}</div>
+                    <div className="text-xs text-text-muted capitalize">{getAssetTypeLabel(row.type)}</div>
                 </div>
             )
         },
@@ -312,7 +326,7 @@ const AssetsPage = ({ user }) => {
                         e.stopPropagation();
                         copyToClipboard(qr.payload);
                     }}
-                    title="Copy QR Payload"
+                    title={t('assets.copyPayload')}
                 >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="3" width="7" height="7" />
@@ -332,7 +346,7 @@ const AssetsPage = ({ user }) => {
                 <button
                     className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary transition-colors"
                     onClick={() => handleViewAsset(row)}
-                    title="View Details"
+                    title={t('assets.viewDetails')}
                 >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="9 18 15 12 9 6" />
@@ -547,7 +561,7 @@ const AssetsPage = ({ user }) => {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs font-semibold text-text-muted uppercase">{t('common.type')}</span>
-                                        <span className="text-sm font-medium capitalize">{selectedAsset.type}</span>
+                                        <span className="text-sm font-medium capitalize">{getAssetTypeLabel(selectedAsset.type)}</span>
                                     </div>
                                     {selectedAsset.notes && (
                                         <div className="mt-3 pt-3 border-t border-border">
@@ -579,7 +593,7 @@ const AssetsPage = ({ user }) => {
                                                 <div>
                                                     <div className="font-medium">{selectedAsset.current_assignment.assignee?.full_name}</div>
                                                     <div className="text-xs text-text-muted">
-                                                        {t('assets.assignedSince')}: {new Date(selectedAsset.current_assignment.assigned_at).toLocaleDateString()}
+                                                        {t('assets.assignedSince')}: {new Date(selectedAsset.current_assignment.assigned_at).toLocaleDateString(dateLocale)}
                                                     </div>
                                                 </div>
                                             </div>
@@ -641,7 +655,7 @@ const AssetsPage = ({ user }) => {
                                             {/* QR Code Placeholder */}
                                             <div className="flex justify-center mb-3">
                                                 <div className="w-24 h-24 bg-surface-invert rounded-lg flex items-center justify-center text-text-invert text-xs">
-                                                    [QR Code]
+                                                    [{t('assets.qrCode')}]
                                                 </div>
                                             </div>
                                             <Button
@@ -672,8 +686,8 @@ const AssetsPage = ({ user }) => {
                                                     <div>
                                                         <div className="text-sm font-medium">{history.employee?.full_name}</div>
                                                         <div className="text-xs text-text-muted">
-                                                            {new Date(history.assigned_at).toLocaleDateString()}
-                                                            {history.unassigned_at && ` — ${new Date(history.unassigned_at).toLocaleDateString()}`}
+                                                            {new Date(history.assigned_at).toLocaleDateString(dateLocale)}
+                                                            {history.unassigned_at && ` — ${new Date(history.unassigned_at).toLocaleDateString(dateLocale)}`}
                                                         </div>
                                                     </div>
                                                     {history.is_active && (
