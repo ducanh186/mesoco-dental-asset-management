@@ -3,6 +3,7 @@
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetOffServiceController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\CheckinController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeContractController;
@@ -215,6 +216,16 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
         */
         Route::get('/locations/dropdown', [LocationController::class, 'dropdown']);
         Route::apiResource('locations', LocationController::class);
+
+        /*
+        |----------------------------------------------------------------------
+        | Disposal Management (Thu hủy - BFD Module 4)
+        |----------------------------------------------------------------------
+        | Assets with depreciation >= 70% eligible for disposal
+        */
+        Route::get('/disposal/summary', [DisposalController::class, 'summary']);
+        Route::get('/disposal/assets', [DisposalController::class, 'assets']);
+        Route::post('/disposal/assets/{asset}/retire', [DisposalController::class, 'retire']);
 
         /*
         |----------------------------------------------------------------------
