@@ -29,6 +29,7 @@ import ReportPage from './pages/ReportPage';
 import QRScanPage from './pages/QRScanPage';
 import ContractsPage from './pages/ContractsPage';
 import EmployeesPage from './pages/EmployeesPage';
+import DisposalPage from './pages/DisposalPage';
 
 // UI Components
 import { ToastProvider } from './components/ui';
@@ -1045,11 +1046,24 @@ const MyAssetHistoryPageWrapper = () => {
      );
 };
 
+const DisposalPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper
+               title={t('disposal.title')}
+               breadcrumbs={[{ label: t('disposal.title') }]}
+          >
+               <DisposalPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
 const ReportPageWrapper = () => {
      const { user } = useAuth();
      const { t } = useI18n();
      return (
-          <AdminLayoutWrapper 
+          <AdminLayoutWrapper
                title={t('nav.reports')}
                breadcrumbs={[{ label: t('nav.reports') }]}
           >
@@ -1301,6 +1315,11 @@ const App = () => {
                               <ProtectedRoute>
                                    <MyAssetHistoryPageWrapper />
                               </ProtectedRoute>
+                         } />
+                         <Route path="/disposal" element={
+                              <AdminHrRoute>
+                                   <DisposalPageWrapper />
+                              </AdminHrRoute>
                          } />
                          <Route path="/reports" element={
                               <ProtectedRoute>
