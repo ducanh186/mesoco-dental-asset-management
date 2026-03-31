@@ -790,6 +790,24 @@ export const contractsApi = {
     },
 };
 
+// ============================================================================
+// Disposal API (Thu hủy)
+// ============================================================================
+export const disposalApi = {
+    summary: async () => {
+        const response = await axios.get('/api/disposal/summary');
+        return response.data;
+    },
+    assets: async (params = {}) => {
+        const response = await axios.get('/api/disposal/assets', { params });
+        return response.data;
+    },
+    retire: async (assetId, data) => {
+        const response = await axios.post(`/api/disposal/assets/${assetId}/retire`, data);
+        return response.data;
+    },
+};
+
 export default {
     assets: assetsApi,
     myAssets: myAssetsApi,
@@ -805,5 +823,6 @@ export default {
     feedback: feedbackApi,
     reports: reportsApi,
     contracts: contractsApi,
+    disposal: disposalApi,
     handleApiError,
 };
