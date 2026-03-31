@@ -412,6 +412,34 @@ class Asset extends Model
     }
 
     /**
+     * Get depreciation percentage (0-100).
+     * Formula: accumulated_depreciation / (purchase_cost - salvage_value) * 100
+     */
+    public function getDepreciationPercentage(?Carbon $asOfDate = null): ?float
+    {
+        $accumulated = $this->getAccumulatedDepreciation($asOfDate);
+        if ($accumulated === null || !$this->purchase_cost) {
+            return null;
+        }
+
+        $depreciableAmount = (float) $this->purchase_cost - (float) ($this->salvage_value ?? 0);
+        if ($depreciableAmount <= 0) {
+            return 100.0;
+        }
+
+        return round(min(($accumulated / $depreciableAmount) * 100, 100), 1);
+    }
+
+    /**
+     * Check if asset is eligible for disposal (depreciation >= 70%).
+     */
+    public function isEligibleForDisposal(?Carbon $asOfDate = null): bool
+    {
+        $percentage = $this->getDepreciationPercentage($asOfDate);
+        return $percentage !== null && $percentage >= 70;
+    }
+
+    /**
      * Check if asset is fully depreciated.
      */
     public function isFullyDepreciated(?Carbon $asOfDate = null): bool
@@ -458,6 +486,8 @@ class Asset extends Model
             'current_book_value' => $this->getCurrentBookValue($asOfDate),
             'remaining_useful_life_months' => $this->getRemainingUsefulLifeMonths($asOfDate),
             'is_fully_depreciated' => $this->isFullyDepreciated($asOfDate),
+            'depreciation_percentage' => $this->getDepreciationPercentage($asOfDate),
+            'is_eligible_for_disposal' => $this->isEligibleForDisposal($asOfDate),
         ];
     }
 
