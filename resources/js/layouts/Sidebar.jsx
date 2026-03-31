@@ -5,23 +5,27 @@ import { useI18n } from '../i18n';
 /**
  * Sidebar - OrangeHRM-inspired collapsible sidebar navigation
  * 
- * RBAC Menu Visibility:
+ * RBAC Menu Visibility (aligned with BFD):
  * ┌─────────────┬──────────────────────────────────────────────────────┐
  * │ Role        │ Menu Items                                           │
  * ├─────────────┼──────────────────────────────────────────────────────┤
- * │ admin       │ Dashboard, My Equipment, Equipment Catalog,          │
- * │             │ Inventory & Valuation, Requests, Review Requests,    │
- * │             │ Maintenance, Reports, Users, Locations, Admin,       │
- * │             │ Settings                                             │
- * │ hr          │ Dashboard, My Equipment, Equipment Catalog,          │
- * │             │ Inventory & Valuation, Requests, Review Requests,    │
- * │             │ Maintenance, Reports, Users, Locations, Settings     │
- * │ doctor      │ Dashboard, My Equipment, Requests, My Asset History, │
- * │             │ Settings                                             │
- * │ technician  │ Dashboard, My Equipment, Requests, Maintenance,      │
- * │             │ My Asset History, Settings                           │
- * │ staff       │ Dashboard, My Equipment, Requests, My Asset History, │
- * │             │ Settings                                             │
+ * │ admin       │ Dashboard, My Equipment, Asset Catalog,              │
+ * │             │ Inventory & Valuation, Distribution Forms,           │
+ * │             │ Review Distribution, Maintenance & Repair,           │
+ * │             │ Feedback & Suggestions, Reports & Statistics,        │
+ * │             │ Employee Profiles, Location Catalog, Admin           │
+ * │ hr          │ Dashboard, My Equipment, Asset Catalog,              │
+ * │             │ Inventory & Valuation, Distribution Forms,           │
+ * │             │ Review Distribution, Maintenance & Repair,           │
+ * │             │ Feedback & Suggestions, Reports & Statistics,        │
+ * │             │ Employee Profiles, Location Catalog                  │
+ * │ doctor      │ Dashboard, My Equipment, Distribution Forms,         │
+ * │             │ Feedback & Suggestions, My Asset History             │
+ * │ technician  │ Dashboard, My Equipment, Distribution Forms,         │
+ * │             │ Maintenance & Repair, Feedback & Suggestions,        │
+ * │             │ My Asset History                                     │
+ * │ staff       │ Dashboard, My Equipment, Distribution Forms,         │
+ * │             │ Feedback & Suggestions, My Asset History             │
  * └─────────────┴──────────────────────────────────────────────────────┘
  */
 const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
@@ -96,11 +100,18 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             labelKey: 'nav.maintenance', 
             icon: 'maintenance'
         }] : []),
+        // Admin/HR only - Disposal (Thu hủy)
+        ...(isAdminOrHr ? [{
+            id: 'disposal',
+            path: '/disposal',
+            labelKey: 'nav.disposal',
+            icon: 'disposal'
+        }] : []),
         // All users - Feedback
-        { 
+        {
             id: 'feedback',
-            path: '/feedback', 
-            labelKey: 'nav.feedback', 
+            path: '/feedback',
+            labelKey: 'nav.feedback',
             icon: 'feedback'
         },
         // Non-admin roles only - My Asset History
@@ -270,6 +281,14 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     <line x1="9" y1="9" x2="15" y2="9" />
                     <line x1="9" y1="13" x2="12" y2="13" />
+                </svg>
+            ),
+            disposal: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
                 </svg>
             ),
             contracts: (
