@@ -70,7 +70,7 @@ export default {
             overdue: 'Quá hạn',
             expired: 'Hết hạn',
             terminated: 'Đã chấm dứt',
-            retired: 'Đã thanh lý',
+            retired: 'Đã thu hủy',
             draft: 'Nháp'
         },
         type: 'Loại',
@@ -106,30 +106,34 @@ export default {
     nav: {
         dashboard: 'Tổng quan',
         profile: 'Hồ sơ',
-        employees: 'Nhân sự',
-        assets: 'Danh mục thiết bị',
-        equipmentCatalog: 'Danh mục thiết bị',
+        employees: 'Hồ sơ nhân viên',
+        assets: 'Danh mục tài sản',
+        equipmentCatalog: 'Danh mục tài sản',
         myEquipment: 'Thiết bị của tôi',
         myAssets: 'Thiết bị của tôi',
         equipment: 'Thiết bị',
         shifts: 'Ca làm',
         checkin: 'Ghi nhận ca',
-        requests: 'Phiếu yêu cầu',
-        reviewRequests: 'Duyệt phiếu',
-        inventory: 'Kho vật tư',
-        inventoryValuation: 'Kho & định giá',
-        maintenance: 'Bảo trì',
+        requests: 'Phiếu cấp phát',
+        reviewRequests: 'Duyệt phiếu cấp phát',
+        inventory: 'Kiểm kê định kì',
+        inventoryValuation: 'Kiểm kê & định giá',
+        maintenance: 'Bảo trì & Sửa chữa',
         offService: 'Tạm ngưng sử dụng',
-        feedback: 'Góp ý',
-        reports: 'Báo cáo',
+        feedback: 'Phản hồi & đề xuất',
+        reports: 'Báo cáo & thống kê',
         settings: 'Cài đặt',
         admin: 'Quản trị',
         users: 'Người dùng',
-        locations: 'Vị trí',
+        locations: 'Danh mục vị trí',
         myAssetHistory: 'Lịch sử thiết bị',
         equipmentLookup: 'Tra cứu thiết bị',
         qrScan: 'Quét QR',
         contracts: 'Hợp đồng',
+        disposal: 'Thu hủy',
+        incidents: 'Quản lý sự cố',
+        disposalForms: 'Phiếu thu hủy',
+        suppliers: 'Nhà cung cấp',
         logout: 'Đăng xuất',
         collapse: 'Thu gọn',
         expand: 'Mở rộng',
@@ -302,9 +306,9 @@ export default {
         viewReports: 'Xem báo cáo',
         myEquipment: 'Thiết bị của tôi',
         myRequests: 'Phiếu của tôi',
-        reviewRequests: 'Duyệt phiếu',
-        maintenance: 'Bảo trì',
-        inventory: 'Kho & định giá',
+        reviewRequests: 'Duyệt phiếu cấp phát',
+        maintenance: 'Bảo trì & Sửa chữa',
+        inventory: 'Kiểm kê & định giá',
         
         // Table
         viewAll: 'Xem tất cả',
@@ -369,7 +373,7 @@ export default {
             active: 'Đang hoạt động',
             off_service: 'Tạm ngưng sử dụng',
             maintenance: 'Đang bảo trì',
-            retired: 'Đã thanh lý',
+            retired: 'Đã thu hủy',
         },
         
         // Assignment
@@ -875,8 +879,8 @@ export default {
     // Maintenance / Bảo trì
     // ========================================================================
     maintenance: {
-        title: 'Bảo trì',
-        subtitle: 'Lịch bảo trì và hồ sơ dịch vụ',
+        title: 'Bảo trì & Sửa chữa',
+        subtitle: 'Lịch bảo trì, sửa chữa và hồ sơ dịch vụ',
         schedule: 'Lịch bảo trì',
         records: 'Hồ sơ bảo trì',
         totalRecords: 'Tổng hồ sơ',
@@ -935,7 +939,7 @@ export default {
     // Inventory / Kho vật tư
     // ========================================================================
     inventory: {
-        title: 'Kho vật tư',
+        title: 'Kiểm kê & định giá',
         stock: 'Tồn kho',
         inbound: 'Nhập kho',
         outbound: 'Xuất kho',
@@ -947,15 +951,16 @@ export default {
     // Reports / Báo cáo
     // ========================================================================
     reports: {
-        title: 'Báo cáo',
+        title: 'Báo cáo & thống kê',
         overview: 'Tổng hợp',
         assetReport: 'Báo cáo thiết bị',
-        assetUsage: 'Sử dụng thiết bị',
+        assetUsage: 'Tình hình sử dụng thiết bị',
         incidents: 'Sự cố',
-        requests: 'Phiếu yêu cầu',
+        requests: 'Phiếu cấp phát',
         assignmentReport: 'Báo cáo phân công',
-        maintenanceReport: 'Báo cáo bảo trì',
-        maintenance: 'Bảo trì',
+        maintenanceReport: 'Tình hình sửa chữa, bảo trì',
+        maintenance: 'Bảo trì & Sửa chữa',
+        conditionReport: 'Báo cáo tình trạng',
         export: 'Xuất báo cáo',
         exportPdf: 'Xuất PDF',
         exportExcel: 'Xuất Excel',
@@ -963,13 +968,43 @@ export default {
     },
 
     // ========================================================================
-    // Feedback / Góp ý
+    // Feedback / Phản hồi & Đề xuất
     // ========================================================================
     feedback: {
-        title: 'Góp ý',
-        sendFeedback: 'Gửi góp ý',
-        placeholder: 'Nhập nội dung góp ý...',
-        thanks: 'Cảm ơn bạn đã góp ý',
+        title: 'Phản hồi & đề xuất',
+        sendFeedback: 'Gửi phản hồi',
+        placeholder: 'Nhập nội dung phản hồi hoặc đề xuất...',
+        thanks: 'Cảm ơn bạn đã gửi phản hồi',
+    },
+
+    // ========================================================================
+    // Disposal / Thu hủy
+    // ========================================================================
+    disposal: {
+        title: 'Thu hủy thiết bị',
+        subtitle: 'Quản lý thiết bị đủ điều kiện thu hủy (khấu hao ≥ 70%)',
+        eligibleForDisposal: 'Đủ điều kiện thu hủy',
+        highDepreciation: 'Khấu hao ≥ 90%',
+        alreadyRetired: 'Đã thu hủy',
+        remainingValue: 'Giá trị còn lại',
+        eligibleTab: 'Đủ điều kiện',
+        retiredTab: 'Đã thu hủy',
+        assetCode: 'Mã thiết bị',
+        assetName: 'Tên thiết bị',
+        category: 'Danh mục',
+        depreciation: 'Khấu hao',
+        purchaseCost: 'Giá mua',
+        bookValue: 'Giá trị sổ sách',
+        reason: 'Lý do thu hủy',
+        reasonPlaceholder: 'Nhập lý do thu hủy thiết bị...',
+        retiredDate: 'Ngày thu hủy',
+        retire: 'Thu hủy',
+        retireSuccess: 'Đã thu hủy thiết bị thành công.',
+        retireConfirmTitle: 'Xác nhận thu hủy',
+        retireConfirmMessage: 'Bạn có chắc muốn thu hủy thiết bị {name} ({code})?',
+        confirmRetire: 'Xác nhận thu hủy',
+        noEligible: 'Không có thiết bị nào đủ điều kiện thu hủy.',
+        noRetired: 'Chưa có thiết bị nào được thu hủy.',
     },
 
     // ========================================================================

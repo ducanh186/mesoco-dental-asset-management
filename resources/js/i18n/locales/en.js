@@ -102,30 +102,34 @@ export default {
     nav: {
         dashboard: 'Dashboard',
         profile: 'Profile',
-        employees: 'Employees',
-        assets: 'Assets',
-        equipmentCatalog: 'Equipment Catalog',
+        employees: 'Employee Profiles',
+        assets: 'Asset Catalog',
+        equipmentCatalog: 'Asset Catalog',
         myEquipment: 'My Equipment',
         myAssets: 'My Equipment',
         equipment: 'Equipment',
         shifts: 'Shifts',
         checkin: 'Shift Check-in',
-        requests: 'Requests',
-        reviewRequests: 'Review Requests',
-        inventory: 'Inventory',
+        requests: 'Distribution Forms',
+        reviewRequests: 'Review Distribution',
+        inventory: 'Periodic Inventory',
         inventoryValuation: 'Inventory & Valuation',
-        maintenance: 'Maintenance',
+        maintenance: 'Maintenance & Repair',
         offService: 'Off Service',
-        feedback: 'Feedback',
-        reports: 'Reports',
+        feedback: 'Feedback & Suggestions',
+        reports: 'Reports & Statistics',
         settings: 'Settings',
         admin: 'Admin',
         users: 'Users',
-        locations: 'Locations',
+        locations: 'Location Catalog',
         myAssetHistory: 'My Asset History',
         equipmentLookup: 'Equipment Lookup',
         qrScan: 'QR Scanner',
         contracts: 'Contracts',
+        disposal: 'Disposal',
+        incidents: 'Incident Management',
+        disposalForms: 'Disposal Forms',
+        suppliers: 'Suppliers',
         logout: 'Logout',
         collapse: 'Collapse',
         expand: 'Expand',
@@ -299,9 +303,9 @@ export default {
         myEquipment: 'My Equipment',
         myRequests: 'My Requests',
         reviewRequests: 'Review Requests',
-        maintenance: 'Maintenance',
-        inventory: 'Inventory',
-        
+        maintenance: 'Maintenance & Repair',
+        inventory: 'Inventory & Valuation',
+
         // Table
         viewAll: 'View All',
         loading: 'Loading...',
@@ -861,8 +865,8 @@ export default {
     // Maintenance
     // ========================================================================
     maintenance: {
-        title: 'Maintenance',
-        subtitle: 'Maintenance schedules and service records',
+        title: 'Maintenance & Repair',
+        subtitle: 'Maintenance schedules, repairs and service records',
         schedule: 'Maintenance Schedule',
         records: 'Maintenance Records',
         totalRecords: 'Total Records',
@@ -921,7 +925,7 @@ export default {
     // Inventory
     // ========================================================================
     inventory: {
-        title: 'Inventory',
+        title: 'Inventory & Valuation',
         stock: 'Stock',
         inbound: 'Inbound',
         outbound: 'Outbound',
@@ -933,15 +937,16 @@ export default {
     // Reports
     // ========================================================================
     reports: {
-        title: 'Reports',
+        title: 'Reports & Statistics',
         overview: 'Overview',
         assetReport: 'Asset Report',
-        assetUsage: 'Asset Usage',
+        assetUsage: 'Equipment Usage Report',
         incidents: 'Incidents',
-        requests: 'Requests',
+        requests: 'Distribution Forms',
         assignmentReport: 'Assignment Report',
-        maintenanceReport: 'Maintenance Report',
-        maintenance: 'Maintenance',
+        maintenanceReport: 'Maintenance & Repair Report',
+        maintenance: 'Maintenance & Repair',
+        conditionReport: 'Condition Report',
         export: 'Export',
         exportPdf: 'Export PDF',
         exportExcel: 'Export Excel',
@@ -952,9 +957,9 @@ export default {
     // Feedback
     // ========================================================================
     feedback: {
-        title: 'Feedback',
+        title: 'Feedback & Suggestions',
         sendFeedback: 'Send Feedback',
-        placeholder: 'Enter your feedback...',
+        placeholder: 'Enter your feedback or suggestion...',
         thanks: 'Thank you for your feedback',
     },
 
@@ -1158,6 +1163,36 @@ export default {
             female: 'Female',
             other: 'Other',
         },
+    },
+
+    // ========================================================================
+    // Disposal
+    // ========================================================================
+    disposal: {
+        title: 'Equipment Disposal',
+        subtitle: 'Manage equipment eligible for disposal (depreciation >= 70%)',
+        eligibleForDisposal: 'Eligible for Disposal',
+        highDepreciation: 'Depreciation >= 90%',
+        alreadyRetired: 'Already Disposed',
+        remainingValue: 'Remaining Value',
+        eligibleTab: 'Eligible',
+        retiredTab: 'Disposed',
+        assetCode: 'Asset Code',
+        assetName: 'Asset Name',
+        category: 'Category',
+        depreciation: 'Depreciation',
+        purchaseCost: 'Purchase Cost',
+        bookValue: 'Book Value',
+        reason: 'Disposal Reason',
+        reasonPlaceholder: 'Enter reason for disposing this asset...',
+        retiredDate: 'Disposal Date',
+        retire: 'Dispose',
+        retireSuccess: 'Asset disposed successfully.',
+        retireConfirmTitle: 'Confirm Disposal',
+        retireConfirmMessage: 'Are you sure you want to dispose {name} ({code})?',
+        confirmRetire: 'Confirm Disposal',
+        noEligible: 'No assets eligible for disposal.',
+        noRetired: 'No disposed assets yet.',
     },
 
     // ========================================================================
