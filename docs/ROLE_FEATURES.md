@@ -199,6 +199,7 @@ role:admin,hr         → Admin hoặc HR
 
 ## 🔗 Tài Liệu Liên Quan
 
-- [Cấu trúc dự án](PROJECT_STRUCTURE.md)
+- [Checklist tính năng theo role](feat_role.md)
 - [Hướng dẫn API](postman/) - Postman Collection
 - [Stack công nghệ](STACK.md)
+- [Quy ước database](DB_CONVENTIONS.md)
