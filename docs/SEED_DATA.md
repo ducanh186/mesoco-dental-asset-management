@@ -41,7 +41,7 @@ $this->call([
 
 ## Demo Accounts
 
-All demo accounts use the same password: **`Password123!`**
+All demo accounts use the same password: **`password`**
 
 | Employee Code | Name                  | Role         | Email               | Position              |
 |---------------|-----------------------|--------------|---------------------|-----------------------|
