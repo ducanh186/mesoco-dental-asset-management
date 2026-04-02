@@ -87,14 +87,14 @@ These employees exist but don't have login credentials (for testing assignment w
 
 ## Assets Summary
 
-Total: **35 assets** with MSA-XXXX code pattern
+Total: **65 assets** with MSA-XXXX code pattern
 
 ### By Type
 
 | Type      | Count | Asset Codes          |
 |-----------|-------|----------------------|
 | Machine   | 10    | MSA-0001 to MSA-0010 |
-| Equipment | 10    | MSA-0011 to MSA-0020 |
+| Equipment | 40    | MSA-0011 to MSA-0020, MSA-0036 to MSA-0065 |
 | Tool      | 8     | MSA-0021 to MSA-0028 |
 | Tray      | 5     | MSA-0029 to MSA-0033 |
 | Other     | 2     | MSA-0034 to MSA-0035 |
@@ -103,10 +103,10 @@ Total: **35 assets** with MSA-XXXX code pattern
 
 | Status      | Count | Examples                           |
 |-------------|-------|------------------------------------|
-| Active      | 29    | Most assets                        |
-| Maintenance | 4     | MSA-0006, MSA-0019, MSA-0027       |
-| Off-Service | 1     | MSA-0009 (Water Purification)      |
-| Retired     | 1     | MSA-0020 (Portable Suction Unit)   |
+| Active      | 55    | Most assets                        |
+| Maintenance | 6     | MSA-0019, MSA-0042, MSA-0064       |
+| Off-Service | 2     | MSA-0009, MSA-0043                 |
+| Retired     | 2     | MSA-0020, MSA-0065                |
 
 ### High-Value Assets (> 50M VND)
 
@@ -178,7 +178,7 @@ Total: **35 assets** with MSA-XXXX code pattern
 
 ## QR Identities
 
-All 35 assets have QR identities with:
+All 65 assets have QR identities with:
 - **Format:** `MESOCO|ASSET|v1|<uuid>`
 - **Payload Version:** v1
 
@@ -278,7 +278,7 @@ To add more demo data, edit [FinalMvpSeeder.php](../database/seeders/FinalMvpSee
 ```php
 // Add new asset
 $assetsData[] = [
-    'asset_code' => 'MSA-0036',
+    'asset_code' => 'MSA-0066',
     'name' => 'New Equipment',
     'type' => Asset::TYPE_EQUIPMENT,
     // ... other fields

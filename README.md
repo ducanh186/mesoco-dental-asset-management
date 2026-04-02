@@ -20,15 +20,15 @@
 
 ## 📚 Tài Liệu
 
-Xem tất cả: [docs/INDEX.md](docs/INDEX.md)
+Sau khi seed dữ liệu demo, xem chi tiết dataset tại [docs/SEED_DATA.md](docs/SEED_DATA.md).
 
 | File | Nội dung |
 |------|----------|
-| [📁 PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | Cấu trúc project & workflow |
-| [📋 DECISIONS.md](docs/DECISIONS.md) | Kiến trúc & quyết định kỹ thuật |
+| [🗃️ SEED_DATA.md](docs/SEED_DATA.md) | Tài khoản demo, assets mẫu, cách seed dữ liệu |
 | [🛠️ STACK.md](docs/STACK.md) | Tech stack chi tiết |
-| [🎯 VIBE_CODE_PLAYBOOK.md](docs/VIBE_CODE_PLAYBOOK.md) | Quy tắc phát triển |
 | [👥 ROLE_FEATURES.md](docs/ROLE_FEATURES.md) | Chi tiết tính năng theo role |
+| [🔐 RBAC_MATRIX.md](docs/RBAC_MATRIX.md) | Ma trận quyền theo API/role |
+| [🧱 DB_CONVENTIONS.md](docs/DB_CONVENTIONS.md) | Quy ước database và quan hệ bảng |
 
 ---
 
@@ -267,10 +267,11 @@ docker compose logs app --tail=100 > error.txt
 
 | File | Nội dung |
 |------|----------|
-| [📁 PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | Cấu trúc project & workflow |
-| [📋 DECISIONS.md](docs/DECISIONS.md) | Kiến trúc & quyết định kỹ thuật |
+| [🗃️ SEED_DATA.md](docs/SEED_DATA.md) | Mô tả đầy đủ dữ liệu demo và cách seed |
 | [🛠️ STACK.md](docs/STACK.md) | Tech stack chi tiết |
-| [🎯 VIBE_CODE_PLAYBOOK.md](docs/VIBE_CODE_PLAYBOOK.md) | Quy tắc phát triển |
+| [👥 ROLE_FEATURES.md](docs/ROLE_FEATURES.md) | Chi tiết tính năng theo role |
+| [🔐 RBAC_MATRIX.md](docs/RBAC_MATRIX.md) | Ma trận quyền |
+| [🧱 DB_CONVENTIONS.md](docs/DB_CONVENTIONS.md) | Quy ước DB |
 
 ---
 
