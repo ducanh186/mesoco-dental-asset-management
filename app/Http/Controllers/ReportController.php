@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetRequest;
+use App\Models\Disposal;
 use App\Models\Feedback;
 use App\Models\MaintenanceEvent;
 use Carbon\Carbon;
@@ -14,18 +15,18 @@ use Illuminate\Http\Request;
  * ReportController - Phase 8
  * 
  * Summary reports for dashboard and management.
- * Provides aggregated data for:
- * - Locked/off-service assets
- * - Overdue maintenance events
- * - Request counts by status
- * - Feedback summary
+ * Provides aggregated data for the 5 DFD-aligned modules:
+ * - Catalog & asset records
+ * - Allocation/request queue
+ * - Maintenance
+ * - Disposal/liquidation
  */
 class ReportController extends Controller
 {
     /**
      * Get overall system summary
      * 
-     * Accessible by: admin, hr (managers)
+     * Accessible by: manager
      */
     public function summary(Request $request): JsonResponse
     {
@@ -44,7 +45,7 @@ class ReportController extends Controller
             'assets' => $this->getAssetStats(),
             'maintenance' => $this->getMaintenanceStats($fromDate, $toDate),
             'requests' => $this->getRequestStats($fromDate, $toDate),
-            'feedback' => $this->getFeedbackStats($fromDate, $toDate),
+            'disposal' => $this->getDisposalStats($fromDate, $toDate),
         ]);
     }
 
@@ -160,45 +161,33 @@ class ReportController extends Controller
     }
 
     /**
-     * Get feedback statistics
+     * Get disposal statistics
      */
-    protected function getFeedbackStats(Carbon $from, Carbon $to): array
+    protected function getDisposalStats(Carbon $from, Carbon $to): array
     {
-        $periodQuery = Feedback::whereBetween('created_at', [$from, $to]);
-
-        // Current unresolved
-        $unresolved = Feedback::whereIn('status', [Feedback::STATUS_NEW, Feedback::STATUS_IN_PROGRESS])->count();
-
-        // By status
-        $byStatus = [
-            'new' => Feedback::where('status', Feedback::STATUS_NEW)->count(),
-            'in_progress' => Feedback::where('status', Feedback::STATUS_IN_PROGRESS)->count(),
-            'resolved' => Feedback::where('status', Feedback::STATUS_RESOLVED)->count(),
-        ];
-
-        // By type in period
-        $byType = [
-            'issue' => (clone $periodQuery)->where('type', Feedback::TYPE_ISSUE)->count(),
-            'suggestion' => (clone $periodQuery)->where('type', Feedback::TYPE_SUGGESTION)->count(),
-            'praise' => (clone $periodQuery)->where('type', Feedback::TYPE_PRAISE)->count(),
-            'other' => (clone $periodQuery)->where('type', Feedback::TYPE_OTHER)->count(),
-        ];
-
-        // Average rating (if any)
-        $avgRating = Feedback::whereNotNull('rating')->avg('rating');
+        $periodQuery = Disposal::whereBetween('disposed_at', [$from, $to]);
+        $eligibleForDisposal = Asset::query()
+            ->where('status', '!=', Asset::STATUS_RETIRED)
+            ->get()
+            ->filter(fn (Asset $asset) => $asset->isEligibleForDisposal())
+            ->count();
 
         return [
-            'unresolved' => $unresolved,
-            'created_in_period' => (clone $periodQuery)->count(),
-            'resolved_in_period' => (clone $periodQuery)->where('status', Feedback::STATUS_RESOLVED)->count(),
-            'by_status' => $byStatus,
-            'by_type' => $byType,
-            'average_rating' => $avgRating ? round($avgRating, 2) : null,
+            'eligible' => $eligibleForDisposal,
+            'retired_total' => Asset::where('status', Asset::STATUS_RETIRED)->count(),
+            'retired_in_period' => (clone $periodQuery)->count(),
+            'by_method' => [
+                'destroy' => (clone $periodQuery)->where('method', 'destroy')->count(),
+                'liquidation' => (clone $periodQuery)->where('method', 'liquidation')->count(),
+                'scrap' => (clone $periodQuery)->where('method', 'scrap')->count(),
+                'other' => (clone $periodQuery)->where('method', 'other')->count(),
+            ],
+            'recovered_value' => round((float) ((clone $periodQuery)->sum('proceeds_amount') ?? 0), 2),
         ];
     }
 
     /**
-     * Export report as CSV (admin only)
+     * Export report as CSV (manager only)
      */
     public function export(Request $request): JsonResponse
     {

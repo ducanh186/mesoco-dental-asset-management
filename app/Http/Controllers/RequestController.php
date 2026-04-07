@@ -22,11 +22,11 @@ class RequestController extends Controller
         $user = $httpRequest->user();
         $perPage = min($httpRequest->input('per_page', 15), 100);
 
-        $query = AssetRequest::with(['requester', 'reviewer']);
+        $query = AssetRequest::with(['asset:id,asset_code,name', 'requester', 'reviewer', 'assignee:id,name,email']);
 
-        // mine=1 filter: show only user's own requests
-        // For non-admin users, always filter by own requests
-        if ($httpRequest->boolean('mine') || !$user->isAdmin()) {
+        // Requesters only see their own requests.
+        // Operational roles can inspect the broader queue.
+        if ($httpRequest->boolean('mine') || !$user->hasOperationalAccess()) {
             $employee = $user->employee;
             if (!$employee) {
                 return response()->json([
@@ -95,6 +95,10 @@ class RequestController extends Controller
                 'type' => $validated['type'],
                 'status' => AssetRequest::STATUS_SUBMITTED,
                 'requested_by_employee_id' => $employee->id, // Always from session
+                'asset_id' => collect($validated['items'] ?? [])
+                    ->pluck('asset_id')
+                    ->filter()
+                    ->first(),
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'severity' => $validated['severity'] ?? null,
@@ -129,7 +133,16 @@ class RequestController extends Controller
             DB::commit();
 
             // Load relationships for response
-            $assetRequest->load(['requester', 'items.asset', 'items.fromShift', 'items.toShift', 'events.actor']);
+            $assetRequest->load([
+                'asset:id,asset_code,name',
+                'requester',
+                'assignee:id,name,email',
+                'items.asset',
+                'items.fromShift',
+                'items.toShift',
+                'events.actor',
+                'approvals.reviewer',
+            ]);
 
             return response()->json([
                 'message' => 'Request created successfully.',
@@ -157,11 +170,14 @@ class RequestController extends Controller
 
         $assetRequest = AssetRequest::with([
             'requester',
+            'asset:id,asset_code,name',
             'reviewer',
+            'assignee:id,name,email',
             'items.asset',
             'items.fromShift',
             'items.toShift',
             'events.actor',
+            'approvals.reviewer',
         ])->find($id);
 
         if (!$assetRequest) {
@@ -213,7 +229,15 @@ class RequestController extends Controller
 
         $assetRequest->cancel($user);
 
-        $assetRequest->load(['requester', 'reviewer', 'items.asset', 'events.actor']);
+        $assetRequest->load([
+            'requester',
+            'reviewer',
+            'assignee:id,name,email',
+            'asset:id,asset_code,name',
+            'items.asset',
+            'events.actor',
+            'approvals.reviewer',
+        ]);
 
         return response()->json([
             'message' => 'Request cancelled successfully.',

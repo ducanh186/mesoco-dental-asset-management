@@ -22,6 +22,7 @@ class RequestEvent extends Model
         'CREATED',
         'SUBMITTED',
         'APPROVED',
+        'DISPATCHED',
         'REJECTED',
         'CANCELLED',
     ];
@@ -29,6 +30,7 @@ class RequestEvent extends Model
     public const TYPE_CREATED = 'CREATED';
     public const TYPE_SUBMITTED = 'SUBMITTED';
     public const TYPE_APPROVED = 'APPROVED';
+    public const TYPE_DISPATCHED = 'DISPATCHED';
     public const TYPE_REJECTED = 'REJECTED';
     public const TYPE_CANCELLED = 'CANCELLED';
 

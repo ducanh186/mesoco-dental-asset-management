@@ -85,8 +85,7 @@ class QrController extends Controller
             $checkInBlockedReason = 'NO_ACTIVE_SHIFT';
         } elseif ($todayCheckin) {
             $checkInBlockedReason = 'ALREADY_CHECKED_IN';
-        } elseif (!in_array($user->role, ['admin', 'hr']) && 
-                  $currentAssignment->employee_id !== $user->employee_id) {
+        } elseif (!$user->hasOperationalAccess() && $currentAssignment->employee_id !== $user->employee_id) {
             $checkInBlockedReason = 'NOT_ASSIGNEE';
         } else {
             $canCheckIn = true;

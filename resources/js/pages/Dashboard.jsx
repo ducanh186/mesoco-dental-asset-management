@@ -3,13 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import axios from 'axios';
 import { StatCard, QuickActionGrid, RecentEquipmentTable } from '../components/dashboard';
+import { ROLE_MANAGER, ROLE_TECHNICIAN, hasOperationalAccess, normalizeRole } from '../utils/roles';
 
 /**
  * Dashboard Page - Role-based conditional rendering
  * 
- * - Admin/HR: Global metrics (inventory, pending approvals, maintenance)
- * - Technician: Maintenance-focused metrics
- * - Doctor/Staff: Personal metrics (my equipment, my requests)
+ * - Manager: approval + reporting overview
+ * - Technician: operational overview for catalog/allocation/maintenance
+ * - Doctor/Employee: personal metrics (my equipment, my requests)
  */
 const Dashboard = ({ user }) => {
     const { t } = useI18n();
@@ -19,19 +20,20 @@ const Dashboard = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // Admin/HR stats
+    // Operational stats
     const [inventorySummary, setInventorySummary] = useState(null);
     const [pendingReviews, setPendingReviews] = useState([]);
     const [maintenanceEvents, setMaintenanceEvents] = useState([]);
     const [globalAssets, setGlobalAssets] = useState([]);
     
-    // Doctor/Staff/Technician stats
+    // Personal stats
     const [myAssets, setMyAssets] = useState([]);
     const [myRequests, setMyRequests] = useState([]);
     
-    const role = user?.role || 'staff';
-    const isAdminOrHr = ['admin', 'hr'].includes(role);
-    const isTechnician = role === 'technician';
+    const role = normalizeRole(user?.role);
+    const isManager = role === ROLE_MANAGER;
+    const isTechnician = role === ROLE_TECHNICIAN;
+    const isOperationalRole = hasOperationalAccess(user);
 
     // Fetch data based on role
     const fetchDashboardData = useCallback(async () => {
@@ -39,8 +41,7 @@ const Dashboard = ({ user }) => {
         setError(null);
         
         try {
-            if (isAdminOrHr) {
-                // Admin/HR: Fetch global metrics
+            if (isManager) {
                 const [inventoryRes, reviewsRes, maintenanceRes, assetsRes] = await Promise.all([
                     axios.get('/api/inventory/summary').catch(() => ({ data: null })),
                     axios.get('/api/review-requests').catch(() => ({ data: { requests: [] } })),
@@ -54,19 +55,19 @@ const Dashboard = ({ user }) => {
                 setGlobalAssets(inventoryRes.data?.assets || assetsRes.data?.assets || assetsRes.data?.data || []);
                 
             } else if (isTechnician) {
-                // Technician: Maintenance + personal equipment
-                const [maintenanceRes, myAssetsRes, myRequestsRes] = await Promise.all([
+                const [inventoryRes, maintenanceRes, assetsRes, myRequestsRes] = await Promise.all([
+                    axios.get('/api/inventory/summary').catch(() => ({ data: null })),
                     axios.get('/api/maintenance-events').catch(() => ({ data: { maintenance_events: [] } })),
-                    axios.get('/api/my-assets').catch(() => ({ data: { assets: [] } })),
+                    axios.get('/api/assets', { params: { per_page: 5 } }).catch(() => ({ data: { assets: [] } })),
                     axios.get('/api/requests').catch(() => ({ data: { requests: [] } }))
                 ]);
                 
+                setInventorySummary(inventoryRes.data);
                 setMaintenanceEvents(maintenanceRes.data?.maintenance_events || maintenanceRes.data?.data || []);
-                setMyAssets(myAssetsRes.data?.assets || myAssetsRes.data?.data || []);
+                setGlobalAssets(assetsRes.data?.assets || assetsRes.data?.data || []);
                 setMyRequests(myRequestsRes.data?.requests || myRequestsRes.data?.data || []);
                 
             } else {
-                // Doctor/Staff: Personal metrics only
                 const [myAssetsRes, myRequestsRes] = await Promise.all([
                     axios.get('/api/my-assets').catch(() => ({ data: { assets: [] } })),
                     axios.get('/api/requests').catch(() => ({ data: { requests: [] } }))
@@ -81,7 +82,7 @@ const Dashboard = ({ user }) => {
         } finally {
             setLoading(false);
         }
-    }, [isAdminOrHr, isTechnician, t]);
+    }, [isManager, isTechnician, t]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -129,7 +130,7 @@ const Dashboard = ({ user }) => {
 
     // Calculate stats for cards based on role
     const getStats = () => {
-        if (isAdminOrHr) {
+        if (isManager) {
             const totalEquipment = inventorySummary?.total_assets || inventorySummary?.total || 0;
             const pendingCount = pendingReviews.length;
             const maintenanceDue = maintenanceEvents.filter(
@@ -172,33 +173,32 @@ const Dashboard = ({ user }) => {
         }
 
         if (isTechnician) {
+            const totalEquipment = inventorySummary?.total_assets || inventorySummary?.total || globalAssets.length;
             const inProgressCount = maintenanceEvents.filter(m => m.status === 'in_progress').length;
             const scheduledCount = maintenanceEvents.filter(m => m.status === 'scheduled').length;
-            const myEquipmentCount = myAssets.length;
+            const pendingIncidentCount = myRequests.filter(r => r.status === 'SUBMITTED').length;
 
             return [
                 {
-                    title: t('dashboard.maintenanceInProgress'),
-                    value: inProgressCount,
-                    subtitle: t('dashboard.scheduled', { count: scheduledCount }),
-                    color: inProgressCount > 0 ? 'warning' : 'success',
-                    trend: 'neutral',
-                    icon: maintenanceIcon
-                },
-                {
-                    title: t('dashboard.myEquipmentCount'),
-                    value: myEquipmentCount,
-                    subtitle: null,
+                    title: t('dashboard.totalEquipment'),
+                    value: totalEquipment,
+                    subtitle: scheduledCount > 0 ? t('dashboard.scheduled', { count: scheduledCount }) : null,
                     color: 'primary',
                     trend: 'neutral',
                     icon: equipmentIcon
                 },
                 {
+                    title: t('dashboard.maintenanceInProgress'),
+                    value: inProgressCount,
+                    subtitle: pendingIncidentCount > 0 ? t('dashboard.pendingCount', { count: pendingIncidentCount }) : null,
+                    color: inProgressCount > 0 ? 'warning' : 'success',
+                    trend: 'neutral',
+                    icon: maintenanceIcon
+                },
+                {
                     title: t('dashboard.scheduledMaintenance'),
                     value: scheduledCount,
-                    subtitle: scheduledCount > 0 
-                        ? t('dashboard.upcomingTasks')
-                        : t('dashboard.noScheduled'),
+                    subtitle: scheduledCount > 0 ? t('dashboard.upcomingTasks') : t('dashboard.noScheduled'),
                     color: scheduledCount > 0 ? 'info' : 'success',
                     trend: 'neutral',
                     icon: calendarIcon
@@ -206,7 +206,6 @@ const Dashboard = ({ user }) => {
             ];
         }
 
-        // Doctor/Staff: Personal metrics
         const myEquipmentCount = myAssets.length;
         const lockedCount = myAssets.filter(a => a.is_locked || a.status === 'off_service').length;
         const activeRequestsCount = myRequests.filter(
@@ -268,7 +267,7 @@ const Dashboard = ({ user }) => {
 
     // Get table data based on role
     const getTableData = () => {
-        if (isAdminOrHr) {
+        if (isOperationalRole) {
             return globalAssets.slice(0, 5);
         }
         return myAssets.slice(0, 5);
@@ -284,7 +283,7 @@ const Dashboard = ({ user }) => {
                     {t('dashboard.welcome', { name: user?.name || 'Bạn' })}
                 </h2>
                 <p className="text-text-muted">
-                    {isAdminOrHr 
+                    {isManager 
                         ? t('dashboard.welcomeSubtitleAdmin')
                         : isTechnician
                             ? t('dashboard.welcomeSubtitleTechnician')

@@ -11,9 +11,9 @@ use App\Models\User;
  * Rules:
  * - All authenticated users can create feedback
  * - Users can view their own feedback
- * - Admin/HR/Technician can view all feedback
- * - Admin/HR/Technician can manage (update status, respond) feedback
- * - Only admin can delete feedback
+ * - Quản lý/Kỹ thuật viên can view all feedback
+ * - Quản lý/Kỹ thuật viên can manage (update status, respond) feedback
+ * - Only quản lý can delete feedback
  */
 class FeedbackPolicy
 {
@@ -28,7 +28,7 @@ class FeedbackPolicy
     /**
      * View single feedback
      * - Owner can view their own
-     * - Admin/HR/Technician can view any
+     * - Quản lý/Kỹ thuật viên can view any
      */
     public function view(User $user, Feedback $feedback): bool
     {
@@ -38,7 +38,7 @@ class FeedbackPolicy
         }
 
         // Managers
-        return $user->hasAnyRole(['admin', 'hr', 'technician']);
+        return $user->hasAnyRole([User::ROLE_MANAGER, User::ROLE_TECHNICIAN]);
     }
 
     /**
@@ -51,13 +51,13 @@ class FeedbackPolicy
 
     /**
      * Update feedback (status, response)
-     * - Admin/HR/Technician can update any
+     * - Quản lý/Kỹ thuật viên can update any
      * - Owner can update content if status is 'new'
      */
     public function update(User $user, Feedback $feedback): bool
     {
         // Managers can always update
-        if ($user->hasAnyRole(['admin', 'hr', 'technician'])) {
+        if ($user->hasAnyRole([User::ROLE_MANAGER, User::ROLE_TECHNICIAN])) {
             return true;
         }
 
@@ -71,15 +71,15 @@ class FeedbackPolicy
      */
     public function manage(User $user, Feedback $feedback): bool
     {
-        return $user->hasAnyRole(['admin', 'hr', 'technician']);
+        return $user->hasAnyRole([User::ROLE_MANAGER, User::ROLE_TECHNICIAN]);
     }
 
     /**
-     * Delete feedback - Admin only
+     * Delete feedback - Manager only
      */
     public function delete(User $user, Feedback $feedback): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasRole(User::ROLE_MANAGER);
     }
 
     /**
@@ -87,6 +87,6 @@ class FeedbackPolicy
      */
     public function viewAll(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'hr', 'technician']);
+        return $user->hasAnyRole([User::ROLE_MANAGER, User::ROLE_TECHNICIAN]);
     }
 }

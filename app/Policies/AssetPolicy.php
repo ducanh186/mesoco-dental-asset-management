@@ -10,8 +10,8 @@ use Illuminate\Auth\Access\HandlesAuthorization;
  * AssetPolicy
  * 
  * RBAC rules:
- * - Admin/HR: full CRUD + assign/unassign
- * - Non-admin: can view only their assigned assets
+ * - Quản lý/Kỹ thuật viên: full CRUD + assign/unassign
+ * - Other users: can view only their assigned assets
  */
 class AssetPolicy
 {
@@ -30,11 +30,11 @@ class AssetPolicy
 
     /**
      * Determine whether the user can view the asset.
-     * Admin/HR can view any; others only if assigned to them.
+     * Operational roles can view any; others only if assigned to them.
      */
     public function view(User $user, Asset $asset): bool
     {
-        if ($user->isAdmin()) {
+        if ($user->hasOperationalAccess()) {
             return true;
         }
 
@@ -49,38 +49,38 @@ class AssetPolicy
 
     /**
      * Determine whether the user can create assets.
-     * Admin/HR only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->hasOperationalAccess();
     }
 
     /**
      * Determine whether the user can update the asset.
-     * Admin/HR only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function update(User $user, Asset $asset): bool
     {
-        return $user->isAdmin();
+        return $user->hasOperationalAccess();
     }
 
     /**
      * Determine whether the user can delete the asset.
-     * Admin/HR only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function delete(User $user, Asset $asset): bool
     {
-        return $user->isAdmin();
+        return $user->hasOperationalAccess();
     }
 
     /**
      * Determine whether the user can assign/unassign the asset.
-     * Admin/HR only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function assign(User $user, Asset $asset): bool
     {
-        return $user->isAdmin();
+        return $user->hasOperationalAccess();
     }
 
     /**

@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { preferLocalizedMessage } from './services/api';
+import { ROLE_MANAGER, ROLE_TECHNICIAN, normalizeRole } from './utils/roles';
 
 // Layout Components
 import AdminLayout from './layouts/AdminLayout';
@@ -121,7 +122,7 @@ const GuestRoute = ({ children }) => {
      return children;
 };
 
-const AdminOnlyRoute = ({ children }) => {
+const RoleRoute = ({ children, allowedRoles }) => {
      const { user, loading } = useAuth();
      const location = useLocation();
 
@@ -133,31 +134,20 @@ const AdminOnlyRoute = ({ children }) => {
           return <Navigate to="/login" state={{ from: location }} replace />;
      }
 
-     if (user.role !== 'admin') {
+     if (!allowedRoles.includes(normalizeRole(user?.role))) {
           return <Navigate to="/dashboard" replace />;
      }
 
      return children;
 };
 
-const AdminHrRoute = ({ children }) => {
-     const { user, loading } = useAuth();
-     const location = useLocation();
+const ManagerRoute = ({ children }) => (
+     <RoleRoute allowedRoles={[ROLE_MANAGER]}>{children}</RoleRoute>
+);
 
-     if (loading) {
-          return <LoadingScreen />;
-     }
-
-     if (!user) {
-          return <Navigate to="/login" state={{ from: location }} replace />;
-     }
-
-     if (user.role !== 'admin' && user.role !== 'hr') {
-          return <Navigate to="/dashboard" replace />;
-     }
-
-     return children;
-};
+const OperatorRoute = ({ children }) => (
+     <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_TECHNICIAN]}>{children}</RoleRoute>
+);
 
 // ============================================================================
 // Loading Screen
@@ -898,16 +888,8 @@ const ChangePasswordPageWrapper = () => {
 
 const AssetsPageWrapper = () => {
      const { user } = useAuth();
-     const navigate = useNavigate();
      
-     // RBAC check - only admin and hr can access
-     useEffect(() => {
-          if (user && user.role !== 'admin' && user.role !== 'hr') {
-               navigate('/dashboard', { replace: true });
-          }
-     }, [user, navigate]);
-     
-     if (!user || (user.role !== 'admin' && user.role !== 'hr')) {
+     if (!user) {
           return null;
      }
      
@@ -1257,9 +1239,9 @@ const App = () => {
                               } />
 
                          <Route path="/assets" element={
-                              <ProtectedRoute>
+                              <OperatorRoute>
                                    <AssetsPageWrapper />
-                              </ProtectedRoute>
+                              </OperatorRoute>
                          } />
                          <Route path="/my-assets" element={
                               <ProtectedRoute>
@@ -1292,24 +1274,24 @@ const App = () => {
                               </ProtectedRoute>
                          } />
                          <Route path="/review-requests" element={
-                              <ProtectedRoute>
+                              <ManagerRoute>
                                    <ReviewRequestsPageWrapper />
-                              </ProtectedRoute>
+                              </ManagerRoute>
                          } />
                          <Route path="/maintenance" element={
-                              <ProtectedRoute>
+                              <OperatorRoute>
                                    <MaintenancePageWrapper />
-                              </ProtectedRoute>
+                              </OperatorRoute>
                          } />
                          <Route path="/inventory" element={
-                              <ProtectedRoute>
+                              <OperatorRoute>
                                    <InventoryPageWrapper />
-                              </ProtectedRoute>
+                              </OperatorRoute>
                          } />
                          <Route path="/locations" element={
-                              <ProtectedRoute>
+                              <OperatorRoute>
                                    <LocationsPageWrapper />
-                              </ProtectedRoute>
+                              </OperatorRoute>
                          } />
                          <Route path="/my-asset-history" element={
                               <ProtectedRoute>
@@ -1317,45 +1299,21 @@ const App = () => {
                               </ProtectedRoute>
                          } />
                          <Route path="/disposal" element={
-                              <AdminHrRoute>
+                              <OperatorRoute>
                                    <DisposalPageWrapper />
-                              </AdminHrRoute>
-                         } />
+                              </OperatorRoute>
+                          } />
                          <Route path="/reports" element={
-                              <ProtectedRoute>
+                              <ManagerRoute>
                                    <ReportPageWrapper />
-                              </ProtectedRoute>
-                         } />
-                         <Route path="/feedback" element={
-                              <ProtectedRoute>
-                                   <FeedbackPageWrapper />
-                              </ProtectedRoute>
-                         } />
-                         <Route path="/contracts" element={
-                              <AdminOnlyRoute>
-                                   <ContractsPageWrapper />
-                              </AdminOnlyRoute>
-                         } />
-                         <Route path="/employees" element={
-                              <AdminHrRoute>
-                                   <EmployeesPageWrapper />
-                              </AdminHrRoute>
-                         } />
-                         <Route path="/users" element={
-                              <ProtectedRoute>
-                                   <UsersPage />
-                              </ProtectedRoute>
-                         } />
-                         <Route path="/admin" element={
-                              <AdminOnlyRoute>
-                                   <AdminPageWrapper />
-                              </AdminOnlyRoute>
-                         } />
-                         <Route path="/settings" element={
-                              <ProtectedRoute>
-                                   <SettingsPage />
-                              </ProtectedRoute>
-                         } />
+                              </ManagerRoute>
+                          } />
+                         <Route path="/feedback" element={<Navigate to="/requests" replace />} />
+                         <Route path="/contracts" element={<Navigate to="/dashboard" replace />} />
+                         <Route path="/employees" element={<Navigate to="/dashboard" replace />} />
+                         <Route path="/users" element={<Navigate to="/dashboard" replace />} />
+                         <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+                         <Route path="/settings" element={<Navigate to="/dashboard" replace />} />
 
                          {/* 404 */}
                          <Route path="*" element={<NotFoundPage />} />

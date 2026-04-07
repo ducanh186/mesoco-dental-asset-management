@@ -14,7 +14,8 @@ import {
     useToast 
 } from '../components/ui';
 import { useI18n } from '../i18n';
-import { maintenanceApi, assetsApi, handleApiError } from '../services/api';
+import { maintenanceApi, assetsApi, usersApi, handleApiError } from '../services/api';
+import { hasOperationalAccess } from '../utils/roles';
 
 /**
  * MaintenancePage - Maintenance schedules and service records (Phase 7)
@@ -50,13 +51,14 @@ const MaintenancePage = ({ user }) => {
         priority: 'normal',
         note: '',
         estimated_duration_minutes: '',
-        assigned_to: '',
+        assigned_to_user_id: '',
     });
     const [assets, setAssets] = useState([]);
+    const [technicians, setTechnicians] = useState([]);
     const [formLoading, setFormLoading] = useState(false);
 
     // Permission check
-    const canManage = ['admin', 'hr', 'technician'].includes(user?.role);
+    const canManage = hasOperationalAccess(user);
 
     // Fetch data
     const fetchEvents = useCallback(async () => {
@@ -71,7 +73,7 @@ const MaintenancePage = ({ user }) => {
             
             const response = await maintenanceApi.list(params);
             setEvents(response.data || []);
-            setPagination(response.meta || { current_page: 1, last_page: 1, total: 0, per_page: 15 });
+            setPagination(response.pagination || { current_page: 1, last_page: 1, total: 0, per_page: 15 });
         } catch (error) {
             handleApiError(error, toast);
         } finally {
@@ -98,16 +100,31 @@ const MaintenancePage = ({ user }) => {
         }
     }, []);
 
+    const fetchTechnicians = useCallback(async () => {
+        try {
+            const response = await usersApi.list({ role: 'technician', per_page: 100 });
+            setTechnicians(response.users || []);
+        } catch (error) {
+            console.error('Failed to fetch technicians:', error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchEvents();
         fetchSummary();
     }, [fetchEvents, fetchSummary]);
 
     useEffect(() => {
-        if (showCreateModal && assets.length === 0) {
-            fetchAssets();
+        if (showCreateModal) {
+            if (assets.length === 0) {
+                fetchAssets();
+            }
+
+            if (technicians.length === 0) {
+                fetchTechnicians();
+            }
         }
-    }, [showCreateModal, assets.length, fetchAssets]);
+    }, [showCreateModal, assets.length, technicians.length, fetchAssets, fetchTechnicians]);
 
     // Filter client-side by search query
     const filteredEvents = events.filter(event => {
@@ -131,6 +148,9 @@ const MaintenancePage = ({ user }) => {
         try {
             const payload = {
                 ...formData,
+                assigned_to_user_id: formData.assigned_to_user_id
+                    ? parseInt(formData.assigned_to_user_id, 10)
+                    : null,
                 estimated_duration_minutes: formData.estimated_duration_minutes 
                     ? parseInt(formData.estimated_duration_minutes) 
                     : null,
@@ -145,7 +165,7 @@ const MaintenancePage = ({ user }) => {
                 priority: 'normal',
                 note: '',
                 estimated_duration_minutes: '',
-                assigned_to: '',
+                assigned_to_user_id: '',
             });
             fetchEvents();
             fetchSummary();
@@ -552,10 +572,16 @@ const MaintenancePage = ({ user }) => {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">Phân công cho</label>
-                        <Input
-                            placeholder="Tên kỹ thuật viên hoặc nhà cung cấp"
-                            value={formData.assigned_to}
-                            onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                        <Select
+                            options={[
+                                { value: '', label: 'Chọn kỹ thuật viên...' },
+                                ...technicians.map((technician) => ({
+                                    value: String(technician.id),
+                                    label: technician.name,
+                                })),
+                            ]}
+                            value={formData.assigned_to_user_id}
+                            onChange={(e) => setFormData({ ...formData, assigned_to_user_id: e.target.value })}
                         />
                     </div>
                     <div>
@@ -612,7 +638,9 @@ const MaintenancePage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-sm text-text-muted">Phân công</p>
-                                <p className="font-medium">{selectedEvent.assigned_to || '-'}</p>
+                                <p className="font-medium">
+                                    {selectedEvent.assigned_user?.name || selectedEvent.assigned_to || '-'}
+                                </p>
                             </div>
                             {selectedEvent.started_at && (
                                 <div>

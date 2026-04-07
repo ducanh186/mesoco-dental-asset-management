@@ -16,20 +16,36 @@ class User extends Authenticatable
 
     /**
      * Available roles in the system.
-     * No separate roles table - stored as string enum in users.role
+     * Stored in users.role for backward compatibility and normalized to roles.id.
      */
-    public const ROLES = ['admin', 'hr', 'doctor', 'technician', 'employee'];
-    
-    public const ROLE_ADMIN = 'admin';
-    public const ROLE_HR = 'hr';
+    public const ROLES = ['manager', 'technician', 'doctor', 'employee'];
+
+    public const ROLE_MANAGER = 'manager';
     public const ROLE_DOCTOR = 'doctor';
     public const ROLE_TECHNICIAN = 'technician';
     public const ROLE_EMPLOYEE = 'employee';
+    public const ROLE_STAFF = 'staff';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_HR = 'hr';
 
     /**
-     * Roles that can manage employees and user accounts.
+     * Legacy roles are mapped to the DFD-aligned role model.
      */
-    public const ADMIN_ROLES = ['admin', 'hr'];
+    public const LEGACY_ROLE_MAP = [
+        self::ROLE_ADMIN => self::ROLE_MANAGER,
+        self::ROLE_HR => self::ROLE_TECHNICIAN,
+        self::ROLE_STAFF => self::ROLE_EMPLOYEE,
+    ];
+
+    /**
+     * Quản lý: approval/report/system ownership.
+     */
+    public const MANAGER_ROLES = [self::ROLE_MANAGER];
+
+    /**
+     * Quản lý + kỹ thuật viên: operational backoffice access.
+     */
+    public const OPERATION_ROLES = [self::ROLE_MANAGER, self::ROLE_TECHNICIAN];
 
     /**
      * The attributes that are mass assignable.
@@ -43,6 +59,7 @@ class User extends Authenticatable
         'employee_code',
         'employee_id',
         'role',
+        'role_id',
         'status',
         'must_change_password',
     ];
@@ -71,6 +88,36 @@ class User extends Authenticatable
         ];
     }
 
+    public function getRoleAttribute(?string $value): string
+    {
+        return self::normalizeRole($value);
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $user) {
+            $rawRole = $user->getAttributes()['role'] ?? null;
+
+            $normalizedRole = $rawRole
+                ? self::normalizeRole($rawRole)
+                : null;
+
+            if (!$normalizedRole && $user->role_id) {
+                $normalizedRole = Role::query()
+                    ->whereKey($user->role_id)
+                    ->value('code');
+            }
+
+            $normalizedRole = $normalizedRole ?: self::ROLE_EMPLOYEE;
+
+            $user->role = $normalizedRole;
+            $user->role_id = Role::query()->firstOrCreate(
+                ['code' => $normalizedRole],
+                ['name' => self::roleLabel($normalizedRole)]
+            )->id;
+        });
+    }
+
     /**
      * Get the employee record associated with this user.
      */
@@ -79,12 +126,52 @@ class User extends Authenticatable
         return $this->belongsTo(Employee::class);
     }
 
+    public function roleDefinition(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
     /**
-     * Check if user has admin or HR role (can manage employees/users).
+     * Backward-compatible alias retained for legacy authorization checks.
      */
     public function isAdmin(): bool
     {
-        return in_array($this->role, self::ADMIN_ROLES);
+        return $this->isManager();
+    }
+
+    public function isHr(): bool
+    {
+        return $this->isTechnician();
+    }
+
+    public function isManager(): bool
+    {
+        return in_array($this->canonicalRole(), self::MANAGER_ROLES, true);
+    }
+
+    public function isTechnician(): bool
+    {
+        return $this->canonicalRole() === self::ROLE_TECHNICIAN;
+    }
+
+    public function hasOperationalAccess(): bool
+    {
+        return in_array($this->canonicalRole(), self::OPERATION_ROLES, true);
+    }
+
+    public function canReviewRequests(): bool
+    {
+        return $this->isManager();
+    }
+
+    public function canViewReports(): bool
+    {
+        return $this->isManager();
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isManager();
     }
 
     /**
@@ -92,7 +179,7 @@ class User extends Authenticatable
      */
     public function hasRole(string $role): bool
     {
-        return $this->role === $role;
+        return $this->canonicalRole() === self::normalizeRole($role);
     }
 
     /**
@@ -100,7 +187,9 @@ class User extends Authenticatable
      */
     public function hasAnyRole(array $roles): bool
     {
-        return in_array($this->role, $roles);
+        $normalizedRoles = array_map([self::class, 'normalizeRole'], $roles);
+
+        return in_array($this->canonicalRole(), $normalizedRoles, true);
     }
 
     /**
@@ -109,7 +198,7 @@ class User extends Authenticatable
     public function scopeByRole($query, ?string $role)
     {
         if ($role) {
-            return $query->where('role', $role);
+            return $query->where('role', self::normalizeRole($role));
         }
         return $query;
     }
@@ -126,5 +215,31 @@ class User extends Authenticatable
             });
         }
         return $query;
+    }
+
+    public function canonicalRole(): string
+    {
+        return self::normalizeRole($this->getAttributes()['role'] ?? self::ROLE_EMPLOYEE);
+    }
+
+    public static function normalizeRole(?string $role): string
+    {
+        $normalized = strtolower(trim((string) $role));
+
+        if ($normalized === '') {
+            return self::ROLE_EMPLOYEE;
+        }
+
+        return self::LEGACY_ROLE_MAP[$normalized] ?? $normalized;
+    }
+
+    public static function roleLabel(string $role): string
+    {
+        return match (self::normalizeRole($role)) {
+            self::ROLE_MANAGER => 'Manager',
+            self::ROLE_TECHNICIAN => 'Technician',
+            self::ROLE_DOCTOR => 'Doctor',
+            default => 'Employee',
+        };
     }
 }

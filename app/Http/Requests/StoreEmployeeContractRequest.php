@@ -19,7 +19,7 @@ class StoreEmployeeContractRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->role === 'admin';
+        return $this->user()?->canManageUsers() ?? false;
     }
 
     /**
@@ -64,7 +64,7 @@ class StoreEmployeeContractRequest extends FormRequest
     protected function failedAuthorization(): void
     {
         throw new \Illuminate\Auth\Access\AuthorizationException(
-            'Only administrators can manage contracts.'
+            'Only managers can manage contracts.'
         );
     }
 }

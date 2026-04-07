@@ -317,10 +317,14 @@ export const requestsApi = {
      * Review (approve/reject) a request
      * POST /api/requests/{id}/review
      */
-    review: async (id, action, note = null) => {
+    review: async (id, action, payload = {}) => {
+        const normalizedPayload = (typeof payload === 'string' || payload === null)
+            ? { note: payload }
+            : payload;
+
         const response = await axios.post(`/api/requests/${id}/review`, {
             action,
-            note,
+            ...normalizedPayload,
         });
         return response.data;
     },
@@ -598,7 +602,7 @@ export const maintenanceApi = {
      * POST /api/maintenance-events/{id}/cancel
      */
     cancel: async (id, reason = null) => {
-        const response = await axios.post(`/api/maintenance-events/${id}/cancel`, { cancel_reason: reason });
+        const response = await axios.post(`/api/maintenance-events/${id}/cancel`, { reason });
         return response.data;
     },
 

@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 /**
  * UpdateUserRoleRequest
  * 
- * Validates user role update requests (Roles & Permission - Admin/HR only).
+ * Validates user role update requests (manager only).
  * Only role is editable - employee_code and name are read-only.
  */
 class UpdateUserRoleRequest extends FormRequest
@@ -19,7 +19,7 @@ class UpdateUserRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->isAdmin();
+        return $this->user()->canManageUsers();
     }
 
     /**

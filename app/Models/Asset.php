@@ -5,9 +5,11 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Asset extends Model
 {
@@ -63,16 +65,22 @@ class Asset extends Model
         'name',
         'type',
         'category',
+        'category_id',
+        'supplier_id',
         'location',
         'status',
         'notes',
         'instructions_url',
+        'qr_value',
+        'qr_image_path',
         'purchase_date',
         'purchase_cost',
         'useful_life_months',
         'salvage_value',
         'depreciation_method',
+        'depreciation_rate',
         'warranty_expiry',
+        'warranty_period_months',
         // Off-service metadata (Phase 7)
         'off_service_reason',
         'off_service_from',
@@ -90,9 +98,27 @@ class Asset extends Model
             'warranty_expiry' => 'date',
             'purchase_cost' => 'decimal:2',
             'salvage_value' => 'decimal:2',
+            'warranty_period_months' => 'integer',
+            'depreciation_rate' => 'decimal:4',
             'off_service_from' => 'datetime',
             'off_service_until' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $asset) {
+            if ($asset->category) {
+                $asset->category_id = Category::query()->firstOrCreate(
+                    ['code' => Str::slug($asset->category, '_')],
+                    ['name' => $asset->category]
+                )->id;
+            } elseif ($asset->category_id) {
+                $asset->category = Category::query()
+                    ->whereKey($asset->category_id)
+                    ->value('name');
+            }
+        });
     }
 
     /**
@@ -145,9 +171,19 @@ class Asset extends Model
     /**
      * Get the user who locked this asset.
      */
-    public function offServiceSetBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function offServiceSetBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'off_service_set_by');
+    }
+
+    public function categoryDefinition(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     /**
@@ -156,6 +192,11 @@ class Asset extends Model
     public function maintenanceEvents(): HasMany
     {
         return $this->hasMany(MaintenanceEvent::class);
+    }
+
+    public function repairLogs(): HasMany
+    {
+        return $this->hasMany(RepairLog::class);
     }
 
     /**
@@ -207,6 +248,16 @@ class Asset extends Model
     public function qrIdentity(): HasOne
     {
         return $this->hasOne(AssetQrIdentity::class)->latest();
+    }
+
+    public function disposals(): HasMany
+    {
+        return $this->hasMany(Disposal::class);
+    }
+
+    public function latestDisposal(): HasOne
+    {
+        return $this->hasOne(Disposal::class)->latest('disposed_at');
     }
 
     /**
@@ -479,7 +530,9 @@ class Asset extends Model
             'useful_life_months' => $this->useful_life_months,
             'salvage_value' => (float) ($this->salvage_value ?? 0),
             'depreciation_method' => $this->depreciation_method ?? self::DEPRECIATION_TIME,
+            'depreciation_rate' => $this->depreciation_rate ? (float) $this->depreciation_rate : null,
             'warranty_expiry' => $this->warranty_expiry?->toDateString(),
+            'warranty_period_months' => $this->warranty_period_months,
             'months_in_service' => $this->getMonthsInService($asOfDate),
             'monthly_depreciation' => $this->getMonthlyDepreciation(),
             'accumulated_depreciation' => $this->getAccumulatedDepreciation($asOfDate),
@@ -656,4 +709,3 @@ class Asset extends Model
         }
     }
 }
-

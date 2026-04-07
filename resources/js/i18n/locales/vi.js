@@ -106,6 +106,8 @@ export default {
     nav: {
         dashboard: 'Tổng quan',
         profile: 'Hồ sơ',
+        catalogRecords: 'Quản lý danh mục & hồ sơ',
+        allocationManagement: 'Quản lý cấp phát',
         employees: 'Hồ sơ nhân viên',
         assets: 'Danh mục tài sản',
         equipmentCatalog: 'Danh mục tài sản',
@@ -114,8 +116,8 @@ export default {
         equipment: 'Thiết bị',
         shifts: 'Ca làm',
         checkin: 'Ghi nhận ca',
-        requests: 'Phiếu cấp phát',
-        reviewRequests: 'Duyệt phiếu cấp phát',
+        requests: 'Phiếu cấp phát / báo sự cố',
+        reviewRequests: 'Duyệt yêu cầu',
         inventory: 'Kiểm kê định kì',
         inventoryValuation: 'Kiểm kê & định giá',
         maintenance: 'Bảo trì & Sửa chữa',
@@ -244,9 +246,9 @@ export default {
         technician: 'Kỹ thuật viên',
         receptionist: 'Lễ tân',
         manager: 'Quản lý',
-        admin: 'Quản trị',
+        admin: 'Quản lý',
         owner: 'Chủ phòng khám',
-        hr: 'Nhân sự',
+        hr: 'Kỹ thuật viên',
     },
 
     // ========================================================================
@@ -514,8 +516,8 @@ export default {
         
         // Roles (dùng chung từ roles section)
         roles: {
-            admin: 'Quản trị',
-            hr: 'Nhân sự',
+            admin: 'Quản lý',
+            hr: 'Kỹ thuật viên',
             doctor: 'Bác sĩ',
             technician: 'Kỹ thuật viên',
             staff: 'Nhân viên',

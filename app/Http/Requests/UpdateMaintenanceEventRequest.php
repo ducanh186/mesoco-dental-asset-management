@@ -54,6 +54,11 @@ class UpdateMaintenanceEventRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'assigned_to_user_id' => [
+                'nullable',
+                'integer',
+                'exists:users,id',
+            ],
             'estimated_duration_minutes' => [
                 'nullable',
                 'integer',
@@ -74,6 +79,7 @@ class UpdateMaintenanceEventRequest extends FormRequest
             'priority' => 'mức độ ưu tiên',
             'note' => 'ghi chú',
             'assigned_to' => 'người phụ trách',
+            'assigned_to_user_id' => 'người phụ trách',
             'estimated_duration_minutes' => 'thời gian dự kiến (phút)',
         ];
     }

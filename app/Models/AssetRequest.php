@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -71,7 +72,9 @@ class AssetRequest extends Model
         'type',
         'status',
         'requested_by_employee_id',
+        'asset_id',
         'reviewed_by_user_id',
+        'assigned_to_user_id',
         'reviewed_at',
         'review_note',
         'title',
@@ -104,12 +107,22 @@ class AssetRequest extends Model
         return $this->belongsTo(Employee::class, 'requested_by_employee_id');
     }
 
+    public function asset(): BelongsTo
+    {
+        return $this->belongsTo(Asset::class);
+    }
+
     /**
      * Get the user who reviewed this.
      */
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by_user_id');
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
     /**
@@ -126,6 +139,11 @@ class AssetRequest extends Model
     public function events(): HasMany
     {
         return $this->hasMany(RequestEvent::class, 'request_id')->orderBy('created_at', 'asc');
+    }
+
+    public function approvals(): MorphMany
+    {
+        return $this->morphMany(Approval::class, 'approvable');
     }
 
     // =========================================================================
@@ -212,14 +230,19 @@ class AssetRequest extends Model
         return $this->status === self::STATUS_SUBMITTED;
     }
 
+    public function requiresTechnicianAssignment(): bool
+    {
+        return $this->type === self::TYPE_JUSTIFICATION;
+    }
+
     /**
      * Approve this request.
      * 
      * Uses DB transaction + lock to prevent race conditions.
      */
-    public function approve(User $reviewer, ?string $note = null): bool
+    public function approve(User $reviewer, ?string $note = null, ?User $assignee = null): bool
     {
-        return DB::transaction(function () use ($reviewer, $note) {
+        return DB::transaction(function () use ($reviewer, $note, $assignee) {
             // Lock and re-check status to prevent race condition
             $locked = self::where('id', $this->id)->lockForUpdate()->first();
             
@@ -230,13 +253,20 @@ class AssetRequest extends Model
             $locked->update([
                 'status' => self::STATUS_APPROVED,
                 'reviewed_by_user_id' => $reviewer->id,
+                'assigned_to_user_id' => $assignee?->id,
                 'reviewed_at' => now(),
                 'review_note' => $note,
             ]);
 
             $locked->logEvent(RequestEvent::TYPE_APPROVED, $reviewer, [
                 'note' => $note,
+                'assigned_to' => $assignee ? [
+                    'id' => $assignee->id,
+                    'name' => $assignee->name,
+                    'email' => $assignee->email,
+                ] : null,
             ]);
+            $locked->recordApproval('approved', $reviewer, $note);
 
             // Refresh current instance
             $this->refresh();
@@ -270,6 +300,7 @@ class AssetRequest extends Model
             $locked->logEvent(RequestEvent::TYPE_REJECTED, $reviewer, [
                 'note' => $note,
             ]);
+            $locked->recordApproval('rejected', $reviewer, $note);
 
             // Refresh current instance
             $this->refresh();
@@ -315,6 +346,16 @@ class AssetRequest extends Model
             'actor_user_id' => $actor?->id,
             'event_type' => $type,
             'meta' => $meta,
+        ]);
+    }
+
+    public function recordApproval(string $status, User $reviewer, ?string $note = null): Approval
+    {
+        return $this->approvals()->create([
+            'reviewer_user_id' => $reviewer->id,
+            'status' => $status,
+            'note' => $note,
+            'acted_at' => now(),
         ]);
     }
 
@@ -386,6 +427,11 @@ class AssetRequest extends Model
             'severity' => $this->severity,
             'incident_at' => $this->incident_at?->toISOString(),
             'suspected_cause' => $this->suspected_cause,
+            'asset' => $this->relationLoaded('asset') && $this->asset ? [
+                'id' => $this->asset->id,
+                'asset_code' => $this->asset->asset_code,
+                'name' => $this->asset->name,
+            ] : null,
             'requester' => $this->requester ? [
                 'id' => $this->requester->id,
                 'employee_code' => $this->requester->employee_code,
@@ -395,6 +441,11 @@ class AssetRequest extends Model
                 'id' => $this->reviewer->id,
                 'name' => $this->reviewer->name,
             ] : null,
+            'assigned_to' => $this->relationLoaded('assignee') && $this->assignee ? [
+                'id' => $this->assignee->id,
+                'name' => $this->assignee->name,
+                'email' => $this->assignee->email,
+            ] : null,
             'reviewed_at' => $this->reviewed_at?->toISOString(),
             'review_note' => $this->review_note,
             'created_at' => $this->created_at?->toISOString(),
@@ -402,6 +453,7 @@ class AssetRequest extends Model
             'is_final' => $this->isFinal(),
             'can_be_cancelled' => $this->canBeCancelled(),
             'can_be_reviewed' => $this->canBeReviewed(),
+            'requires_technician_assignment' => $this->requiresTechnicianAssignment(),
         ];
 
         if ($includeItems && $this->relationLoaded('items')) {
@@ -410,6 +462,19 @@ class AssetRequest extends Model
 
         if ($includeEvents && $this->relationLoaded('events')) {
             $data['events'] = $this->events->map(fn($event) => $event->toApiArray());
+        }
+
+        if ($this->relationLoaded('approvals')) {
+            $data['approvals'] = $this->approvals->map(fn($approval) => [
+                'id' => $approval->id,
+                'status' => $approval->status,
+                'note' => $approval->note,
+                'acted_at' => $approval->acted_at?->toISOString(),
+                'reviewer' => $approval->relationLoaded('reviewer') && $approval->reviewer ? [
+                    'id' => $approval->reviewer->id,
+                    'name' => $approval->reviewer->name,
+                ] : null,
+            ]);
         }
 
         return $data;

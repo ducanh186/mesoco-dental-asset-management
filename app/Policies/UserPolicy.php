@@ -7,18 +7,18 @@ use App\Models\User;
 /**
  * UserPolicy
  * 
- * Controls access to user account management (Roles & Permission screen).
- * Only admin/HR roles can manage user accounts.
+ * Controls access to user account management (legacy backoffice module).
+ * - Quản lý: full account management
+ * - Kỹ thuật viên: list/create/view accounts, cannot change roles or delete
  */
 class UserPolicy
 {
     /**
      * Determine whether the user can view any users.
-     * Admin/HR can view user list (Roles & Permission).
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->hasOperationalAccess();
     }
 
     /**
@@ -26,7 +26,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        if ($user->isAdmin()) {
+        if ($user->hasOperationalAccess()) {
             return true;
         }
         
@@ -36,31 +36,29 @@ class UserPolicy
 
     /**
      * Determine whether the user can create users.
-     * Only admin/HR can create user accounts.
+     * Operational roles can create user accounts.
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->hasOperationalAccess();
     }
 
     /**
      * Determine whether the user can update the model.
-     * Admin/HR can update any user's role.
-     * Note: Only role is editable, not employee_code or name.
+     * Only quản lý can update user roles.
      */
     public function update(User $user, User $model): bool
     {
-        return $user->isAdmin();
+        return $user->canManageUsers();
     }
 
     /**
      * Determine whether the user can delete the model.
-     * Admin/HR can delete user accounts.
-     * Cannot delete self.
+     * Only quản lý can delete user accounts.
      */
     public function delete(User $user, User $model): bool
     {
-        if (!$user->isAdmin()) {
+        if (!$user->canManageUsers()) {
             return false;
         }
         

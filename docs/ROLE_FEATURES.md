@@ -1,205 +1,152 @@
-# Phân Quyền và Tính Năng Theo Vai Trò
+# Tính năng theo vai trò
 
-Hệ thống quản lý tài sản nha khoa Mesoco sử dụng mô hình phân quyền theo vai trò (RBAC). Mỗi người dùng được gán **một vai trò duy nhất**, quyết định những tính năng và dữ liệu họ có thể truy cập.
+Hệ thống hiện dùng 4 vai trò chuẩn:
 
----
+- `manager`
+- `technician`
+- `doctor`
+- `employee`
 
-## 📊 Bảng Tổng Quan Quyền Hạn
+Các role cũ như `admin`, `hr`, `staff` chỉ còn là alias để tương thích dữ liệu cũ và sẽ được chuẩn hóa về 4 role trên khi lưu xuống database.
 
-| Tính năng | Admin | HR | Bác sĩ | Kỹ thuật viên | Nhân viên |
-|-----------|:-----:|:--:|:------:|:-------------:|:---------:|
-| **Quản lý Tài sản** |
-| Xem danh sách tài sản | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Thêm/Sửa/Xóa tài sản | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Gán/Thu hồi tài sản | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Tạo lại mã QR | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Quản lý Nhân viên** |
-| Xem/Thêm/Sửa nhân viên | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Xóa nhân viên | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Quản lý Tài khoản** |
-| Xem danh sách tài khoản | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Tạo tài khoản mới | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Thay đổi vai trò | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Xóa tài khoản | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Xử lý Yêu cầu** |
-| Duyệt/Từ chối yêu cầu | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Tính năng Chung** |
-| Xem tài sản được giao | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Check-in/Check-out | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Báo cáo sự cố (Justification) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Mượn thiết bị (Asset Loan) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Yêu cầu vật tư (Consumable) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Quét mã QR | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Cập nhật hồ sơ cá nhân | ✅ | ✅ | ✅ | ✅ | ✅ |
+## 1. Nguyên tắc nghiệp vụ
 
----
+- Không còn khái niệm “nhân sự” là một nhóm chức năng độc lập trong phạm vi DFD mức 0.
+- `manager` thay cho `admin` cũ ở các tác vụ phê duyệt, báo cáo và quản trị quyền.
+- `technician` giữ toàn bộ quyền vận hành mà trước đây nhóm hành chính/nhân sự cũ dùng để quản lý danh mục, tài sản, bảo trì và thu hủy.
+- `doctor` và `employee` là nhóm người dùng đầu cuối, chỉ làm việc với tài sản được giao và yêu cầu của chính họ.
 
-## 👤 Chi Tiết Từng Vai Trò
+## 2. Bảng tổng quan
 
-<a id="admin-features"></a>
-### 1. Admin (Quản trị viên)
+| Chức năng | Manager | Technician | Doctor | Employee |
+| --- | :---: | :---: | :---: | :---: |
+| Xem và cập nhật hồ sơ cá nhân | ✅ | ✅ | ✅ | ✅ |
+| Xem tài sản cá nhân | ✅ | ✅ | ✅ | ✅ |
+| Quét QR và check-in/check-out | ✅ | ✅ | ✅ | ✅ |
+| Tạo yêu cầu báo sự cố | ✅ | ✅ | ✅ | ✅ |
+| Tạo yêu cầu mượn thiết bị | ✅ | ✅ | ✅ | ✅ |
+| Tạo yêu cầu vật tư | ✅ | ✅ | ✅ | ✅ |
+| Xem và hủy yêu cầu của chính mình | ✅ | ✅ | ✅ | ✅ |
+| Xem toàn bộ yêu cầu vận hành | ✅ | ✅ | ❌ | ❌ |
+| Duyệt yêu cầu | ✅ | ❌ | ❌ | ❌ |
+| Chỉ định kỹ thuật viên cho phiếu sự cố | ✅ | ❌ | ❌ | ❌ |
+| Quản lý tài sản, vị trí, tồn kho | ✅ | ✅ | ❌ | ❌ |
+| Phân công và thu hồi tài sản | ✅ | ✅ | ❌ | ❌ |
+| Quản lý bảo trì/sửa chữa | ✅ | ✅ | ❌ | ❌ |
+| Khóa/mở thiết bị off-service | ✅ | ✅ | ❌ | ❌ |
+| Quản lý thu hủy/thanh lý | ✅ | ✅ | ❌ | ❌ |
+| Xem báo cáo và thống kê | ✅ | ❌ | ❌ | ❌ |
+| Đổi role người dùng | ✅ | ❌ | ❌ | ❌ |
+| Xóa tài khoản người dùng | ✅ | ❌ | ❌ | ❌ |
 
-**Mô tả:** Quyền cao nhất trong hệ thống, có toàn quyền truy cập và quản lý.
+## 3. Manager
 
-**Quyền hạn đặc biệt:**
-- ✅ **Thay đổi vai trò người dùng** - Chỉ Admin mới có thể nâng/hạ quyền
-- ✅ **Xóa tài khoản** - Chỉ Admin mới có quyền xóa người dùng
-- ✅ Toàn bộ quyền của HR
+`manager` là vai trò điều phối nghiệp vụ cấp cao.
 
-**Trường hợp sử dụng:**
-- Thiết lập hệ thống ban đầu
-- Quản lý phân quyền người dùng
-- Xử lý các tác vụ nhạy cảm (xóa dữ liệu, thay đổi cấu hình)
+Quyền chính:
 
----
+- Duyệt hoặc từ chối request trong hàng chờ.
+- Khi duyệt phiếu `JUSTIFICATION`, bắt buộc chỉ định kỹ thuật viên.
+- Tự động sinh ticket bảo trì/sửa chữa từ phiếu sự cố đã duyệt.
+- Xem báo cáo tổng hợp tài sản, request, bảo trì, thu hủy.
+- Quản lý role tài khoản.
+- Truy cập toàn bộ phân hệ vận hành như technician.
 
-<a id="hr-features"></a>
-### 2. HR (Nhân sự)
+Manager là người chịu trách nhiệm ở bước giữa trong luồng:
 
-**Mô tả:** Quản lý tài sản, nhân viên và xử lý các yêu cầu từ nhân viên.
+`nhân viên / bác sĩ -> quản lý -> kỹ thuật viên`
 
-**Quyền hạn chính:**
-- ✅ **Quản lý Tài sản** - Thêm, sửa, xóa, gán, thu hồi thiết bị
-- ✅ **Quản lý Nhân viên** - CRUD đầy đủ hồ sơ nhân viên
-- ✅ **Tạo Tài khoản** - Tạo tài khoản mới cho nhân viên (không đổi role)
-- ✅ **Duyệt Yêu cầu** - Phê duyệt/từ chối báo cáo sự cố, mượn thiết bị
+## 4. Technician
 
-**Không có quyền:**
-- ❌ Thay đổi vai trò người dùng
-- ❌ Xóa tài khoản người dùng
+`technician` là vai trò vận hành chính ở backend sau lần refactor này.
 
-**Trường hợp sử dụng:**
-- Nhập liệu tài sản mới vào hệ thống
-- Gán thiết bị cho nhân viên khi onboarding
-- Thu hồi thiết bị khi nhân viên nghỉ việc
-- Duyệt các yêu cầu mượn thiết bị
+Quyền chính:
 
----
+- Quản lý danh mục và hồ sơ tài sản:
+  - tài sản
+  - vị trí
+  - tồn kho
+  - QR
+- Phân công và thu hồi tài sản.
+- Tạo và cập nhật sự kiện bảo trì.
+- Bắt đầu, hoàn thành, hủy bảo trì.
+- Khóa và mở tài sản ở trạng thái off-service.
+- Thực hiện thu hủy/thanh lý.
+- Xem danh sách yêu cầu để phối hợp xử lý.
 
-<a id="doctor-features"></a>
-### 3. Doctor (Bác sĩ)
+Giới hạn:
 
-**Mô tả:** Sử dụng thiết bị y tế, có nhu cầu mượn thêm thiết bị và báo cáo sự cố.
+- Không được duyệt request.
+- Không được xem báo cáo tổng hợp.
+- Không được đổi role hoặc xóa user.
 
-**Quyền hạn chính:**
-- ✅ **Xem tài sản được giao** - Xem danh sách thiết bị đang sử dụng
-- ✅ **Check-in/Check-out** - Ghi nhận sử dụng thiết bị theo ca
-- ✅ **Báo cáo sự cố** - Gửi yêu cầu Justification khi thiết bị hỏng
-- ✅ **Mượn thiết bị** - Tạo yêu cầu Asset Loan khi cần thêm
-- ✅ **Yêu cầu vật tư** - Xin cấp vật tư tiêu hao
+## 5. Doctor
 
-**Workflow điển hình:**
-1. Đầu ca: Check-in các thiết bị được giao
-2. Trong ca: Phát hiện máy hỏng → Báo cáo sự cố
-3. Cần thêm dụng cụ → Tạo yêu cầu mượn
-4. Cuối ca: Check-out thiết bị
+`doctor` là người dùng đầu cuối trong khối chuyên môn.
 
----
+Quyền chính:
 
-<a id="technician-features"></a>
-### 4. Technician (Kỹ thuật viên)
+- Xem tài sản được giao.
+- Quét QR để xem tình trạng thiết bị.
+- Check-in/check-out tài sản theo ca.
+- Gửi phiếu báo sự cố cho thiết bị mình đang dùng.
+- Gửi phiếu mượn thiết bị.
+- Gửi phiếu xin vật tư tiêu hao.
+- Theo dõi trạng thái request của mình.
 
-**Mô tả:** Hỗ trợ kỹ thuật, sử dụng và bảo trì thiết bị.
+Giới hạn:
 
-**Quyền hạn chính:**
-- ✅ **Xem tài sản được giao** - Quản lý thiết bị kỹ thuật được giao
-- ✅ **Check-in/Check-out** - Theo dõi sử dụng thiết bị
-- ✅ **Báo cáo sự cố** - Gửi báo cáo kỹ thuật chi tiết
-- ✅ **Mượn thiết bị** - Mượn công cụ phục vụ bảo trì
-- ✅ **Yêu cầu vật tư** - Xin linh kiện thay thế
+- Không truy cập danh mục tổng.
+- Không phân công tài sản cho người khác.
+- Không thao tác bảo trì, thu hủy, báo cáo.
 
-**Lưu ý:** Tính năng **Quản lý Bảo trì** (Maintenance Module) đang được phát triển và sẽ mở rộng quyền cho Technician trong tương lai.
+## 6. Employee
 
----
+`employee` có quyền gần giống `doctor`, khác nhau chủ yếu ở ngữ cảnh nghiệp vụ và vị trí công việc.
 
-<a id="staff-features"></a>
-### 5. Employee/Staff (Nhân viên)
+Quyền chính:
 
-**Mô tả:** Vai trò cơ bản, có quyền sử dụng và báo cáo về thiết bị được giao.
+- Xem tài sản cá nhân.
+- Quét QR và check-in/check-out.
+- Gửi request của mình.
+- Theo dõi hoặc hủy request khi còn hợp lệ.
+- Cập nhật hồ sơ cá nhân.
 
-**Quyền hạn chính:**
-- ✅ **Xem tài sản được giao** - Xem thiết bị mình đang sử dụng
-- ✅ **Check-in/Check-out** - Ghi nhận sử dụng hàng ngày
-- ✅ **Tạo yêu cầu** - Gửi các loại yêu cầu (sự cố, mượn, vật tư)
-- ✅ **Quét QR** - Xem thông tin thiết bị qua QR code
+## 7. Các phân hệ theo DFD mức 0
 
----
+### 7.1 Quản lý danh mục và hồ sơ
 
-## 📝 Các Loại Yêu Cầu (Request Types)
+- Manager: toàn quyền
+- Technician: toàn quyền vận hành
+- Doctor/Employee: không truy cập phân hệ quản trị
 
-Tất cả các vai trò đều có thể tạo các loại yêu cầu sau:
+### 7.2 Quản lý cấp phát
 
-### 1. Báo Cáo Sự Cố (Justification)
-- **Mục đích:** Báo cáo thiết bị hỏng, mất, hoặc cần sửa chữa
-- **Yêu cầu:** Chọn tài sản **đang được giao cho mình**
-- **Trường bắt buộc:** Mức độ nghiêm trọng (severity)
+- Doctor/Employee: tạo request
+- Manager: duyệt request
+- Technician: thực hiện cấp phát và xử lý phần vận hành phía sau
 
-### 2. Mượn Thiết Bị (Asset Loan)
-- **Mục đích:** Mượn tạm thiết bị chưa được gán cho ai
-- **Yêu cầu:** Chọn tài sản **đang sẵn có** (chưa gán, status=active)
-- **Trường bắt buộc:** Khoảng thời gian mượn (ca hoặc ngày)
+### 7.3 Quản lý bảo trì sửa chữa
 
-### 3. Yêu Cầu Vật Tư (Consumable Request)
-- **Mục đích:** Xin cấp vật tư tiêu hao (bông, gạc, dung dịch...)
-- **Yêu cầu:** Nhập tên/mã SKU và số lượng
-- **Trường bắt buộc:** Tên vật tư, số lượng
+- Doctor/Employee: báo sự cố
+- Manager: duyệt và điều phối
+- Technician: xử lý ticket bảo trì/sửa chữa
 
----
+### 7.4 Quản lý thu hủy
 
-## 🔒 Bảo Mật và Xác Thực
+- Manager và Technician có quyền vận hành.
+- Doctor/Employee không trực tiếp thao tác.
 
-### Luồng Đăng Nhập
-1. Người dùng đăng nhập với email/password
-2. Nếu `must_change_password = true`: Bắt buộc đổi mật khẩu
-3. Sau khi đổi password: Truy cập đầy đủ theo vai trò
+### 7.5 Báo cáo và thống kê
 
-### API Token
-- Sử dụng **Laravel Sanctum** cho SPA authentication
-- Session-based cho web, Token-based cho mobile/API
+- Chỉ `manager` được truy cập.
 
-### Middleware Bảo Vệ
-```
-auth:sanctum          → Yêu cầu đăng nhập
-must_change_password  → Kiểm tra đổi mật khẩu lần đầu
-role:admin            → Chỉ Admin
-role:admin,hr         → Admin hoặc HR
-```
+## 8. Lưu ý về module cũ
 
----
+Trong repo vẫn còn một số phần cũ như `feedback`, `contracts`, `employees` để giữ tương thích dữ liệu hoặc phục vụ nội bộ. Tuy nhiên luồng sản phẩm chính hiện được chốt theo 5 phân hệ ở trên.
 
-## 📖 Ví Dụ Thực Tế
+## 9. Tài liệu liên quan
 
-### Kịch bản 1: Bác sĩ báo máy hỏng
-```
-1. Bác sĩ Nguyễn Văn A đăng nhập
-2. Vào "Tài sản của tôi" → Thấy máy X-Ray đang được giao
-3. Tạo yêu cầu "Báo cáo sự cố" → Chọn máy X-Ray
-4. Nhập mức độ: "Cao", mô tả: "Màn hình không hiển thị"
-5. HR nhận được thông báo → Duyệt → Chuyển kỹ thuật
-```
-
-### Kịch bản 2: HR gán thiết bị cho nhân viên mới
-```
-1. HR đăng nhập
-2. Vào "Quản lý Nhân viên" → Tạo hồ sơ mới
-3. Vào "Quản lý Tài sản" → Chọn thiết bị chưa gán
-4. Nhấn "Gán tài sản" → Chọn nhân viên mới
-5. Nhân viên đăng nhập → Thấy thiết bị trong "Tài sản của tôi"
-```
-
-### Kịch bản 3: Admin nâng quyền nhân viên lên HR
-```
-1. Admin đăng nhập
-2. Vào "Quản lý Tài khoản" → Tìm nhân viên
-3. Nhấn "Thay đổi vai trò" → Chọn "HR"
-4. Nhân viên refresh → Có thêm menu quản lý
-```
-
----
-
-## 🔗 Tài Liệu Liên Quan
-
-- [Checklist tính năng theo role](feat_role.md)
-- [Hướng dẫn API](postman/) - Postman Collection
-- [Stack công nghệ](STACK.md)
-- [Quy ước database](DB_CONVENTIONS.md)
+- [Mục lục tài liệu](README.md)
+- [Ma trận phân quyền API](RBAC_MATRIX.md)
+- [Checklist nghiệm thu](feat_role.md)

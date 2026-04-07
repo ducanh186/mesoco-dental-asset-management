@@ -30,11 +30,10 @@ use Illuminate\Support\Facades\Route;
 | ┌─────────────┬────────────────────────────────────────────────────────────────────┐
 | │ Role        │ Permissions                                                        │
 | ├─────────────┼────────────────────────────────────────────────────────────────────┤
-| │ admin       │ Full access + System Settings + Users + Roles + Inventory + Maint. │
-| │ hr          │ Assets + Assign + Review + Reports + Users + Inventory + Maint.    │
-| │ technician  │ My Equipment + Maintenance CRUD + Requests + My Asset History      │
-| │ doctor      │ My Equipment + Requests + Check-in + My Asset History              │
-| │ staff       │ My Equipment + Basic Requests + Check-in + My Asset History        │
+| │ manager     │ Duyệt yêu cầu, báo cáo, cấu hình và điều phối hệ thống             │
+| │ technician  │ Danh mục, cấp phát, bảo trì, thu hủy và vận hành thiết bị          │
+| │ doctor      │ Báo sự cố / mượn thiết bị / theo dõi thiết bị cá nhân              │
+| │ employee    │ Báo sự cố / mượn thiết bị / theo dõi thiết bị cá nhân              │
 | └─────────────┴────────────────────────────────────────────────────────────────────┘
 */
 
@@ -101,7 +100,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
     Route::patch('/checkins/{checkin}/checkout', [CheckinController::class, 'checkout']);
 
     /**
-     * Asset check-in status (own assets only, admin/hr can view any)
+     * Asset check-in status (own assets only, manager/technician can view any)
      */
     Route::get('/assets/{asset}/checkin-status', [CheckinController::class, 'assetCheckinStatus']);
 
@@ -138,126 +137,77 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMIN ONLY ROUTES
+    | MANAGER ONLY ROUTES
     |--------------------------------------------------------------------------
-    | Full system access: Users + Roles + System Settings
+    | Approval, reporting, and system-level governance
     */
-    Route::middleware('role:admin')->group(function () {
-        // Roles management - Only admin can change roles
+    Route::middleware('role:manager')->group(function () {
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
         Route::get('/roles', [UserController::class, 'roles']);
-        
-        // Delete users - Only admin
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
-        /*
-        |----------------------------------------------------------------------
-        | Employee Contracts (Admin Only)
-        |----------------------------------------------------------------------
-        | Manage employee contracts with PDF upload/view
-        */
         Route::get('/employees/{employee}/contracts', [EmployeeContractController::class, 'index']);
         Route::post('/employees/{employee}/contracts', [EmployeeContractController::class, 'store']);
         Route::get('/contracts/{contract}', [EmployeeContractController::class, 'show']);
         Route::put('/contracts/{contract}', [EmployeeContractController::class, 'update']);
         Route::delete('/contracts/{contract}', [EmployeeContractController::class, 'destroy']);
         Route::get('/contracts/{contract}/file', [EmployeeContractController::class, 'streamFile']);
-    });
 
-    /*
-    |--------------------------------------------------------------------------
-    | ADMIN + HR ROUTES
-    |--------------------------------------------------------------------------
-    | Asset management, Employee management, Review requests, Inventory
-    */
-    Route::middleware('role:admin,hr')->group(function () {
-        // Employees CRUD
-        Route::get('/employees/available', [EmployeeController::class, 'available']);
-        Route::apiResource('employees', EmployeeController::class);
-
-        // Users Management (HR can list/create/view but NOT change roles or delete)
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::get('/users/{user}', [UserController::class, 'show']);
-
-        // Assets CRUD
-        Route::get('/assets', [AssetController::class, 'index']);
-        Route::get('/assets/available', [AssetController::class, 'available']);
-        Route::post('/assets', [AssetController::class, 'store']);
-        Route::get('/assets/{asset}', [AssetController::class, 'show']);
-        Route::put('/assets/{asset}', [AssetController::class, 'update']);
-        Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
-        
-        // Asset Assignment
-        Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
-        Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
-        Route::post('/assets/{asset}/regenerate-qr', [AssetController::class, 'regenerateQr']);
-
-        // Review Requests - Admin/HR can review all pending requests
         Route::get('/review-requests', [ReviewRequestController::class, 'index']);
         Route::post('/requests/{id}/review', [ReviewRequestController::class, 'review']);
 
-        /*
-        |----------------------------------------------------------------------
-        | Inventory Management (Phase 6)
-        |----------------------------------------------------------------------
-        | Dashboard, asset list with filters, valuation reports, CSV export
-        */
-        Route::get('/inventory/summary', [InventoryController::class, 'summary']);
-        Route::get('/inventory/assets', [InventoryController::class, 'assets']);
-        Route::get('/inventory/valuation', [InventoryController::class, 'valuation']);
-        Route::get('/inventory/export', [InventoryController::class, 'export']);
-
-        /*
-        |----------------------------------------------------------------------
-        | Location Management (Phase 6)
-        |----------------------------------------------------------------------
-        | CRUD for physical locations
-        */
-        Route::get('/locations/dropdown', [LocationController::class, 'dropdown']);
-        Route::apiResource('locations', LocationController::class);
-
-        /*
-        |----------------------------------------------------------------------
-        | Disposal Management (Thu hủy - BFD Module 4)
-        |----------------------------------------------------------------------
-        | Assets with depreciation >= 70% eligible for disposal
-        */
-        Route::get('/disposal/summary', [DisposalController::class, 'summary']);
-        Route::get('/disposal/assets', [DisposalController::class, 'assets']);
-        Route::post('/disposal/assets/{asset}/retire', [DisposalController::class, 'retire']);
-
-        /*
-        |----------------------------------------------------------------------
-        | Reports (Phase 8)
-        |----------------------------------------------------------------------
-        | System-wide summary reports for management
-        */
         Route::get('/reports/summary', [ReportController::class, 'summary']);
         Route::get('/reports/export', [ReportController::class, 'export']);
     });
 
     /*
     |--------------------------------------------------------------------------
-    | TECHNICIAN + ADMIN + HR ROUTES
+    | MANAGER + TECHNICIAN ROUTES
     |--------------------------------------------------------------------------
-    | Maintenance scheduling, tracking, and off-service management (Phase 7)
+    | Operational modules from the DFD:
+    | 1. Catalog & records
+    | 2. Allocation
+    | 3. Maintenance & repair
+    | 4. Disposal
     */
-    Route::middleware('role:admin,hr,technician')->group(function () {
-        // Maintenance Events CRUD
+    Route::middleware('role:manager,technician')->group(function () {
+        Route::get('/employees/available', [EmployeeController::class, 'available']);
+        Route::apiResource('employees', EmployeeController::class);
+
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::get('/users/{user}', [UserController::class, 'show']);
+
+        Route::get('/assets', [AssetController::class, 'index']);
+        Route::get('/assets/available', [AssetController::class, 'available']);
+        Route::post('/assets', [AssetController::class, 'store']);
+        Route::get('/assets/{asset}', [AssetController::class, 'show']);
+        Route::put('/assets/{asset}', [AssetController::class, 'update']);
+        Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
+        Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
+        Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
+        Route::post('/assets/{asset}/regenerate-qr', [AssetController::class, 'regenerateQr']);
+
+        Route::get('/inventory/summary', [InventoryController::class, 'summary']);
+        Route::get('/inventory/assets', [InventoryController::class, 'assets']);
+        Route::get('/inventory/valuation', [InventoryController::class, 'valuation']);
+        Route::get('/inventory/export', [InventoryController::class, 'export']);
+
+        Route::get('/locations/dropdown', [LocationController::class, 'dropdown']);
+        Route::apiResource('locations', LocationController::class);
+
+        Route::get('/disposal/summary', [DisposalController::class, 'summary']);
+        Route::get('/disposal/assets', [DisposalController::class, 'assets']);
+        Route::post('/disposal/assets/{asset}/retire', [DisposalController::class, 'retire']);
         Route::get('/maintenance-events', [MaintenanceEventController::class, 'index']);
         Route::get('/maintenance-events/summary', [MaintenanceEventController::class, 'summary']);
         Route::post('/maintenance-events', [MaintenanceEventController::class, 'store']);
         Route::get('/maintenance-events/{maintenanceEvent}', [MaintenanceEventController::class, 'show']);
         Route::put('/maintenance-events/{maintenanceEvent}', [MaintenanceEventController::class, 'update']);
         Route::delete('/maintenance-events/{maintenanceEvent}', [MaintenanceEventController::class, 'destroy']);
-        
-        // State transitions
         Route::post('/maintenance-events/{maintenanceEvent}/start', [MaintenanceEventController::class, 'start']);
         Route::post('/maintenance-events/{maintenanceEvent}/complete', [MaintenanceEventController::class, 'complete']);
         Route::post('/maintenance-events/{maintenanceEvent}/cancel', [MaintenanceEventController::class, 'cancel']);
-        
-        // Manual off-service lock/unlock
         Route::post('/assets/{asset}/lock', [AssetOffServiceController::class, 'lock']);
         Route::post('/assets/{asset}/unlock', [AssetOffServiceController::class, 'unlock']);
     });

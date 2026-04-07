@@ -18,11 +18,11 @@ class AssetController extends Controller
     /**
      * Display a listing of all assets.
      * 
-     * SECURITY: This endpoint is protected by route middleware (role:admin,hr).
+     * SECURITY: This endpoint is protected by route middleware (role:manager,technician).
      * DO NOT add auto-filtering logic here - that's a security footgun.
      * Use myAssets() for user's own assets instead.
      * 
-     * GET /api/assets (Admin/HR only via route middleware)
+     * GET /api/assets (Manager/Technician only via route middleware)
      * Query params: search, type, status, per_page, include_checkin_status
      */
     public function index(Request $request): JsonResponse
@@ -213,7 +213,7 @@ class AssetController extends Controller
 
     /**
      * Store a newly created asset.
-     * Admin/HR only.
+     * Manager/Technician only.
      * 
      * POST /api/assets
      */
@@ -232,6 +232,7 @@ class AssetController extends Controller
         $qrIdentity = AssetQrIdentity::create([
             'asset_id' => $asset->id,
         ]);
+        $asset->update(['qr_value' => $qrIdentity->payload]);
 
         $asset->load(['qrIdentity', 'currentAssignment']);
 
@@ -250,8 +251,7 @@ class AssetController extends Controller
     {
         $user = $request->user();
 
-        // Check authorization
-        if (!$user->isAdmin()) {
+        if (!$user->hasOperationalAccess()) {
             $employeeId = $user->employee?->id;
             if (!$employeeId || $asset->currentAssignment?->employee_id !== $employeeId) {
                 return response()->json([
@@ -274,7 +274,7 @@ class AssetController extends Controller
 
     /**
      * Update the specified asset.
-     * Admin/HR only.
+     * Manager/Technician only.
      * 
      * PATCH /api/assets/{asset}
      */
@@ -292,7 +292,7 @@ class AssetController extends Controller
 
     /**
      * Remove the specified asset.
-     * Admin/HR only.
+     * Manager/Technician only.
      * Cannot delete if asset is currently assigned.
      * 
      * DELETE /api/assets/{asset}
@@ -316,7 +316,7 @@ class AssetController extends Controller
 
     /**
      * Assign asset to an employee.
-     * Admin/HR only.
+     * Manager/Technician only.
      * Only 1 active assignee per asset.
      * Uses transaction + pessimistic lock to prevent race conditions.
      * 
@@ -384,7 +384,7 @@ class AssetController extends Controller
 
     /**
      * Unassign asset from current employee.
-     * Admin/HR only.
+     * Manager/Technician only.
      * Uses transaction + pessimistic lock to ensure consistency.
      * 
      * POST /api/assets/{asset}/unassign
@@ -427,7 +427,7 @@ class AssetController extends Controller
 
     /**
      * Get assets available for assignment (not currently assigned).
-     * Admin/HR only.
+     * Manager/Technician only.
      * 
      * GET /api/assets/available
      */
@@ -491,6 +491,7 @@ class AssetController extends Controller
         $qrIdentity = AssetQrIdentity::create([
             'asset_id' => $asset->id,
         ]);
+        $asset->update(['qr_value' => $qrIdentity->payload]);
 
         $asset->load(['currentAssignment.employee', 'qrIdentity']);
 
@@ -526,6 +527,9 @@ class AssetController extends Controller
             'asset_code' => $asset->asset_code,
             'name' => $asset->name,
             'type' => $asset->type,
+            'category' => $asset->category,
+            'category_id' => $asset->category_id,
+            'location' => $asset->location,
             'status' => $asset->status,
             'notes' => $asset->notes,
             'instructions' => [
@@ -533,6 +537,7 @@ class AssetController extends Controller
                 'url' => $asset->instructions_url,
                 'available' => $asset->instructions_url !== null,
             ],
+            'qr_value' => $asset->qr_value ?? $asset->qrIdentity?->payload,
             'is_assigned' => $currentAssignment !== null,
             'current_assignment' => $currentAssignment ? [
                 'id' => $currentAssignment->id,

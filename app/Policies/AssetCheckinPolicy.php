@@ -16,7 +16,7 @@ class AssetCheckinPolicy
 {
     /**
      * Determine whether the user can view any check-ins.
-     * Admin/HR can view all; others can only view their own.
+     * Operational roles can view all; others can only view their own.
      */
     public function viewAny(User $user): bool
     {
@@ -28,8 +28,7 @@ class AssetCheckinPolicy
      */
     public function view(User $user, AssetCheckin $checkin): bool
     {
-        // Admin/HR can view all
-        if (in_array($user->role, ['admin', 'hr'])) {
+        if ($user->hasOperationalAccess()) {
             return true;
         }
 
@@ -42,7 +41,7 @@ class AssetCheckinPolicy
      * 
      * Rules:
      * - Asset must not be locked (off_service or maintenance)
-     * - User must be the current assignee OR admin/hr
+     * - User must be the current assignee OR an operational role
      */
     public function checkIn(User $user, Asset $asset): Response
     {
@@ -52,8 +51,7 @@ class AssetCheckinPolicy
             return Response::deny($reason, 'ASSET_LOCKED');
         }
 
-        // Admin/HR can check in any asset
-        if (in_array($user->role, ['admin', 'hr'])) {
+        if ($user->hasOperationalAccess()) {
             return Response::allow();
         }
 
@@ -83,8 +81,7 @@ class AssetCheckinPolicy
             return Response::deny('This check-in has already been checked out.', 'ALREADY_CHECKED_OUT');
         }
 
-        // Admin/HR can check out any
-        if (in_array($user->role, ['admin', 'hr'])) {
+        if ($user->hasOperationalAccess()) {
             return Response::allow();
         }
 

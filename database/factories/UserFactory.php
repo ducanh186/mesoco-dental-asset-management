@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -34,7 +35,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'employee',
+            'role' => User::ROLE_EMPLOYEE,
             'status' => 'active',
             'remember_token' => Str::random(10),
         ];
@@ -51,23 +52,21 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the user is an admin.
+     * Indicate that the user is a manager.
      */
-    public function admin(): static
+    public function manager(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => 'admin',
+            'role' => User::ROLE_MANAGER,
         ]);
     }
 
     /**
-     * Indicate that the user is HR.
+     * Legacy alias for manager.
      */
-    public function hr(): static
+    public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'hr',
-        ]);
+        return $this->manager();
     }
 
     /**
@@ -76,8 +75,16 @@ class UserFactory extends Factory
     public function technician(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => 'technician',
+            'role' => User::ROLE_TECHNICIAN,
         ]);
+    }
+
+    /**
+     * Legacy alias for technician.
+     */
+    public function hr(): static
+    {
+        return $this->technician();
     }
 
     /**
@@ -86,18 +93,26 @@ class UserFactory extends Factory
     public function doctor(): static
     {
         return $this->state(fn (array $attributes) => [
-            'role' => 'doctor',
+            'role' => User::ROLE_DOCTOR,
         ]);
     }
 
     /**
-     * Indicate that the user is staff.
+     * Indicate that the user is an employee.
+     */
+    public function employee(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_EMPLOYEE,
+        ]);
+    }
+
+    /**
+     * Legacy alias for employee.
      */
     public function staff(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'staff',
-        ]);
+        return $this->employee();
     }
 
     /**

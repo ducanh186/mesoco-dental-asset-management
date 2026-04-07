@@ -72,7 +72,7 @@ const ReportPage = ({ user }) => {
         );
     }
 
-    const { assets, maintenance, requests, feedback } = report || {};
+    const { assets, maintenance, requests, disposal } = report || {};
 
     return (
         <div className="report-page space-y-6">
@@ -212,48 +212,38 @@ const ReportPage = ({ user }) => {
                     </CardBody>
                 </Card>
 
-                {/* Feedback Statistics */}
+                {/* Disposal Statistics */}
                 <Card>
-                    <CardHeader title="Phản hồi" subtitle="Thống kê phản hồi người dùng" />
+                    <CardHeader title="Thu hủy" subtitle="Tình hình thu hủy, thanh lý thiết bị" />
                     <CardBody>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between p-3 bg-warning/10 rounded-lg">
-                                <span className="text-text">Chưa giải quyết</span>
-                                <Badge variant="warning" size="lg">{feedback?.unresolved || 0}</Badge>
+                                <span className="text-text">Đủ điều kiện thu hủy</span>
+                                <Badge variant="warning" size="lg">{disposal?.eligible || 0}</Badge>
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="text-center p-3 bg-warning/10 rounded-lg">
-                                    <p className="text-xl font-bold text-warning">{feedback?.by_status?.new || 0}</p>
-                                    <p className="text-xs text-text-muted">Mới</p>
+                                    <p className="text-xl font-bold text-warning">{disposal?.retired_in_period || 0}</p>
+                                    <p className="text-xs text-text-muted">Thu hủy trong kỳ</p>
                                 </div>
                                 <div className="text-center p-3 bg-primary/10 rounded-lg">
-                                    <p className="text-xl font-bold text-primary">{feedback?.by_status?.in_progress || 0}</p>
-                                    <p className="text-xs text-text-muted">Đang xử lý</p>
+                                    <p className="text-xl font-bold text-primary">{disposal?.retired_total || 0}</p>
+                                    <p className="text-xs text-text-muted">Đã thu hủy</p>
                                 </div>
                                 <div className="text-center p-3 bg-success/10 rounded-lg">
-                                    <p className="text-xl font-bold text-success">{feedback?.by_status?.resolved || 0}</p>
-                                    <p className="text-xs text-text-muted">Đã giải quyết</p>
+                                    <p className="text-xl font-bold text-success">{disposal?.recovered_value || 0}</p>
+                                    <p className="text-xs text-text-muted">Giá trị thu hồi</p>
                                 </div>
                             </div>
                             <div className="pt-2 border-t">
-                                <p className="text-sm font-medium text-text mb-2">Theo loại (trong kỳ):</p>
+                                <p className="text-sm font-medium text-text mb-2">Theo phương thức (trong kỳ):</p>
                                 <div className="flex flex-wrap gap-2">
-                                    <Badge variant="danger">Sự cố: {feedback?.by_type?.issue || 0}</Badge>
-                                    <Badge variant="info">Đề xuất: {feedback?.by_type?.suggestion || 0}</Badge>
-                                    <Badge variant="success">Khen ngợi: {feedback?.by_type?.praise || 0}</Badge>
-                                    <Badge variant="default">Khác: {feedback?.by_type?.other || 0}</Badge>
+                                    <Badge variant="danger">Hủy bỏ: {disposal?.by_method?.destroy || 0}</Badge>
+                                    <Badge variant="info">Thanh lý: {disposal?.by_method?.liquidation || 0}</Badge>
+                                    <Badge variant="success">Phế liệu: {disposal?.by_method?.scrap || 0}</Badge>
+                                    <Badge variant="default">Khác: {disposal?.by_method?.other || 0}</Badge>
                                 </div>
                             </div>
-                            {feedback?.average_rating && (
-                                <div className="pt-2 border-t">
-                                    <p className="text-sm text-text-muted">Đánh giá trung bình</p>
-                                    <p className="text-2xl font-bold text-yellow-500">
-                                        {'★'.repeat(Math.round(feedback.average_rating))}
-                                        {'☆'.repeat(5 - Math.round(feedback.average_rating))}
-                                        <span className="text-lg text-text ml-2">({feedback.average_rating}/5)</span>
-                                    </p>
-                                </div>
-                            )}
                         </div>
                     </CardBody>
                 </Card>

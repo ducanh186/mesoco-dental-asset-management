@@ -154,9 +154,9 @@ class EmployeeContractController extends Controller
     public function destroy(Request $request, EmployeeContract $contract): JsonResponse
     {
         // Admin check (since we're not using FormRequest here)
-        if ($request->user()?->role !== 'admin') {
+        if (!$request->user()?->canManageUsers()) {
             return response()->json([
-                'message' => 'Forbidden. Only administrators can delete contracts.',
+                'message' => 'Forbidden. Only managers can delete contracts.',
             ], 403);
         }
 
@@ -180,9 +180,9 @@ class EmployeeContractController extends Controller
     public function streamFile(Request $request, EmployeeContract $contract): StreamedResponse|JsonResponse
     {
         // Admin check
-        if ($request->user()?->role !== 'admin') {
+        if (!$request->user()?->canManageUsers()) {
             return response()->json([
-                'message' => 'Forbidden. Only administrators can view contract files.',
+                'message' => 'Forbidden. Only managers can view contract files.',
             ], 403);
         }
 

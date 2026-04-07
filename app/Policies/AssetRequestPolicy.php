@@ -11,7 +11,8 @@ use Illuminate\Auth\Access\HandlesAuthorization;
  * 
  * Authorization rules for AssetRequest model:
  * - Requester: can view/cancel own requests
- * - Admin/HR: can view all requests, approve/reject SUBMITTED requests
+ * - Quản lý: can approve/reject SUBMITTED requests
+ * - Quản lý/Kỹ thuật viên: can view all requests for operational follow-up
  */
 class AssetRequestPolicy
 {
@@ -28,16 +29,14 @@ class AssetRequestPolicy
 
     /**
      * Determine whether the user can view the request.
-     * Admin/HR can view any; others only their own.
+     * Operational roles can view any; others only their own.
      */
     public function view(User $user, AssetRequest $assetRequest): bool
     {
-        // Admin/HR can view any request
-        if ($user->isAdmin()) {
+        if ($user->hasOperationalAccess()) {
             return true;
         }
 
-        // Staff can only view their own requests
         return $this->isRequester($user, $assetRequest);
     }
 
@@ -91,7 +90,7 @@ class AssetRequestPolicy
 
     /**
      * Determine whether the user can review (approve/reject) the request.
-     * Only Admin/HR can review, and only when SUBMITTED.
+     * Only quản lý can review, and only when SUBMITTED.
      */
     public function review(User $user, AssetRequest $assetRequest): bool
     {
@@ -99,16 +98,16 @@ class AssetRequestPolicy
             return false;
         }
 
-        return $user->isAdmin();
+        return $user->canReviewRequests();
     }
 
     /**
      * Determine whether the user can view the review queue.
-     * Admin/HR only.
+     * Manager only.
      */
     public function viewReviewQueue(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->canReviewRequests();
     }
 
     /**

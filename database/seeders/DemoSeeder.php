@@ -56,6 +56,11 @@ class DemoSeeder extends Seeder
         // ====================================================================
         $this->seedContracts();
 
+        // ====================================================================
+        // STEP 6: Sync ERD-aligned tables from legacy/demo data
+        // ====================================================================
+        $this->call(ErdAlignmentSeeder::class);
+
         $this->command->info('✅ DemoSeeder completed!');
     }
 
@@ -67,11 +72,11 @@ class DemoSeeder extends Seeder
         $this->command->info('  → Updating demo accounts...');
 
         $accounts = [
-            ['code' => 'E0001', 'role' => 'admin', 'email' => 'admin@mesoco.vn'],
-            ['code' => 'E0002', 'role' => 'hr', 'email' => 'hr@mesoco.vn'],
-            ['code' => 'E0003', 'role' => 'doctor', 'email' => 'doctor@mesoco.vn'],
-            ['code' => 'E0004', 'role' => 'technician', 'email' => 'tech@mesoco.vn'],
-            ['code' => 'E0005', 'role' => 'employee', 'email' => 'staff@mesoco.vn'],
+            ['code' => 'E0001', 'role' => User::ROLE_MANAGER, 'email' => 'manager@mesoco.vn'],
+            ['code' => 'E0002', 'role' => User::ROLE_TECHNICIAN, 'email' => 'technician@mesoco.vn'],
+            ['code' => 'E0003', 'role' => User::ROLE_DOCTOR, 'email' => 'doctor@mesoco.vn'],
+            ['code' => 'E0004', 'role' => User::ROLE_TECHNICIAN, 'email' => 'tech@mesoco.vn'],
+            ['code' => 'E0005', 'role' => User::ROLE_EMPLOYEE, 'email' => 'staff@mesoco.vn'],
         ];
 
         foreach ($accounts as $account) {
@@ -83,6 +88,7 @@ class DemoSeeder extends Seeder
             User::where('employee_code', $account['code'])
                 ->update([
                     'email' => $account['email'],
+                    'role' => $account['role'],
                     'password' => Hash::make('password'),
                     'must_change_password' => false,
                 ]);

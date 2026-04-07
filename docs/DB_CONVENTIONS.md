@@ -1,175 +1,283 @@
-# Database Conventions
+# Quy ước database
 
-This document describes the database naming conventions and design patterns used in the Mesoco Dental Asset Management system.
+Tài liệu này mô tả quy ước đặt tên, các bảng lõi và các mối quan hệ quan trọng đang được dùng trong hệ thống sau khi align theo ERD mới.
 
-## ID Field Conventions
+## 1. Mục tiêu thiết kế
 
-### `employee_id` vs `user_id`
+Schema hiện tại phục vụ 5 nghiệp vụ chính:
 
-The system distinguishes between **Employees** (HR records) and **Users** (system accounts):
+1. Quản lý danh mục và hồ sơ
+2. Quản lý cấp phát
+3. Quản lý bảo trì sửa chữa
+4. Quản lý thu hủy
+5. Báo cáo và thống kê
 
-| Field | Table | Description | FK Target |
-|-------|-------|-------------|-----------|
-| `employee_id` | asset_assignments | Physical person responsible for asset | employees.id |
-| `employee_id` | asset_checkins | Person performing check-in | employees.id |
-| `user_id` | users | Employee's system account (nullable) | employees.id |
-| `user_id` | request_events | System user who performed action | users.id |
+Thiết kế ưu tiên:
 
-### Key Relationships
+- giữ tương thích với dữ liệu cũ
+- chuẩn hóa role
+- audit được luồng phê duyệt
+- có thể truy ngược từ sự cố sang bảo trì và thu hủy
 
+## 2. Quy ước đặt tên
+
+### 2.1 Bảng
+
+- Dùng `snake_case`
+- Dùng dạng số nhiều
+- Ví dụ:
+  - `assets`
+  - `asset_assignments`
+  - `maintenance_events`
+  - `purchase_order_items`
+
+### 2.2 Cột
+
+- Khóa chính luôn là `id`
+- Khóa ngoại có dạng `{singular_table}_id`
+- Datetime dùng hậu tố `_at`
+- Date dùng hậu tố `_date`
+- Cờ boolean dùng tiền tố `is_`
+
+Ví dụ:
+
+- `reviewed_by_user_id`
+- `assigned_to_user_id`
+- `disposed_at`
+- `is_active`
+
+## 3. Nhóm bảng lõi
+
+### 3.1 Nhân sự và tài khoản
+
+| Bảng | Vai trò |
+| --- | --- |
+| `employees` | Hồ sơ nhân sự thực tế |
+| `users` | Tài khoản đăng nhập |
+| `roles` | Danh mục role chuẩn hóa |
+
+Quy ước:
+
+- `users.employee_id` trỏ về hồ sơ nhân sự.
+- `users.role` vẫn được giữ để tương thích.
+- `users.role_id` là khóa ngoại chuẩn hóa sang `roles`.
+
+Role chuẩn hiện hành:
+
+- `manager`
+- `technician`
+- `doctor`
+- `employee`
+
+Alias cũ được normalize:
+
+- `admin -> manager`
+- `hr -> technician`
+- `staff -> employee`
+
+### 3.2 Danh mục và tài sản
+
+| Bảng | Vai trò |
+| --- | --- |
+| `assets` | Hồ sơ tài sản |
+| `categories` | Danh mục tài sản |
+| `locations` | Vị trí sử dụng/lưu kho |
+| `suppliers` | Nhà cung cấp |
+| `asset_qr_identities` | Danh tính QR |
+| `asset_assignments` | Lịch sử giao nhận tài sản |
+| `asset_checkins` | Nhật ký check-in/check-out |
+
+Trạng thái tài sản quan trọng:
+
+- `active`
+- `off_service`
+- `maintenance`
+- `retired`
+
+### 3.3 Request, phê duyệt và điều phối
+
+| Bảng | Vai trò |
+| --- | --- |
+| `requests` | Header của phiếu |
+| `request_items` | Chi tiết item/request |
+| `request_events` | Nhật ký trạng thái |
+| `approvals` | Lớp phê duyệt chuẩn hóa |
+
+Loại request:
+
+- `JUSTIFICATION`
+- `ASSET_LOAN`
+- `CONSUMABLE_REQUEST`
+
+Trạng thái request:
+
+- `SUBMITTED`
+- `APPROVED`
+- `REJECTED`
+- `CANCELLED`
+
+Event quan trọng:
+
+- `CREATED`
+- `SUBMITTED`
+- `APPROVED`
+- `DISPATCHED`
+- `REJECTED`
+- `CANCELLED`
+
+`DISPATCHED` là event dùng cho luồng:
+
+`phiếu sự cố đã duyệt -> giao cho kỹ thuật viên -> sinh ticket bảo trì`
+
+### 3.4 Bảo trì và sửa chữa
+
+| Bảng | Vai trò |
+| --- | --- |
+| `maintenance_events` | Ticket bảo trì/sửa chữa |
+| `repair_logs` | Nhật ký sửa chữa chuẩn hóa |
+
+Trạng thái `maintenance_events`:
+
+- `scheduled`
+- `in_progress`
+- `completed`
+- `canceled`
+
+Quy ước đặc biệt:
+
+- `assigned_to_user_id` là khóa ngoại chuẩn.
+- `assigned_to` được giữ để tương thích dữ liệu cũ và hiển thị nhanh.
+- Khi event loại `repair` được tạo/cập nhật, hệ thống sync sang `repair_logs`.
+
+### 3.5 Thu hủy và mua sắm
+
+| Bảng | Vai trò |
+| --- | --- |
+| `disposals` | Nhật ký thu hủy/thanh lý |
+| `purchase_orders` | Đơn mua |
+| `purchase_order_items` | Dòng hàng của đơn mua |
+
+`disposals` phục vụ các case:
+
+- hủy
+- thanh lý
+- bán phế liệu
+- ghi nhận giá trị thu hồi
+
+## 4. Quan hệ quan trọng
+
+### 4.1 Employee và User
+
+```text
+employees 1 --- 0..1 users
 ```
-┌─────────────┐         ┌─────────────┐
-│  Employee   │ 1────0..1│    User     │
-│  (HR Record)│         │  (Account)  │
-├─────────────┤         ├─────────────┤
-│ id (PK)     │◄────────│ employee_id │
-│ code        │         │ role        │
-│ name        │         │ email       │
-│ department  │         │ password    │
-└─────────────┘         └─────────────┘
-       │
-       │ 1
-       ▼
-       *
-┌─────────────────┐
-│ AssetAssignment │
-├─────────────────┤
-│ asset_id        │
-│ employee_id     │◄─── The person holding the asset
-│ assigned_at     │
-│ returned_at     │
-└─────────────────┘
+
+- `employees` là hồ sơ người thật
+- `users` là tài khoản hệ thống
+
+### 4.2 Asset và Assignment
+
+```text
+assets 1 --- * asset_assignments * --- 1 employees
 ```
 
-### When to Use Each
+- Mỗi tài sản có nhiều lần giao nhận theo thời gian.
+- Chỉ assignment chưa `unassigned_at` mới được coi là đang hiệu lực.
 
-| Use Case | Use Field | Example |
-|----------|-----------|---------|
-| Asset is assigned to someone | `employee_id` | "Dr. Nguyen is responsible for this ultrasonic scaler" |
-| Someone checks in for shift | `employee_id` | "Dr. Nguyen checked in at 8:00 AM" |
-| Audit trail of system actions | `user_id` | "HR admin approved this request" |
-| Login/authentication | `user_id` | "User logged in at 9:00 AM" |
+### 4.3 Request sự cố và bảo trì
 
-## Table Naming
-
-- Use **snake_case** for table names: `asset_assignments`, `request_items`
-- Use **plural** form: `employees`, `assets`, `locations`
-- Pivot tables: alphabetical order: `asset_employee` (not used), `employee_shift`
-
-## Column Naming
-
-- Primary key: always `id` (auto-increment bigint)
-- Foreign keys: `{referenced_table_singular}_id` → `employee_id`, `asset_id`
-- Timestamps: `created_at`, `updated_at`, `deleted_at` (soft deletes)
-- Boolean flags: `is_*` prefix → `is_active`, `is_verified`
-- Dates: `*_at` suffix for datetimes, `*_date` for dates only
-- Monetary values: store as `decimal(15,2)` with `_cost` or `_value` suffix
-
-## Status Enums
-
-### Asset Status
-```php
-enum AssetStatus: string {
-    case AVAILABLE = 'available';      // Ready to assign
-    case IN_USE = 'in_use';           // Currently assigned
-    case MAINTENANCE = 'maintenance';  // Under repair
-    case RETIRED = 'retired';         // End of life
-}
+```text
+requests
+  -> approvals
+  -> request_events
+  -> assigned_to_user_id (technician)
+  -> maintenance_events (phát sinh sau khi manager duyệt)
+  -> repair_logs (đồng bộ từ maintenance_events loại repair)
 ```
 
-### Request Status
-```php
-enum RequestStatus: string {
-    case PENDING = 'pending';
-    case APPROVED = 'approved';
-    case REJECTED = 'rejected';
-    case CANCELLED = 'cancelled';
-}
+Đây là luồng chính cho yêu cầu:
+
+`nhân viên / bác sĩ báo sự cố -> quản lý duyệt -> kỹ thuật viên xử lý`
+
+### 4.4 Asset và Disposal
+
+```text
+assets 1 --- * disposals
 ```
 
-## Soft Deletes
+- Một tài sản có thể có nhiều bản ghi thu hủy nếu cần lưu lịch sử điều chỉnh.
+- Ở luồng chuẩn hiện tại, tài sản retired sẽ có ít nhất một disposal record.
 
-Tables using soft deletes (have `deleted_at` column):
-- `assets` - Retired assets kept for history
-- `users` - Deactivated accounts
+## 5. Trường dữ liệu giữ tương thích
 
-Tables using `is_active` flag instead:
-- `locations` - May have assets still referencing them
-- `employees` - Employment status tracking
+Schema hiện có một số cặp cột song song để không phá dữ liệu cũ:
 
-## Indexing Strategy
+| Cột | Mục đích |
+| --- | --- |
+| `users.role` và `users.role_id` | Tương thích role cũ và chuẩn hóa sang bảng `roles` |
+| `maintenance_events.assigned_to` và `assigned_to_user_id` | Hỗ trợ dữ liệu text cũ và liên kết user chuẩn |
+| `requests.asset_id` và `request_items.asset_id` | Header giữ asset chính, item giữ chi tiết |
 
-### Required Indexes
-- All foreign keys
-- Frequently filtered columns: `status`, `is_active`, `created_at`
-- Search columns: `name`, `asset_code`, `employee_code`
+Nguyên tắc:
 
-### Composite Indexes
-```sql
--- Asset search
-INDEX idx_assets_search (status, is_active, asset_code)
+- Dùng khóa ngoại chuẩn khi có thể.
+- Giữ trường text cũ để đọc dữ liệu legacy.
+- Seeder/migration sẽ backfill từ trường cũ sang trường mới.
 
--- Assignment lookup
-INDEX idx_assignments_active (asset_id, returned_at)
+## 6. Quy ước migration
 
--- Check-in queries
-INDEX idx_checkins_date (employee_id, checked_in_at)
+Tên file migration theo mẫu:
+
+```text
+YYYY_MM_DD_HHMMSS_ten_nghiep_vu.php
 ```
 
-## Migration Naming
+Ví dụ:
 
-Format: `{YYYY_MM_DD_HHMMSS}_{action}_{table}_table.php`
+- `2026_04_07_180000_create_erd_alignment_tables.php`
+- `2026_04_07_180100_align_existing_tables_with_erd.php`
+- `2026_04_07_190000_normalize_roles_for_dfd_scope.php`
 
-Examples:
-- `2024_01_01_000001_create_employees_table.php`
-- `2024_01_15_000001_create_locations_table.php`
-- `2024_02_01_000001_add_warranty_fields_to_assets_table.php`
+## 7. Quy ước seeder
 
-## Data Integrity
+Seeder chính trong repo:
 
-### Cascading Rules
+- `DatabaseSeeder`: dữ liệu tối thiểu cho môi trường local
+- `FinalMvpSeeder`: dataset demo lớn
+- `DemoSeeder`: dữ liệu tương thích và tình huống demo bổ sung
+- `ErdAlignmentSeeder`: backfill role/category/approval/repair/disposal
 
-| Parent | Child | On Delete | Reason |
-|--------|-------|-----------|--------|
-| employees | asset_assignments | RESTRICT | Preserve assignment history |
-| employees | users | SET NULL | User can exist without employee link |
-| assets | asset_assignments | CASCADE | Assignment meaningless without asset |
-| assets | asset_qr_identities | CASCADE | QR tied to specific asset |
+Ưu tiên:
 
-### Constraints
+- dùng `updateOrCreate`, `firstOrCreate`
+- tránh tạo dữ liệu trùng
+- có thể chạy nhiều lần
 
-```sql
--- Assets must have positive values
-CHECK (purchase_cost >= 0)
-CHECK (useful_life_months > 0 OR useful_life_months IS NULL)
+## 8. Ràng buộc nghiệp vụ cần giữ
 
--- Assignments must have valid dates
-CHECK (returned_at IS NULL OR returned_at >= assigned_at)
+- Tài sản `off_service` hoặc `maintenance` không được:
+  - check-in
+  - assign
+  - loan
+- Phiếu `JUSTIFICATION` khi duyệt phải có `assigned_to_user_id`.
+- User được chỉ định cho phiếu sự cố phải là `technician`.
+- Event bảo trì loại `repair` phải đồng bộ sang `repair_logs`.
+- Tài sản `retired` cần có `disposals`.
 
--- Location names must be unique
-UNIQUE (name) ON locations
-```
+## 9. Khi thêm bảng mới
 
-## Query Patterns
+Khi mở rộng schema, nên tuân thủ:
 
-### Getting Active Assignments
-```php
-// Current holder of an asset
-Asset::find($id)->currentAssignment?->employee;
+- có model rõ ràng nếu bảng đi vào nghiệp vụ chính
+- có seeder/backfill nếu ảnh hưởng dữ liệu cũ
+- không phá các cột legacy đang được frontend hoặc seeder cũ dùng
+- cập nhật tài liệu trong:
+  - `DB_CONVENTIONS.md`
+  - `SEED_DATA.md`
+  - `RBAC_MATRIX.md` nếu có API mới
 
-// All assets held by an employee
-Employee::find($id)->currentAssets;
-```
+## 10. Tài liệu liên quan
 
-### Filtering by Employee via User
-```php
-// Get user's employee record, then filter
-$employeeId = auth()->user()->employee_id;
-AssetCheckin::where('employee_id', $employeeId)->get();
-```
-
-### Audit Trail
-```php
-// Who approved a request?
-$request->events()->where('action', 'approved')->first()->user;
-```
+- [Stack công nghệ](STACK.md)
+- [Ma trận RBAC](RBAC_MATRIX.md)
+- [Dữ liệu mẫu](SEED_DATA.md)

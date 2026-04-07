@@ -19,6 +19,7 @@ class Employee extends Model
         'employee_code',
         'full_name',
         'position',
+        'department',
         'dob',
         'gender',
         'phone',

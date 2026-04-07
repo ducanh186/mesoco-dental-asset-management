@@ -14,6 +14,7 @@ import {
 } from '../components/ui';
 import { useI18n } from '../i18n';
 import { requestsApi, assetsApi, myAssetsApi, shiftsApi, handleApiError } from '../services/api';
+import { hasOperationalAccess } from '../utils/roles';
 
 // ============================================================================
 // Constants
@@ -118,29 +119,23 @@ const RequestsPage = ({ user }) => {
     const fetchAssetsForType = async (requestType) => {
         try {
             let response;
-            const isAdminOrHr = user && ['admin', 'hr'].includes(user.role);
+            const canSelectAnyAsset = hasOperationalAccess(user);
             
             if (requestType === REQUEST_TYPES.JUSTIFICATION) {
-                if (isAdminOrHr) {
-                    // Admin/HR can create justification for any active asset
+                if (canSelectAnyAsset) {
                     response = await assetsApi.list({ per_page: 200, status: 'active' });
                     setAssetOptions((response.assets || []).map(a => ({
                         value: a.id,
                         label: a.asset_code ? `${a.asset_code} - ${a.name}` : `${a.name} (ID: ${a.id})`,
                     })));
                 } else {
-                    // Regular users: only their assigned assets
                     response = await myAssetsApi.dropdown();
-                    // API returns { data: [...] }
                     setAssetOptions(response.data || []);
                 }
             } else if (requestType === REQUEST_TYPES.ASSET_LOAN) {
-                // For Asset Loan: get available (unassigned) assets
                 response = await myAssetsApi.availableForLoan();
-                // API returns { data: [...] }
                 setAssetOptions(response.data || []);
             } else {
-                // Fallback to old behavior for other types (CONSUMABLE)
                 response = await assetsApi.list({ per_page: 100 });
                 setAssetOptions((response.assets || []).map(a => ({
                     value: a.id,

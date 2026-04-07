@@ -12,6 +12,7 @@ import {
     LoadingSpinner
 } from '../components/ui';
 import { useI18n } from '../i18n';
+import { normalizeRole } from '../utils/roles';
 import { preferLocalizedMessage } from '../services/api';
 
 /**
@@ -185,9 +186,9 @@ const ProfilePage = ({ user }) => {
     };
 
     const getRoleLabel = () => {
-        if (!user?.role) return t('roles.staff');
-        const label = t(`roles.${user.role}`);
-        return label === `roles.${user.role}` ? user.role : label;
+        const role = normalizeRole(user?.role);
+        const label = t(`roles.${role}`);
+        return label === `roles.${role}` ? role : label;
     };
 
     if (loading) {

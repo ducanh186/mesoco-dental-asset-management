@@ -13,9 +13,9 @@ use Illuminate\Validation\Rules\Password;
  * Validates user account creation requests.
  * 
  * RBAC Policy:
- * - Admin: Can create user with any role
- * - HR: Can create user but CANNOT set role (defaults to 'staff')
- *       Admin must assign role later via updateRole endpoint
+ * - Manager: Can create user with any canonical role
+ * - Technician: Can create user but CANNOT set role (defaults to 'employee')
+ *   Manager must assign elevated roles later via updateRole endpoint
  * 
  * This prevents HR from "indirectly assigning roles" during creation.
  */
@@ -23,11 +23,10 @@ class StoreUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     * Admin or HR can create users.
      */
     public function authorize(): bool
     {
-        return $this->user()->isAdmin() || $this->user()->isHr();
+        return $this->user()->hasOperationalAccess();
     }
 
     /**
@@ -51,9 +50,7 @@ class StoreUserRequest extends FormRequest
             ],
         ];
 
-        // Only Admin can set role during creation
-        // HR creates user with default role 'staff', Admin assigns proper role later
-        if ($this->user()->isAdmin()) {
+        if ($this->user()->canManageUsers()) {
             $rules['role'] = [
                 'required',
                 'string',
@@ -84,15 +81,14 @@ class StoreUserRequest extends FormRequest
 
     /**
      * Get the validated data with defaults applied.
-     * HR users get default role 'staff' since they cannot set role.
+     * Technicians get default role 'employee' since they cannot set role.
      */
     public function validated($key = null, $default = null): mixed
     {
         $validated = parent::validated($key, $default);
         
-        // If HR is creating user (no role in request), default to 'staff'
-        if (!$this->user()->isAdmin() && !isset($validated['role'])) {
-            $validated['role'] = 'staff';
+        if (!$this->user()->canManageUsers() && !isset($validated['role'])) {
+            $validated['role'] = User::ROLE_EMPLOYEE;
         }
         
         return $validated;

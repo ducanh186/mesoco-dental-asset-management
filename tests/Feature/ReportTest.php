@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Asset;
 use App\Models\AssetRequest;
-use App\Models\Feedback;
+use App\Models\Disposal;
 use App\Models\MaintenanceEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,17 +36,17 @@ class ReportTest extends TestCase
                 'assets',
                 'maintenance',
                 'requests',
-                'feedback',
+                'disposal',
             ]);
     }
 
-    public function test_hr_can_access_report_summary(): void
+    public function test_legacy_hr_alias_cannot_access_report_summary(): void
     {
         $hr = User::factory()->hr()->create();
 
         $response = $this->actingAs($hr)->getJson('/api/reports/summary');
 
-        $response->assertOk();
+        $response->assertForbidden();
     }
 
     public function test_technician_cannot_access_report_summary(): void
@@ -153,24 +153,48 @@ class ReportTest extends TestCase
     }
 
     // =========================================================================
-    // FEEDBACK STATS
+    // DISPOSAL STATS
     // =========================================================================
 
-    public function test_report_includes_feedback_stats(): void
+    public function test_report_includes_disposal_stats(): void
     {
         $admin = User::factory()->admin()->create();
 
-        Feedback::factory()->count(4)->create(['status' => 'new']);
-        Feedback::factory()->count(2)->create(['status' => 'in_progress']);
-        Feedback::factory()->count(3)->create(['status' => 'resolved']);
+        $destroyedAsset = Asset::factory()->retired()->withValuation()->create();
+        $liquidatedAsset = Asset::factory()->retired()->withValuation()->create();
+
+        Disposal::create([
+            'code' => 'DSP-202604-0001',
+            'asset_id' => $destroyedAsset->id,
+            'method' => 'destroy',
+            'reason' => 'Broken beyond repair',
+            'disposed_by_user_id' => $admin->id,
+            'approved_by_user_id' => $admin->id,
+            'disposed_at' => now(),
+            'asset_book_value' => 1000,
+            'proceeds_amount' => 0,
+        ]);
+
+        Disposal::create([
+            'code' => 'DSP-202604-0002',
+            'asset_id' => $liquidatedAsset->id,
+            'method' => 'liquidation',
+            'reason' => 'Replaced by new unit',
+            'disposed_by_user_id' => $admin->id,
+            'approved_by_user_id' => $admin->id,
+            'disposed_at' => now(),
+            'asset_book_value' => 2000,
+            'proceeds_amount' => 750,
+        ]);
 
         $response = $this->actingAs($admin)->getJson('/api/reports/summary');
 
         $response->assertOk()
-            ->assertJsonPath('feedback.unresolved', 6)
-            ->assertJsonPath('feedback.by_status.new', 4)
-            ->assertJsonPath('feedback.by_status.in_progress', 2)
-            ->assertJsonPath('feedback.by_status.resolved', 3);
+            ->assertJsonPath('disposal.retired_total', 2)
+            ->assertJsonPath('disposal.retired_in_period', 2)
+            ->assertJsonPath('disposal.by_method.destroy', 1)
+            ->assertJsonPath('disposal.by_method.liquidation', 1)
+            ->assertJsonPath('disposal.recovered_value', 750);
     }
 
     // =========================================================================
@@ -181,14 +205,29 @@ class ReportTest extends TestCase
     {
         $admin = User::factory()->admin()->create();
 
-        // Created this month
-        Feedback::factory()->count(3)->create([
-            'created_at' => now(),
+        $assetThisMonth = Asset::factory()->retired()->withValuation()->create();
+        $assetLastMonth = Asset::factory()->retired()->withValuation()->create();
+
+        Disposal::create([
+            'code' => 'DSP-202604-0010',
+            'asset_id' => $assetThisMonth->id,
+            'method' => 'destroy',
+            'reason' => 'Monthly disposal',
+            'disposed_by_user_id' => $admin->id,
+            'approved_by_user_id' => $admin->id,
+            'disposed_at' => now(),
+            'asset_book_value' => 100,
         ]);
 
-        // Created last month
-        Feedback::factory()->count(5)->create([
-            'created_at' => now()->subMonth(),
+        Disposal::create([
+            'code' => 'DSP-202603-0011',
+            'asset_id' => $assetLastMonth->id,
+            'method' => 'destroy',
+            'reason' => 'Previous month disposal',
+            'disposed_by_user_id' => $admin->id,
+            'approved_by_user_id' => $admin->id,
+            'disposed_at' => now()->subMonth(),
+            'asset_book_value' => 120,
         ]);
 
         $from = now()->startOfMonth()->toDateString();
@@ -197,6 +236,6 @@ class ReportTest extends TestCase
         $response = $this->actingAs($admin)->getJson("/api/reports/summary?from={$from}&to={$to}");
 
         $response->assertOk()
-            ->assertJsonPath('feedback.created_in_period', 3);
+            ->assertJsonPath('disposal.retired_in_period', 1);
     }
 }

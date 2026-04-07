@@ -1,21 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../i18n';
+import { hasOperationalAccess } from '../../utils/roles';
 
 /**
  * RecentEquipmentTable - Role-based equipment table
  * 
- * - Admin/HR: Shows global assets with full actions (View/Edit/Delete)
- * - Doctor/Staff/Technician: Shows "My Equipment" with limited actions (View/Create Request)
+ * - Quản lý/Kỹ thuật viên: Shows global assets with full actions
+ * - Doctor/Employee: Shows "My Equipment" with limited actions
  * 
  * @param {Object} props
  * @param {string} props.role - User role
  * @param {Array} props.data - Equipment data array
  * @param {boolean} props.loading - Loading state
  * @param {Function} props.onView - View handler
- * @param {Function} props.onEdit - Edit handler (Admin/HR only)
- * @param {Function} props.onDelete - Delete handler (Admin/HR only)
- * @param {Function} props.onCreateRequest - Create request handler (Doctor/Staff)
+ * @param {Function} props.onEdit - Edit handler (operational roles only)
+ * @param {Function} props.onDelete - Delete handler (operational roles only)
+ * @param {Function} props.onCreateRequest - Create request handler (requester roles)
  */
 const RecentEquipmentTable = ({ 
     role, 
@@ -27,7 +28,7 @@ const RecentEquipmentTable = ({
     onCreateRequest
 }) => {
     const { t } = useI18n();
-    const isAdminOrHr = ['admin', 'hr'].includes(role);
+    const isOperationalRole = hasOperationalAccess({ role });
 
     const getStatusBadgeClass = (status) => {
         const statusLower = (status || '').toLowerCase();
@@ -61,7 +62,7 @@ const RecentEquipmentTable = ({
             { key: 'status', label: t('common.status.label') },
         ];
 
-        if (isAdminOrHr) {
+        if (isOperationalRole) {
             return [
                 ...baseColumns,
                 { key: 'assignedTo', label: t('dashboard.assignedTo') },
@@ -70,7 +71,6 @@ const RecentEquipmentTable = ({
             ];
         }
 
-        // Doctor/Staff/Technician: My Equipment columns
         return [
             ...baseColumns,
             { key: 'lockStatus', label: t('dashboard.lockStatus') },
@@ -147,8 +147,7 @@ const RecentEquipmentTable = ({
                             </svg>
                         </button>
 
-                        {/* Admin/HR: Edit + Delete */}
-                        {isAdminOrHr && (
+                        {isOperationalRole && (
                             <>
                                 <button 
                                     onClick={() => onEdit?.(item)}
@@ -173,8 +172,7 @@ const RecentEquipmentTable = ({
                             </>
                         )}
 
-                        {/* Doctor/Staff: Create Request */}
-                        {!isAdminOrHr && (
+                        {!isOperationalRole && (
                             <button 
                                 onClick={() => onCreateRequest?.(item)}
                                 className="action-btn p-2 text-text-muted hover:text-warning hover:bg-warning/10 rounded-md transition-colors"
@@ -225,7 +223,7 @@ const RecentEquipmentTable = ({
             <div className="data-table-section bg-surface rounded-lg shadow-sm border border-border">
                 <div className="section-header p-4 border-b border-border">
                     <h3 className="section-title text-text font-semibold">
-                        {isAdminOrHr ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
+                        {isOperationalRole ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
                     </h3>
                 </div>
                 <div className="table-empty p-12 text-center text-text-muted">
@@ -236,7 +234,7 @@ const RecentEquipmentTable = ({
                     </svg>
                     <h4 className="text-text font-medium mb-2">{t('dashboard.noEquipmentFound')}</h4>
                     <p className="text-sm mb-4">{t('dashboard.noEquipmentHint')}</p>
-                    {isAdminOrHr && (
+                    {isOperationalRole && (
                         <Link to="/assets" className="btn btn-primary inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-text-invert rounded-lg">
                             {t('dashboard.addEquipment')}
                         </Link>
@@ -250,10 +248,10 @@ const RecentEquipmentTable = ({
         <div className="data-table-section bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
             <div className="section-header p-4 border-b border-border flex items-center justify-between">
                 <h3 className="section-title text-text font-semibold">
-                    {isAdminOrHr ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
+                    {isOperationalRole ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
                 </h3>
                 <Link 
-                    to={isAdminOrHr ? '/assets' : '/my-assets'} 
+                    to={isOperationalRole ? '/assets' : '/my-assets'} 
                     className="view-all-link text-sm text-primary hover:text-primary-hover flex items-center gap-1"
                 >
                     {t('dashboard.viewAll')}

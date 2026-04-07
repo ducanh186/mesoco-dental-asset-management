@@ -12,22 +12,20 @@ use Illuminate\Auth\Access\Response;
  * Phase 7: Maintenance RBAC rules.
  * 
  * Permission Matrix:
- * - Admin: Full access (CRUD + all transitions)
- * - HR: Full access (CRUD + all transitions)
- * - Technician: Create, update, start, complete, cancel own/assigned events
- * - Doctor/Staff: View only
+ * - Quản lý/Kỹ thuật viên: full maintenance operations
+ * - Bác sĩ/Nhân viên: view only
  */
 class MaintenanceEventPolicy
 {
     /**
      * Roles that have full maintenance management access.
      */
-    private const ADMIN_ROLES = ['admin', 'hr'];
+    private const FULL_ACCESS_ROLES = [User::ROLE_MANAGER, User::ROLE_TECHNICIAN];
 
     /**
      * Roles that can manage maintenance (create, update, transitions).
      */
-    private const MANAGER_ROLES = ['admin', 'hr', 'technician'];
+    private const MANAGER_ROLES = [User::ROLE_MANAGER, User::ROLE_TECHNICIAN];
 
     /**
      * Determine whether the user can view any maintenance events.
@@ -49,17 +47,17 @@ class MaintenanceEventPolicy
 
     /**
      * Determine whether the user can create maintenance events.
-     * Admin, HR, Technician only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, self::MANAGER_ROLES);
+        return $user->hasAnyRole(self::MANAGER_ROLES);
     }
 
     /**
      * Determine whether the user can update a maintenance event.
-     * Admin/HR: always
-     * Technician: only if they created it or are assigned to it
+     * Quản lý: always
+     * Kỹ thuật viên: only if they created it or are assigned to it
      */
     public function update(User $user, MaintenanceEvent $event): Response
     {
@@ -68,14 +66,16 @@ class MaintenanceEventPolicy
             return Response::deny('Cannot update a completed or canceled maintenance event.');
         }
 
-        // Admin/HR can update any
-        if (in_array($user->role, self::ADMIN_ROLES)) {
+        if ($user->hasRole(User::ROLE_MANAGER)) {
             return Response::allow();
         }
 
         // Technician can update their own or assigned events
-        if ($user->role === 'technician') {
+        if ($user->isTechnician()) {
             if ($event->created_by === $user->id) {
+                return Response::allow();
+            }
+            if ($event->assigned_to_user_id === $user->id) {
                 return Response::allow();
             }
             if ($event->assigned_to === $user->name || $event->assigned_to === $user->email) {
@@ -88,12 +88,12 @@ class MaintenanceEventPolicy
 
     /**
      * Determine whether the user can delete a maintenance event.
-     * Only Admin/HR, and only if still scheduled.
+     * Operational roles only, and only if still scheduled.
      */
     public function delete(User $user, MaintenanceEvent $event): Response
     {
-        if (!in_array($user->role, self::ADMIN_ROLES)) {
-            return Response::deny('Only admin or HR can delete maintenance events.');
+        if (!$user->hasAnyRole(self::FULL_ACCESS_ROLES)) {
+            return Response::deny('Only manager or technician can delete maintenance events.');
         }
 
         if ($event->status !== MaintenanceEvent::STATUS_SCHEDULED) {
@@ -105,11 +105,11 @@ class MaintenanceEventPolicy
 
     /**
      * Determine whether the user can start a maintenance event.
-     * Admin, HR, Technician only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function start(User $user, MaintenanceEvent $event): Response
     {
-        if (!in_array($user->role, self::MANAGER_ROLES)) {
+        if (!$user->hasAnyRole(self::MANAGER_ROLES)) {
             return Response::deny('You do not have permission to start maintenance.');
         }
 
@@ -122,11 +122,11 @@ class MaintenanceEventPolicy
 
     /**
      * Determine whether the user can complete a maintenance event.
-     * Admin, HR, Technician only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function complete(User $user, MaintenanceEvent $event): Response
     {
-        if (!in_array($user->role, self::MANAGER_ROLES)) {
+        if (!$user->hasAnyRole(self::MANAGER_ROLES)) {
             return Response::deny('You do not have permission to complete maintenance.');
         }
 
@@ -139,11 +139,11 @@ class MaintenanceEventPolicy
 
     /**
      * Determine whether the user can cancel a maintenance event.
-     * Admin, HR, Technician only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function cancel(User $user, MaintenanceEvent $event): Response
     {
-        if (!in_array($user->role, self::MANAGER_ROLES)) {
+        if (!$user->hasAnyRole(self::MANAGER_ROLES)) {
             return Response::deny('You do not have permission to cancel maintenance.');
         }
 
@@ -156,10 +156,10 @@ class MaintenanceEventPolicy
 
     /**
      * Determine whether the user can manually lock/unlock assets.
-     * Admin, HR, Technician only.
+     * Quản lý/Kỹ thuật viên only.
      */
     public function manageOffService(User $user): bool
     {
-        return in_array($user->role, self::MANAGER_ROLES);
+        return $user->hasAnyRole(self::MANAGER_ROLES);
     }
 }

@@ -1,160 +1,87 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n';
+import { ROLE_DOCTOR, ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_TECHNICIAN, getUserRole, hasOperationalAccess } from '../utils/roles';
 
 /**
- * Sidebar - OrangeHRM-inspired collapsible sidebar navigation
- * 
- * RBAC Menu Visibility (aligned with BFD):
- * ┌─────────────┬──────────────────────────────────────────────────────┐
- * │ Role        │ Menu Items                                           │
- * ├─────────────┼──────────────────────────────────────────────────────┤
- * │ admin       │ Dashboard, My Equipment, Asset Catalog,              │
- * │             │ Inventory & Valuation, Distribution Forms,           │
- * │             │ Review Distribution, Maintenance & Repair,           │
- * │             │ Feedback & Suggestions, Reports & Statistics,        │
- * │             │ Employee Profiles, Location Catalog, Admin           │
- * │ hr          │ Dashboard, My Equipment, Asset Catalog,              │
- * │             │ Inventory & Valuation, Distribution Forms,           │
- * │             │ Review Distribution, Maintenance & Repair,           │
- * │             │ Feedback & Suggestions, Reports & Statistics,        │
- * │             │ Employee Profiles, Location Catalog                  │
- * │ doctor      │ Dashboard, My Equipment, Distribution Forms,         │
- * │             │ Feedback & Suggestions, My Asset History             │
- * │ technician  │ Dashboard, My Equipment, Distribution Forms,         │
- * │             │ Maintenance & Repair, Feedback & Suggestions,        │
- * │             │ My Asset History                                     │
- * │ staff       │ Dashboard, My Equipment, Distribution Forms,         │
- * │             │ Feedback & Suggestions, My Asset History             │
- * └─────────────┴──────────────────────────────────────────────────────┘
+ * Sidebar focused on the 5 DFD level-0 tasks.
  */
 const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const location = useLocation();
     const { t } = useI18n();
     const [expandedMenus, setExpandedMenus] = useState({});
 
-    // Role helpers
-    const isAdmin = user?.role === 'admin';
-    const isHr = user?.role === 'hr';
-    const isTechnician = user?.role === 'technician';
-    const isDoctor = user?.role === 'doctor';
-    const isEmployee = user?.role === 'employee';
-    const isAdminOrHr = isAdmin || isHr;
-    const isNonAdminRole = isDoctor || isTechnician || isEmployee;
+    const role = getUserRole(user);
+    const isManager = role === ROLE_MANAGER;
+    const isTechnician = role === ROLE_TECHNICIAN;
+    const isDoctor = role === ROLE_DOCTOR;
+    const isEmployee = role === ROLE_EMPLOYEE;
+    const isOperationalRole = hasOperationalAccess(user);
+    const isRequesterOnlyRole = isDoctor || isEmployee;
 
-    // Navigation items with role-based visibility
     const navItems = [
-        // All users - Dashboard
         { 
             id: 'dashboard',
             path: '/dashboard', 
             labelKey: 'nav.dashboard', 
             icon: 'dashboard'
         },
-        // All users - My Equipment
         { 
             id: 'my-assets',
             path: '/my-assets', 
             labelKey: 'nav.myEquipment', 
             icon: 'myAssets'
         },
-        // All users - QR Scanner
         { 
             id: 'qr-scan',
             path: '/qr-scan', 
             labelKey: 'nav.qrScan', 
             icon: 'qrScan'
         },
-        // Admin/HR only - Equipment Catalog (Danh mục thiết bị)
-        ...(isAdminOrHr ? [{
-            id: 'assets',
-            path: '/assets', 
-            labelKey: 'nav.equipmentCatalog', 
-            icon: 'assets'
+        ...(isOperationalRole ? [{
+            id: 'catalog-records',
+            path: '/assets',
+            labelKey: 'nav.catalogRecords',
+            icon: 'assets',
+            children: [
+                { path: '/assets', label: t('nav.assets') },
+                { path: '/inventory', label: t('nav.inventoryValuation') },
+                { path: '/locations', label: t('nav.locations') },
+            ]
         }] : []),
-        // Admin/HR only - Inventory & Valuation (Kho & định giá)
-        ...(isAdminOrHr ? [{
-            id: 'inventory',
-            path: '/inventory', 
-            labelKey: 'nav.inventoryValuation', 
-            icon: 'inventory'
-        }] : []),
-        // All users - Requests
-        { 
-            id: 'requests',
-            path: '/requests', 
-            labelKey: 'nav.requests', 
-            icon: 'requests'
+        {
+            id: 'allocation-management',
+            path: '/requests',
+            labelKey: 'nav.allocationManagement',
+            icon: 'requests',
+            children: [
+                { path: '/requests', label: t('nav.requests') },
+                ...(isManager ? [{ path: '/review-requests', label: t('nav.reviewRequests') }] : []),
+            ]
         },
-        // Admin/HR only - Review Requests
-        ...(isAdminOrHr ? [{
-            id: 'review-requests',
-            path: '/review-requests', 
-            labelKey: 'nav.reviewRequests', 
-            icon: 'reviewRequests'
-        }] : []),
-        // Technician + Admin/HR - Maintenance
-        ...((isTechnician || isAdminOrHr) ? [{
+        ...(isOperationalRole ? [{
             id: 'maintenance',
             path: '/maintenance', 
             labelKey: 'nav.maintenance', 
             icon: 'maintenance'
         }] : []),
-        // Admin/HR only - Disposal (Thu hủy)
-        ...(isAdminOrHr ? [{
+        ...(isOperationalRole ? [{
             id: 'disposal',
             path: '/disposal',
             labelKey: 'nav.disposal',
             icon: 'disposal'
         }] : []),
-        // All users - Feedback
-        {
-            id: 'feedback',
-            path: '/feedback',
-            labelKey: 'nav.feedback',
-            icon: 'feedback'
-        },
-        // Non-admin roles only - My Asset History
-        ...(isNonAdminRole ? [{
-            id: 'my-asset-history',
-            path: '/my-asset-history', 
-            labelKey: 'nav.myAssetHistory', 
-            icon: 'history'
-        }] : []),
-        // Admin/HR only - Reports
-        ...(isAdminOrHr ? [{
+        ...(isManager ? [{
             id: 'reports',
             path: '/reports', 
             labelKey: 'nav.reports', 
             icon: 'reports'
         }] : []),
-        // Admin/HR only - Employees (Nhân viên)
-        ...(isAdminOrHr ? [{
-            id: 'employees',
-            path: '/employees', 
-            labelKey: 'nav.employees', 
-            icon: 'employees'
-        }] : []),
-        // Admin/HR only - Locations
-        ...(isAdminOrHr ? [{
-            id: 'locations',
-            path: '/locations', 
-            labelKey: 'nav.locations', 
-            icon: 'locations'
-        }] : []),
-        // Admin only - Contracts (legacy, can be removed later since Employee page has contract tab)
-        ...(isAdmin ? [{
-            id: 'contracts',
-            path: '/contracts', 
-            labelKey: 'nav.contracts', 
-            icon: 'contracts'
-        }] : []),
-        // Admin only - System Administration
-        ...(isAdmin ? [{
-            id: 'admin',
-            path: '/admin', 
-            labelKey: 'nav.admin', 
-            icon: 'admin'
+        ...(isRequesterOnlyRole || isTechnician ? [{
+            id: 'my-asset-history',
+            path: '/my-asset-history', 
+            labelKey: 'nav.myAssetHistory', 
+            icon: 'history'
         }] : []),
     ];
 
@@ -313,9 +240,11 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     };
 
     const renderNavItem = (item) => {
-        const active = isActive(item.path);
         const hasChildren = item.children && item.children.length > 0;
-        const isExpanded = expandedMenus[item.id];
+        const active = hasChildren
+            ? item.children.some(child => isActive(child.path))
+            : isActive(item.path);
+        const isExpanded = expandedMenus[item.id] ?? active;
 
         if (hasChildren) {
             return (

@@ -31,13 +31,13 @@ class DatabaseSeeder extends Seeder
         $this->call(ShiftSeeder::class);
 
         // ========================================
-        // Admin User (role: admin)
+        // Manager User (role: manager)
         // ========================================
         $adminEmployee = Employee::updateOrCreate(
             ['employee_code' => 'E0001'],
             [
                 'full_name' => 'Nguyễn Văn An',
-                'email' => 'admin@mesoco.vn',
+                'email' => 'manager@mesoco.vn',
                 'position' => 'Quản trị hệ thống',
                 'dob' => '1985-01-15',
                 'gender' => 'male',
@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
                 'employee_code' => $adminEmployee->employee_code,
                 'name' => $adminEmployee->full_name,
                 'email' => $adminEmployee->email,
-                'role' => 'admin',
+                'role' => 'manager',
                 'password' => Hash::make('password'),
                 'must_change_password' => false,
                 'status' => 'active',
@@ -61,18 +61,18 @@ class DatabaseSeeder extends Seeder
         );
 
         // ========================================
-        // HR User (role: hr)
+        // Technician User (role: technician)
         // ========================================
         $hrEmployee = Employee::updateOrCreate(
             ['employee_code' => 'E0002'],
             [
                 'full_name' => 'Trần Thị Bình',
-                'email' => 'hr@mesoco.vn',
+                'email' => 'technician@mesoco.vn',
                 'position' => 'Trưởng phòng Nhân sự',
                 'dob' => '1988-05-20',
                 'gender' => 'female',
                 'phone' => '0901234568',
-                'address' => '456 HR Street, Ho Chi Minh City',
+                'address' => '456 Service Street, Ho Chi Minh City',
                 'status' => 'active',
             ]
         );
@@ -83,7 +83,7 @@ class DatabaseSeeder extends Seeder
                 'employee_code' => $hrEmployee->employee_code,
                 'name' => $hrEmployee->full_name,
                 'email' => $hrEmployee->email,
-                'role' => 'hr',
+                'role' => 'technician',
                 'password' => Hash::make('password'),
                 'must_change_password' => false,
                 'status' => 'active',

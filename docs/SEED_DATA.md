@@ -1,292 +1,239 @@
-# Seed Data Documentation
+# Dữ liệu mẫu và seeder
 
-> **Last Updated:** January 27, 2026  
-> **Seeder:** `FinalMvpSeeder.php`
+Tài liệu này mô tả các seeder đang có trong repo, cách chạy và các tài khoản demo ổn định để kiểm thử nghiệp vụ.
 
-This document describes the demo data created by `FinalMvpSeeder` for MVP demonstration and testing purposes.
+## 1. Mục tiêu
 
----
+Seeder trong dự án phục vụ 3 mục đích:
 
-## Quick Start
+- dựng nhanh môi trường local
+- tạo dữ liệu demo cho 5 phân hệ chính
+- đồng bộ dữ liệu cũ sang schema đã align theo ERD mới
 
-### Safe Incremental Seed (Recommended)
+## 2. Các seeder chính
 
-Run this to add demo data to your **existing** database without losing current data:
+### 2.1 `DatabaseSeeder`
+
+Phục vụ dữ liệu tối thiểu để chạy app nhanh.
+
+Bao gồm:
+
+- shift cơ bản
+- một số employee và user nền
+- một số asset, QR, assignment, check-in
+
+Phù hợp khi cần:
+
+- smoke test nhanh
+- kiểm tra luồng đăng nhập
+- phát triển tính năng nhỏ
+
+### 2.2 `FinalMvpSeeder`
+
+Seeder demo lớn cho hầu hết phân hệ.
+
+Bao gồm:
+
+- location
+- shift
+- employee và user cho nhiều vai trò
+- asset số lượng lớn
+- assignment
+- request nhiều trạng thái
+- check-in
+- maintenance event
+- feedback cũ để tương thích
+
+Seeder này gọi thêm `ErdAlignmentSeeder` sau khi tạo dữ liệu.
+
+### 2.3 `DemoSeeder`
+
+Seeder bổ sung để tạo thêm case demo tương thích, đặc biệt ở các phần:
+
+- request mẫu
+- maintenance event mẫu
+- feedback mẫu
+- contract mẫu
+
+Seeder này cũng gọi thêm `ErdAlignmentSeeder`.
+
+### 2.4 `ErdAlignmentSeeder`
+
+Seeder đồng bộ dữ liệu cũ sang schema mới:
+
+- chuẩn hóa `users.role` và `role_id`
+- tạo `categories`
+- backfill `approvals`
+- đồng bộ `assigned_to_user_id` ở maintenance
+- tạo `repair_logs`
+- tạo `disposals` cho tài sản đã retired
+
+## 3. Cách chạy
+
+### Dựng dữ liệu tối thiểu
+
+```bash
+php artisan db:seed
+```
+
+### Dựng dataset demo lớn
 
 ```bash
 php artisan db:seed --class=FinalMvpSeeder
 ```
 
-### Fresh Database with All Seeds
+### Bơm thêm case demo tương thích
 
-Reset everything and start fresh:
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+### Chạy đồng bộ schema ERD riêng
+
+```bash
+php artisan db:seed --class=ErdAlignmentSeeder
+```
+
+### Reset toàn bộ rồi seed lại
 
 ```bash
 php artisan migrate:fresh --seed
 ```
 
-### Run via DatabaseSeeder
+## 4. Bộ tài khoản demo ổn định
+
+Các tài khoản dưới đây ổn định trong dữ liệu local tối thiểu và cũng được `DemoSeeder` giữ đồng nhất:
 
-The `FinalMvpSeeder` can also be called from `DatabaseSeeder`:
+| Mã nhân viên | Vai trò | Email | Mật khẩu |
+| --- | --- | --- | --- |
+| `E0001` | `manager` | `manager@mesoco.vn` | `password` |
+| `E0002` | `technician` | `technician@mesoco.vn` | `password` |
+| `E0003` | `doctor` | `doctor@mesoco.vn` | `password` |
+| `E0004` | `technician` | `tech@mesoco.vn` | `password` |
+| `E0005` | `employee` | `staff@mesoco.vn` | `password` |
 
-```php
-// In DatabaseSeeder.php
-$this->call([
-    ShiftSeeder::class,
-    FinalMvpSeeder::class,
-]);
-```
+Dataset mở rộng từ `FinalMvpSeeder` có thể có thêm:
 
----
+- `E0006`
+- `E0007`
+- `E0008`
+- các employee không có tài khoản đăng nhập như `E0009`, `E0010`
 
-## Demo Accounts
+## 5. Những nhóm dữ liệu đã được seed
 
-All demo accounts use the same password: **`password`**
+### 5.1 Danh mục và hồ sơ
 
-| Employee Code | Name                  | Role         | Email               | Position              |
-|---------------|-----------------------|--------------|---------------------|-----------------------|
-| E0001         | Nguyễn Văn Admin      | **ADMIN**    | admin@mesoco.vn     | System Administrator  |
-| E0002         | Trần Thị HR           | **HR**       | hr@mesoco.vn        | HR Manager            |
-| E0003         | Dr. Lê Văn Bác Sĩ     | **DOCTOR**   | doctor1@mesoco.vn   | Senior Dentist        |
-| E0004         | Dr. Phạm Thị Nha Sĩ   | **DOCTOR**   | doctor2@mesoco.vn   | Orthodontist          |
-| E0005         | Hoàng Văn Kỹ Thuật    | **TECHNICIAN** | tech1@mesoco.vn   | Dental Technician     |
-| E0006         | Võ Thị Kỹ Thuật Viên  | **TECHNICIAN** | tech2@mesoco.vn   | Lab Technician        |
-| E0007         | Đặng Văn Nhân Viên    | **EMPLOYEE** | staff1@mesoco.vn    | Receptionist          |
-| E0008         | Bùi Thị Lễ Tân        | **EMPLOYEE** | staff2@mesoco.vn    | Dental Assistant      |
+- vị trí
+- tài sản
+- category
+- QR identity
+- assignment
+- employee
+- user
+- role
 
-### Employees Without User Accounts
+### 5.2 Cấp phát
 
-These employees exist but don't have login credentials (for testing assignment without login):
+- request đủ loại:
+  - `JUSTIFICATION`
+  - `ASSET_LOAN`
+  - `CONSUMABLE_REQUEST`
+- request ở nhiều trạng thái:
+  - `SUBMITTED`
+  - `APPROVED`
+  - `REJECTED`
+  - `CANCELLED`
+- request event
+- approval record
 
-| Employee Code | Name               | Position        |
-|---------------|--------------------|-----------------|
-| E0009         | Ngô Văn Pending    | Trainee Dentist |
-| E0010         | Lý Thị Thực Tập    | Intern          |
+### 5.3 Bảo trì và sửa chữa
 
----
+- maintenance event:
+  - `scheduled`
+  - `in_progress`
+  - `completed`
+  - `canceled`
+- repair log được sync cho event loại `repair`
 
-## Locations
+### 5.4 Thu hủy
 
-| Name                      | Description                              |
-|---------------------------|------------------------------------------|
-| Main Clinic - District 1  | Primary dental clinic with 5 treatment rooms |
-| Branch Clinic - District 3 | Branch office with 3 treatment rooms    |
-| Storage Warehouse         | Central storage for equipment and supplies |
+- asset `retired`
+- disposal record do seeder đồng bộ tạo ra hoặc do dữ liệu demo sinh sẵn
 
----
+### 5.5 Báo cáo
 
-## Shifts
+Seeder không tạo bảng “report” riêng. Báo cáo được tính tổng hợp từ:
 
-| Code | Name            | Time          |
-|------|-----------------|---------------|
-| S1   | Morning Shift   | 08:00 - 12:00 |
-| S2   | Afternoon Shift | 13:00 - 17:00 |
-| S3   | Evening Shift   | 18:00 - 21:00 |
+- `assets`
+- `requests`
+- `maintenance_events`
+- `disposals`
 
----
+## 6. Kịch bản kiểm thử đề xuất
 
-## Assets Summary
+### 6.1 Luồng báo sự cố
 
-Total: **65 assets** with MSA-XXXX code pattern
+1. Đăng nhập `E0003`
+2. Tạo request loại `JUSTIFICATION`
+3. Đăng nhập `E0001`
+4. Duyệt request và chỉ định `E0002` hoặc `E0004`
+5. Kiểm tra có `maintenance_events` và `repair_logs`
 
-### By Type
+### 6.2 Luồng mượn thiết bị
 
-| Type      | Count | Asset Codes          |
-|-----------|-------|----------------------|
-| Machine   | 10    | MSA-0001 to MSA-0010 |
-| Equipment | 40    | MSA-0011 to MSA-0020, MSA-0036 to MSA-0065 |
-| Tool      | 8     | MSA-0021 to MSA-0028 |
-| Tray      | 5     | MSA-0029 to MSA-0033 |
-| Other     | 2     | MSA-0034 to MSA-0035 |
+1. Đăng nhập `E0005`
+2. Tạo request loại `ASSET_LOAN`
+3. Đăng nhập `E0001`
+4. Duyệt hoặc từ chối
+5. Kiểm tra `request_events` và `approvals`
 
-### By Status
+### 6.3 Luồng bảo trì
 
-| Status      | Count | Examples                           |
-|-------------|-------|------------------------------------|
-| Active      | 55    | Most assets                        |
-| Maintenance | 6     | MSA-0019, MSA-0042, MSA-0064       |
-| Off-Service | 2     | MSA-0009, MSA-0043                 |
-| Retired     | 2     | MSA-0020, MSA-0065                |
+1. Đăng nhập `E0002` hoặc `E0004`
+2. Vào danh sách bảo trì
+3. Bắt đầu event `scheduled`
+4. Hoàn thành event
+5. Kiểm tra lock/unlock của tài sản
 
-### High-Value Assets (> 50M VND)
+### 6.4 Luồng thu hủy
 
-| Code     | Name                      | Purchase Cost |
-|----------|---------------------------|---------------|
-| MSA-0010 | Dental CT Scanner (CBCT)  | 350,000,000 ₫ |
-| MSA-0005 | CAD/CAM Milling Machine   | 250,000,000 ₫ |
-| MSA-0001 | Dental Panoramic X-Ray    | 120,000,000 ₫ |
-| MSA-0019 | Intraoral Scanner         | 95,000,000 ₫  |
-| MSA-0011 | Dental Chair Unit #1      | 85,000,000 ₫  |
+1. Đăng nhập `E0002` hoặc `E0001`
+2. Thực hiện retire một asset
+3. Kiểm tra:
+   - `assets.status = retired`
+   - có record ở `disposals`
 
-### Warranty Status
+## 7. Tính chất idempotent
 
-| Status              | Count | Examples                     |
-|---------------------|-------|------------------------------|
-| Valid (> 6 months)  | 25+   | Most recent purchases        |
-| Expiring Soon       | 3     | MSA-0004, MSA-0014, MSA-0015 |
-| Expired             | 5+    | MSA-0007, MSA-0009, MSA-0020 |
+Seeder trong repo chủ yếu dùng:
 
----
+- `updateOrCreate`
+- `firstOrCreate`
 
-## Assignments
+Nghĩa là:
 
-### Active Assignments (13 total)
+- có thể chạy lại nhiều lần
+- hạn chế tạo trùng
+- phù hợp cho local/dev/demo
 
-| Employee   | Role       | Assets Assigned                  |
-|------------|------------|----------------------------------|
-| E0003      | Doctor     | MSA-0002, MSA-0014, MSA-0021     |
-| E0004      | Doctor     | MSA-0013, MSA-0032               |
-| E0005      | Technician | MSA-0003, MSA-0004, MSA-0022     |
-| E0006      | Technician | MSA-0005, MSA-0019               |
-| E0007      | Staff      | MSA-0029                         |
-| E0008      | Staff      | MSA-0030, MSA-0031               |
+Tuy nhiên vẫn nên cẩn thận khi:
 
-### Historical Assignments (for testing history view)
+- đã có dữ liệu thật trong DB
+- dùng chung DB giữa nhiều người
+- cần giữ nguyên timestamp lịch sử
 
-- MSA-0011 was previously assigned to E0003, then unassigned
-- MSA-0016 was previously assigned to E0005, then unassigned
+## 8. Gợi ý dùng seeder theo ngữ cảnh
 
----
+| Nhu cầu | Lệnh phù hợp |
+| --- | --- |
+| Dựng local nhanh | `php artisan db:seed` |
+| Demo đầy đủ | `php artisan db:seed --class=FinalMvpSeeder` |
+| Tạo thêm case minh họa | `php artisan db:seed --class=DemoSeeder` |
+| Đồng bộ sau khi đổi schema | `php artisan db:seed --class=ErdAlignmentSeeder` |
+| Reset hoàn toàn | `php artisan migrate:fresh --seed` |
 
-## Requests
+## 9. Tài liệu liên quan
 
-### Request Summary (10 total)
-
-| Code             | Type               | Status    | Requested By |
-|------------------|--------------------|-----------|--------------|
-| REQ-202501-0001  | JUSTIFICATION      | SUBMITTED | E0003        |
-| REQ-202501-0002  | JUSTIFICATION      | APPROVED  | E0005        |
-| REQ-202501-0003  | JUSTIFICATION      | REJECTED  | E0004        |
-| REQ-202501-0004  | ASSET_LOAN         | SUBMITTED | E0006        |
-| REQ-202501-0005  | ASSET_LOAN         | APPROVED  | E0003        |
-| REQ-202501-0006  | ASSET_LOAN         | CANCELLED | E0008        |
-| REQ-202501-0007  | CONSUMABLE_REQUEST | SUBMITTED | E0007        |
-| REQ-202501-0008  | CONSUMABLE_REQUEST | APPROVED  | E0005        |
-| REQ-202501-0009  | CONSUMABLE_REQUEST | REJECTED  | E0004        |
-| REQ-202501-0010  | CONSUMABLE_REQUEST | SUBMITTED | E0003        |
-
-### By Status
-
-| Status    | Count |
-|-----------|-------|
-| SUBMITTED | 4     |
-| APPROVED  | 3     |
-| REJECTED  | 2     |
-| CANCELLED | 1     |
-
----
-
-## QR Identities
-
-All 65 assets have QR identities with:
-- **Format:** `MESOCO|ASSET|v1|<uuid>`
-- **Payload Version:** v1
-
-Example QR codes to test scanning:
-
-```
-Asset: MSA-0001 (Dental Panoramic X-Ray)
-QR Payload: MESOCO|ASSET|v1|<auto-generated-uuid>
-
-Asset: MSA-0011 (Dental Chair Unit #1)
-QR Payload: MESOCO|ASSET|v1|<auto-generated-uuid>
-```
-
-> Note: UUIDs are auto-generated on first seed. Query the database to get actual values.
-
----
-
-## Check-ins
-
-### Check-in Records (8 total)
-
-| Asset    | Employee | Shift     | Status       |
-|----------|----------|-----------|--------------|
-| MSA-0002 | E0003    | Morning   | Completed    |
-| MSA-0014 | E0003    | Afternoon | Completed    |
-| MSA-0021 | E0003    | Morning   | Completed    |
-| MSA-0003 | E0005    | Morning   | Completed    |
-| MSA-0004 | E0005    | Afternoon | Completed    |
-| MSA-0013 | E0004    | Morning   | Completed    |
-| MSA-0032 | E0004    | Morning   | **Active** ⏳ |
-| MSA-0029 | E0007    | Morning   | Completed    |
-
----
-
-## Test Scenarios
-
-Use this data to verify the following features:
-
-### ✅ Authentication & RBAC
-
-1. Login as each role (admin, hr, doctor, technician, employee)
-2. Verify menu visibility per role
-3. Test unauthorized access attempts
-
-### ✅ Asset Management
-
-1. View asset list with filters (type, status, category)
-2. Check depreciation calculations
-3. View assets with expired/expiring warranties
-4. Search by asset code (MSA-XXXX)
-
-### ✅ Inventory & Valuation
-
-1. View inventory summary by category
-2. Check depreciation reports
-3. Filter fully depreciated assets
-4. Export asset valuation data
-
-### ✅ Assignments
-
-1. View current assignments per employee
-2. Check assignment history
-3. Assign/unassign assets (admin only)
-4. View "My Assets" for logged-in user
-
-### ✅ Requests
-
-1. Create new requests (all types)
-2. Approve/reject requests (admin/hr)
-3. View request history
-4. Check request events timeline
-
-### ✅ Check-in/Check-out
-
-1. Scan QR to check-in
-2. Manual check-in
-3. View active check-ins
-4. Complete check-out
-
----
-
-## Idempotency
-
-The seeder uses `updateOrCreate` pattern, meaning:
-
-- ✅ Safe to run multiple times
-- ✅ Won't duplicate data
-- ✅ Updates existing records with same identifiers
-- ✅ Wrapped in DB transaction (all-or-nothing)
-
----
-
-## Customization
-
-To add more demo data, edit [FinalMvpSeeder.php](../database/seeders/FinalMvpSeeder.php):
-
-```php
-// Add new asset
-$assetsData[] = [
-    'asset_code' => 'MSA-0066',
-    'name' => 'New Equipment',
-    'type' => Asset::TYPE_EQUIPMENT,
-    // ... other fields
-];
-```
-
-Then re-run the seeder:
-
-```bash
-php artisan db:seed --class=FinalMvpSeeder
-```
+- [Stack công nghệ](STACK.md)
+- [Quy ước database](DB_CONVENTIONS.md)
+- [Checklist nghiệm thu](feat_role.md)

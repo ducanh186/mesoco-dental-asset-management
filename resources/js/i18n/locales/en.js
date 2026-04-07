@@ -102,6 +102,8 @@ export default {
     nav: {
         dashboard: 'Dashboard',
         profile: 'Profile',
+        catalogRecords: 'Catalog & Records',
+        allocationManagement: 'Allocation Management',
         employees: 'Employee Profiles',
         assets: 'Asset Catalog',
         equipmentCatalog: 'Asset Catalog',
@@ -110,8 +112,8 @@ export default {
         equipment: 'Equipment',
         shifts: 'Shifts',
         checkin: 'Shift Check-in',
-        requests: 'Distribution Forms',
-        reviewRequests: 'Review Distribution',
+        requests: 'Allocation & Incident Forms',
+        reviewRequests: 'Review Requests',
         inventory: 'Periodic Inventory',
         inventoryValuation: 'Inventory & Valuation',
         maintenance: 'Maintenance & Repair',
@@ -240,9 +242,9 @@ export default {
         technician: 'Technician',
         receptionist: 'Receptionist',
         manager: 'Manager',
-        admin: 'Admin',
+        admin: 'Manager',
         owner: 'Owner',
-        hr: 'HR',
+        hr: 'Technician',
     },
 
     // ========================================================================
@@ -510,8 +512,8 @@ export default {
         
         // Roles
         roles: {
-            admin: 'Administrator',
-            hr: 'HR',
+            admin: 'Manager',
+            hr: 'Technician',
             doctor: 'Doctor',
             technician: 'Technician',
             staff: 'Staff',

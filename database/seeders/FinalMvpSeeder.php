@@ -76,6 +76,8 @@ class FinalMvpSeeder extends Seeder
             $this->seedFeedback();
         });
 
+        $this->call(ErdAlignmentSeeder::class);
+
         $this->command->newLine();
         $this->command->info('✅ Final MVP Seeder completed successfully!');
         $this->printSummary();
@@ -145,29 +147,29 @@ class FinalMvpSeeder extends Seeder
         $this->command->info('👥 Seeding employees and users...');
 
         $employeeData = [
-            // Admin
+            // Manager
             [
                 'employee_code' => 'E0001',
-                'full_name' => 'Nguyễn Văn Admin',
-                'email' => 'admin@mesoco.vn',
-                'position' => 'System Administrator',
+                'full_name' => 'Nguyễn Văn Quản Lý',
+                'email' => 'manager@mesoco.vn',
+                'position' => 'Equipment Manager',
                 'dob' => '1985-03-15',
                 'gender' => 'male',
                 'phone' => '0901234567',
-                'address' => '100 Admin Street, District 1, HCMC',
-                'role' => User::ROLE_ADMIN,
+                'address' => '100 Manager Street, District 1, HCMC',
+                'role' => User::ROLE_MANAGER,
             ],
-            // HR Manager
+            // Senior technician
             [
                 'employee_code' => 'E0002',
-                'full_name' => 'Trần Thị HR',
-                'email' => 'hr@mesoco.vn',
-                'position' => 'HR Manager',
+                'full_name' => 'Trần Thị Kỹ Thuật',
+                'email' => 'technician@mesoco.vn',
+                'position' => 'Senior Technician',
                 'dob' => '1988-07-22',
                 'gender' => 'female',
                 'phone' => '0901234568',
-                'address' => '200 HR Avenue, District 3, HCMC',
-                'role' => User::ROLE_HR,
+                'address' => '200 Service Avenue, District 3, HCMC',
+                'role' => User::ROLE_TECHNICIAN,
             ],
             // Doctors
             [

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Asset;
 use App\Models\AssetAssignment;
+use App\Models\MaintenanceEvent;
 use App\Models\AssetRequest;
 use App\Models\Employee;
 use App\Models\RequestEvent;
@@ -55,10 +56,10 @@ class RequestTest extends TestCase
             'must_change_password' => false,
         ]);
 
-        // Create HR user
+        // Create technician user (legacy HR alias)
         $hrEmployee = Employee::factory()->create([
             'employee_code' => 'HR001',
-            'full_name' => 'HR User',
+            'full_name' => 'Technician User',
         ]);
         $this->hrUser = User::factory()->create([
             'employee_id' => $hrEmployee->id,
@@ -520,7 +521,7 @@ class RequestTest extends TestCase
             ->assertJsonCount(1, 'requests');
     }
 
-    public function test_hr_can_view_review_queue(): void
+    public function test_technician_cannot_view_review_queue(): void
     {
         AssetRequest::create([
             'code' => AssetRequest::generateCode(),
@@ -534,7 +535,7 @@ class RequestTest extends TestCase
         $response = $this->actingAs($this->hrUser)
             ->getJson('/api/review-requests');
 
-        $response->assertOk();
+        $response->assertForbidden();
     }
 
     public function test_employee_cannot_view_review_queue(): void
@@ -586,6 +587,7 @@ class RequestTest extends TestCase
             'type' => 'JUSTIFICATION',
             'status' => 'SUBMITTED',
             'requested_by_employee_id' => $this->employee->id,
+            'asset_id' => $this->asset->id,
             'title' => 'To Approve',
             'severity' => 'low',
         ]);
@@ -594,17 +596,52 @@ class RequestTest extends TestCase
             ->postJson("/api/requests/{$request->id}/review", [
                 'action' => 'APPROVE',
                 'note' => 'Looks good, approved.',
+                'assigned_to_user_id' => $this->hrUser->id,
             ]);
 
         $response->assertOk()
             ->assertJsonPath('request.status', 'APPROVED')
             ->assertJsonPath('request.review_note', 'Looks good, approved.')
+            ->assertJsonPath('request.assigned_to.id', $this->hrUser->id)
+            ->assertJsonPath('maintenance_event.type', MaintenanceEvent::TYPE_REPAIR)
             ->assertJsonPath('request.is_final', true);
 
         $this->assertDatabaseHas('request_events', [
             'request_id' => $request->id,
             'event_type' => 'APPROVED',
         ]);
+
+        $this->assertDatabaseHas('request_events', [
+            'request_id' => $request->id,
+            'event_type' => 'DISPATCHED',
+        ]);
+
+        $this->assertDatabaseHas('maintenance_events', [
+            'asset_id' => $this->asset->id,
+            'type' => MaintenanceEvent::TYPE_REPAIR,
+            'assigned_to_user_id' => $this->hrUser->id,
+        ]);
+    }
+
+    public function test_justification_review_requires_technician_assignment(): void
+    {
+        $request = AssetRequest::create([
+            'code' => AssetRequest::generateCode(),
+            'type' => 'JUSTIFICATION',
+            'status' => 'SUBMITTED',
+            'requested_by_employee_id' => $this->employee->id,
+            'asset_id' => $this->asset->id,
+            'title' => 'Missing Technician',
+            'severity' => 'high',
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->postJson("/api/requests/{$request->id}/review", [
+                'action' => 'APPROVE',
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['assigned_to_user_id']);
     }
 
     public function test_admin_can_reject_request(): void
@@ -804,8 +841,8 @@ class RequestTest extends TestCase
         // Admin can review
         $this->assertTrue($this->adminUser->can('review', $request));
         
-        // HR can review
-        $this->assertTrue($this->hrUser->can('review', $request));
+        // Technician cannot review
+        $this->assertFalse($this->hrUser->can('review', $request));
         
         // Employee cannot review
         $this->assertFalse($this->employeeUser->can('review', $request));

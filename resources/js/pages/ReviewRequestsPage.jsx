@@ -13,7 +13,7 @@ import {
     useToast 
 } from '../components/ui';
 import { useI18n } from '../i18n';
-import { requestsApi, handleApiError } from '../services/api';
+import { requestsApi, usersApi, handleApiError } from '../services/api';
 
 // ============================================================================
 // Constants
@@ -39,7 +39,7 @@ const SEVERITIES = {
 };
 
 // ============================================================================
-// ReviewRequestsPage - Review queue for Admin/HR
+// ReviewRequestsPage - Manager review queue
 // ============================================================================
 const ReviewRequestsPage = ({ user }) => {
     const { t, locale } = useI18n();
@@ -62,6 +62,8 @@ const ReviewRequestsPage = ({ user }) => {
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [reviewAction, setReviewAction] = useState('');
     const [reviewNote, setReviewNote] = useState('');
+    const [assignedTechnicianId, setAssignedTechnicianId] = useState('');
+    const [technicians, setTechnicians] = useState([]);
     const [submitting, setSubmitting] = useState(false);
 
     // ========================================
@@ -92,6 +94,19 @@ const ReviewRequestsPage = ({ user }) => {
         fetchRequests();
     }, [fetchRequests]);
 
+    const fetchTechnicians = useCallback(async () => {
+        try {
+            const data = await usersApi.list({ role: 'technician', per_page: 100 });
+            setTechnicians(data.users || []);
+        } catch (error) {
+            console.error('Failed to fetch technicians:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchTechnicians();
+    }, [fetchTechnicians]);
+
     // ========================================
     // Actions
     // ========================================
@@ -105,21 +120,46 @@ const ReviewRequestsPage = ({ user }) => {
         }
     };
 
+    const closeReviewModal = () => {
+        setIsReviewOpen(false);
+        setReviewAction('');
+        setReviewNote('');
+        setAssignedTechnicianId('');
+    };
+
     const openReviewModal = (request, action) => {
         setSelectedRequest(request);
         setReviewAction(action);
         setReviewNote('');
+        setAssignedTechnicianId(request?.assigned_to?.id ? String(request.assigned_to.id) : '');
         setIsReviewOpen(true);
     };
 
     const handleReview = async () => {
         if (!selectedRequest || !reviewAction) return;
 
+        if (
+            reviewAction === 'APPROVE' &&
+            selectedRequest.requires_technician_assignment &&
+            !assignedTechnicianId
+        ) {
+            toast.error('Vui lòng chỉ định kỹ thuật viên trước khi duyệt phiếu sự cố');
+            return;
+        }
+
         setSubmitting(true);
         try {
-            await requestsApi.review(selectedRequest.id, reviewAction, reviewNote || null);
+            const payload = {
+                note: reviewNote || null,
+            };
+
+            if (assignedTechnicianId) {
+                payload.assigned_to_user_id = Number(assignedTechnicianId);
+            }
+
+            await requestsApi.review(selectedRequest.id, reviewAction, payload);
             toast.success(reviewAction === 'APPROVE' ? t('review.approveSuccess') : t('review.rejectSuccess'));
-            setIsReviewOpen(false);
+            closeReviewModal();
             setIsDetailOpen(false);
             setSelectedRequest(null);
             fetchRequests(pagination.current_page);
@@ -196,6 +236,7 @@ const ReviewRequestsPage = ({ user }) => {
             case 'CREATED': return 'Tạo phiếu';
             case 'SUBMITTED': return 'Gửi phiếu';
             case 'APPROVED': return 'Duyệt phiếu';
+            case 'DISPATCHED': return 'Chuyển kỹ thuật xử lý';
             case 'REJECTED': return 'Từ chối phiếu';
             case 'CANCELLED': return 'Hủy phiếu';
             default: return eventType;
@@ -479,6 +520,14 @@ const ReviewRequestsPage = ({ user }) => {
                                     <span className="ml-2 text-text">{selectedRequest.suspected_cause}</span>
                                 </div>
                             )}
+                            {selectedRequest.assigned_to && (
+                                <div>
+                                    <span className="text-text-muted">Kỹ thuật viên phụ trách:</span>
+                                    <span className="ml-2 text-text">
+                                        {selectedRequest.assigned_to.name}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Review Note (if already reviewed) */}
@@ -555,12 +604,12 @@ const ReviewRequestsPage = ({ user }) => {
             {/* Review Action Modal */}
             <Modal
                 isOpen={isReviewOpen}
-                onClose={() => { setIsReviewOpen(false); setReviewNote(''); }}
+                onClose={closeReviewModal}
                 title={`${reviewAction === 'APPROVE' ? t('review.approve') : t('review.reject')} phiếu`}
                 size="sm"
                 footer={
                     <div className="flex gap-3">
-                        <Button variant="secondary" onClick={() => { setIsReviewOpen(false); setReviewNote(''); }}>
+                        <Button variant="secondary" onClick={closeReviewModal}>
                             {t('common.cancel')}
                         </Button>
                         <Button 
@@ -584,6 +633,25 @@ const ReviewRequestsPage = ({ user }) => {
                         <div className="p-3 bg-surface-muted rounded-md">
                             <p className="font-medium text-text">{selectedRequest.code}</p>
                             <p className="text-sm text-text-muted">{selectedRequest.title}</p>
+                        </div>
+                    )}
+
+                    {reviewAction === 'APPROVE' && selectedRequest?.requires_technician_assignment && (
+                        <div>
+                            <label className="block text-sm font-medium text-text mb-1">
+                                Kỹ thuật viên phụ trách <span className="text-danger">*</span>
+                            </label>
+                            <Select
+                                options={[
+                                    { value: '', label: 'Chọn kỹ thuật viên...' },
+                                    ...technicians.map((technician) => ({
+                                        value: String(technician.id),
+                                        label: technician.name,
+                                    })),
+                                ]}
+                                value={assignedTechnicianId}
+                                onChange={(e) => setAssignedTechnicianId(e.target.value)}
+                            />
                         </div>
                     )}
 

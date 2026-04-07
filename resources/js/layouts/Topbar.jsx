@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import { useI18n } from '../i18n';
+import { normalizeRole } from '../utils/roles';
 
 /**
  * Topbar - OrangeHRM-inspired top navigation bar
@@ -41,9 +42,9 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
     };
 
     const getRoleLabel = () => {
-        if (!user?.role) return t('roles.staff');
-        const label = t(`roles.${user.role}`);
-        return label === `roles.${user.role}` ? user.role : label;
+        const role = normalizeRole(user?.role);
+        const label = t(`roles.${role}`);
+        return label === `roles.${role}` ? role : label;
     };
 
     const getUserInitials = () => {

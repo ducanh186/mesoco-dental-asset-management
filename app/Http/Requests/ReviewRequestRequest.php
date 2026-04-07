@@ -12,8 +12,7 @@ class ReviewRequestRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // User must be admin/HR to review requests
-        return $this->user()->isAdmin();
+        return $this->user()->canReviewRequests();
     }
 
     /**
@@ -24,6 +23,7 @@ class ReviewRequestRequest extends FormRequest
         return [
             'action' => ['required', 'string', Rule::in(['APPROVE', 'REJECT'])],
             'note' => ['nullable', 'string', 'max:2000'],
+            'assigned_to_user_id' => ['nullable', 'integer', 'exists:users,id'],
         ];
     }
 

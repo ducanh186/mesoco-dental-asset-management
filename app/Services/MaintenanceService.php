@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Asset;
 use App\Models\MaintenanceEvent;
+use App\Models\RepairLog;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -36,6 +37,8 @@ class MaintenanceService
         $this->validatePriority($data['priority'] ?? 'normal');
 
         return DB::transaction(function () use ($data, $user) {
+            $assignment = $this->resolveAssignmentData($data);
+
             $event = MaintenanceEvent::create([
                 'code' => MaintenanceEvent::generateCode(),
                 'asset_id' => $data['asset_id'],
@@ -45,12 +48,15 @@ class MaintenanceService
                 'priority' => $data['priority'] ?? MaintenanceEvent::PRIORITY_NORMAL,
                 'note' => $data['note'] ?? null,
                 'estimated_duration_minutes' => $data['estimated_duration_minutes'] ?? null,
-                'assigned_to' => $data['assigned_to'] ?? null,
+                'assigned_to' => $assignment['assigned_to'],
+                'assigned_to_user_id' => $assignment['assigned_to_user_id'],
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
 
-            return $event->fresh(['asset', 'creator']);
+            $this->syncRepairLog($event);
+
+            return $event->fresh(['asset', 'creator', 'assignedUser']);
         });
     }
 
@@ -76,20 +82,33 @@ class MaintenanceService
         }
 
         return DB::transaction(function () use ($event, $data, $user) {
-            $updateData = array_filter([
-                'type' => $data['type'] ?? null,
-                'planned_at' => $data['planned_at'] ?? null,
-                'priority' => $data['priority'] ?? null,
-                'note' => $data['note'] ?? null,
-                'estimated_duration_minutes' => $data['estimated_duration_minutes'] ?? null,
-                'assigned_to' => $data['assigned_to'] ?? null,
-            ], fn($v) => $v !== null);
+            $updateData = [];
+
+            foreach ([
+                'type',
+                'planned_at',
+                'priority',
+                'note',
+                'estimated_duration_minutes',
+            ] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $updateData[$field] = $data[$field];
+                }
+            }
+
+            if (array_key_exists('assigned_to', $data) || array_key_exists('assigned_to_user_id', $data)) {
+                $assignment = $this->resolveAssignmentData($data);
+                $updateData['assigned_to'] = $assignment['assigned_to'];
+                $updateData['assigned_to_user_id'] = $assignment['assigned_to_user_id'];
+            }
 
             $updateData['updated_by'] = $user->id;
 
             $event->update($updateData);
 
-            return $event->fresh(['asset', 'creator', 'updater']);
+            $this->syncRepairLog($event->fresh());
+
+            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
     }
 
@@ -138,7 +157,9 @@ class MaintenanceService
             // Lock the asset
             $this->lockAsset($asset, $user, "Maintenance in progress: {$event->code}");
 
-            return $event->fresh(['asset', 'creator', 'updater']);
+            $this->syncRepairLog($event->fresh());
+
+            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
     }
 
@@ -184,7 +205,9 @@ class MaintenanceService
             // Check if we should unlock the asset
             $this->maybeUnlockAsset($asset, $event->id);
 
-            return $event->fresh(['asset', 'creator', 'updater']);
+            $this->syncRepairLog($event->fresh());
+
+            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
     }
 
@@ -219,7 +242,9 @@ class MaintenanceService
                 $this->maybeUnlockAsset($asset, $event->id);
             }
 
-            return $event->fresh(['asset', 'creator', 'updater']);
+            $this->syncRepairLog($event->fresh());
+
+            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
     }
 
@@ -367,5 +392,62 @@ class MaintenanceService
                 "Invalid priority. Allowed: " . implode(', ', MaintenanceEvent::PRIORITIES)
             );
         }
+    }
+
+    private function resolveAssignmentData(array $data): array
+    {
+        $assignedUserId = $data['assigned_to_user_id'] ?? null;
+        $assignedTo = $data['assigned_to'] ?? null;
+
+        if ($assignedUserId) {
+            $assignedUser = User::query()->find($assignedUserId);
+
+            return [
+                'assigned_to' => $assignedUser?->name,
+                'assigned_to_user_id' => $assignedUser?->id,
+            ];
+        }
+
+        if ($assignedTo) {
+            $assignedUser = User::query()
+                ->where('name', $assignedTo)
+                ->orWhere('email', $assignedTo)
+                ->first();
+
+            return [
+                'assigned_to' => $assignedUser?->name ?? $assignedTo,
+                'assigned_to_user_id' => $assignedUser?->id,
+            ];
+        }
+
+        return [
+            'assigned_to' => null,
+            'assigned_to_user_id' => null,
+        ];
+    }
+
+    private function syncRepairLog(MaintenanceEvent $event): void
+    {
+        if (
+            $event->type !== MaintenanceEvent::TYPE_REPAIR &&
+            !$event->repairLog()->exists()
+        ) {
+            return;
+        }
+
+        RepairLog::updateOrCreate(
+            ['maintenance_event_id' => $event->id],
+            [
+                'asset_id' => $event->asset_id,
+                'technician_user_id' => $event->assigned_to_user_id,
+                'status' => $event->status,
+                'issue_description' => $event->note,
+                'action_taken' => $event->result_note,
+                'cost' => $event->cost,
+                'started_at' => $event->started_at,
+                'completed_at' => $event->completed_at,
+                'logged_at' => $event->completed_at ?? $event->started_at ?? $event->planned_at,
+            ]
+        );
     }
 }

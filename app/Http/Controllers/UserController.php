@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRoleRequest;
 use App\Models\Employee;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,8 +17,8 @@ use Illuminate\Support\Facades\Hash;
  * Handles user account management.
  * 
  * RBAC:
- * - Admin: Full access (list, create, update role, delete)
- * - HR: List, Create, View only (cannot change roles or delete)
+ * - Manager: Full access (list, create, update role, delete)
+ * - Technician: List, create, view only (cannot change roles or delete)
  * 
  * Features:
  * - List users with filtering by employee_code/name/role
@@ -26,8 +27,8 @@ use Illuminate\Support\Facades\Hash;
  * - Delete user account (Admin only)
  * 
  * Authorization enforced via:
- * 1. Route middleware: role:admin (for role changes, delete)
- * 2. Route middleware: role:admin,hr (for list, create, view)
+ * 1. Route middleware: role:manager (for role changes, delete)
+ * 2. Route middleware: role:manager,technician (for list, create, view)
  */
 class UserController extends Controller
 {
@@ -41,7 +42,10 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = User::with('employee:id,employee_code,full_name,email');
+        $query = User::with([
+            'employee:id,employee_code,full_name,email',
+            'roleDefinition:id,code,name',
+        ]);
 
         // Search by employee_code or name
         if ($search = $request->query('search')) {
@@ -64,6 +68,7 @@ class UserController extends Controller
                 'employee_code' => $user->employee_code,
                 'name' => $user->name,
                 'role' => $user->role,
+                'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
                 'status' => $user->status,
                 'employee' => $user->employee ? [
                     'id' => $user->employee->id,
@@ -81,7 +86,16 @@ class UserController extends Controller
                 'per_page' => $users->perPage(),
                 'total' => $users->total(),
             ],
-            'available_roles' => User::ROLES,
+            'available_roles' => Role::query()
+                ->where('is_active', true)
+                ->whereIn('code', User::ROLES)
+                ->orderBy('id')
+                ->pluck('code'),
+            'available_role_records' => Role::query()
+                ->where('is_active', true)
+                ->whereIn('code', User::ROLES)
+                ->orderBy('id')
+                ->get(['code', 'name']),
         ]);
     }
 
@@ -91,7 +105,7 @@ class UserController extends Controller
      * 
      * RBAC:
      * - Admin: Can set any role during creation
-     * - HR: Creates user with role='staff' (cannot set role)
+     * - HR: Creates user with role='employee' (cannot set role)
      *       Admin must assign proper role later via PATCH /users/{id}/role
      * 
      * After creation, user can login with employee_code + default_password.
@@ -107,7 +121,7 @@ class UserController extends Controller
             'employee_code' => $employee->employee_code,
             'name' => $employee->full_name,
             'email' => $employee->email,
-            'role' => $validated['role'], // Admin sets role, HR gets default 'staff'
+            'role' => User::normalizeRole($validated['role']),
             'password' => Hash::make($validated['default_password']),
             'must_change_password' => true,
             'status' => 'active',
@@ -120,6 +134,7 @@ class UserController extends Controller
                 'employee_code' => $user->employee_code,
                 'name' => $user->name,
                 'role' => $user->role,
+                'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
             ],
         ], 201);
     }
@@ -136,6 +151,7 @@ class UserController extends Controller
                 'employee_code' => $user->employee_code,
                 'name' => $user->name,
                 'role' => $user->role,
+                'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
                 'status' => $user->status,
                 'employee' => $user->employee ? [
                     'id' => $user->employee->id,
@@ -154,7 +170,7 @@ class UserController extends Controller
      */
     public function updateRole(UpdateUserRoleRequest $request, User $user): JsonResponse
     {
-        // Prevent admin from demoting themselves
+        // Prevent managers from changing their own role
         if ($request->user()->id === $user->id && $request->role !== $user->role) {
             return response()->json([
                 'message' => 'You cannot change your own role.',
@@ -162,7 +178,7 @@ class UserController extends Controller
         }
 
         $oldRole = $user->role;
-        $user->update(['role' => $request->role]);
+        $user->update(['role' => User::normalizeRole($request->role)]);
 
         return response()->json([
             'message' => "User role updated from '{$oldRole}' to '{$request->role}'.",
@@ -171,6 +187,7 @@ class UserController extends Controller
                 'employee_code' => $user->employee_code,
                 'name' => $user->name,
                 'role' => $user->role,
+                'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
             ],
         ]);
     }
@@ -205,7 +222,16 @@ class UserController extends Controller
     public function roles(): JsonResponse
     {
         return response()->json([
-            'roles' => User::ROLES,
+            'roles' => Role::query()
+                ->where('is_active', true)
+                ->whereIn('code', User::ROLES)
+                ->orderBy('id')
+                ->pluck('code'),
+            'role_records' => Role::query()
+                ->where('is_active', true)
+                ->whereIn('code', User::ROLES)
+                ->orderBy('id')
+                ->get(['code', 'name']),
         ]);
     }
 }

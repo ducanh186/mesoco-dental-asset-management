@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
@@ -112,6 +113,7 @@ class MaintenanceEvent extends Model
         'actual_duration_minutes',
         'cost',
         'assigned_to',
+        'assigned_to_user_id',
         'created_by',
         'updated_by',
     ];
@@ -155,6 +157,16 @@ class MaintenanceEvent extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+
+    public function repairLog(): HasOne
+    {
+        return $this->hasOne(RepairLog::class);
     }
 
     // =========================================================================
@@ -223,10 +235,16 @@ class MaintenanceEvent extends Model
     /**
      * Get upcoming events (scheduled and planned_at in future).
      */
-    public function scopeUpcoming($query)
+    public function scopeUpcoming($query, ?int $days = null)
     {
-        return $query->where('status', self::STATUS_SCHEDULED)
+        $query->where('status', self::STATUS_SCHEDULED)
             ->where('planned_at', '>', now());
+
+        if ($days) {
+            $query->where('planned_at', '<=', now()->addDays($days));
+        }
+
+        return $query;
     }
 
     // =========================================================================
@@ -295,6 +313,26 @@ class MaintenanceEvent extends Model
         static::creating(function (MaintenanceEvent $event) {
             if (empty($event->code)) {
                 $event->code = static::generateCode();
+            }
+        });
+
+        static::saving(function (MaintenanceEvent $event) {
+            if ($event->assigned_to_user_id) {
+                $event->assigned_to = User::query()
+                    ->whereKey($event->assigned_to_user_id)
+                    ->value('name') ?? $event->assigned_to;
+                return;
+            }
+
+            if ($event->assigned_to) {
+                $matchedUserId = User::query()
+                    ->where('name', $event->assigned_to)
+                    ->orWhere('email', $event->assigned_to)
+                    ->value('id');
+
+                if ($matchedUserId) {
+                    $event->assigned_to_user_id = $matchedUserId;
+                }
             }
         });
     }

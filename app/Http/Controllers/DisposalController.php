@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\Disposal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Controller for asset disposal management (Thu hủy).
@@ -89,6 +91,10 @@ class DisposalController extends Controller
     {
         $validated = $request->validate([
             'reason' => 'required|string|max:500',
+            'method' => 'nullable|string|in:' . implode(',', Disposal::METHODS),
+            'disposed_at' => 'nullable|date',
+            'proceeds_amount' => 'nullable|numeric|min:0',
+            'note' => 'nullable|string|max:2000',
         ]);
 
         if ($asset->status === Asset::STATUS_RETIRED) {
@@ -98,12 +104,31 @@ class DisposalController extends Controller
             ], 422);
         }
 
-        $asset->update([
-            'status' => Asset::STATUS_RETIRED,
-            'off_service_reason' => $validated['reason'],
-            'off_service_from' => now(),
-            'off_service_set_by' => $request->user()->id,
-        ]);
+        $user = $request->user();
+
+        $disposal = DB::transaction(function () use ($asset, $validated, $user) {
+            $disposedAt = $validated['disposed_at'] ?? now();
+
+            $asset->update([
+                'status' => Asset::STATUS_RETIRED,
+                'off_service_reason' => $validated['reason'],
+                'off_service_from' => $disposedAt,
+                'off_service_set_by' => $user?->id,
+            ]);
+
+            return Disposal::create([
+                'code' => Disposal::generateCode(),
+                'asset_id' => $asset->id,
+                'method' => $validated['method'] ?? 'destroy',
+                'reason' => $validated['reason'],
+                'disposed_by_user_id' => $user?->id,
+                'approved_by_user_id' => $user?->id,
+                'disposed_at' => $disposedAt,
+                'asset_book_value' => $asset->getCurrentBookValue(),
+                'proceeds_amount' => $validated['proceeds_amount'] ?? null,
+                'note' => $validated['note'] ?? null,
+            ]);
+        });
 
         return response()->json([
             'message' => 'Đã thu hủy thiết bị thành công.',
@@ -112,6 +137,12 @@ class DisposalController extends Controller
                 'asset_code' => $asset->asset_code,
                 'name' => $asset->name,
                 'status' => $asset->status,
+                'disposal' => [
+                    'id' => $disposal->id,
+                    'code' => $disposal->code,
+                    'method' => $disposal->method,
+                    'disposed_at' => $disposal->disposed_at?->toISOString(),
+                ],
             ],
         ]);
     }
@@ -153,7 +184,7 @@ class DisposalController extends Controller
                 'name' => $asset->name,
                 'category' => $asset->category,
                 'status' => $asset->status,
-                'location' => $asset->location?->name,
+                'location' => $asset->location,
                 'purchase_cost' => $valuation['purchase_cost'],
                 'purchase_date' => $valuation['purchase_date'],
                 'current_book_value' => $valuation['current_book_value'],
@@ -192,7 +223,7 @@ class DisposalController extends Controller
      */
     private function retiredAssets(Request $request, int $perPage): JsonResponse
     {
-        $query = Asset::where('status', Asset::STATUS_RETIRED);
+        $query = Asset::with('latestDisposal')->where('status', Asset::STATUS_RETIRED);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -218,6 +249,10 @@ class DisposalController extends Controller
                 'status' => $asset->status,
                 'off_service_reason' => $asset->off_service_reason,
                 'off_service_from' => $asset->off_service_from?->toDateString(),
+                'disposal_method' => $asset->latestDisposal?->method,
+                'proceeds_amount' => $asset->latestDisposal?->proceeds_amount !== null
+                    ? (float) $asset->latestDisposal->proceeds_amount
+                    : null,
                 'purchase_cost' => $valuation['purchase_cost'],
                 'current_book_value' => $valuation['current_book_value'],
                 'depreciation_percentage' => $valuation['depreciation_percentage'],

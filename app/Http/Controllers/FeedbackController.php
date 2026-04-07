@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreFeedbackRequest;
 use App\Http\Requests\UpdateFeedbackRequest;
 use App\Models\Feedback;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class FeedbackController extends Controller
     /**
      * List feedbacks with filters
      * - Users see only their own by default
-     * - Managers (admin/hr/technician) see all
+     * - Managers (manager/technician) see all
      */
     public function index(Request $request): JsonResponse
     {
@@ -27,7 +28,7 @@ class FeedbackController extends Controller
             ->with(['user:id,name,employee_code', 'asset:id,name,asset_code', 'resolver:id,name']);
 
         // Non-managers only see their own
-        if (!$user->hasAnyRole(['admin', 'hr', 'technician'])) {
+        if (!$user->hasAnyRole([User::ROLE_MANAGER, User::ROLE_TECHNICIAN])) {
             $query->where('user_id', $user->id);
         } else {
             // Managers can filter by user
@@ -72,7 +73,7 @@ class FeedbackController extends Controller
         $query = Feedback::query();
 
         // Non-managers only see their own
-        if (!$user->hasAnyRole(['admin', 'hr', 'technician'])) {
+        if (!$user->hasAnyRole([User::ROLE_MANAGER, User::ROLE_TECHNICIAN])) {
             $query->where('user_id', $user->id);
         }
 
@@ -138,7 +139,7 @@ class FeedbackController extends Controller
     public function update(UpdateFeedbackRequest $request, Feedback $feedback): JsonResponse
     {
         $user = $request->user();
-        $isManager = $user->hasAnyRole(['admin', 'hr', 'technician']);
+        $isManager = $user->hasAnyRole([User::ROLE_MANAGER, User::ROLE_TECHNICIAN]);
 
         // Handle status transition
         $newStatus = $request->input('status');
@@ -171,7 +172,7 @@ class FeedbackController extends Controller
     }
 
     /**
-     * Delete a feedback (admin only)
+     * Delete a feedback (manager only)
      */
     public function destroy(Request $request, Feedback $feedback): JsonResponse
     {
