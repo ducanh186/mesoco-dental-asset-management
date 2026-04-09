@@ -25,15 +25,37 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $employee = $user->employee;
+        $supplier = $user->supplier;
+
+        if ($supplier) {
+            return response()->json([
+                'profile' => [
+                    'profile_type' => 'supplier',
+                    'supplier_code' => $supplier->code,
+                    'name' => $supplier->name,
+                    'contact_person' => $supplier->contact_person,
+                    'email' => $supplier->email,
+                    'phone' => $supplier->phone,
+                    'address' => $supplier->address,
+                    'note' => $supplier->note,
+                ],
+                'user' => [
+                    'id' => $user->id,
+                    'role' => $user->role,
+                    'must_change_password' => $user->must_change_password,
+                ],
+            ]);
+        }
 
         if (!$employee) {
             return response()->json([
-                'message' => 'Profile not found. No employee record linked to this account.',
+                'message' => 'Profile not found. No employee or supplier record linked to this account.',
             ], 404);
         }
 
         return response()->json([
             'profile' => [
+                'profile_type' => 'employee',
                 'employee_code' => $employee->employee_code,
                 'full_name' => $employee->full_name,
                 'email' => $employee->email,
@@ -62,10 +84,39 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $employee = $user->employee;
+        $supplier = $user->supplier;
+
+        if ($supplier) {
+            $data = $request->safeData();
+
+            if (empty($data)) {
+                return response()->json([
+                    'message' => 'No valid fields provided for update.',
+                ], 422);
+            }
+
+            $supplier->update($data);
+            $supplier->refresh();
+            $user->forceFill(['name' => $supplier->name])->save();
+
+            return response()->json([
+                'message' => 'Profile updated successfully.',
+                'profile' => [
+                    'profile_type' => 'supplier',
+                    'supplier_code' => $supplier->code,
+                    'name' => $supplier->name,
+                    'contact_person' => $supplier->contact_person,
+                    'email' => $supplier->email,
+                    'phone' => $supplier->phone,
+                    'address' => $supplier->address,
+                    'note' => $supplier->note,
+                ],
+            ]);
+        }
 
         if (!$employee) {
             return response()->json([
-                'message' => 'Profile not found. No employee record linked to this account.',
+                'message' => 'Profile not found. No employee or supplier record linked to this account.',
             ], 404);
         }
 
@@ -80,10 +131,12 @@ class ProfileController extends Controller
 
         $employee->update($data);
         $employee->refresh();
+        $user->forceFill(['name' => $employee->full_name])->save();
 
         return response()->json([
             'message' => 'Profile updated successfully.',
             'profile' => [
+                'profile_type' => 'employee',
                 'employee_code' => $employee->employee_code,
                 'full_name' => $employee->full_name,
                 'email' => $employee->email,

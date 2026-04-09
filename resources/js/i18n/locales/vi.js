@@ -71,7 +71,10 @@ export default {
             expired: 'Hết hạn',
             terminated: 'Đã chấm dứt',
             retired: 'Đã thu hủy',
-            draft: 'Nháp'
+            draft: 'Nháp',
+            preparing: 'Chuẩn bị',
+            shipping: 'Đang giao',
+            delivered: 'Giao hàng thành công'
         },
         type: 'Loại',
         name: 'Tên',
@@ -136,6 +139,7 @@ export default {
         incidents: 'Quản lý sự cố',
         disposalForms: 'Phiếu thu hủy',
         suppliers: 'Nhà cung cấp',
+        purchaseOrders: 'Đơn hàng',
         logout: 'Đăng xuất',
         collapse: 'Thu gọn',
         expand: 'Mở rộng',
@@ -241,7 +245,7 @@ export default {
     roles: {
         staff: 'Nhân viên',
         employee: 'Nhân viên', // DB value 'employee' displays as 'Nhân viên'
-        doctor: 'Bác sĩ',
+        doctor: 'Nhân viên',
         nurse: 'Y tá',
         technician: 'Kỹ thuật viên',
         receptionist: 'Lễ tân',
@@ -249,6 +253,7 @@ export default {
         admin: 'Quản lý',
         owner: 'Chủ phòng khám',
         hr: 'Kỹ thuật viên',
+        supplier: 'Nhà cung cấp',
     },
 
     // ========================================================================
@@ -261,6 +266,7 @@ export default {
         welcomeSubtitleAdmin: 'Tổng quan về hệ thống quản lý thiết bị nha khoa.',
         welcomeSubtitleUser: 'Xem thiết bị được giao và quản lý phiếu yêu cầu của bạn.',
         welcomeSubtitleTechnician: 'Theo dõi lịch bảo trì và quản lý thiết bị.',
+        welcomeSubtitleSupplier: 'Theo dõi đơn hàng và cập nhật tiến độ giao hàng của nhà cung cấp.',
         
         // Admin/HR Cards
         totalEquipment: 'Tổng thiết bị',
@@ -311,6 +317,17 @@ export default {
         reviewRequests: 'Duyệt phiếu cấp phát',
         maintenance: 'Bảo trì & Sửa chữa',
         inventory: 'Kiểm kê & định giá',
+        totalOrders: 'Tổng đơn hàng',
+        ordersShipping: 'Đơn đang giao',
+        ordersDelivered: 'Đơn giao xong',
+        preparingCount: '{count} đơn đang chuẩn bị',
+        shippingInProgress: 'Đang có đơn trên đường giao',
+        noShippingOrders: 'Chưa có đơn đang giao',
+        deliveredCount: '{count} đơn đã giao thành công',
+        awaitingDelivery: 'Chưa có đơn giao xong',
+        recentOrders: 'Đơn hàng gần đây',
+        recentOrdersHint: 'Các đơn hàng mới nhất cần theo dõi tiến độ',
+        noOrdersFound: 'Không có đơn hàng nào',
         
         // Table
         viewAll: 'Xem tất cả',
@@ -356,6 +373,7 @@ export default {
         model: 'Model',
         category: 'Nhóm thiết bị',
         location: 'Vị trí',
+        supplier: 'Nhà cung cấp',
         movable: 'Thiết bị di động',
         fixed: 'Thiết bị cố định',
         
@@ -460,6 +478,8 @@ export default {
         assetCodeHint: 'Để trống để tự động tạo mã',
         enterAssetName: 'Nhập tên thiết bị',
         optionalNotes: 'Ghi chú (không bắt buộc)',
+        chooseSupplier: 'Chọn nhà cung cấp...',
+        noSupplier: 'Chưa gắn nhà cung cấp',
         chooseEmployee: 'Chọn nhân viên...',
         
         // Items count
@@ -518,7 +538,7 @@ export default {
         roles: {
             admin: 'Quản lý',
             hr: 'Kỹ thuật viên',
-            doctor: 'Bác sĩ',
+            doctor: 'Nhân viên',
             technician: 'Kỹ thuật viên',
             staff: 'Nhân viên',
         },
@@ -547,6 +567,10 @@ export default {
         loadError: 'Không thể tải hồ sơ. Vui lòng thử lại.',
         employeeId: 'Mã nhân viên',
         employeeFullName: 'Họ và tên nhân viên',
+        supplierCode: 'Mã nhà cung cấp',
+        supplierName: 'Tên nhà cung cấp',
+        contactPerson: 'Người liên hệ',
+        supplierNote: 'Ghi chú nhà cung cấp',
         fullName: 'Họ và tên',
         phone: 'Số điện thoại',
         phoneNumber: 'Số điện thoại',
@@ -572,6 +596,15 @@ export default {
         active: 'đang hoạt động',
         completed: 'hoàn thành',
         pending: 'chờ xử lý',
+    },
+
+    // ========================================================================
+    // Purchase Orders / Đơn hàng
+    // ========================================================================
+    purchaseOrders: {
+        orderCode: 'Mã đơn hàng',
+        orderDate: 'Ngày đặt',
+        totalAmount: 'Thành tiền',
     },
 
     // ========================================================================

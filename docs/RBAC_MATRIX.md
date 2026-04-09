@@ -1,147 +1,79 @@
-# Ma trận phân quyền API
+# Ma trận phân quyền
 
-Tài liệu này mô tả quyền truy cập API theo trạng thái code hiện tại. Trọng tâm là các route trong `routes/api.php` sau khi chuẩn hóa role về `manager`, `technician`, `doctor`, `employee`.
+## 1. Vai trò canonical
 
-## 1. Các tầng kiểm soát quyền
+- `manager`
+- `technician`
+- `employee`
+- `supplier`
 
-Backend đang chặn quyền ở 3 lớp:
+## 2. Ma trận quyền theo module
 
-1. Route middleware
-2. `FormRequest::authorize()`
-3. Policy theo resource
+| Module / API | manager | technician | employee | supplier |
+| --- | --- | --- | --- | --- |
+| `/api/profile` | Có | Có | Có | Có |
+| `/api/assets` | Có | Có | Không | Không |
+| `/api/inventory/*` | Có | Có | Không | Không |
+| `/api/locations` | Có | Có | Không | Không |
+| `/api/suppliers` | Có | Có | Không | Không |
+| `/api/purchase-orders` GET | Có | Có | Không | Có, chỉ đơn của mình |
+| `/api/purchase-orders` POST/PUT/DELETE | Có | Có | Không | Không |
+| `/api/purchase-orders/{id}/status` | Có | Có | Không | Có, chỉ đơn của mình |
+| `/api/requests` | Có | Có | Có | Không |
+| `/api/review-requests` | Có | Không | Không | Không |
+| `/api/maintenance-events` | Có | Có | Không | Không |
+| `/api/disposal/*` | Có | Có | Không | Không |
+| `/api/reports/*` | Có | Không | Không | Không |
+| `/api/users` list/create/show | Có | Có | Không | Không |
+| `/api/users/{id}/role` | Có | Không | Không | Không |
+| `/api/roles` | Có | Không | Không | Không |
 
-Nguyên tắc:
+## 3. Route group hiện tại
 
-- Không tin vào việc frontend ẩn nút.
-- Request theo ID luôn cần policy hoặc kiểm tra ownership.
-- `manager` là vai trò duyệt và báo cáo.
-- `technician` là vai trò vận hành.
+### 3.1. Mọi người dùng đã đăng nhập
 
-## 2. Nhóm route chung cho mọi người dùng đã đăng nhập
+- `/api/me`
+- `/api/change-password`
+- `/api/profile`
 
-| Nhóm API | Endpoint tiêu biểu | Vai trò |
-| --- | --- | --- |
-| Hồ sơ và bảo mật | `GET /api/me`, `GET/PUT /api/profile`, `POST /api/change-password` | Tất cả |
-| QR và tài sản cá nhân | `POST /api/qr/resolve`, `GET /api/my-assets`, `GET /api/my-asset-history*` | Tất cả |
-| Check-in | `POST /api/checkins`, `PATCH /api/checkins/{id}/checkout`, `GET /api/my-checkins` | Tất cả |
-| Shift | `GET /api/shifts`, `GET /api/shifts/{shift}` | Tất cả |
-| Request của người dùng | `GET /api/requests`, `POST /api/requests`, `GET /api/requests/{id}`, `POST /api/requests/{id}/cancel` | Tất cả |
-| Khóa trạng thái tài sản | `GET /api/assets/{asset}/lock-status` | Tất cả |
+### 3.2. Nội bộ: manager + technician + employee
 
-Ghi chú:
+- QR
+- my-assets
+- shifts
+- checkin
+- my-asset-history
+- requests
+- feedback
 
-- Người dùng cuối chỉ xem request của chính họ, trừ khi thuộc nhóm vận hành.
-- Check-in chỉ hợp lệ với tài sản được giao cho người dùng hoặc được policy cho phép.
+### 3.3. Manager בלבד
 
-## 3. Nhóm route chỉ dành cho manager
+- review queue
+- report summary/export
+- update user role
+- delete user
 
-| Nhóm API | Endpoint tiêu biểu | Vai trò |
-| --- | --- | --- |
-| Duyệt request | `GET /api/review-requests`, `POST /api/requests/{id}/review` | Manager |
-| Báo cáo | `GET /api/reports/summary`, `GET /api/reports/export` | Manager |
-| Quản lý role user | `PATCH /api/users/{user}/role`, `DELETE /api/users/{user}`, `GET /api/roles` | Manager |
-| Hợp đồng | `GET/POST /api/employees/{employee}/contracts`, `GET/PUT/DELETE /api/contracts/{contract}` | Manager |
+### 3.4. Manager + technician
 
-Luồng đặc biệt:
+- employees
+- users list/create/show
+- assets
+- inventory
+- locations
+- suppliers
+- maintenance
+- disposal
+- purchase order create/update/delete
 
-- `POST /api/requests/{id}/review` với phiếu `JUSTIFICATION` sẽ:
-  - yêu cầu `assigned_to_user_id`
-  - kiểm tra user được gán có role `technician`
-  - duyệt request
-  - sinh `maintenance_events`
-  - log thêm `DISPATCHED`
+### 3.5. Manager + technician + supplier
 
-## 4. Nhóm route cho manager và technician
+- purchase order list/show
+- purchase order status update
 
-| Nhóm API | Endpoint tiêu biểu | Vai trò |
-| --- | --- | --- |
-| Nhân viên | `GET/POST /api/users`, `GET /api/users/{user}`, `GET /api/employees/available`, `apiResource employees` | Manager, Technician |
-| Tài sản | `GET /api/assets`, `POST /api/assets`, `PUT /api/assets/{asset}`, `POST /api/assets/{asset}/assign` | Manager, Technician |
-| QR quản trị | `POST /api/assets/{asset}/regenerate-qr` | Manager, Technician |
-| Tồn kho | `GET /api/inventory/*` | Manager, Technician |
-| Vị trí | `GET /api/locations/dropdown`, `apiResource locations` | Manager, Technician |
-| Thu hủy | `GET /api/disposal/*`, `POST /api/disposal/assets/{asset}/retire` | Manager, Technician |
-| Bảo trì | `GET /api/maintenance-events*`, `POST /api/maintenance-events`, `PUT /api/maintenance-events/{maintenanceEvent}` | Manager, Technician |
-| Off-service | `POST /api/assets/{asset}/lock`, `POST /api/assets/{asset}/unlock` | Manager, Technician |
+## 4. Ràng buộc quan trọng
 
-Ghi chú:
-
-- `technician` được quyền vận hành đầy đủ ở 4 phân hệ:
-  - danh mục và hồ sơ
-  - cấp phát
-  - bảo trì sửa chữa
-  - thu hủy
-- `technician` không được quyền duyệt request hay xem báo cáo.
-
-## 5. Quyền theo resource
-
-### 5.1 Request
-
-`AssetRequestPolicy` chịu trách nhiệm các điểm sau:
-
-- Người tạo request được xem request của chính họ.
-- Người tạo request được hủy request của chính họ khi còn `SUBMITTED`.
-- Manager được xem queue duyệt và duyệt request.
-- Technician không được duyệt.
-
-### 5.2 Maintenance
-
-`MaintenanceEventPolicy` chịu trách nhiệm:
-
-- Manager xem và thao tác toàn bộ.
-- Technician thao tác theo rule vận hành.
-- Doctor/Employee không truy cập phân hệ bảo trì.
-
-### 5.3 Asset check-in
-
-`AssetCheckinPolicy` chịu trách nhiệm:
-
-- Chỉ check-in tài sản hợp lệ.
-- Chặn tài sản đang `off_service` hoặc `maintenance`.
-
-### 5.4 User và Employee
-
-`UserPolicy` và `EmployeePolicy` xử lý:
-
-- Manager có quyền quản trị role và xóa.
-- Technician chỉ xem/tạo trong phạm vi vận hành.
-
-## 6. Ma trận tóm tắt theo phân hệ
-
-| Phân hệ | Manager | Technician | Doctor | Employee |
-| --- | :---: | :---: | :---: | :---: |
-| Hồ sơ cá nhân | ✅ | ✅ | ✅ | ✅ |
-| Tài sản cá nhân và QR | ✅ | ✅ | ✅ | ✅ |
-| Check-in/check-out | ✅ | ✅ | ✅ | ✅ |
-| Tạo request | ✅ | ✅ | ✅ | ✅ |
-| Duyệt request | ✅ | ❌ | ❌ | ❌ |
-| Danh mục tài sản | ✅ | ✅ | ❌ | ❌ |
-| Phân công tài sản | ✅ | ✅ | ❌ | ❌ |
-| Bảo trì và sửa chữa | ✅ | ✅ | ❌ | ❌ |
-| Thu hủy | ✅ | ✅ | ❌ | ❌ |
-| Báo cáo | ✅ | ❌ | ❌ | ❌ |
-| Đổi role user | ✅ | ❌ | ❌ | ❌ |
-
-## 7. Endpoint đặc biệt ngoài phạm vi DFD chính
-
-Repo vẫn giữ một số API để tương thích:
-
-- `feedbacks`
-- `contracts`
-- `employees`
-
-Các API này không phải là trọng tâm của DFD mức 0, nhưng vẫn tồn tại trong codebase. Khi viết tài liệu nghiệp vụ hoặc demo sản phẩm, nên ưu tiên 5 phân hệ chính.
-
-## 8. Checklist rà soát quyền sau mỗi lần sửa
-
-- Manager còn duyệt được request hay không.
-- Technician không lọt quyền báo cáo hoặc đổi role.
-- Doctor/Employee không xem được danh mục tổng.
-- Request theo ID còn chặn IDOR.
-- Tài sản `off_service` còn bị khóa ở check-in, assign và loan.
-
-## 9. Tài liệu liên quan
-
-- [Tính năng theo vai trò](ROLE_FEATURES.md)
-- [Quy ước database](DB_CONVENTIONS.md)
-- [Checklist nghiệm thu](feat_role.md)
+- Supplier không được nhìn thấy route người dùng nội bộ như `requests`, `my-assets`, `qr-scan`
+- Supplier chỉ nhìn thấy đơn hàng có `supplier_id` trùng với `users.supplier_id`
+- Manager không được tự đổi role của chính mình qua API đổi role
+- Tài khoản supplier không thể đổi sang role nội bộ nếu không có `employee_id`
+- Tài khoản nội bộ không thể đổi sang `supplier` nếu không có `supplier_id`

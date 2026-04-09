@@ -67,7 +67,10 @@ export default {
             expired: 'Expired',
             terminated: 'Terminated',
             retired: 'Retired',
-            draft: 'Draft'
+            draft: 'Draft',
+            preparing: 'Preparing',
+            shipping: 'Shipping',
+            delivered: 'Delivered'
         },
         type: 'Type',
         name: 'Name',
@@ -132,6 +135,7 @@ export default {
         incidents: 'Incident Management',
         disposalForms: 'Disposal Forms',
         suppliers: 'Suppliers',
+        purchaseOrders: 'Purchase Orders',
         logout: 'Logout',
         collapse: 'Collapse',
         expand: 'Expand',
@@ -237,7 +241,7 @@ export default {
     roles: {
         staff: 'Staff',
         employee: 'Staff', // DB value 'employee' displays as 'Staff'
-        doctor: 'Doctor',
+        doctor: 'Staff',
         nurse: 'Nurse',
         technician: 'Technician',
         receptionist: 'Receptionist',
@@ -245,6 +249,7 @@ export default {
         admin: 'Manager',
         owner: 'Owner',
         hr: 'Technician',
+        supplier: 'Supplier',
     },
 
     // ========================================================================
@@ -257,6 +262,7 @@ export default {
         welcomeSubtitleAdmin: 'Overview of dental equipment management system.',
         welcomeSubtitleUser: 'View your assigned equipment and manage requests.',
         welcomeSubtitleTechnician: 'Track maintenance schedules and manage equipment.',
+        welcomeSubtitleSupplier: 'Track purchase orders and update delivery progress for your supplier account.',
         
         // Admin/HR Cards
         totalEquipment: 'Total Equipment',
@@ -307,6 +313,17 @@ export default {
         reviewRequests: 'Review Requests',
         maintenance: 'Maintenance & Repair',
         inventory: 'Inventory & Valuation',
+        totalOrders: 'Total Orders',
+        ordersShipping: 'Orders Shipping',
+        ordersDelivered: 'Delivered Orders',
+        preparingCount: '{count} preparing',
+        shippingInProgress: 'Orders are currently shipping',
+        noShippingOrders: 'No orders are shipping',
+        deliveredCount: '{count} delivered successfully',
+        awaitingDelivery: 'No orders delivered yet',
+        recentOrders: 'Recent Orders',
+        recentOrdersHint: 'Latest purchase orders that need progress tracking',
+        noOrdersFound: 'No purchase orders found',
 
         // Table
         viewAll: 'View All',
@@ -352,6 +369,7 @@ export default {
         model: 'Model',
         category: 'Category',
         location: 'Location',
+        supplier: 'Supplier',
         movable: 'Movable',
         fixed: 'Fixed',
         
@@ -456,6 +474,8 @@ export default {
         assetCodeHint: 'Leave blank for auto-generate',
         enterAssetName: 'Enter equipment name',
         optionalNotes: 'Optional notes',
+        chooseSupplier: 'Choose a supplier...',
+        noSupplier: 'No supplier linked',
         chooseEmployee: 'Choose an employee...',
         
         // Items count
@@ -514,7 +534,7 @@ export default {
         roles: {
             admin: 'Manager',
             hr: 'Technician',
-            doctor: 'Doctor',
+            doctor: 'Staff',
             technician: 'Technician',
             staff: 'Staff',
         },
@@ -543,6 +563,10 @@ export default {
         loadError: 'Failed to load profile. Please try again.',
         employeeId: 'Employee ID',
         employeeFullName: 'Employee Full Name',
+        supplierCode: 'Supplier Code',
+        supplierName: 'Supplier Name',
+        contactPerson: 'Contact Person',
+        supplierNote: 'Supplier Note',
         fullName: 'Full Name',
         phone: 'Phone',
         phoneNumber: 'Phone Number',
@@ -568,6 +592,15 @@ export default {
         active: 'active',
         completed: 'completed',
         pending: 'pending',
+    },
+
+    // ========================================================================
+    // Purchase Orders
+    // ========================================================================
+    purchaseOrders: {
+        orderCode: 'Order Code',
+        orderDate: 'Order Date',
+        totalAmount: 'Total Amount',
     },
 
     // ========================================================================

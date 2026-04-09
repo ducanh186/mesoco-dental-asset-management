@@ -30,7 +30,7 @@ class AssetController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $includeCheckinStatus = $request->boolean('include_checkin_status', false);
 
-        $query = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+        $query = Asset::with(['currentAssignment.employee', 'qrIdentity', 'supplier'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'));
@@ -115,7 +115,7 @@ class AssetController extends Controller
             ]);
         }
 
-        $query = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+        $query = Asset::with(['currentAssignment.employee', 'qrIdentity', 'supplier'])
             ->assignedTo($employeeId)
             ->search($request->input('search'))
             ->byType($request->input('type'))
@@ -234,7 +234,7 @@ class AssetController extends Controller
         ]);
         $asset->update(['qr_value' => $qrIdentity->payload]);
 
-        $asset->load(['qrIdentity', 'currentAssignment']);
+        $asset->load(['qrIdentity', 'currentAssignment', 'supplier']);
 
         return response()->json([
             'message' => 'Asset created successfully.',
@@ -264,6 +264,7 @@ class AssetController extends Controller
             'currentAssignment.employee',
             'currentAssignment.assignedByUser',
             'qrIdentity',
+            'supplier',
             'assignments' => fn($q) => $q->with(['employee', 'assignedByUser'])->orderByDesc('assigned_at')->limit(10),
         ]);
 
@@ -282,7 +283,7 @@ class AssetController extends Controller
     {
         $asset->update($request->validated());
 
-        $asset->load(['currentAssignment.employee', 'qrIdentity']);
+        $asset->load(['currentAssignment.employee', 'qrIdentity', 'supplier']);
 
         return response()->json([
             'message' => 'Asset updated successfully.',
@@ -433,7 +434,7 @@ class AssetController extends Controller
      */
     public function available(Request $request): JsonResponse
     {
-        $assets = Asset::with(['qrIdentity', 'currentAssignment'])
+        $assets = Asset::with(['qrIdentity', 'currentAssignment', 'supplier'])
             ->where('status', Asset::STATUS_ACTIVE)
             ->unassigned()
             ->orderBy('asset_code')
@@ -493,7 +494,7 @@ class AssetController extends Controller
         ]);
         $asset->update(['qr_value' => $qrIdentity->payload]);
 
-        $asset->load(['currentAssignment.employee', 'qrIdentity']);
+        $asset->load(['currentAssignment.employee', 'qrIdentity', 'supplier']);
 
         return response()->json([
             'message' => 'QR code regenerated successfully.',
@@ -529,6 +530,15 @@ class AssetController extends Controller
             'type' => $asset->type,
             'category' => $asset->category,
             'category_id' => $asset->category_id,
+            'supplier_id' => $asset->supplier_id,
+            'supplier' => $asset->supplier ? [
+                'id' => $asset->supplier->id,
+                'code' => $asset->supplier->code,
+                'name' => $asset->supplier->name,
+                'contact_person' => $asset->supplier->contact_person,
+                'phone' => $asset->supplier->phone,
+                'email' => $asset->supplier->email,
+            ] : null,
             'location' => $asset->location,
             'status' => $asset->status,
             'notes' => $asset->notes,

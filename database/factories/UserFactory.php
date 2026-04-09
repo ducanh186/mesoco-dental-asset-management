@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -105,6 +106,25 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => User::ROLE_EMPLOYEE,
         ]);
+    }
+
+    /**
+     * Indicate that the user is a supplier account.
+     */
+    public function supplier(?Supplier $supplier = null): static
+    {
+        return $this->state(function () use ($supplier) {
+            $supplierModel = $supplier ?? Supplier::factory()->create();
+
+            return [
+                'supplier_id' => $supplierModel->id,
+                'employee_id' => null,
+                'employee_code' => $supplierModel->code ?? ('NCC-' . str_pad((string) $supplierModel->id, 3, '0', STR_PAD_LEFT)),
+                'name' => $supplierModel->name,
+                'email' => $supplierModel->email ?? "supplier-{$supplierModel->id}@mesoco.local",
+                'role' => User::ROLE_SUPPLIER,
+            ];
+        });
     }
 
     /**

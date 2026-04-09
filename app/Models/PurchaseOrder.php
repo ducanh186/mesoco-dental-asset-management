@@ -12,6 +12,16 @@ class PurchaseOrder extends Model
 {
     use HasFactory;
 
+    public const STATUS_PREPARING = 'preparing';
+    public const STATUS_SHIPPING = 'shipping';
+    public const STATUS_DELIVERED = 'delivered';
+
+    public const STATUSES = [
+        self::STATUS_PREPARING,
+        self::STATUS_SHIPPING,
+        self::STATUS_DELIVERED,
+    ];
+
     protected $fillable = [
         'order_code',
         'supplier_id',
@@ -21,6 +31,7 @@ class PurchaseOrder extends Model
         'expected_delivery_date',
         'status',
         'total_amount',
+        'payment_method',
         'note',
     ];
 
@@ -31,6 +42,22 @@ class PurchaseOrder extends Model
             'expected_delivery_date' => 'date',
             'total_amount' => 'decimal:2',
         ];
+    }
+
+    public function getStatusAttribute(?string $value): string
+    {
+        return self::normalizeStatus($value);
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $purchaseOrder) {
+            $purchaseOrder->status = self::normalizeStatus($purchaseOrder->getAttributes()['status'] ?? null);
+
+            if (!$purchaseOrder->order_code) {
+                $purchaseOrder->order_code = self::generateCode();
+            }
+        });
     }
 
     public function supplier(): BelongsTo
@@ -56,5 +83,39 @@ class PurchaseOrder extends Model
     public function approvals(): MorphMany
     {
         return $this->morphMany(Approval::class, 'approvable');
+    }
+
+    public static function normalizeStatus(?string $status): string
+    {
+        $normalized = strtolower(trim((string) $status));
+
+        return match ($normalized) {
+            '', 'draft' => self::STATUS_PREPARING,
+            self::STATUS_SHIPPING => self::STATUS_SHIPPING,
+            self::STATUS_DELIVERED => self::STATUS_DELIVERED,
+            default => self::STATUS_PREPARING,
+        };
+    }
+
+    public static function statusOptions(): array
+    {
+        return self::STATUSES;
+    }
+
+    public static function generateCode(): string
+    {
+        $prefix = 'PO-' . now()->format('Ym') . '-';
+        $latestCode = self::query()
+            ->where('order_code', 'like', $prefix . '%')
+            ->orderByDesc('order_code')
+            ->value('order_code');
+
+        $nextNumber = 1;
+
+        if ($latestCode && preg_match('/(\d+)$/', $latestCode, $matches)) {
+            $nextNumber = ((int) $matches[1]) + 1;
+        }
+
+        return $prefix . str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

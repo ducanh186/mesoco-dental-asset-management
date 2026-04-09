@@ -1,183 +1,107 @@
-# Ngăn xếp công nghệ
+# Stack kỹ thuật
 
-Tài liệu này mô tả stack đang dùng trong repo `mesoco-dental-asset-management`, các lệnh phát triển chính và cấu trúc thư mục quan trọng.
+## 1. Công nghệ chính
 
-## 1. Tổng quan
+- Backend: Laravel 12, Sanctum, Eloquent ORM
+- Frontend: React, React Router, Vite
+- Database dev/test: SQLite
+- Styling: CSS nội bộ + component UI dùng lại trong `resources/js/components/ui`
 
-Hệ thống hiện được xây dựng theo mô hình:
+## 2. Cấu trúc repo quan trọng
 
-- Backend Laravel phục vụ API JSON và render shell của SPA.
-- Frontend React chạy bằng Vite.
-- Xác thực dùng Laravel Sanctum.
-- Dữ liệu cốt lõi bám theo 5 phân hệ nghiệp vụ:
-  - Quản lý danh mục và hồ sơ
-  - Quản lý cấp phát
-  - Quản lý bảo trì sửa chữa
-  - Quản lý thu hủy
-  - Báo cáo và thống kê
-
-## 2. Backend
-
-- Ngôn ngữ: `PHP ^8.2`
-- Framework: `laravel/framework ^12.0`
-- Xác thực: `laravel/sanctum ^4.2`
-- Công cụ dev:
-  - `laravel/pint`
-  - `phpunit/phpunit ^11.5.3`
-  - `laravel/pail`
-  - `laravel/sail`
-
-Thư mục chính:
-
-- `app/Http/Controllers`: controller API
-- `app/Http/Requests`: validation và authorize
+- `app/Http/Controllers`: API controller theo từng phân hệ
+- `app/Http/Requests`: validation request
 - `app/Models`: model Eloquent
-- `app/Policies`: RBAC và IDOR protection
-- `app/Services`: nghiệp vụ nhiều bước, ví dụ `MaintenanceService`
-- `database/migrations`: schema
-- `database/seeders`: dữ liệu mẫu và đồng bộ schema
-- `routes/api.php`: toàn bộ API sau đăng nhập
+- `database/migrations`: schema và các migration chuẩn hóa
+- `database/seeders`: dữ liệu demo
+- `resources/js/pages`: màn hình React
+- `resources/js/services/api.js`: client API cho frontend
+- `routes/api.php`: map route và RBAC
+- `tests/Feature`: test API và nghiệp vụ
 
-## 3. Frontend
+## 3. Các module đang hoạt động
 
-- `react ^19.2.3`
-- `react-dom ^19.2.3`
-- `react-router-dom ^7.12.0`
-- `vite ^7.0.7`
-- `@vitejs/plugin-react ^5.1.2`
-- `tailwindcss ^4.0.0`
-- `axios ^1.13.2`
-- `html5-qrcode ^2.3.8`
+### 3.1. Danh mục và hồ sơ
 
-Thư mục chính:
+- `assets`
+- `locations`
+- `suppliers`
+- `users`
+- `employees`
+- `purchase_orders`
 
-- `resources/js/app.jsx`: router chính của SPA
-- `resources/js/pages`: các màn hình
-- `resources/js/layouts`: layout, sidebar, topbar
-- `resources/js/components`: UI component và widget
-- `resources/js/services/api.js`: client gọi API
-- `resources/js/utils/roles.js`: chuẩn hóa role ở frontend
-- `resources/css`: CSS/Tailwind
+### 3.2. Cấp phát
 
-## 4. Cơ sở dữ liệu
+- `requests`
+- `review-requests`
+- `asset assignments`
 
-Repo đang hỗ trợ tốt cho hai kiểu chạy:
+### 3.3. Bảo trì và sửa chữa
 
-- SQLite cục bộ để phát triển nhanh và chạy test.
-- MySQL/MariaDB khi triển khai môi trường thực tế.
+- `maintenance_events`
+- `repair_logs`
+- `off service`
 
-Các nhóm bảng nổi bật:
+### 3.4. Thu hủy
 
-- Nhân sự và tài khoản:
-  - `employees`
-  - `users`
-  - `roles`
-- Danh mục và tài sản:
-  - `assets`
-  - `categories`
-  - `locations`
-  - `asset_assignments`
-  - `asset_qr_identities`
-  - `asset_checkins`
-- Yêu cầu cấp phát và báo sự cố:
-  - `requests`
-  - `request_items`
-  - `request_events`
-  - `approvals`
-- Bảo trì, sửa chữa, thu hủy:
-  - `maintenance_events`
-  - `repair_logs`
-  - `disposals`
-- Mở rộng mua sắm theo ERD:
-  - `suppliers`
-  - `purchase_orders`
-  - `purchase_order_items`
+- `disposals`
 
-## 5. Lệnh phát triển
+### 3.5. Báo cáo
 
-### Thiết lập lần đầu
+- `reports/summary`
+- `reports/export`
 
-```bash
-composer install
-npm install
-copy .env.example .env
-php artisan key:generate
-php artisan migrate --force
-npm run build
-```
+## 4. Role hiện tại trong code
 
-Hoặc dùng script đã khai báo trong `composer.json`:
+- `manager`: duyệt, điều phối, báo cáo, quản lý user/role
+- `technician`: vận hành danh mục, cấp phát, bảo trì, thu hủy, đơn hàng
+- `employee`: người dùng nội bộ đầu cuối
+- `supplier`: tài khoản nhà cung cấp, chỉ xem và cập nhật đơn hàng của chính mình
 
-```bash
-composer run setup
-```
+Legacy mapping vẫn được giữ để không gãy dữ liệu cũ:
 
-### Chạy môi trường phát triển
+- `admin -> manager`
+- `hr -> technician`
+- `doctor -> employee`
+- `staff -> employee`
+
+## 5. Điểm kỹ thuật mới nhất
+
+- `users` giờ có thể liên kết `employee_id` hoặc `supplier_id`
+- `supplier` là canonical role, không còn chỉ là danh mục
+- `purchase_orders` có `payment_method`
+- `purchase_order_items` lưu sản phẩm, số lượng, đơn giá, thành tiền
+- trạng thái đơn hàng chuẩn hóa thành `preparing`, `shipping`, `delivered`
+- `/api/profile` hỗ trợ cả profile nhân viên và profile nhà cung cấp
+
+## 6. Lệnh làm việc
+
+Chạy backend + frontend dev:
 
 ```bash
 composer run dev
 ```
 
-Lệnh này chạy đồng thời:
-
-- `php artisan serve`
-- `php artisan queue:listen`
-- `php artisan pail`
-- `npm run dev`
-
-### Build frontend
+Build frontend:
 
 ```bash
 npm run build
 ```
 
-### Chạy test
+Chạy migrate:
+
+```bash
+php artisan migrate --force
+```
+
+Chạy test:
 
 ```bash
 php artisan test
 ```
 
-Hoặc:
+Chạy một nhóm test quan trọng:
 
 ```bash
-composer run test
+php artisan test tests/Feature/PurchaseOrderApiTest.php tests/Feature/ProfileTest.php
 ```
-
-## 6. Kiểm tra nhanh sau khi sửa code
-
-Các lệnh thường dùng trong repo này:
-
-```bash
-php artisan test tests/Feature/RequestTest.php
-php artisan test tests/Feature/MaintenanceTest.php
-php artisan test tests/Feature/ReportTest.php
-npm run build
-```
-
-## 7. Nguyên tắc kiến trúc đang áp dụng
-
-- Quyền truy cập không dựa vào frontend ẩn nút.
-- Backend chặn ở nhiều tầng:
-  - route middleware
-  - `FormRequest::authorize()`
-  - policy
-- Role cũ được normalize về 4 role chuẩn:
-  - `manager`
-  - `technician`
-  - `doctor`
-  - `employee`
-- Luồng sự cố chuẩn:
-  - người dùng tạo `JUSTIFICATION`
-  - quản lý duyệt
-  - chỉ định kỹ thuật viên
-  - sinh `maintenance_events`
-  - đồng bộ `repair_logs`
-
-## 8. Tài liệu liên quan
-
-- [Mục lục tài liệu](README.md)
-- [Tính năng theo vai trò](ROLE_FEATURES.md)
-- [Ma trận phân quyền API](RBAC_MATRIX.md)
-- [Quy ước database](DB_CONVENTIONS.md)
-- [Dữ liệu mẫu và seeder](SEED_DATA.md)
-- [Checklist nghiệm thu theo vai trò](feat_role.md)

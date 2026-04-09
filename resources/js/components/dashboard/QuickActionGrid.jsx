@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../i18n';
-import { ROLE_MANAGER, hasOperationalAccess, normalizeRole } from '../../utils/roles';
+import { ROLE_MANAGER, ROLE_SUPPLIER, hasOperationalAccess, normalizeRole } from '../../utils/roles';
 
 /**
  * QuickActionGrid - Role-based quick action buttons grid
@@ -15,6 +15,7 @@ const QuickActionGrid = ({ role }) => {
     const getActionsForRole = (roleValue) => {
         const normalizedRole = normalizeRole(roleValue);
         const isManager = normalizedRole === ROLE_MANAGER;
+        const isSupplier = normalizedRole === ROLE_SUPPLIER;
         const isOperationalRole = hasOperationalAccess({ role: normalizedRole });
 
         if (isManager) {
@@ -116,6 +117,35 @@ const QuickActionGrid = ({ role }) => {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="3 6 5 6 21 6" />
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                    )
+                }
+            ];
+        }
+
+        if (isSupplier) {
+            return [
+                {
+                    key: 'purchaseOrders',
+                    label: t('nav.purchaseOrders'),
+                    to: '/purchase-orders',
+                    icon: (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                            <rect x="9" y="3" width="6" height="4" rx="1" />
+                            <path d="M9 12h6" />
+                            <path d="M9 16h6" />
+                        </svg>
+                    )
+                },
+                {
+                    key: 'profile',
+                    label: t('nav.profile'),
+                    to: '/profile',
+                    icon: (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21a8 8 0 1 0-16 0" />
+                            <circle cx="12" cy="7" r="4" />
                         </svg>
                     )
                 }

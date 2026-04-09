@@ -6,6 +6,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRoleRequest;
 use App\Models\Employee;
 use App\Models\Role;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,6 +45,7 @@ class UserController extends Controller
     {
         $query = User::with([
             'employee:id,employee_code,full_name,email',
+            'supplier:id,code,name,contact_person,email',
             'roleDefinition:id,code,name',
         ]);
 
@@ -70,10 +72,18 @@ class UserController extends Controller
                 'role' => $user->role,
                 'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
                 'status' => $user->status,
+                'profile_type' => $user->isSupplier() ? 'supplier' : 'employee',
                 'employee' => $user->employee ? [
                     'id' => $user->employee->id,
                     'full_name' => $user->employee->full_name,
                     'email' => $user->employee->email,
+                ] : null,
+                'supplier' => $user->supplier ? [
+                    'id' => $user->supplier->id,
+                    'code' => $user->supplier->code,
+                    'name' => $user->supplier->name,
+                    'contact_person' => $user->supplier->contact_person,
+                    'email' => $user->supplier->email,
                 ] : null,
             ];
         });
@@ -114,28 +124,40 @@ class UserController extends Controller
     public function store(StoreUserRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $employee = Employee::findOrFail($validated['employee_id']);
+        $role = User::normalizeRole($validated['role']);
 
-        $user = User::create([
-            'employee_id' => $employee->id,
-            'employee_code' => $employee->employee_code,
-            'name' => $employee->full_name,
-            'email' => $employee->email,
-            'role' => User::normalizeRole($validated['role']),
-            'password' => Hash::make($validated['default_password']),
-            'must_change_password' => true,
-            'status' => 'active',
-        ]);
+        if ($role === User::ROLE_SUPPLIER) {
+            $supplier = Supplier::findOrFail($validated['supplier_id']);
+            $user = User::create([
+                'supplier_id' => $supplier->id,
+                'employee_code' => $this->resolveSupplierEmployeeCode($supplier),
+                'name' => $supplier->name,
+                'email' => $this->resolveSupplierEmail($supplier),
+                'role' => $role,
+                'password' => Hash::make($validated['default_password']),
+                'must_change_password' => true,
+                'status' => 'active',
+            ]);
+        } else {
+            $employee = Employee::findOrFail($validated['employee_id']);
+
+            $user = User::create([
+                'employee_id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'name' => $employee->full_name,
+                'email' => $employee->email,
+                'role' => $role,
+                'password' => Hash::make($validated['default_password']),
+                'must_change_password' => true,
+                'status' => 'active',
+            ]);
+        }
+
+        $user->loadMissing(['employee:id,employee_code,full_name,email', 'supplier:id,code,name,contact_person,email', 'roleDefinition:id,code,name']);
 
         return response()->json([
             'message' => 'User account created successfully. User must change password on first login.',
-            'user' => [
-                'id' => $user->id,
-                'employee_code' => $user->employee_code,
-                'name' => $user->name,
-                'role' => $user->role,
-                'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
-            ],
+            'user' => $this->transformUser($user),
         ], 201);
     }
 
@@ -145,20 +167,14 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
+        $user->loadMissing([
+            'employee:id,employee_code,full_name,email',
+            'supplier:id,code,name,contact_person,email,address,note',
+            'roleDefinition:id,code,name',
+        ]);
+
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'employee_code' => $user->employee_code,
-                'name' => $user->name,
-                'role' => $user->role,
-                'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
-                'status' => $user->status,
-                'employee' => $user->employee ? [
-                    'id' => $user->employee->id,
-                    'full_name' => $user->employee->full_name,
-                    'email' => $user->employee->email,
-                ] : null,
-            ],
+            'user' => $this->transformUser($user),
         ]);
     }
 
@@ -177,18 +193,27 @@ class UserController extends Controller
             ], 422);
         }
 
+        $newRole = User::normalizeRole($request->role);
+
+        if ($newRole === User::ROLE_SUPPLIER && !$user->supplier_id) {
+            return response()->json([
+                'message' => 'This account is not linked to a supplier record.',
+            ], 422);
+        }
+
+        if ($newRole !== User::ROLE_SUPPLIER && !$user->employee_id) {
+            return response()->json([
+                'message' => 'Supplier accounts cannot be converted into employee roles without linking an employee record.',
+            ], 422);
+        }
+
         $oldRole = $user->role;
-        $user->update(['role' => User::normalizeRole($request->role)]);
+        $user->update(['role' => $newRole]);
+        $user->loadMissing(['employee:id,employee_code,full_name,email', 'supplier:id,code,name,contact_person,email', 'roleDefinition:id,code,name']);
 
         return response()->json([
             'message' => "User role updated from '{$oldRole}' to '{$request->role}'.",
-            'user' => [
-                'id' => $user->id,
-                'employee_code' => $user->employee_code,
-                'name' => $user->name,
-                'role' => $user->role,
-                'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
-            ],
+            'user' => $this->transformUser($user),
         ]);
     }
 
@@ -233,5 +258,61 @@ class UserController extends Controller
                 ->orderBy('id')
                 ->get(['code', 'name']),
         ]);
+    }
+
+    private function transformUser(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'employee_code' => $user->employee_code,
+            'name' => $user->name,
+            'role' => $user->role,
+            'role_name' => $user->roleDefinition?->name ?? User::roleLabel($user->role),
+            'status' => $user->status,
+            'profile_type' => $user->isSupplier() ? 'supplier' : 'employee',
+            'employee' => $user->employee ? [
+                'id' => $user->employee->id,
+                'employee_code' => $user->employee->employee_code,
+                'full_name' => $user->employee->full_name,
+                'email' => $user->employee->email,
+            ] : null,
+            'supplier' => $user->supplier ? [
+                'id' => $user->supplier->id,
+                'code' => $user->supplier->code,
+                'name' => $user->supplier->name,
+                'contact_person' => $user->supplier->contact_person,
+                'email' => $user->supplier->email,
+                'address' => $user->supplier->address,
+                'note' => $user->supplier->note,
+            ] : null,
+        ];
+    }
+
+    private function resolveSupplierEmployeeCode(Supplier $supplier): string
+    {
+        $baseCode = trim((string) ($supplier->code ?: 'NCC-' . str_pad((string) $supplier->id, 3, '0', STR_PAD_LEFT)));
+        $candidate = $baseCode;
+        $suffix = 1;
+
+        while (User::query()->where('employee_code', $candidate)->exists()) {
+            $candidate = $baseCode . '-' . str_pad((string) $suffix, 2, '0', STR_PAD_LEFT);
+            $suffix++;
+        }
+
+        return $candidate;
+    }
+
+    private function resolveSupplierEmail(Supplier $supplier): string
+    {
+        $baseEmail = $supplier->email ?: "supplier-{$supplier->id}@mesoco.local";
+        $candidate = $baseEmail;
+        $suffix = 1;
+
+        while (User::query()->where('email', $candidate)->exists()) {
+            $candidate = "supplier-{$supplier->id}-{$suffix}@mesoco.local";
+            $suffix++;
+        }
+
+        return $candidate;
     }
 }

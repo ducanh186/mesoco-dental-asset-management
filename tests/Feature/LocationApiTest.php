@@ -55,12 +55,14 @@ class LocationApiTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_technician_cannot_access_locations(): void
+    public function test_technician_can_access_locations(): void
     {
         $user = $this->createUserWithRole('technician');
+        Location::factory()->count(2)->create();
 
         $response = $this->actingAs($user)->getJson('/api/locations');
-        $response->assertStatus(403);
+        $response->assertStatus(200)
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_hr_can_access_locations(): void

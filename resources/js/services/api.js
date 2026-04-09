@@ -463,7 +463,7 @@ export const myAssetHistoryApi = {
 };
 
 // ============================================================================
-// Locations API (Phase 6 - Admin/HR)
+// Locations API
 // ============================================================================
 export const locationsApi = {
     /**
@@ -517,6 +517,76 @@ export const locationsApi = {
      */
     dropdown: async () => {
         const response = await axios.get('/api/locations/dropdown');
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Suppliers API
+// ============================================================================
+export const suppliersApi = {
+    list: async (params = {}) => {
+        const response = await axios.get('/api/suppliers', { params });
+        return response.data;
+    },
+
+    get: async (id) => {
+        const response = await axios.get(`/api/suppliers/${id}`);
+        return response.data;
+    },
+
+    create: async (data) => {
+        const response = await axios.post('/api/suppliers', data);
+        return response.data;
+    },
+
+    update: async (id, data) => {
+        const response = await axios.put(`/api/suppliers/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id) => {
+        const response = await axios.delete(`/api/suppliers/${id}`);
+        return response.data;
+    },
+
+    dropdown: async () => {
+        const response = await axios.get('/api/suppliers/dropdown');
+        return response.data;
+    },
+};
+
+// ============================================================================
+// Purchase Orders API
+// ============================================================================
+export const purchaseOrdersApi = {
+    list: async (params = {}) => {
+        const response = await axios.get('/api/purchase-orders', { params });
+        return response.data;
+    },
+
+    get: async (id) => {
+        const response = await axios.get(`/api/purchase-orders/${id}`);
+        return response.data;
+    },
+
+    create: async (data) => {
+        const response = await axios.post('/api/purchase-orders', data);
+        return response.data;
+    },
+
+    update: async (id, data) => {
+        const response = await axios.put(`/api/purchase-orders/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id) => {
+        const response = await axios.delete(`/api/purchase-orders/${id}`);
+        return response.data;
+    },
+
+    updateStatus: async (id, data) => {
+        const response = await axios.patch(`/api/purchase-orders/${id}/status`, data);
         return response.data;
     },
 };
@@ -823,6 +893,8 @@ export default {
     inventory: inventoryApi,
     myAssetHistory: myAssetHistoryApi,
     locations: locationsApi,
+    suppliers: suppliersApi,
+    purchaseOrders: purchaseOrdersApi,
     maintenance: maintenanceApi,
     feedback: feedbackApi,
     reports: reportsApi,

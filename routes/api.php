@@ -6,20 +6,27 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\CheckinController;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\EmployeeContractController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MaintenanceEventController;
 use App\Http\Controllers\MyAssetHistoryController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\ReviewRequestController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+
+$legacyContractModuleResponse = static function () {
+    return response()->json([
+        'message' => 'Employee contract module has been removed from the main product scope.',
+    ], 410);
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -32,15 +39,17 @@ use Illuminate\Support\Facades\Route;
 | ├─────────────┼────────────────────────────────────────────────────────────────────┤
 | │ manager     │ Duyệt yêu cầu, báo cáo, cấu hình và điều phối hệ thống             │
 | │ technician  │ Danh mục, cấp phát, bảo trì, thu hủy và vận hành thiết bị          │
-| │ doctor      │ Báo sự cố / mượn thiết bị / theo dõi thiết bị cá nhân              │
 | │ employee    │ Báo sự cố / mượn thiết bị / theo dõi thiết bị cá nhân              │
+| │ supplier    │ Theo dõi và cập nhật trạng thái đơn hàng của chính nhà cung cấp     │
 | └─────────────┴────────────────────────────────────────────────────────────────────┘
+|
+| Ghi chú: bác sĩ dùng chung vai trò `employee`.
 */
 
 /**
  * Authenticated Routes
  */
-Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
+Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () use ($legacyContractModuleResponse) {
     /**
      * GET /api/me
      * Get current authenticated user
@@ -66,74 +75,71 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
-    /**
-     * QR Resolve - All authenticated users can scan QR codes
-     */
-    Route::post('/qr/resolve', [QrController::class, 'resolve']);
+    Route::middleware('role:manager,technician,employee')->group(function () {
+        /**
+         * QR Resolve - core internal roles only
+         */
+        Route::post('/qr/resolve', [QrController::class, 'resolve']);
 
-    /**
-     * My Assets - All users can view their assigned assets
-     */
-    Route::get('/my-assets', [AssetController::class, 'myAssets']);
-    
-    /**
-     * My Assigned Assets for dropdown (Justification requests)
-     */
-    Route::get('/my-assigned-assets/dropdown', [AssetController::class, 'myAssignedAssetsDropdown']);
-    
-    /**
-     * Available Assets - All users can view available assets for loan
-     */
-    Route::get('/assets/available-for-loan', [AssetController::class, 'availableForLoan']);
+        /**
+         * My Assets - internal users can view their assigned assets
+         */
+        Route::get('/my-assets', [AssetController::class, 'myAssets']);
+        Route::get('/my-assigned-assets/dropdown', [AssetController::class, 'myAssignedAssetsDropdown']);
+        Route::get('/assets/available-for-loan', [AssetController::class, 'availableForLoan']);
 
-    /**
-     * Shifts - All authenticated users can view shifts
-     */
-    Route::get('/shifts', [ShiftController::class, 'index']);
-    Route::get('/shifts/{shift}', [ShiftController::class, 'show']);
+        /**
+         * Shifts and check-ins
+         */
+        Route::get('/shifts', [ShiftController::class, 'index']);
+        Route::get('/shifts/{shift}', [ShiftController::class, 'show']);
+        Route::post('/checkins', [CheckinController::class, 'store']);
+        Route::get('/my-checkins', [CheckinController::class, 'myCheckins']);
+        Route::patch('/checkins/{checkin}/checkout', [CheckinController::class, 'checkout']);
+        Route::get('/assets/{asset}/checkin-status', [CheckinController::class, 'assetCheckinStatus']);
 
-    /**
-     * Check-ins - All authenticated users can check-in their assigned assets
-     */
-    Route::post('/checkins', [CheckinController::class, 'store']);
-    Route::get('/my-checkins', [CheckinController::class, 'myCheckins']);
-    Route::patch('/checkins/{checkin}/checkout', [CheckinController::class, 'checkout']);
+        /**
+         * My asset history
+         */
+        Route::get('/my-asset-history', [MyAssetHistoryController::class, 'index']);
+        Route::get('/my-asset-history/summary', [MyAssetHistoryController::class, 'summary']);
 
-    /**
-     * Asset check-in status (own assets only, manager/technician can view any)
-     */
-    Route::get('/assets/{asset}/checkin-status', [CheckinController::class, 'assetCheckinStatus']);
+        /**
+         * Internal request workflow
+         */
+        Route::get('/requests', [RequestController::class, 'index']);
+        Route::post('/requests', [RequestController::class, 'store']);
+        Route::get('/requests/{id}', [RequestController::class, 'show']);
+        Route::post('/requests/{id}/cancel', [RequestController::class, 'cancel']);
 
-    /**
-     * My Asset History - All users can view their own asset history (Phase 6)
-     * Server-side ownership enforcement - users can only see their own history
-     */
-    Route::get('/my-asset-history', [MyAssetHistoryController::class, 'index']);
-    Route::get('/my-asset-history/summary', [MyAssetHistoryController::class, 'summary']);
-
-    /**
-     * Staff Requests - All authenticated users can create and view their own requests
-     * Types: JUSTIFICATION (báo sự cố), ASSET_LOAN (mượn thiết bị), CONSUMABLE_REQUEST (xin vật tư)
-     */
-    Route::get('/requests', [RequestController::class, 'index']);
-    Route::post('/requests', [RequestController::class, 'store']);
-    Route::get('/requests/{id}', [RequestController::class, 'show']);
-    Route::post('/requests/{id}/cancel', [RequestController::class, 'cancel']);
+        /*
+        |--------------------------------------------------------------------------
+        | FEEDBACK ROUTES - Internal authenticated roles
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/feedbacks', [FeedbackController::class, 'index']);
+        Route::get('/feedbacks/summary', [FeedbackController::class, 'summary']);
+        Route::post('/feedbacks', [FeedbackController::class, 'store']);
+        Route::get('/feedbacks/{feedback}', [FeedbackController::class, 'show']);
+        Route::put('/feedbacks/{feedback}', [FeedbackController::class, 'update']);
+        Route::patch('/feedbacks/{feedback}/status', [FeedbackController::class, 'updateStatus']);
+        Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'destroy']);
+    });
 
     /*
     |--------------------------------------------------------------------------
-    | FEEDBACK ROUTES - All authenticated users (Phase 8)
+    | LEGACY CONTRACT ROUTES
     |--------------------------------------------------------------------------
-    | Users can create and view their own feedback
-    | Managers can view all and manage status
+    | Employee contracts are out of the current product scope. Keep explicit
+    | JSON endpoints so old clients do not fall through to the SPA HTML.
     */
-    Route::get('/feedbacks', [FeedbackController::class, 'index']);
-    Route::get('/feedbacks/summary', [FeedbackController::class, 'summary']);
-    Route::post('/feedbacks', [FeedbackController::class, 'store']);
-    Route::get('/feedbacks/{feedback}', [FeedbackController::class, 'show']);
-    Route::put('/feedbacks/{feedback}', [FeedbackController::class, 'update']);
-    Route::patch('/feedbacks/{feedback}/status', [FeedbackController::class, 'updateStatus']);
-    Route::delete('/feedbacks/{feedback}', [FeedbackController::class, 'destroy']);
+    Route::get('/employees/{employee}/contracts', $legacyContractModuleResponse);
+    Route::post('/employees/{employee}/contracts', $legacyContractModuleResponse);
+    Route::get('/contracts/{contract}', $legacyContractModuleResponse);
+    Route::put('/contracts/{contract}', $legacyContractModuleResponse);
+    Route::patch('/contracts/{contract}', $legacyContractModuleResponse);
+    Route::delete('/contracts/{contract}', $legacyContractModuleResponse);
+    Route::get('/contracts/{contract}/file', $legacyContractModuleResponse);
 
     /*
     |--------------------------------------------------------------------------
@@ -145,13 +151,6 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
         Route::get('/roles', [UserController::class, 'roles']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
-
-        Route::get('/employees/{employee}/contracts', [EmployeeContractController::class, 'index']);
-        Route::post('/employees/{employee}/contracts', [EmployeeContractController::class, 'store']);
-        Route::get('/contracts/{contract}', [EmployeeContractController::class, 'show']);
-        Route::put('/contracts/{contract}', [EmployeeContractController::class, 'update']);
-        Route::delete('/contracts/{contract}', [EmployeeContractController::class, 'destroy']);
-        Route::get('/contracts/{contract}/file', [EmployeeContractController::class, 'streamFile']);
 
         Route::get('/review-requests', [ReviewRequestController::class, 'index']);
         Route::post('/requests/{id}/review', [ReviewRequestController::class, 'review']);
@@ -195,6 +194,11 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
 
         Route::get('/locations/dropdown', [LocationController::class, 'dropdown']);
         Route::apiResource('locations', LocationController::class);
+        Route::get('/suppliers/dropdown', [SupplierController::class, 'dropdown']);
+        Route::apiResource('suppliers', SupplierController::class);
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+        Route::put('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update']);
+        Route::delete('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy']);
 
         Route::get('/disposal/summary', [DisposalController::class, 'summary']);
         Route::get('/disposal/assets', [DisposalController::class, 'assets']);
@@ -210,6 +214,12 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () {
         Route::post('/maintenance-events/{maintenanceEvent}/cancel', [MaintenanceEventController::class, 'cancel']);
         Route::post('/assets/{asset}/lock', [AssetOffServiceController::class, 'lock']);
         Route::post('/assets/{asset}/unlock', [AssetOffServiceController::class, 'unlock']);
+    });
+
+    Route::middleware('role:manager,technician,supplier')->group(function () {
+        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
+        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show']);
+        Route::patch('/purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus']);
     });
 
     // Lock status is viewable by all authenticated users

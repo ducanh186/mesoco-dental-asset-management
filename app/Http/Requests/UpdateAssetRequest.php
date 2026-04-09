@@ -33,6 +33,7 @@ class UpdateAssetRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'type' => ['sometimes', 'string', Rule::in(Asset::TYPES)],
             'status' => ['sometimes', 'string', Rule::in(Asset::STATUSES)],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'instructions_url' => ['nullable', 'string', 'max:2000', 'url:http,https'],
         ];

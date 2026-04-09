@@ -1,152 +1,117 @@
 # Tính năng theo vai trò
 
-Hệ thống hiện dùng 4 vai trò chuẩn:
+## 1. Manager
 
-- `manager`
-- `technician`
-- `doctor`
-- `employee`
+Manager có quyền hệ thống và quyền điều phối:
 
-Các role cũ như `admin`, `hr`, `staff` chỉ còn là alias để tương thích dữ liệu cũ và sẽ được chuẩn hóa về 4 role trên khi lưu xuống database.
+- xem toàn bộ dashboard quản trị
+- duyệt phiếu cấp phát và phiếu báo sự cố
+- gán kỹ thuật viên xử lý sự cố
+- quản lý tài khoản người dùng và role
+- quản lý danh mục thiết bị, vị trí, nhà cung cấp
+- tạo, sửa, xóa đơn hàng
+- xem báo cáo và thống kê
+- tham gia bảo trì/thu hủy khi cần
 
-## 1. Nguyên tắc nghiệp vụ
+## 2. Technician
 
-- Không còn khái niệm “nhân sự” là một nhóm chức năng độc lập trong phạm vi DFD mức 0.
-- `manager` thay cho `admin` cũ ở các tác vụ phê duyệt, báo cáo và quản trị quyền.
-- `technician` giữ toàn bộ quyền vận hành mà trước đây nhóm hành chính/nhân sự cũ dùng để quản lý danh mục, tài sản, bảo trì và thu hủy.
-- `doctor` và `employee` là nhóm người dùng đầu cuối, chỉ làm việc với tài sản được giao và yêu cầu của chính họ.
+Technician là vai trò vận hành nội bộ:
 
-## 2. Bảng tổng quan
+- quản lý danh mục thiết bị
+- quản lý vị trí
+- quản lý nhà cung cấp
+- tạo user nội bộ mức `employee`
+- tiếp nhận và xử lý bảo trì/sửa chữa
+- thao tác khóa/mở trạng thái off-service
+- xử lý thu hủy/thanh lý
+- tạo, sửa, xóa đơn hàng
+- xem danh sách đơn hàng của tất cả nhà cung cấp
 
-| Chức năng | Manager | Technician | Doctor | Employee |
-| --- | :---: | :---: | :---: | :---: |
-| Xem và cập nhật hồ sơ cá nhân | ✅ | ✅ | ✅ | ✅ |
-| Xem tài sản cá nhân | ✅ | ✅ | ✅ | ✅ |
-| Quét QR và check-in/check-out | ✅ | ✅ | ✅ | ✅ |
-| Tạo yêu cầu báo sự cố | ✅ | ✅ | ✅ | ✅ |
-| Tạo yêu cầu mượn thiết bị | ✅ | ✅ | ✅ | ✅ |
-| Tạo yêu cầu vật tư | ✅ | ✅ | ✅ | ✅ |
-| Xem và hủy yêu cầu của chính mình | ✅ | ✅ | ✅ | ✅ |
-| Xem toàn bộ yêu cầu vận hành | ✅ | ✅ | ❌ | ❌ |
-| Duyệt yêu cầu | ✅ | ❌ | ❌ | ❌ |
-| Chỉ định kỹ thuật viên cho phiếu sự cố | ✅ | ❌ | ❌ | ❌ |
-| Quản lý tài sản, vị trí, tồn kho | ✅ | ✅ | ❌ | ❌ |
-| Phân công và thu hồi tài sản | ✅ | ✅ | ❌ | ❌ |
-| Quản lý bảo trì/sửa chữa | ✅ | ✅ | ❌ | ❌ |
-| Khóa/mở thiết bị off-service | ✅ | ✅ | ❌ | ❌ |
-| Quản lý thu hủy/thanh lý | ✅ | ✅ | ❌ | ❌ |
-| Xem báo cáo và thống kê | ✅ | ❌ | ❌ | ❌ |
-| Đổi role người dùng | ✅ | ❌ | ❌ | ❌ |
-| Xóa tài khoản người dùng | ✅ | ❌ | ❌ | ❌ |
+Lưu ý:
 
-## 3. Manager
+- technician không xem báo cáo tổng hợp cấp quản trị
+- technician không đổi role của người dùng
 
-`manager` là vai trò điều phối nghiệp vụ cấp cao.
+## 3. Employee
 
-Quyền chính:
+Employee là người dùng nội bộ đầu cuối. Bác sĩ dùng chung role này.
 
-- Duyệt hoặc từ chối request trong hàng chờ.
-- Khi duyệt phiếu `JUSTIFICATION`, bắt buộc chỉ định kỹ thuật viên.
-- Tự động sinh ticket bảo trì/sửa chữa từ phiếu sự cố đã duyệt.
-- Xem báo cáo tổng hợp tài sản, request, bảo trì, thu hủy.
-- Quản lý role tài khoản.
-- Truy cập toàn bộ phân hệ vận hành như technician.
+Employee có thể:
 
-Manager là người chịu trách nhiệm ở bước giữa trong luồng:
+- xem thiết bị được giao
+- quét QR để tra cứu
+- tạo phiếu mượn thiết bị
+- tạo phiếu báo sự cố
+- theo dõi phiếu của chính mình
+- cập nhật hồ sơ cá nhân
 
-`nhân viên / bác sĩ -> quản lý -> kỹ thuật viên`
+Employee không có quyền:
 
-## 4. Technician
+- vào module danh mục nội bộ
+- vào module bảo trì/thu hủy
+- vào module báo cáo
+- vào module đơn hàng
 
-`technician` là vai trò vận hành chính ở backend sau lần refactor này.
+## 4. Supplier
 
-Quyền chính:
+Supplier là vai trò mới cho nhà cung cấp.
 
-- Quản lý danh mục và hồ sơ tài sản:
-  - tài sản
-  - vị trí
-  - tồn kho
-  - QR
-- Phân công và thu hồi tài sản.
-- Tạo và cập nhật sự kiện bảo trì.
-- Bắt đầu, hoàn thành, hủy bảo trì.
-- Khóa và mở tài sản ở trạng thái off-service.
-- Thực hiện thu hủy/thanh lý.
-- Xem danh sách yêu cầu để phối hợp xử lý.
+Supplier có thể:
 
-Giới hạn:
+- đăng nhập bằng tài khoản gắn với bản ghi `suppliers`
+- xem dashboard đơn hàng của chính mình
+- xem danh sách đơn hàng thuộc nhà cung cấp của mình
+- cập nhật trạng thái đơn hàng: `preparing`, `shipping`, `delivered`
+- cập nhật hồ sơ nhà cung cấp của chính mình
 
-- Không được duyệt request.
-- Không được xem báo cáo tổng hợp.
-- Không được đổi role hoặc xóa user.
+Supplier không có quyền:
 
-## 5. Doctor
+- xem thiết bị nội bộ
+- tạo phiếu cấp phát hoặc phiếu sự cố
+- xem báo cáo quản trị
+- quản lý danh mục, vị trí, user hoặc tài sản
+- xem đơn hàng của nhà cung cấp khác
 
-`doctor` là người dùng đầu cuối trong khối chuyên môn.
+## 5. Theo phân hệ
 
-Quyền chính:
-
-- Xem tài sản được giao.
-- Quét QR để xem tình trạng thiết bị.
-- Check-in/check-out tài sản theo ca.
-- Gửi phiếu báo sự cố cho thiết bị mình đang dùng.
-- Gửi phiếu mượn thiết bị.
-- Gửi phiếu xin vật tư tiêu hao.
-- Theo dõi trạng thái request của mình.
-
-Giới hạn:
-
-- Không truy cập danh mục tổng.
-- Không phân công tài sản cho người khác.
-- Không thao tác bảo trì, thu hủy, báo cáo.
-
-## 6. Employee
-
-`employee` có quyền gần giống `doctor`, khác nhau chủ yếu ở ngữ cảnh nghiệp vụ và vị trí công việc.
-
-Quyền chính:
-
-- Xem tài sản cá nhân.
-- Quét QR và check-in/check-out.
-- Gửi request của mình.
-- Theo dõi hoặc hủy request khi còn hợp lệ.
-- Cập nhật hồ sơ cá nhân.
-
-## 7. Các phân hệ theo DFD mức 0
-
-### 7.1 Quản lý danh mục và hồ sơ
+### 5.1. Quản lý danh mục và hồ sơ
 
 - Manager: toàn quyền
 - Technician: toàn quyền vận hành
-- Doctor/Employee: không truy cập phân hệ quản trị
+- Employee: không truy cập
+- Supplier: chỉ truy cập hồ sơ của chính supplier qua trang profile
 
-### 7.2 Quản lý cấp phát
+### 5.2. Quản lý cấp phát
 
-- Doctor/Employee: tạo request
-- Manager: duyệt request
-- Technician: thực hiện cấp phát và xử lý phần vận hành phía sau
-
-### 7.3 Quản lý bảo trì sửa chữa
-
-- Doctor/Employee: báo sự cố
 - Manager: duyệt và điều phối
-- Technician: xử lý ticket bảo trì/sửa chữa
+- Technician: tham gia vận hành và xem queue phù hợp
+- Employee: tạo và theo dõi phiếu của chính mình
+- Supplier: không truy cập
 
-### 7.4 Quản lý thu hủy
+### 5.3. Bảo trì và sửa chữa
 
-- Manager và Technician có quyền vận hành.
-- Doctor/Employee không trực tiếp thao tác.
+- Manager: giám sát và can thiệp
+- Technician: vai trò chính
+- Employee: chỉ báo sự cố
+- Supplier: không truy cập module nội bộ
 
-### 7.5 Báo cáo và thống kê
+### 5.4. Thu hủy
 
-- Chỉ `manager` được truy cập.
+- Manager: phê duyệt/giám sát
+- Technician: thao tác chính
+- Employee: không truy cập
+- Supplier: không truy cập
 
-## 8. Lưu ý về module cũ
+### 5.5. Báo cáo
 
-Trong repo vẫn còn một số phần cũ như `feedback`, `contracts`, `employees` để giữ tương thích dữ liệu hoặc phục vụ nội bộ. Tuy nhiên luồng sản phẩm chính hiện được chốt theo 5 phân hệ ở trên.
+- Manager: truy cập
+- Technician: không truy cập báo cáo quản trị
+- Employee: không truy cập
+- Supplier: không truy cập
 
-## 9. Tài liệu liên quan
+### 5.6. Đơn hàng nhà cung cấp
 
-- [Mục lục tài liệu](README.md)
-- [Ma trận phân quyền API](RBAC_MATRIX.md)
-- [Checklist nghiệm thu](feat_role.md)
+- Manager: tạo, sửa, xóa, xem mọi đơn hàng
+- Technician: tạo, sửa, xóa, xem mọi đơn hàng
+- Employee: không truy cập
+- Supplier: chỉ xem đơn của mình và cập nhật trạng thái

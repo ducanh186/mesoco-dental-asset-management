@@ -72,6 +72,9 @@ export const StatusBadge = ({ status, className = '', ...props }) => {
         terminated: { variant: 'danger', label: t('common.status.terminated') },
         retired: { variant: 'default', label: t('common.status.retired') },
         draft: { variant: 'default', label: t('common.status.draft') },
+        preparing: { variant: 'warning', label: t('common.status.preparing') },
+        shipping: { variant: 'info', label: t('common.status.shipping') },
+        delivered: { variant: 'success', label: t('common.status.delivered') },
     };
 
     const config = statusConfig[normalizedStatus] || {

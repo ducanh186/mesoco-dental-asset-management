@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { preferLocalizedMessage } from './services/api';
-import { ROLE_MANAGER, ROLE_TECHNICIAN, normalizeRole } from './utils/roles';
+import { ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, normalizeRole } from './utils/roles';
 
 // Layout Components
 import AdminLayout from './layouts/AdminLayout';
@@ -23,6 +23,8 @@ import ReviewRequestsPage from './pages/ReviewRequestsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import InventoryPage from './pages/InventoryPage';
 import LocationsPage from './pages/LocationsPage';
+import SuppliersPage from './pages/SuppliersPage';
+import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import AdminPage from './pages/AdminPage';
 import MyAssetHistoryPage from './pages/MyAssetHistoryPage';
 import FeedbackPage from './pages/FeedbackPage';
@@ -147,6 +149,14 @@ const ManagerRoute = ({ children }) => (
 
 const OperatorRoute = ({ children }) => (
      <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_TECHNICIAN]}>{children}</RoleRoute>
+);
+
+const InternalRoute = ({ children }) => (
+     <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_TECHNICIAN, ROLE_EMPLOYEE]}>{children}</RoleRoute>
+);
+
+const PurchaseOrderRoute = ({ children }) => (
+     <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_TECHNICIAN, ROLE_SUPPLIER]}>{children}</RoleRoute>
 );
 
 // ============================================================================
@@ -1015,6 +1025,32 @@ const LocationsPageWrapper = () => {
      );
 };
 
+const SuppliersPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper
+               title={t('nav.suppliers')}
+               breadcrumbs={[{ label: t('nav.suppliers') }]}
+          >
+               <SuppliersPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const PurchaseOrdersPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper
+               title={t('nav.purchaseOrders')}
+               breadcrumbs={[{ label: t('nav.purchaseOrders') }]}
+          >
+               <PurchaseOrdersPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
 const MyAssetHistoryPageWrapper = () => {
      const { user } = useAuth();
      const { t } = useI18n();
@@ -1243,35 +1279,40 @@ const App = () => {
                                    <AssetsPageWrapper />
                               </OperatorRoute>
                          } />
+                         <Route path="/purchase-orders" element={
+                              <PurchaseOrderRoute>
+                                   <PurchaseOrdersPageWrapper />
+                              </PurchaseOrderRoute>
+                         } />
                          <Route path="/my-assets" element={
-                              <ProtectedRoute>
+                              <InternalRoute>
                                    <MyAssetsPageWrapper />
-                              </ProtectedRoute>
+                              </InternalRoute>
                          } />
                          <Route path="/equipment" element={
-                              <ProtectedRoute>
+                              <InternalRoute>
                                    <EquipmentPage />
-                              </ProtectedRoute>
+                              </InternalRoute>
                          } />
                          <Route path="/equipment/*" element={
-                              <ProtectedRoute>
+                              <InternalRoute>
                                    <EquipmentPage />
-                              </ProtectedRoute>
+                              </InternalRoute>
                          } />
                          <Route path="/qr-scan" element={
-                              <ProtectedRoute>
+                              <InternalRoute>
                                    <QRScanPageWrapper />
-                              </ProtectedRoute>
+                              </InternalRoute>
                          } />
                          <Route path="/requests" element={
-                              <ProtectedRoute>
+                              <InternalRoute>
                                    <RequestsPageWrapper />
-                              </ProtectedRoute>
+                              </InternalRoute>
                          } />
                          <Route path="/requests/*" element={
-                              <ProtectedRoute>
+                              <InternalRoute>
                                    <RequestsPageWrapper />
-                              </ProtectedRoute>
+                              </InternalRoute>
                          } />
                          <Route path="/review-requests" element={
                               <ManagerRoute>
@@ -1293,10 +1334,15 @@ const App = () => {
                                    <LocationsPageWrapper />
                               </OperatorRoute>
                          } />
+                         <Route path="/suppliers" element={
+                              <OperatorRoute>
+                                   <SuppliersPageWrapper />
+                              </OperatorRoute>
+                         } />
                          <Route path="/my-asset-history" element={
-                              <ProtectedRoute>
+                              <InternalRoute>
                                    <MyAssetHistoryPageWrapper />
-                              </ProtectedRoute>
+                              </InternalRoute>
                          } />
                          <Route path="/disposal" element={
                               <OperatorRoute>

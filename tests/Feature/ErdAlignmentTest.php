@@ -28,6 +28,19 @@ class ErdAlignmentTest extends TestCase
         $this->assertSame('employee', $user->roleDefinition?->code);
     }
 
+    public function test_doctor_role_is_now_collapsed_into_employee(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'doctor',
+            'must_change_password' => false,
+        ]);
+
+        $user->refresh()->load('roleDefinition');
+
+        $this->assertSame('employee', $user->role);
+        $this->assertSame('employee', $user->roleDefinition?->code);
+    }
+
     public function test_reviewing_request_creates_approval_record(): void
     {
         $admin = User::factory()->admin()->create(['must_change_password' => false]);

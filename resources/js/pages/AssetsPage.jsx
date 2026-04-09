@@ -14,7 +14,7 @@ import {
     ConfirmModal,
     useToast
 } from '../components/ui';
-import { assetsApi, employeesApi, handleApiError } from '../services/api';
+import { assetsApi, employeesApi, suppliersApi, handleApiError } from '../services/api';
 import { useI18n } from '../i18n';
 
 /**
@@ -29,6 +29,7 @@ const AssetsPage = ({ user }) => {
     // Data State
     const [assets, setAssets] = useState([]);
     const [employees, setEmployees] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [loading, setLoading] = useState(true);
 
@@ -56,6 +57,7 @@ const AssetsPage = ({ user }) => {
         name: '',
         type: 'equipment',
         status: 'active',
+        supplier_id: '',
         notes: ''
     });
     const [createErrors, setCreateErrors] = useState({});
@@ -142,6 +144,15 @@ const AssetsPage = ({ user }) => {
         }
     }, []);
 
+    const fetchSuppliers = useCallback(async () => {
+        try {
+            const data = await suppliersApi.dropdown();
+            setSuppliers(data.data || []);
+        } catch (error) {
+            console.error('Failed to fetch suppliers:', error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchAssets();
     }, [fetchAssets]);
@@ -149,6 +160,10 @@ const AssetsPage = ({ user }) => {
     useEffect(() => {
         fetchEmployees();
     }, [fetchEmployees]);
+
+    useEffect(() => {
+        fetchSuppliers();
+    }, [fetchSuppliers]);
 
     // Reset page when filters change
     useEffect(() => {
@@ -178,7 +193,7 @@ const AssetsPage = ({ user }) => {
             const data = await assetsApi.create(createForm);
             toast.success(t('assets.createSuccess'));
             setCreateModalOpen(false);
-            setCreateForm({ asset_code: '', name: '', type: 'equipment', status: 'active', notes: '' });
+            setCreateForm({ asset_code: '', name: '', type: 'equipment', status: 'active', supplier_id: '', notes: '' });
             
             // Show the new asset in drawer
             setSelectedAsset(data.asset);
@@ -470,6 +485,21 @@ const AssetsPage = ({ user }) => {
                             value={createForm.status}
                             onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}
                         />
+                        <Select
+                            label={t('assets.supplier')}
+                            options={[
+                                { value: '', label: t('assets.chooseSupplier') },
+                                ...suppliers.map((supplier) => ({
+                                    value: supplier.id,
+                                    label: supplier.code
+                                        ? `${supplier.code} - ${supplier.name}`
+                                        : supplier.name,
+                                })),
+                            ]}
+                            value={createForm.supplier_id}
+                            onChange={(e) => setCreateForm({ ...createForm, supplier_id: e.target.value })}
+                            error={createErrors.supplier_id?.[0]}
+                        />
                         <Input
                             label={t('common.notes')}
                             placeholder={t('assets.optionalNotes')}
@@ -562,6 +592,19 @@ const AssetsPage = ({ user }) => {
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs font-semibold text-text-muted uppercase">{t('common.type')}</span>
                                         <span className="text-sm font-medium capitalize">{getAssetTypeLabel(selectedAsset.type)}</span>
+                                    </div>
+                                    <div className="mt-3 pt-3 border-t border-border flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">{t('assets.supplier')}</span>
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium text-text">
+                                                {selectedAsset.supplier?.name || t('assets.noSupplier')}
+                                            </div>
+                                            {(selectedAsset.supplier?.code || selectedAsset.supplier?.contact_person) && (
+                                                <div className="text-xs text-text-muted">
+                                                    {selectedAsset.supplier?.code || selectedAsset.supplier?.contact_person}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                     {selectedAsset.notes && (
                                         <div className="mt-3 pt-3 border-t border-border">

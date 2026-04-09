@@ -18,12 +18,13 @@ class User extends Authenticatable
      * Available roles in the system.
      * Stored in users.role for backward compatibility and normalized to roles.id.
      */
-    public const ROLES = ['manager', 'technician', 'doctor', 'employee'];
+    public const ROLES = ['manager', 'technician', 'employee', 'supplier'];
 
     public const ROLE_MANAGER = 'manager';
     public const ROLE_DOCTOR = 'doctor';
     public const ROLE_TECHNICIAN = 'technician';
     public const ROLE_EMPLOYEE = 'employee';
+    public const ROLE_SUPPLIER = 'supplier';
     public const ROLE_STAFF = 'staff';
     public const ROLE_ADMIN = 'admin';
     public const ROLE_HR = 'hr';
@@ -34,6 +35,7 @@ class User extends Authenticatable
     public const LEGACY_ROLE_MAP = [
         self::ROLE_ADMIN => self::ROLE_MANAGER,
         self::ROLE_HR => self::ROLE_TECHNICIAN,
+        self::ROLE_DOCTOR => self::ROLE_EMPLOYEE,
         self::ROLE_STAFF => self::ROLE_EMPLOYEE,
     ];
 
@@ -58,6 +60,7 @@ class User extends Authenticatable
         'password',
         'employee_code',
         'employee_id',
+        'supplier_id',
         'role',
         'role_id',
         'status',
@@ -126,6 +129,11 @@ class User extends Authenticatable
         return $this->belongsTo(Employee::class);
     }
 
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
     public function roleDefinition(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
@@ -152,6 +160,11 @@ class User extends Authenticatable
     public function isTechnician(): bool
     {
         return $this->canonicalRole() === self::ROLE_TECHNICIAN;
+    }
+
+    public function isSupplier(): bool
+    {
+        return $this->canonicalRole() === self::ROLE_SUPPLIER;
     }
 
     public function hasOperationalAccess(): bool
@@ -238,7 +251,7 @@ class User extends Authenticatable
         return match (self::normalizeRole($role)) {
             self::ROLE_MANAGER => 'Manager',
             self::ROLE_TECHNICIAN => 'Technician',
-            self::ROLE_DOCTOR => 'Doctor',
+            self::ROLE_SUPPLIER => 'Supplier',
             default => 'Employee',
         };
     }

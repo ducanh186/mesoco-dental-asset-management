@@ -1,24 +1,33 @@
 # Mesoco Dental Asset Management
 
-README này chỉ là trang vào nhanh. Tài liệu chi tiết của dự án nằm trong [docs/README.md](docs/README.md).
+`README.md` ở root chỉ dùng để điều hướng. Tài liệu chính của dự án nằm trong [docs/README.md](docs/README.md).
 
-## 1. Phạm vi hiện tại
+## Phạm vi hiện tại
 
-Hệ thống đang được chốt theo 5 phân hệ chính:
+Hệ thống đang bám đúng 5 nhiệm vụ chính của DFD mức 0:
 
 1. Quản lý danh mục và hồ sơ
 2. Quản lý cấp phát
-3. Quản lý bảo trì sửa chữa
+3. Quản lý bảo trì và sửa chữa
 4. Quản lý thu hủy
 5. Báo cáo và thống kê
 
-Luồng nghiệp vụ quan trọng nhất:
+Các chốt nghiệp vụ đang áp dụng:
 
-`nhân viên / bác sĩ báo cáo sự cố -> quản lý -> kỹ thuật viên`
+- `employee` là vai trò người dùng nội bộ đầu cuối; bác sĩ dùng chung vai trò này
+- `manager` thay cho `admin`
+- `technician` giữ quyền vận hành nội bộ
+- `supplier` là vai trò cổng nhà cung cấp, chỉ theo dõi và cập nhật đơn hàng của chính mình
+- module hợp đồng nhân viên không còn trong phạm vi sản phẩm chính
 
-## 2. Khởi động nhanh
+Mở rộng mới nhất:
 
-### Thiết lập
+- thêm role `supplier`
+- thêm module `purchase_orders` và `purchase_order_items`
+- đơn hàng có các trường: sản phẩm, số lượng, đơn giá, thành tiền, phương thức thanh toán
+- trạng thái đơn hàng: `preparing`, `shipping`, `delivered`
+
+## Khởi động nhanh
 
 ```bash
 composer install
@@ -29,37 +38,30 @@ php artisan migrate --force
 npm run build
 ```
 
-Hoặc:
+Hoặc dùng script có sẵn:
 
 ```bash
 composer run setup
 ```
 
-### Chạy môi trường dev
+Chạy môi trường phát triển:
 
 ```bash
 composer run dev
 ```
 
-### Build và test
+Chạy test:
 
 ```bash
-npm run build
 php artisan test
 ```
 
-## 3. Tài liệu chính
+## Đi tới tài liệu
 
 - [Mục lục tài liệu](docs/README.md)
 - [Stack công nghệ](docs/STACK.md)
 - [Tính năng theo vai trò](docs/ROLE_FEATURES.md)
-- [Ma trận RBAC](docs/RBAC_MATRIX.md)
+- [Ma trận phân quyền](docs/RBAC_MATRIX.md)
 - [Quy ước database](docs/DB_CONVENTIONS.md)
-- [Dữ liệu mẫu và seeder](docs/SEED_DATA.md)
-- [Checklist nghiệm thu](docs/feat_role.md)
-
-## 4. Ghi chú ngắn
-
-- Role chuẩn hiện hành là `manager`, `technician`, `doctor`, `employee`.
-- `technician` hiện giữ toàn bộ quyền vận hành mà trước đây nhóm hành chính/nhân sự cũ dùng.
-- Một số phần cũ vẫn còn trong repo để giữ tương thích, nhưng luồng sản phẩm chính đã được dồn về 5 phân hệ nêu trên.
+- [Seeder và dữ liệu mẫu](docs/SEED_DATA.md)
+- [Checklist chốt phạm vi](docs/feat_role.md)

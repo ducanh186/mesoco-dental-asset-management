@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Employee;
+use App\Models\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,6 +30,24 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules(): array
     {
+        if ($this->user()?->isSupplier()) {
+            return [
+                'name' => ['sometimes', 'string', 'max:150'],
+                'contact_person' => ['sometimes', 'nullable', 'string', 'max:255'],
+                'phone' => ['sometimes', 'nullable', 'string', 'max:50'],
+                'address' => ['sometimes', 'nullable', 'string', 'max:1000'],
+                'note' => ['sometimes', 'nullable', 'string'],
+
+                'supplier_code' => ['prohibited'],
+                'email' => ['prohibited'],
+                'full_name' => ['prohibited'],
+                'position' => ['prohibited'],
+                'dob' => ['prohibited'],
+                'gender' => ['prohibited'],
+                'employee_code' => ['prohibited'],
+            ];
+        }
+
         return [
             // Editable fields
             'full_name' => ['sometimes', 'string', 'max:255'],
@@ -53,6 +72,7 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'employee_code.prohibited' => 'The employee_code field cannot be modified.',
+            'supplier_code.prohibited' => 'The supplier_code field cannot be modified.',
             'email.prohibited' => 'The email field cannot be modified.',
             'dob.before' => 'The date of birth must be a date before today.',
             'gender.in' => 'The gender must be one of: male, female, other.',
@@ -64,6 +84,10 @@ class UpdateProfileRequest extends FormRequest
      */
     public function safeData(): array
     {
+        if ($this->user()?->isSupplier()) {
+            return $this->only(Supplier::PROFILE_EDITABLE_FIELDS);
+        }
+
         return $this->only(Employee::PROFILE_EDITABLE_FIELDS);
     }
 }

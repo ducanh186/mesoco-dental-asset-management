@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { ROLE_DOCTOR, ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_TECHNICIAN, getUserRole, hasOperationalAccess } from '../utils/roles';
+import { ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, getUserRole, hasOperationalAccess } from '../utils/roles';
 
 /**
  * Sidebar focused on the 5 DFD level-0 tasks.
@@ -14,12 +14,24 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const role = getUserRole(user);
     const isManager = role === ROLE_MANAGER;
     const isTechnician = role === ROLE_TECHNICIAN;
-    const isDoctor = role === ROLE_DOCTOR;
-    const isEmployee = role === ROLE_EMPLOYEE;
+    const isSupplier = role === ROLE_SUPPLIER;
     const isOperationalRole = hasOperationalAccess(user);
-    const isRequesterOnlyRole = isDoctor || isEmployee;
+    const isRequesterOnlyRole = role === ROLE_EMPLOYEE;
 
-    const navItems = [
+    const navItems = isSupplier ? [
+        {
+            id: 'dashboard',
+            path: '/dashboard',
+            labelKey: 'nav.dashboard',
+            icon: 'dashboard'
+        },
+        {
+            id: 'purchase-orders',
+            path: '/purchase-orders',
+            labelKey: 'nav.purchaseOrders',
+            icon: 'purchaseOrders'
+        },
+    ] : [
         { 
             id: 'dashboard',
             path: '/dashboard', 
@@ -47,6 +59,8 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 { path: '/assets', label: t('nav.assets') },
                 { path: '/inventory', label: t('nav.inventoryValuation') },
                 { path: '/locations', label: t('nav.locations') },
+                { path: '/suppliers', label: t('nav.suppliers') },
+                { path: '/purchase-orders', label: t('nav.purchaseOrders') },
             ]
         }] : []),
         {
@@ -187,6 +201,23 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                     <circle cx="12" cy="10" r="3" />
+                </svg>
+            ),
+            suppliers: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 7h13" />
+                    <path d="M3 12h18" />
+                    <path d="M3 17h13" />
+                    <path d="M18 8l3-3" />
+                    <path d="M18 16l3 3" />
+                </svg>
+            ),
+            purchaseOrders: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                    <rect x="9" y="3" width="6" height="4" rx="1" />
+                    <path d="M9 12h6" />
+                    <path d="M9 16h6" />
                 </svg>
             ),
             history: (

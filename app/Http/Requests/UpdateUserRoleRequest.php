@@ -37,6 +37,8 @@ class UpdateUserRoleRequest extends FormRequest
             ],
             // FORBIDDEN FIELDS - must reject with 422 if sent
             'employee_code' => ['prohibited'],
+            'employee_id' => ['prohibited'],
+            'supplier_id' => ['prohibited'],
             'name' => ['prohibited'],
             'email' => ['prohibited'],
             'password' => ['prohibited'],
@@ -54,6 +56,8 @@ class UpdateUserRoleRequest extends FormRequest
             'role.required' => 'Please select a role.',
             'role.in' => 'Invalid role selected. Must be one of: ' . implode(', ', User::ROLES),
             'employee_code.prohibited' => 'The employee_code field cannot be modified.',
+            'employee_id.prohibited' => 'The employee_id field cannot be modified.',
+            'supplier_id.prohibited' => 'The supplier_id field cannot be modified.',
             'name.prohibited' => 'The name field cannot be modified.',
             'email.prohibited' => 'The email field cannot be modified.',
             'password.prohibited' => 'The password field cannot be modified via this endpoint.',

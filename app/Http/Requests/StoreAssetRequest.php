@@ -26,6 +26,7 @@ class StoreAssetRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', Rule::in(Asset::TYPES)],
             'status' => ['sometimes', 'string', Rule::in(Asset::STATUSES)],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'instructions_url' => ['nullable', 'string', 'max:2000', 'url:http,https'],
         ];

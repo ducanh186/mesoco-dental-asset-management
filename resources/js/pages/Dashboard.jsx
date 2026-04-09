@@ -3,14 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import axios from 'axios';
 import { StatCard, QuickActionGrid, RecentEquipmentTable } from '../components/dashboard';
-import { ROLE_MANAGER, ROLE_TECHNICIAN, hasOperationalAccess, normalizeRole } from '../utils/roles';
+import { Badge, Card, Table } from '../components/ui';
+import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, hasOperationalAccess, normalizeRole } from '../utils/roles';
 
 /**
  * Dashboard Page - Role-based conditional rendering
  * 
  * - Manager: approval + reporting overview
  * - Technician: operational overview for catalog/allocation/maintenance
- * - Doctor/Employee: personal metrics (my equipment, my requests)
+ * - Employee: personal metrics (my equipment, my requests)
  */
 const Dashboard = ({ user }) => {
     const { t } = useI18n();
@@ -29,10 +30,18 @@ const Dashboard = ({ user }) => {
     // Personal stats
     const [myAssets, setMyAssets] = useState([]);
     const [myRequests, setMyRequests] = useState([]);
+    const [purchaseOrders, setPurchaseOrders] = useState([]);
+    const [purchaseOrderSummary, setPurchaseOrderSummary] = useState({
+        total: 0,
+        preparing: 0,
+        shipping: 0,
+        delivered: 0,
+    });
     
     const role = normalizeRole(user?.role);
     const isManager = role === ROLE_MANAGER;
     const isTechnician = role === ROLE_TECHNICIAN;
+    const isSupplier = role === ROLE_SUPPLIER;
     const isOperationalRole = hasOperationalAccess(user);
 
     // Fetch data based on role
@@ -67,6 +76,23 @@ const Dashboard = ({ user }) => {
                 setGlobalAssets(assetsRes.data?.assets || assetsRes.data?.data || []);
                 setMyRequests(myRequestsRes.data?.requests || myRequestsRes.data?.data || []);
                 
+            } else if (isSupplier) {
+                const ordersRes = await axios.get('/api/purchase-orders', {
+                    params: { per_page: 5 }
+                }).catch(() => ({
+                    data: {
+                        data: [],
+                        summary: { total: 0, preparing: 0, shipping: 0, delivered: 0 },
+                    }
+                }));
+
+                setPurchaseOrders(ordersRes.data?.data || []);
+                setPurchaseOrderSummary(ordersRes.data?.summary || {
+                    total: 0,
+                    preparing: 0,
+                    shipping: 0,
+                    delivered: 0,
+                });
             } else {
                 const [myAssetsRes, myRequestsRes] = await Promise.all([
                     axios.get('/api/my-assets').catch(() => ({ data: { assets: [] } })),
@@ -82,7 +108,7 @@ const Dashboard = ({ user }) => {
         } finally {
             setLoading(false);
         }
-    }, [isManager, isTechnician, t]);
+    }, [isManager, isSupplier, isTechnician, t]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -206,6 +232,39 @@ const Dashboard = ({ user }) => {
             ];
         }
 
+        if (isSupplier) {
+            return [
+                {
+                    title: t('dashboard.totalOrders'),
+                    value: purchaseOrderSummary.total,
+                    subtitle: t('dashboard.preparingCount', { count: purchaseOrderSummary.preparing }),
+                    color: 'primary',
+                    trend: 'neutral',
+                    icon: requestsIcon,
+                },
+                {
+                    title: t('dashboard.ordersShipping'),
+                    value: purchaseOrderSummary.shipping,
+                    subtitle: purchaseOrderSummary.shipping > 0
+                        ? t('dashboard.shippingInProgress')
+                        : t('dashboard.noShippingOrders'),
+                    color: purchaseOrderSummary.shipping > 0 ? 'info' : 'success',
+                    trend: 'neutral',
+                    icon: maintenanceIcon,
+                },
+                {
+                    title: t('dashboard.ordersDelivered'),
+                    value: purchaseOrderSummary.delivered,
+                    subtitle: purchaseOrderSummary.delivered > 0
+                        ? t('dashboard.deliveredCount', { count: purchaseOrderSummary.delivered })
+                        : t('dashboard.awaitingDelivery'),
+                    color: purchaseOrderSummary.delivered > 0 ? 'success' : 'warning',
+                    trend: 'neutral',
+                    icon: calendarIcon,
+                }
+            ];
+        }
+
         const myEquipmentCount = myAssets.length;
         const lockedCount = myAssets.filter(a => a.is_locked || a.status === 'off_service').length;
         const activeRequestsCount = myRequests.filter(
@@ -287,7 +346,9 @@ const Dashboard = ({ user }) => {
                         ? t('dashboard.welcomeSubtitleAdmin')
                         : isTechnician
                             ? t('dashboard.welcomeSubtitleTechnician')
-                            : t('dashboard.welcomeSubtitleUser')
+                            : isSupplier
+                                ? t('dashboard.welcomeSubtitleSupplier')
+                                : t('dashboard.welcomeSubtitleUser')
                     }
                 </p>
             </div>
@@ -324,16 +385,74 @@ const Dashboard = ({ user }) => {
             {/* Quick Actions */}
             <QuickActionGrid role={role} />
 
-            {/* Recent Equipment Table */}
-            <RecentEquipmentTable
-                role={role}
-                data={getTableData()}
-                loading={loading}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onCreateRequest={handleCreateRequest}
-            />
+            {isSupplier ? (
+                <Card className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-lg font-semibold text-text">{t('dashboard.recentOrders')}</h3>
+                            <p className="text-sm text-text-muted">{t('dashboard.recentOrdersHint')}</p>
+                        </div>
+                        <Link
+                            to="/purchase-orders"
+                            className="text-sm text-primary hover:text-primary-hover"
+                        >
+                            {t('dashboard.viewAll')}
+                        </Link>
+                    </div>
+                    <Table
+                        columns={[
+                            {
+                                key: 'order_code',
+                                label: t('purchaseOrders.orderCode'),
+                            },
+                            {
+                                key: 'order_date',
+                                label: t('purchaseOrders.orderDate'),
+                                render: (value) => value || '—',
+                            },
+                            {
+                                key: 'total_amount',
+                                label: t('purchaseOrders.totalAmount'),
+                                align: 'right',
+                                render: (value) => new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                    maximumFractionDigits: 0,
+                                }).format(Number(value || 0)),
+                            },
+                            {
+                                key: 'status',
+                                label: t('common.status.label'),
+                                render: (value) => (
+                                    <Badge
+                                        variant={value === 'delivered' ? 'success' : value === 'shipping' ? 'info' : 'warning'}
+                                        size="sm"
+                                    >
+                                        {value === 'delivered'
+                                            ? t('common.status.delivered')
+                                            : value === 'shipping'
+                                                ? t('common.status.shipping')
+                                                : t('common.status.preparing')}
+                                    </Badge>
+                                ),
+                            },
+                        ]}
+                        data={purchaseOrders}
+                        loading={loading}
+                        emptyMessage={t('dashboard.noOrdersFound')}
+                    />
+                </Card>
+            ) : (
+                <RecentEquipmentTable
+                    role={role}
+                    data={getTableData()}
+                    loading={loading}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onCreateRequest={handleCreateRequest}
+                />
+            )}
         </div>
     );
 };

@@ -36,13 +36,12 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        $isManager = $this->user()->canManageUsers();
+        $role = User::normalizeRole(
+            $isManager ? $this->input('role', User::ROLE_EMPLOYEE) : User::ROLE_EMPLOYEE
+        );
+
         $rules = [
-            'employee_id' => [
-                'required',
-                'integer',
-                'exists:employees,id',
-                Rule::unique('users', 'employee_id'), // Each employee can have only ONE user account
-            ],
             'default_password' => [
                 'required',
                 'string',
@@ -50,12 +49,30 @@ class StoreUserRequest extends FormRequest
             ],
         ];
 
-        if ($this->user()->canManageUsers()) {
+        if ($isManager) {
             $rules['role'] = [
                 'required',
                 'string',
                 Rule::in(User::ROLES),
             ];
+        }
+
+        if ($role === User::ROLE_SUPPLIER) {
+            $rules['supplier_id'] = [
+                'required',
+                'integer',
+                'exists:suppliers,id',
+                Rule::unique('users', 'supplier_id'),
+            ];
+            $rules['employee_id'] = ['prohibited'];
+        } else {
+            $rules['employee_id'] = [
+                'required',
+                'integer',
+                'exists:employees,id',
+                Rule::unique('users', 'employee_id'),
+            ];
+            $rules['supplier_id'] = ['prohibited'];
         }
 
         return $rules;
@@ -72,6 +89,11 @@ class StoreUserRequest extends FormRequest
             'employee_id.required' => 'Please select an employee.',
             'employee_id.exists' => 'The selected employee does not exist.',
             'employee_id.unique' => 'This employee already has a user account.',
+            'employee_id.prohibited' => 'Employee accounts cannot be created from a supplier record.',
+            'supplier_id.required' => 'Please select a supplier.',
+            'supplier_id.exists' => 'The selected supplier does not exist.',
+            'supplier_id.unique' => 'This supplier already has a user account.',
+            'supplier_id.prohibited' => 'Supplier accounts cannot be created from an employee record.',
             'role.required' => 'Please select a role.',
             'role.in' => 'Invalid role selected. Must be one of: ' . implode(', ', User::ROLES),
             'default_password.required' => 'The default password is required.',

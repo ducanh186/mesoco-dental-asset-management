@@ -31,13 +31,18 @@ import { preferLocalizedMessage } from '../services/api';
 const ProfilePage = ({ user }) => {
     const toast = useToast();
     const { t } = useI18n();
+    const role = normalizeRole(user?.role);
     
     // Loading states
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [profileType, setProfileType] = useState('employee');
     
     // Form data
     const [formData, setFormData] = useState({
+        name: '',
+        supplier_code: '',
+        contact_person: '',
         full_name: '',
         employee_code: '',
         position: '',
@@ -46,6 +51,7 @@ const ProfilePage = ({ user }) => {
         phone: '',
         email: '',
         address: '',
+        note: '',
     });
     
     // Field errors
@@ -68,7 +74,11 @@ const ProfilePage = ({ user }) => {
         try {
             const response = await axios.get('/api/profile');
             const profile = response.data.profile;
+            setProfileType(profile.profile_type || 'employee');
             setFormData({
+                name: profile.name || '',
+                supplier_code: profile.supplier_code || '',
+                contact_person: profile.contact_person || '',
                 full_name: profile.full_name || '',
                 employee_code: profile.employee_code || '',
                 position: profile.position || '',
@@ -77,6 +87,7 @@ const ProfilePage = ({ user }) => {
                 phone: profile.phone || '',
                 email: profile.email || '',
                 address: profile.address || '',
+                note: profile.note || '',
             });
         } catch (error) {
             toast.error(preferLocalizedMessage(error.response?.data?.message, t('profile.loadError')));
@@ -88,15 +99,18 @@ const ProfilePage = ({ user }) => {
     const validateForm = () => {
         const errors = {};
         
-        // Full name is required
-        if (!formData.full_name.trim()) {
+        if (profileType === 'supplier') {
+            if (!formData.name.trim()) {
+                errors.name = t('validation.required');
+            }
+        } else if (!formData.full_name.trim()) {
             errors.full_name = t('validation.required');
         }
         
         setFieldErrors(errors);
         
         // Focus first invalid field
-        if (errors.full_name) {
+        if (errors.name || errors.full_name) {
             fullNameRef.current?.focus();
         }
         
@@ -119,29 +133,41 @@ const ProfilePage = ({ user }) => {
         setSaving(true);
         
         try {
-            // Only send editable fields
-            const payload = {
-                full_name: formData.full_name.trim(),
-                position: formData.position?.trim() || null,
-                dob: formData.dob || null,
-                gender: formData.gender || null,
-                phone: formData.phone?.trim() || null,
-                address: formData.address?.trim() || null,
-            };
+            const payload = profileType === 'supplier'
+                ? {
+                    name: formData.name.trim(),
+                    contact_person: formData.contact_person?.trim() || null,
+                    phone: formData.phone?.trim() || null,
+                    address: formData.address?.trim() || null,
+                    note: formData.note?.trim() || null,
+                }
+                : {
+                    full_name: formData.full_name.trim(),
+                    position: formData.position?.trim() || null,
+                    dob: formData.dob || null,
+                    gender: formData.gender || null,
+                    phone: formData.phone?.trim() || null,
+                    address: formData.address?.trim() || null,
+                };
 
             const response = await axios.put('/api/profile', payload);
             
             // Update form with response data
             if (response.data.profile) {
                 const profile = response.data.profile;
+                setProfileType(profile.profile_type || profileType);
                 setFormData(prev => ({
                     ...prev,
+                    name: profile.name || prev.name,
+                    supplier_code: profile.supplier_code || prev.supplier_code,
+                    contact_person: profile.contact_person || '',
                     full_name: profile.full_name || '',
                     position: profile.position || '',
                     dob: profile.dob || '',
                     gender: profile.gender || '',
                     phone: profile.phone || '',
                     address: profile.address || '',
+                    note: profile.note || '',
                 }));
             }
             
@@ -176,7 +202,9 @@ const ProfilePage = ({ user }) => {
     };
 
     const getUserInitials = () => {
-        const name = formData.full_name || user?.name;
+        const name = profileType === 'supplier'
+            ? (formData.name || user?.name)
+            : (formData.full_name || user?.name);
         if (!name) return 'U';
         const names = name.split(' ');
         if (names.length >= 2) {
@@ -211,10 +239,13 @@ const ProfilePage = ({ user }) => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h2 className="text-xl font-semibold text-text truncate">
-                                    {formData.full_name || user?.name || t('profile.unnamed')}
+                                    {profileType === 'supplier'
+                                        ? (formData.name || user?.name || t('profile.unnamed'))
+                                        : (formData.full_name || user?.name || t('profile.unnamed'))
+                                    }
                                 </h2>
                                 <p className="text-text-muted">
-                                    {formData.employee_code}
+                                    {profileType === 'supplier' ? formData.supplier_code : formData.employee_code}
                                 </p>
                                 <Badge variant="primary" size="sm" className="mt-2">
                                     {getRoleLabel()}
@@ -229,81 +260,90 @@ const ProfilePage = ({ user }) => {
                     <CardHeader title={t('profile.personalDetails')} />
                     <CardBody>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Employee Full Name - Editable */}
                             <Input
                                 ref={fullNameRef}
-                                label={t('profile.employeeFullName')}
-                                value={formData.full_name}
-                                onChange={(e) => handleFieldChange('full_name', e.target.value)}
-                                error={fieldErrors.full_name}
+                                label={profileType === 'supplier' ? t('profile.supplierName') : t('profile.employeeFullName')}
+                                value={profileType === 'supplier' ? formData.name : formData.full_name}
+                                onChange={(e) => handleFieldChange(profileType === 'supplier' ? 'name' : 'full_name', e.target.value)}
+                                error={fieldErrors[profileType === 'supplier' ? 'name' : 'full_name']}
                                 required
                                 disabled={saving}
                             />
 
-                            {/* Employee Id - Disabled */}
                             <Input
-                                label={t('profile.employeeId')}
-                                value={formData.employee_code}
+                                label={profileType === 'supplier' ? t('profile.supplierCode') : t('profile.employeeId')}
+                                value={profileType === 'supplier' ? formData.supplier_code : formData.employee_code}
                                 disabled
                                 helper={t('profile.disabledFieldHint')}
                             />
 
-                            {/* Position - Editable */}
-                            <Input
-                                ref={positionRef}
-                                label={t('profile.position')}
-                                value={formData.position}
-                                onChange={(e) => handleFieldChange('position', e.target.value)}
-                                error={fieldErrors.position}
-                                disabled={saving}
-                            />
+                            {profileType === 'supplier' ? (
+                                <Input
+                                    ref={positionRef}
+                                    label={t('profile.contactPerson')}
+                                    value={formData.contact_person}
+                                    onChange={(e) => handleFieldChange('contact_person', e.target.value)}
+                                    error={fieldErrors.contact_person}
+                                    disabled={saving}
+                                />
+                            ) : (
+                                <Input
+                                    ref={positionRef}
+                                    label={t('profile.position')}
+                                    value={formData.position}
+                                    onChange={(e) => handleFieldChange('position', e.target.value)}
+                                    error={fieldErrors.position}
+                                    disabled={saving}
+                                />
+                            )}
 
-                            {/* Date of Birth - Editable */}
-                            <Input
-                                ref={dobRef}
-                                label={t('profile.dateOfBirth')}
-                                type="date"
-                                value={formData.dob}
-                                onChange={(e) => handleFieldChange('dob', e.target.value)}
-                                error={fieldErrors.dob}
-                                disabled={saving}
-                            />
+                            {profileType === 'employee' && (
+                                <>
+                                    <Input
+                                        ref={dobRef}
+                                        label={t('profile.dateOfBirth')}
+                                        type="date"
+                                        value={formData.dob}
+                                        onChange={(e) => handleFieldChange('dob', e.target.value)}
+                                        error={fieldErrors.dob}
+                                        disabled={saving}
+                                    />
 
-                            {/* Gender - Editable (Radio) */}
-                            <div className="ui-input-wrapper">
-                                <label className="ui-input-label">{t('profile.gender')}</label>
-                                <div className="flex items-center gap-6 mt-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="gender"
-                                            value="male"
-                                            checked={formData.gender === 'male'}
-                                            onChange={(e) => handleFieldChange('gender', e.target.value)}
-                                            disabled={saving}
-                                            className="w-4 h-4 text-primary focus:ring-primary border-border"
-                                        />
-                                        <span className="text-text">{t('profile.male')}</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="gender"
-                                            value="female"
-                                            checked={formData.gender === 'female'}
-                                            onChange={(e) => handleFieldChange('gender', e.target.value)}
-                                            disabled={saving}
-                                            className="w-4 h-4 text-primary focus:ring-primary border-border"
-                                        />
-                                        <span className="text-text">{t('profile.female')}</span>
-                                    </label>
-                                </div>
-                                {fieldErrors.gender && (
-                                    <p className="ui-input-error-text mt-1">{fieldErrors.gender}</p>
-                                )}
-                            </div>
+                                    <div className="ui-input-wrapper">
+                                        <label className="ui-input-label">{t('profile.gender')}</label>
+                                        <div className="flex items-center gap-6 mt-2">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="gender"
+                                                    value="male"
+                                                    checked={formData.gender === 'male'}
+                                                    onChange={(e) => handleFieldChange('gender', e.target.value)}
+                                                    disabled={saving}
+                                                    className="w-4 h-4 text-primary focus:ring-primary border-border"
+                                                />
+                                                <span className="text-text">{t('profile.male')}</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="gender"
+                                                    value="female"
+                                                    checked={formData.gender === 'female'}
+                                                    onChange={(e) => handleFieldChange('gender', e.target.value)}
+                                                    disabled={saving}
+                                                    className="w-4 h-4 text-primary focus:ring-primary border-border"
+                                                />
+                                                <span className="text-text">{t('profile.female')}</span>
+                                            </label>
+                                        </div>
+                                        {fieldErrors.gender && (
+                                            <p className="ui-input-error-text mt-1">{fieldErrors.gender}</p>
+                                        )}
+                                    </div>
+                                </>
+                            )}
 
-                            {/* Phone Number - Editable */}
                             <Input
                                 ref={phoneRef}
                                 label={t('profile.phoneNumber')}
@@ -314,7 +354,6 @@ const ProfilePage = ({ user }) => {
                                 disabled={saving}
                             />
 
-                            {/* Email - Disabled */}
                             <Input
                                 label={t('profile.email')}
                                 type="email"
@@ -323,7 +362,6 @@ const ProfilePage = ({ user }) => {
                                 helper={t('profile.disabledFieldHint')}
                             />
 
-                            {/* Address - Editable (full width) */}
                             <div className="md:col-span-2">
                                 <Textarea
                                     ref={addressRef}
@@ -335,6 +373,19 @@ const ProfilePage = ({ user }) => {
                                     disabled={saving}
                                 />
                             </div>
+
+                            {profileType === 'supplier' && (
+                                <div className="md:col-span-2">
+                                    <Textarea
+                                        label={t('profile.supplierNote')}
+                                        value={formData.note}
+                                        onChange={(e) => handleFieldChange('note', e.target.value)}
+                                        error={fieldErrors.note}
+                                        rows={3}
+                                        disabled={saving}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Save Button */}
