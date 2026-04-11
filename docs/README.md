@@ -59,3 +59,4 @@ Nếu cần nghiệm thu theo chốt khách hàng:
 | [DB_CONVENTIONS.md](DB_CONVENTIONS.md) | Quy ước schema, bảng lõi, enum và ràng buộc dữ liệu |
 | [SEED_DATA.md](SEED_DATA.md) | Seeder, dữ liệu demo, factory và ghi chú môi trường test |
 | [feat_role.md](feat_role.md) | Checklist chốt phạm vi và tiêu chí nghiệm thu |
+| [CLASS_DIAGRAM.md](CLASS_DIAGRAM.md) | Class diagram Mermaid cho các model và quan hệ domain chính |
