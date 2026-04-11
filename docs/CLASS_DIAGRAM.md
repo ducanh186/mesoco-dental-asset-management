@@ -9,7 +9,7 @@ classDiagram
     class User {
         ma_nguoi_dung
         ho_ten
-        emaihttps://www.librechat.ai/docs/locall
+        email 
         vai_tro
         trang_thai
     }
