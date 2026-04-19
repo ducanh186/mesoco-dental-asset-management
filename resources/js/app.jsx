@@ -18,8 +18,6 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import MyEquipmentPage from './pages/MyEquipmentPage';
 import AssetsPage from './pages/AssetsPage';
 import MyAssetsPage from './pages/MyAssetsPage';
-import RequestsPage from './pages/RequestsPage';
-import ReviewRequestsPage from './pages/ReviewRequestsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import InventoryPage from './pages/InventoryPage';
 import LocationsPage from './pages/LocationsPage';
@@ -960,32 +958,6 @@ const QRScanPageWrapper = () => {
      );
 };
 
-const RequestsPageWrapper = () => {
-     const { user } = useAuth();
-     const { t } = useI18n();
-     return (
-          <AdminLayoutWrapper 
-               title={t('nav.requests')} 
-               breadcrumbs={[{ label: t('nav.requests') }]}
-          >
-               <RequestsPage user={user} />
-          </AdminLayoutWrapper>
-     );
-};
-
-const ReviewRequestsPageWrapper = () => {
-     const { user } = useAuth();
-     const { t } = useI18n();
-     return (
-          <AdminLayoutWrapper 
-               title={t('nav.reviewRequests')} 
-               breadcrumbs={[{ label: t('nav.reviewRequests') }]}
-          >
-               <ReviewRequestsPage user={user} />
-          </AdminLayoutWrapper>
-     );
-};
-
 const MaintenancePageWrapper = () => {
      const { user } = useAuth();
      const { t } = useI18n();
@@ -1304,21 +1276,9 @@ const App = () => {
                                    <QRScanPageWrapper />
                               </InternalRoute>
                          } />
-                         <Route path="/requests" element={
-                              <InternalRoute>
-                                   <RequestsPageWrapper />
-                              </InternalRoute>
-                         } />
-                         <Route path="/requests/*" element={
-                              <InternalRoute>
-                                   <RequestsPageWrapper />
-                              </InternalRoute>
-                         } />
-                         <Route path="/review-requests" element={
-                              <ManagerRoute>
-                                   <ReviewRequestsPageWrapper />
-                              </ManagerRoute>
-                         } />
+                         <Route path="/requests" element={<Navigate to="/dashboard" replace />} />
+                         <Route path="/requests/*" element={<Navigate to="/dashboard" replace />} />
+                         <Route path="/review-requests" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/maintenance" element={
                               <OperatorRoute>
                                    <MaintenancePageWrapper />
@@ -1354,7 +1314,7 @@ const App = () => {
                                    <ReportPageWrapper />
                               </ManagerRoute>
                           } />
-                         <Route path="/feedback" element={<Navigate to="/requests" replace />} />
+                         <Route path="/feedback" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/contracts" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/employees" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/users" element={<Navigate to="/dashboard" replace />} />

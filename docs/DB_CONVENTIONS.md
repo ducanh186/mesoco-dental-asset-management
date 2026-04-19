@@ -2,18 +2,127 @@
 
 ## 1. Nguyên tắc chung
 
-- Role canonical được lưu ở `users.role` và chuẩn hóa thêm qua `users.role_id`
-- User liên kết với đúng một profile nghiệp vụ:
-  - nội bộ: `users.employee_id`
-  - nhà cung cấp: `users.supplier_id`
-- `employee_id` và `supplier_id` không phải cùng dùng cho một user theo nghiệp vụ
-- Legacy role vẫn được normalize khi lưu user
+- Mỗi bảng nghiệp vụ dùng `id` làm Primary Key nếu không phải bảng pivot.
+- Bảng pivot như `account_roles` và `role_permissions` dùng composite Primary Key để tránh trùng quan hệ.
+- Mọi liên kết nghiệp vụ chính đều có Foreign Key rõ ràng.
+- `users.role` vẫn là role canonical để tương thích code cũ, nhưng `users.role_id` và `account_roles` là liên kết chuẩn về bảng `roles`.
+- `requests`, `request_items`, `request_events` đã bị loại khỏi scope chính theo yêu cầu mới.
 
-## 2. Bảng lõi
+## 2. Tài khoản và phân quyền
 
-### 2.1. `users`
+### 2.1. `roles`
 
-Cột chính đang dùng:
+- Primary Key: `id`
+- Unique: `code`
+- Dùng cho 4 role canonical: `manager`, `technician`, `employee`, `supplier`
+
+### 2.2. `permissions`
+
+- Primary Key: `id`
+- Unique: `code`
+- Lưu quyền nghiệp vụ dạng nhỏ, ví dụ `inventory.manage`, `maintenance.manage`, `reports.view`
+
+### 2.3. `role_permissions`
+
+- Composite Primary Key: `role_id`, `permission_id`
+- Foreign Key:
+  - `role_id -> roles.id`
+  - `permission_id -> permissions.id`
+- Dùng để mô tả role nào có permission nào.
+
+### 2.4. `account_roles`
+
+- Composite Primary Key: `user_id`, `role_id`
+- Foreign Key:
+  - `user_id -> users.id`
+  - `role_id -> roles.id`
+- Dùng để thể hiện tài khoản được gán role nào. Hiện code vẫn giữ một role chính tại `users.role_id`.
+
+## 3. Bốn nghiệp vụ chính
+
+### 3.1. Cấp phát / đơn hàng
+
+`purchase_orders`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `supplier_id -> suppliers.id`
+  - `requested_by_user_id -> users.id`
+  - `approved_by_user_id -> users.id`
+
+`purchase_order_items`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `purchase_order_id -> purchase_orders.id`
+  - `asset_id -> assets.id`
+  - `category_id -> categories.id`
+- `line_total` luôn do backend tính từ `qty * unit_price`.
+
+### 3.2. Bảo trì
+
+`maintenance_events`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `asset_id -> assets.id`
+  - `assigned_to_user_id -> users.id`
+  - `created_by -> users.id`
+  - `updated_by -> users.id`
+
+`maintenance_details`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `maintenance_event_id -> maintenance_events.id`
+  - `asset_id -> assets.id`
+  - `technician_user_id -> users.id`
+  - `supplier_id -> suppliers.id`
+- Bảng này là bảng chi tiết chuẩn cho nghiệp vụ bảo trì. `repair_logs` được giữ để tương thích legacy.
+
+### 3.3. Thu hủy
+
+`disposals`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `asset_id -> assets.id`
+  - `disposed_by_user_id -> users.id`
+  - `approved_by_user_id -> users.id`
+
+`disposal_details`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `disposal_id -> disposals.id`
+  - `asset_id -> assets.id`
+- Bảng này lưu chi tiết tài sản thu hủy, tình trạng xử lý, giá trị còn lại và số tiền thu hồi.
+
+### 3.4. Kiểm kê
+
+`inventory_checks`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `created_by_user_id -> users.id`
+  - `completed_by_user_id -> users.id`
+- Đại diện cho một đợt kiểm kê.
+
+`inventory_check_items`
+
+- Primary Key: `id`
+- Foreign Key:
+  - `inventory_check_id -> inventory_checks.id`
+  - `asset_id -> assets.id`
+  - `counted_by_user_id -> users.id`
+- Unique: `inventory_check_id`, `asset_id`
+- Lưu từng dòng kiểm kê tài sản: trạng thái kỳ vọng, trạng thái thực tế, vị trí kỳ vọng, vị trí thực tế và kết quả.
+
+## 4. Bảng lõi hỗ trợ
+
+### 4.1. `users`
+
+Cột chính:
 
 - `employee_code`
 - `employee_id`
@@ -23,106 +132,35 @@ Cột chính đang dùng:
 - `status`
 - `must_change_password`
 
-Ghi chú:
-
-- `employee_code` vẫn là định danh đăng nhập cho mọi tài khoản
-- supplier user cũng đăng nhập qua `employee_code`, thường lấy từ `suppliers.code`
-
-### 2.2. `suppliers`
-
-Dùng cho cả:
-
-- danh mục nhà cung cấp
-- profile gốc của supplier portal
-- liên kết purchase order
-- liên kết repair log khi sửa chữa thuê ngoài
-
-### 2.3. `purchase_orders`
-
-Cột chính:
-
-- `order_code`
-- `supplier_id`
-- `requested_by_user_id`
-- `approved_by_user_id`
-- `order_date`
-- `expected_delivery_date`
-- `status`
-- `total_amount`
-- `payment_method`
-- `note`
-
-Enum trạng thái chuẩn:
-
-- `preparing`
-- `shipping`
-- `delivered`
-
-Legacy `draft` được normalize thành `preparing`.
-
-### 2.4. `purchase_order_items`
-
-Cột chính:
-
-- `purchase_order_id`
-- `item_name`
-- `qty`
-- `unit`
-- `unit_price`
-- `line_total`
-- `asset_id` nullable
-- `category_id` nullable
-- `note`
-
 Quy ước:
 
-- `line_total` luôn được tính ở backend từ `qty * unit_price`
-- `total_amount` của đơn hàng là tổng `line_total`
+- User nội bộ liên kết qua `employee_id`.
+- Supplier portal liên kết qua `supplier_id`.
+- Một user không nên đồng thời dùng cả `employee_id` và `supplier_id`.
 
-## 3. Quan hệ quan trọng
+### 4.2. `assets`
 
-- `Supplier hasOne User`
-- `User belongsTo Supplier`
-- `Supplier hasMany PurchaseOrder`
-- `PurchaseOrder hasMany PurchaseOrderItem`
-- `PurchaseOrder belongsTo requester/approver user`
+Foreign Key chính:
 
-## 4. Profile API
+- `category_id -> categories.id`
+- `supplier_id -> suppliers.id`
 
-`/api/profile` trả 2 shape dữ liệu:
+`assets.status` là nguồn trạng thái vận hành của tài sản: `active`, `off_service`, `maintenance`, `retired`.
 
-### 4.1. Employee profile
+### 4.3. `suppliers`
 
-- `profile_type = employee`
-- `employee_code`
-- `full_name`
-- `position`
-- `dob`
-- `gender`
-- `phone`
-- `email`
-- `address`
+Dùng cho:
 
-### 4.2. Supplier profile
+- danh mục nhà cung cấp
+- tài khoản supplier portal
+- đơn hàng
+- bảo trì có hỗ trợ bên ngoài
 
-- `profile_type = supplier`
-- `supplier_code`
-- `name`
-- `contact_person`
-- `phone`
-- `email`
-- `address`
-- `note`
-
-## 5. Các bảng vẫn còn nhưng ngoài scope chính
-
-- `employee_contracts` chỉ còn để tương thích route cũ; API trả `410 Gone`
-- các bảng legacy khác có thể còn trong repo để phục vụ migration/backfill hoặc test cũ
-
-## 6. Migration liên quan gần nhất
+## 5. Migration liên quan gần nhất
 
 - `2026_04_07_180000_create_erd_alignment_tables.php`
 - `2026_04_07_180100_align_existing_tables_with_erd.php`
 - `2026_04_07_190000_normalize_roles_for_dfd_scope.php`
 - `2026_04_07_230000_merge_doctor_into_employee_role.php`
 - `2026_04_09_140000_add_supplier_role_and_purchase_order_payment_method.php`
+- `2026_04_19_090000_align_business_tables_with_client_scope.php`

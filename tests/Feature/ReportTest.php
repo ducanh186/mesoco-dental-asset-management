@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Asset;
-use App\Models\AssetRequest;
 use App\Models\Disposal;
+use App\Models\InventoryCheck;
 use App\Models\MaintenanceEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,8 +35,8 @@ class ReportTest extends TestCase
                 'period' => ['from', 'to'],
                 'assets',
                 'maintenance',
-                'requests',
                 'disposal',
+                'inventory',
             ]);
     }
 
@@ -135,21 +135,35 @@ class ReportTest extends TestCase
     }
 
     // =========================================================================
-    // REQUEST STATS
+    // INVENTORY STATS
     // =========================================================================
 
-    public function test_report_includes_request_stats(): void
+    public function test_report_includes_inventory_stats(): void
     {
         $admin = User::factory()->admin()->create();
 
-        AssetRequest::factory()->count(3)->create(['status' => 'submitted']);
-        AssetRequest::factory()->count(2)->create(['status' => 'approved']);
-        AssetRequest::factory()->count(1)->create(['status' => 'rejected']);
+        InventoryCheck::create([
+            'title' => 'Monthly inventory',
+            'check_date' => now()->toDateString(),
+            'status' => InventoryCheck::STATUS_IN_PROGRESS,
+            'created_by_user_id' => $admin->id,
+        ]);
+
+        InventoryCheck::create([
+            'title' => 'Completed inventory',
+            'check_date' => now()->toDateString(),
+            'status' => InventoryCheck::STATUS_COMPLETED,
+            'created_by_user_id' => $admin->id,
+            'completed_by_user_id' => $admin->id,
+            'completed_at' => now(),
+        ]);
 
         $response = $this->actingAs($admin)->getJson('/api/reports/summary');
 
         $response->assertOk()
-            ->assertJsonPath('requests.pending', 3);
+            ->assertJsonPath('inventory.total', 2)
+            ->assertJsonPath('inventory.in_progress', 1)
+            ->assertJsonPath('inventory.completed_in_period', 1);
     }
 
     // =========================================================================

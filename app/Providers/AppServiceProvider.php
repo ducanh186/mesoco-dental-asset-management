@@ -4,13 +4,11 @@ namespace App\Providers;
 
 use App\Models\Asset;
 use App\Models\AssetCheckin;
-use App\Models\AssetRequest;
 use App\Models\Employee;
 use App\Models\Feedback;
 use App\Models\MaintenanceEvent;
 use App\Models\User;
 use App\Policies\AssetCheckinPolicy;
-use App\Policies\AssetRequestPolicy;
 use App\Policies\EmployeePolicy;
 use App\Policies\FeedbackPolicy;
 use App\Policies\MaintenanceEventPolicy;
@@ -48,7 +46,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Employee::class, EmployeePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(AssetCheckin::class, AssetCheckinPolicy::class);
-        Gate::policy(AssetRequest::class, AssetRequestPolicy::class);
         Gate::policy(MaintenanceEvent::class, MaintenanceEventPolicy::class);
         Gate::policy(Feedback::class, FeedbackPolicy::class);
 

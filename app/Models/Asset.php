@@ -199,6 +199,11 @@ class Asset extends Model
         return $this->hasMany(RepairLog::class);
     }
 
+    public function maintenanceDetails(): HasMany
+    {
+        return $this->hasMany(MaintenanceDetail::class);
+    }
+
     /**
      * Get active (in_progress) maintenance events.
      */
@@ -253,6 +258,16 @@ class Asset extends Model
     public function disposals(): HasMany
     {
         return $this->hasMany(Disposal::class);
+    }
+
+    public function disposalDetails(): HasMany
+    {
+        return $this->hasMany(DisposalDetail::class);
+    }
+
+    public function inventoryCheckItems(): HasMany
+    {
+        return $this->hasMany(InventoryCheckItem::class);
     }
 
     public function latestDisposal(): HasOne

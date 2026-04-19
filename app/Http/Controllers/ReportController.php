@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
-use App\Models\AssetRequest;
 use App\Models\Disposal;
-use App\Models\Feedback;
+use App\Models\InventoryCheck;
 use App\Models\MaintenanceEvent;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -17,9 +16,10 @@ use Illuminate\Http\Request;
  * Summary reports for dashboard and management.
  * Provides aggregated data for the 5 DFD-aligned modules:
  * - Catalog & asset records
- * - Allocation/request queue
+ * - Purchase orders/allocation
  * - Maintenance
  * - Disposal/liquidation
+ * - Inventory checks
  */
 class ReportController extends Controller
 {
@@ -44,8 +44,8 @@ class ReportController extends Controller
             ],
             'assets' => $this->getAssetStats(),
             'maintenance' => $this->getMaintenanceStats($fromDate, $toDate),
-            'requests' => $this->getRequestStats($fromDate, $toDate),
             'disposal' => $this->getDisposalStats($fromDate, $toDate),
+            'inventory' => $this->getInventoryStats($fromDate, $toDate),
         ]);
     }
 
@@ -128,39 +128,6 @@ class ReportController extends Controller
     }
 
     /**
-     * Get request statistics
-     */
-    protected function getRequestStats(Carbon $from, Carbon $to): array
-    {
-        $periodQuery = AssetRequest::whereBetween('created_at', [$from, $to]);
-
-        // Current pending
-        $pending = AssetRequest::whereIn('status', ['submitted', 'pending'])->count();
-
-        // By status in period
-        $byStatus = [
-            'submitted' => (clone $periodQuery)->where('status', 'submitted')->count(),
-            'approved' => (clone $periodQuery)->where('status', 'approved')->count(),
-            'rejected' => (clone $periodQuery)->where('status', 'rejected')->count(),
-            'cancelled' => (clone $periodQuery)->where('status', 'cancelled')->count(),
-        ];
-
-        // By type in period
-        $byType = [
-            'justification' => (clone $periodQuery)->where('type', 'justification')->count(),
-            'asset_loan' => (clone $periodQuery)->where('type', 'asset_loan')->count(),
-            'consumable_request' => (clone $periodQuery)->where('type', 'consumable_request')->count(),
-        ];
-
-        return [
-            'pending' => $pending,
-            'created_in_period' => (clone $periodQuery)->count(),
-            'by_status' => $byStatus,
-            'by_type' => $byType,
-        ];
-    }
-
-    /**
      * Get disposal statistics
      */
     protected function getDisposalStats(Carbon $from, Carbon $to): array
@@ -183,6 +150,20 @@ class ReportController extends Controller
                 'other' => (clone $periodQuery)->where('method', 'other')->count(),
             ],
             'recovered_value' => round((float) ((clone $periodQuery)->sum('proceeds_amount') ?? 0), 2),
+        ];
+    }
+
+    protected function getInventoryStats(Carbon $from, Carbon $to): array
+    {
+        $periodQuery = InventoryCheck::whereBetween('check_date', [$from->toDateString(), $to->toDateString()]);
+
+        return [
+            'total' => InventoryCheck::count(),
+            'in_progress' => InventoryCheck::where('status', InventoryCheck::STATUS_IN_PROGRESS)->count(),
+            'completed_in_period' => (clone $periodQuery)
+                ->where('status', InventoryCheck::STATUS_COMPLETED)
+                ->count(),
+            'created_in_period' => (clone $periodQuery)->count(),
         ];
     }
 

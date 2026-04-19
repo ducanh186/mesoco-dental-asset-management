@@ -8,8 +8,10 @@ Key tables:
 - `assets` — equipment with valuation fields (`purchase_cost`, `useful_life_months`, `salvage_value`, `depreciation_method`) and off-service fields
 - `asset_assignments` — tracks which employee has which asset
 - `asset_checkins` — check-in/check-out logs
-- `requests` — asset request state machine (model is `AssetRequest`)
 - `maintenance_events` — maintenance/repair records
+- `maintenance_details` — detail rows for maintenance work
+- `disposals` / `disposal_details` — disposal header and detail rows
+- `inventory_checks` / `inventory_check_items` — inventory audit header and detail rows
 - `locations` — physical locations/rooms
 - `asset_qr_identities` — QR code tracking
 - `asset_code_sequences` — auto-generated asset codes

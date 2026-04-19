@@ -14,13 +14,12 @@
 | `/api/profile` | Có | Có | Có | Có |
 | `/api/assets` | Có | Có | Không | Không |
 | `/api/inventory/*` | Có | Có | Không | Không |
+| `/api/inventory/checks*` | Có | Có | Không | Không |
 | `/api/locations` | Có | Có | Không | Không |
 | `/api/suppliers` | Có | Có | Không | Không |
 | `/api/purchase-orders` GET | Có | Có | Không | Có, chỉ đơn của mình |
 | `/api/purchase-orders` POST/PUT/DELETE | Có | Có | Không | Không |
 | `/api/purchase-orders/{id}/status` | Có | Có | Không | Có, chỉ đơn của mình |
-| `/api/requests` | Có | Có | Có | Không |
-| `/api/review-requests` | Có | Không | Không | Không |
 | `/api/maintenance-events` | Có | Có | Không | Không |
 | `/api/disposal/*` | Có | Có | Không | Không |
 | `/api/reports/*` | Có | Không | Không | Không |
@@ -43,7 +42,6 @@
 - shifts
 - checkin
 - my-asset-history
-- requests
 - feedback
 
 ### 3.3. Manager בלבד
@@ -59,6 +57,7 @@
 - users list/create/show
 - assets
 - inventory
+- inventory checks
 - locations
 - suppliers
 - maintenance
@@ -72,8 +71,9 @@
 
 ## 4. Ràng buộc quan trọng
 
-- Supplier không được nhìn thấy route người dùng nội bộ như `requests`, `my-assets`, `qr-scan`
+- Supplier không được nhìn thấy route người dùng nội bộ như `my-assets`, `qr-scan`
 - Supplier chỉ nhìn thấy đơn hàng có `supplier_id` trùng với `users.supplier_id`
 - Manager không được tự đổi role của chính mình qua API đổi role
 - Tài khoản supplier không thể đổi sang role nội bộ nếu không có `employee_id`
 - Tài khoản nội bộ không thể đổi sang `supplier` nếu không có `supplier_id`
+- Các route legacy `/api/requests` và `/api/review-requests` trả `410 Gone`

@@ -15,8 +15,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\RequestController;
-use App\Http\Controllers\ReviewRequestController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
@@ -25,6 +23,12 @@ use Illuminate\Support\Facades\Route;
 $legacyContractModuleResponse = static function () {
     return response()->json([
         'message' => 'Employee contract module has been removed from the main product scope.',
+    ], 410);
+};
+
+$removedRequestModuleResponse = static function () {
+    return response()->json([
+        'message' => 'Request workflow has been removed from the main product scope. Use purchase orders, maintenance, disposal, and inventory checks instead.',
     ], 410);
 };
 
@@ -37,7 +41,7 @@ $legacyContractModuleResponse = static function () {
 | ┌─────────────┬────────────────────────────────────────────────────────────────────┐
 | │ Role        │ Permissions                                                        │
 | ├─────────────┼────────────────────────────────────────────────────────────────────┤
-| │ manager     │ Duyệt yêu cầu, báo cáo, cấu hình và điều phối hệ thống             │
+| │ manager     │ Báo cáo, cấu hình, kiểm kê và điều phối hệ thống                   │
 | │ technician  │ Danh mục, cấp phát, bảo trì, thu hủy và vận hành thiết bị          │
 | │ employee    │ Báo sự cố / mượn thiết bị / theo dõi thiết bị cá nhân              │
 | │ supplier    │ Theo dõi và cập nhật trạng thái đơn hàng của chính nhà cung cấp     │
@@ -49,7 +53,7 @@ $legacyContractModuleResponse = static function () {
 /**
  * Authenticated Routes
  */
-Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () use ($legacyContractModuleResponse) {
+Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () use ($legacyContractModuleResponse, $removedRequestModuleResponse) {
     /**
      * GET /api/me
      * Get current authenticated user
@@ -75,7 +79,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
-    Route::middleware('role:manager,technician,employee')->group(function () {
+    Route::middleware('role:manager,technician,employee')->group(function () use ($removedRequestModuleResponse) {
         /**
          * QR Resolve - core internal roles only
          */
@@ -104,13 +108,10 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::get('/my-asset-history', [MyAssetHistoryController::class, 'index']);
         Route::get('/my-asset-history/summary', [MyAssetHistoryController::class, 'summary']);
 
-        /**
-         * Internal request workflow
-         */
-        Route::get('/requests', [RequestController::class, 'index']);
-        Route::post('/requests', [RequestController::class, 'store']);
-        Route::get('/requests/{id}', [RequestController::class, 'show']);
-        Route::post('/requests/{id}/cancel', [RequestController::class, 'cancel']);
+        Route::get('/requests', $removedRequestModuleResponse);
+        Route::post('/requests', $removedRequestModuleResponse);
+        Route::get('/requests/{id}', $removedRequestModuleResponse);
+        Route::post('/requests/{id}/cancel', $removedRequestModuleResponse);
 
         /*
         |--------------------------------------------------------------------------
@@ -145,15 +146,15 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     |--------------------------------------------------------------------------
     | MANAGER ONLY ROUTES
     |--------------------------------------------------------------------------
-    | Approval, reporting, and system-level governance
+    | Reporting and system-level governance
     */
-    Route::middleware('role:manager')->group(function () {
+    Route::middleware('role:manager')->group(function () use ($removedRequestModuleResponse) {
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
         Route::get('/roles', [UserController::class, 'roles']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
-        Route::get('/review-requests', [ReviewRequestController::class, 'index']);
-        Route::post('/requests/{id}/review', [ReviewRequestController::class, 'review']);
+        Route::get('/review-requests', $removedRequestModuleResponse);
+        Route::post('/requests/{id}/review', $removedRequestModuleResponse);
 
         Route::get('/reports/summary', [ReportController::class, 'summary']);
         Route::get('/reports/export', [ReportController::class, 'export']);
@@ -165,9 +166,10 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     |--------------------------------------------------------------------------
     | Operational modules from the DFD:
     | 1. Catalog & records
-    | 2. Allocation
+    | 2. Purchase orders/allocation
     | 3. Maintenance & repair
     | 4. Disposal
+    | 5. Inventory checks
     */
     Route::middleware('role:manager,technician')->group(function () {
         Route::get('/employees/available', [EmployeeController::class, 'available']);
@@ -191,6 +193,11 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::get('/inventory/assets', [InventoryController::class, 'assets']);
         Route::get('/inventory/valuation', [InventoryController::class, 'valuation']);
         Route::get('/inventory/export', [InventoryController::class, 'export']);
+        Route::get('/inventory/checks', [InventoryController::class, 'checks']);
+        Route::post('/inventory/checks', [InventoryController::class, 'storeCheck']);
+        Route::get('/inventory/checks/{inventoryCheck}', [InventoryController::class, 'showCheck']);
+        Route::patch('/inventory/checks/{inventoryCheck}/items/{inventoryCheckItem}', [InventoryController::class, 'updateCheckItem']);
+        Route::post('/inventory/checks/{inventoryCheck}/complete', [InventoryController::class, 'completeCheck']);
 
         Route::get('/locations/dropdown', [LocationController::class, 'dropdown']);
         Route::apiResource('locations', LocationController::class);

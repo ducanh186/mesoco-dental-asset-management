@@ -6,6 +6,8 @@ use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetCheckin;
 use App\Models\Employee;
+use App\Models\InventoryCheck;
+use App\Models\InventoryCheckItem;
 use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -524,5 +526,60 @@ class InventoryApiTest extends TestCase
         $this->assertEquals(2, $warranty['expiring_soon_count']);
         $this->assertEquals(1, $warranty['expired_count']);
         $this->assertEquals(3, $warranty['valid_count']); // 2 expiring soon + 1 valid = 3 (expiring soon is subset of valid)
+    }
+
+    public function test_technician_can_create_inventory_check_with_detail_items(): void
+    {
+        Asset::query()->forceDelete();
+        $asset = Asset::factory()->create([
+            'status' => Asset::STATUS_ACTIVE,
+            'location' => 'Room A',
+        ]);
+
+        $response = $this->actingAs($this->hr)->postJson('/api/inventory/checks', [
+            'title' => 'Room A inventory',
+            'location' => 'Room A',
+            'asset_ids' => [$asset->id],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', InventoryCheck::STATUS_IN_PROGRESS)
+            ->assertJsonPath('data.items_count', 1);
+
+        $this->assertDatabaseHas('inventory_check_items', [
+            'asset_id' => $asset->id,
+            'expected_status' => Asset::STATUS_ACTIVE,
+            'expected_location' => 'Room A',
+            'result' => InventoryCheckItem::RESULT_PENDING,
+        ]);
+    }
+
+    public function test_can_update_and_complete_inventory_check(): void
+    {
+        Asset::query()->forceDelete();
+        $asset = Asset::factory()->create([
+            'status' => Asset::STATUS_ACTIVE,
+            'location' => 'Room B',
+        ]);
+
+        $createResponse = $this->actingAs($this->admin)->postJson('/api/inventory/checks', [
+            'asset_ids' => [$asset->id],
+        ]);
+
+        $checkId = $createResponse->json('data.id');
+        $itemId = InventoryCheckItem::query()->where('inventory_check_id', $checkId)->value('id');
+
+        $this->actingAs($this->admin)
+            ->patchJson("/api/inventory/checks/{$checkId}/items/{$itemId}", [
+                'actual_status' => Asset::STATUS_ACTIVE,
+                'actual_location' => 'Room B',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.result', InventoryCheckItem::RESULT_MATCHED);
+
+        $this->actingAs($this->admin)
+            ->postJson("/api/inventory/checks/{$checkId}/complete")
+            ->assertOk()
+            ->assertJsonPath('data.status', InventoryCheck::STATUS_COMPLETED);
     }
 }

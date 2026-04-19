@@ -9,9 +9,9 @@ import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, hasOperationalAccess, nor
 /**
  * Dashboard Page - Role-based conditional rendering
  * 
- * - Manager: approval + reporting overview
- * - Technician: operational overview for catalog/allocation/maintenance
- * - Employee: personal metrics (my equipment, my requests)
+ * - Manager: reporting overview
+ * - Technician: operational overview for catalog, purchase orders, maintenance, disposal, and inventory
+ * - Employee: personal equipment metrics
  */
 const Dashboard = ({ user }) => {
     const { t } = useI18n();
@@ -23,13 +23,12 @@ const Dashboard = ({ user }) => {
     
     // Operational stats
     const [inventorySummary, setInventorySummary] = useState(null);
-    const [pendingReviews, setPendingReviews] = useState([]);
+    const [inventoryChecks, setInventoryChecks] = useState([]);
     const [maintenanceEvents, setMaintenanceEvents] = useState([]);
     const [globalAssets, setGlobalAssets] = useState([]);
     
     // Personal stats
     const [myAssets, setMyAssets] = useState([]);
-    const [myRequests, setMyRequests] = useState([]);
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [purchaseOrderSummary, setPurchaseOrderSummary] = useState({
         total: 0,
@@ -51,30 +50,28 @@ const Dashboard = ({ user }) => {
         
         try {
             if (isManager) {
-                const [inventoryRes, reviewsRes, maintenanceRes, assetsRes] = await Promise.all([
+                const [inventoryRes, inventoryChecksRes, maintenanceRes, assetsRes] = await Promise.all([
                     axios.get('/api/inventory/summary').catch(() => ({ data: null })),
-                    axios.get('/api/review-requests').catch(() => ({ data: { requests: [] } })),
+                    axios.get('/api/inventory/checks', { params: { status: 'in_progress', per_page: 5 } }).catch(() => ({ data: { data: [] } })),
                     axios.get('/api/maintenance-events').catch(() => ({ data: { maintenance_events: [] } })),
                     axios.get('/api/assets', { params: { per_page: 5 } }).catch(() => ({ data: { assets: [] } }))
                 ]);
                 
                 setInventorySummary(inventoryRes.data);
-                setPendingReviews(reviewsRes.data?.requests || []);
+                setInventoryChecks(inventoryChecksRes.data?.data || []);
                 setMaintenanceEvents(maintenanceRes.data?.maintenance_events || maintenanceRes.data?.data || []);
                 setGlobalAssets(inventoryRes.data?.assets || assetsRes.data?.assets || assetsRes.data?.data || []);
                 
             } else if (isTechnician) {
-                const [inventoryRes, maintenanceRes, assetsRes, myRequestsRes] = await Promise.all([
+                const [inventoryRes, maintenanceRes, assetsRes] = await Promise.all([
                     axios.get('/api/inventory/summary').catch(() => ({ data: null })),
                     axios.get('/api/maintenance-events').catch(() => ({ data: { maintenance_events: [] } })),
-                    axios.get('/api/assets', { params: { per_page: 5 } }).catch(() => ({ data: { assets: [] } })),
-                    axios.get('/api/requests').catch(() => ({ data: { requests: [] } }))
+                    axios.get('/api/assets', { params: { per_page: 5 } }).catch(() => ({ data: { assets: [] } }))
                 ]);
                 
                 setInventorySummary(inventoryRes.data);
                 setMaintenanceEvents(maintenanceRes.data?.maintenance_events || maintenanceRes.data?.data || []);
                 setGlobalAssets(assetsRes.data?.assets || assetsRes.data?.data || []);
-                setMyRequests(myRequestsRes.data?.requests || myRequestsRes.data?.data || []);
                 
             } else if (isSupplier) {
                 const ordersRes = await axios.get('/api/purchase-orders', {
@@ -94,13 +91,9 @@ const Dashboard = ({ user }) => {
                     delivered: 0,
                 });
             } else {
-                const [myAssetsRes, myRequestsRes] = await Promise.all([
-                    axios.get('/api/my-assets').catch(() => ({ data: { assets: [] } })),
-                    axios.get('/api/requests').catch(() => ({ data: { requests: [] } }))
-                ]);
+                const myAssetsRes = await axios.get('/api/my-assets').catch(() => ({ data: { assets: [] } }));
                 
                 setMyAssets(myAssetsRes.data?.assets || myAssetsRes.data?.data || []);
-                setMyRequests(myRequestsRes.data?.requests || myRequestsRes.data?.data || []);
             }
         } catch (err) {
             console.error('Dashboard fetch error:', err);
@@ -158,7 +151,7 @@ const Dashboard = ({ user }) => {
     const getStats = () => {
         if (isManager) {
             const totalEquipment = inventorySummary?.total_assets || inventorySummary?.total || 0;
-            const pendingCount = pendingReviews.length;
+            const inventoryCheckCount = inventoryChecks.length;
             const maintenanceDue = maintenanceEvents.filter(
                 m => m.status === 'scheduled' || m.status === 'overdue'
             ).length;
@@ -176,13 +169,13 @@ const Dashboard = ({ user }) => {
                     icon: equipmentIcon
                 },
                 {
-                    title: t('dashboard.pendingApprovals'),
-                    value: pendingCount,
-                    subtitle: pendingCount > 0 
-                        ? t('dashboard.needsReview')
+                    title: t('nav.inventory'),
+                    value: inventoryCheckCount,
+                    subtitle: inventoryCheckCount > 0
+                        ? t('dashboard.upcomingTasks')
                         : t('dashboard.allClear'),
-                    color: pendingCount > 0 ? 'warning' : 'success',
-                    trend: pendingCount > 0 ? 'neutral' : 'up',
+                    color: inventoryCheckCount > 0 ? 'warning' : 'success',
+                    trend: inventoryCheckCount > 0 ? 'neutral' : 'up',
                     icon: requestsIcon
                 },
                 {
@@ -202,7 +195,6 @@ const Dashboard = ({ user }) => {
             const totalEquipment = inventorySummary?.total_assets || inventorySummary?.total || globalAssets.length;
             const inProgressCount = maintenanceEvents.filter(m => m.status === 'in_progress').length;
             const scheduledCount = maintenanceEvents.filter(m => m.status === 'scheduled').length;
-            const pendingIncidentCount = myRequests.filter(r => r.status === 'SUBMITTED').length;
 
             return [
                 {
@@ -216,7 +208,7 @@ const Dashboard = ({ user }) => {
                 {
                     title: t('dashboard.maintenanceInProgress'),
                     value: inProgressCount,
-                    subtitle: pendingIncidentCount > 0 ? t('dashboard.pendingCount', { count: pendingIncidentCount }) : null,
+                    subtitle: inProgressCount > 0 ? t('dashboard.upcomingTasks') : null,
                     color: inProgressCount > 0 ? 'warning' : 'success',
                     trend: 'neutral',
                     icon: maintenanceIcon
@@ -267,10 +259,6 @@ const Dashboard = ({ user }) => {
 
         const myEquipmentCount = myAssets.length;
         const lockedCount = myAssets.filter(a => a.is_locked || a.status === 'off_service').length;
-        const activeRequestsCount = myRequests.filter(
-            r => ['pending', 'approved', 'in_progress'].includes(r.status)
-        ).length;
-        const pendingRequestsCount = myRequests.filter(r => r.status === 'pending').length;
 
         return [
             {
@@ -282,16 +270,6 @@ const Dashboard = ({ user }) => {
                 color: lockedCount > 0 ? 'warning' : 'primary',
                 trend: lockedCount > 0 ? 'down' : 'neutral',
                 icon: equipmentIcon
-            },
-            {
-                title: t('dashboard.myActiveRequests'),
-                value: activeRequestsCount,
-                subtitle: pendingRequestsCount > 0 
-                    ? t('dashboard.pendingCount', { count: pendingRequestsCount })
-                    : null,
-                color: activeRequestsCount > 0 ? 'info' : 'success',
-                trend: 'neutral',
-                icon: requestsIcon
             },
             {
                 title: t('dashboard.alerts'),
@@ -318,10 +296,6 @@ const Dashboard = ({ user }) => {
     const handleDelete = (item) => {
         // TODO: Implement delete confirmation modal
         console.log('Delete:', item);
-    };
-
-    const handleCreateRequest = (item) => {
-        navigate('/requests/new', { state: { assetId: item.id } });
     };
 
     // Get table data based on role
@@ -450,7 +424,6 @@ const Dashboard = ({ user }) => {
                     onView={handleView}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    onCreateRequest={handleCreateRequest}
                 />
             )}
         </div>

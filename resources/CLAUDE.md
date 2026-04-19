@@ -9,8 +9,6 @@ Entry point: `app.jsx` — contains AuthContext, I18nProvider, React Router, Axi
 - `Dashboard.jsx` — overview with stats, quick actions, recent equipment
 - `AssetsPage.jsx` — equipment catalog (admin/HR), CRUD
 - `InventoryPage.jsx` — inventory & valuation, two tabs: inventory list + depreciation view
-- `RequestsPage.jsx` — distribution/request forms
-- `ReviewRequestsPage.jsx` — approve/reject requests (admin/HR)
 - `MaintenancePage.jsx` — maintenance & repair scheduling
 - `FeedbackPage.jsx` — feedback & suggestions
 - `ReportPage.jsx` — reports & statistics

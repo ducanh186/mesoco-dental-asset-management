@@ -451,47 +451,6 @@ class MaintenanceTest extends TestCase
             ->assertJsonPath('error', 'ASSET_LOCKED');
     }
 
-    public function test_cannot_request_loan_for_locked_asset(): void
-    {
-        // Need an employee linked to doctor for request creation
-        $employee = \App\Models\Employee::factory()->create();
-        $this->doctor->update(['employee_id' => $employee->id]);
-        
-        $this->asset->update([
-            'status' => Asset::STATUS_OFF_SERVICE,
-            'off_service_reason' => 'Broken',
-        ]);
-
-        $response = $this->actingAs($this->doctor)
-            ->postJson('/api/requests', [
-                'type' => 'ASSET_LOAN',
-                'title' => 'Test loan request',
-                'items' => [
-                    [
-                        'item_kind' => 'ASSET',
-                        'asset_id' => $this->asset->id,
-                        'qty' => 1,
-                        'from_date' => now()->addDay()->toDateString(),
-                        'to_date' => now()->addDays(2)->toDateString(),
-                    ],
-                ],
-            ]);
-
-        $response->assertStatus(422);
-        
-        // The error key includes dots, so we need to access it correctly
-        $errors = $response->json('errors');
-        $error = $errors['items.0.asset_id'][0] ?? '';
-        $this->assertNotEmpty($error, 'Expected validation error for items.0.asset_id');
-        // Error should contain the off_service_reason OR standard locked message
-        $this->assertTrue(
-            str_contains(strtolower($error), 'broken') || 
-            str_contains(strtolower($error), 'tạm ngưng') ||
-            str_contains(strtolower($error), 'kỹ thuật viên'),
-            "Error should indicate asset is locked. Got: {$error}"
-        );
-    }
-
     /*
     |--------------------------------------------------------------------------
     | IDOR Protection Tests

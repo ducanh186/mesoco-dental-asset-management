@@ -4,13 +4,12 @@ Thư mục `docs/` là nguồn tài liệu chính của repo. Toàn bộ file `.
 
 ## 1. Phạm vi nghiệp vụ
 
-Sản phẩm chỉ tập trung vào 5 phân hệ chính:
+Sản phẩm hiện tập trung vào 4 nghiệp vụ chính:
 
-1. Quản lý danh mục và hồ sơ
-2. Quản lý cấp phát
-3. Quản lý bảo trì và sửa chữa
-4. Quản lý thu hủy
-5. Báo cáo và thống kê
+1. Cấp phát / đơn hàng
+2. Bảo trì
+3. Thu hủy
+4. Kiểm kê
 
 Các quyết định đã chốt:
 
@@ -18,17 +17,23 @@ Các quyết định đã chốt:
 - `manager` thay cho `admin`
 - `technician` là vai trò vận hành nội bộ
 - `supplier` là vai trò mới cho cổng nhà cung cấp
-- hợp đồng nhân viên và các module cũ ngoài 5 phân hệ chính không còn là phạm vi sản phẩm
+- bảng `requests` không còn thuộc scope chính
+- mỗi nghiệp vụ chính có một bảng detail tương ứng
+- hợp đồng nhân viên và các module cũ ngoài 4 nghiệp vụ chính không còn là phạm vi sản phẩm
 
 ## 2. Luồng cốt lõi
 
-Luồng sự cố nội bộ:
+Luồng bảo trì:
 
-`nhân viên báo sự cố -> quản lý duyệt/điều phối -> kỹ thuật viên xử lý`
+`manager/technician tạo lịch bảo trì -> technician xử lý -> ghi maintenance detail`
 
 Luồng đơn hàng nhà cung cấp:
 
 `quản lý/kỹ thuật viên tạo đơn hàng -> nhà cung cấp theo dõi -> nhà cung cấp cập nhật trạng thái chuẩn bị / đang giao / giao thành công`
+
+Luồng kiểm kê:
+
+`manager/technician tạo đợt kiểm kê -> kiểm từng tài sản -> hoàn tất inventory check`
 
 ## 3. Thứ tự nên đọc
 

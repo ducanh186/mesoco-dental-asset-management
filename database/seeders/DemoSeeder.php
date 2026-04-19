@@ -12,6 +12,7 @@ use App\Models\RequestItem;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -102,6 +103,11 @@ class DemoSeeder extends Seeder
      */
     private function seedDemoRequests(): void
     {
+        if (!Schema::hasTable('requests')) {
+            $this->command->info('  → Skipping demo requests; request workflow is outside the current scope.');
+            return;
+        }
+
         $this->command->info('  → Seeding demo requests...');
 
         $doctor = Employee::where('employee_code', 'E0003')->first();

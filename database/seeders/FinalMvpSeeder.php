@@ -18,6 +18,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -33,8 +34,6 @@ use Illuminate\Support\Str;
  * - 65 Assets with valuation data (MSA-XXXX pattern)
  * - 15 Asset Assignments (active and historical)
  * - QR Identities for all assets
- * - 10 Requests (mixed types and statuses)
- * - Request events (approvals, rejections)
  * - 8 Asset Checkin records
  * 
  * Run: php artisan db:seed --class=FinalMvpSeeder
@@ -1368,6 +1367,11 @@ class FinalMvpSeeder extends Seeder
      */
     private function seedRequests(): void
     {
+        if (!Schema::hasTable('requests')) {
+            $this->command->info('📝 Skipping requests; request workflow is outside the current scope.');
+            return;
+        }
+
         $this->command->info('📝 Seeding requests...');
 
         $requests = [
@@ -1945,8 +1949,8 @@ class FinalMvpSeeder extends Seeder
                 ['Assets', Asset::count()],
                 ['QR Identities', AssetQrIdentity::count()],
                 ['Assignments', AssetAssignment::count()],
-                ['Requests', AssetRequest::count()],
-                ['Request Events', RequestEvent::count()],
+                ['Requests', Schema::hasTable('requests') ? AssetRequest::count() : 0],
+                ['Request Events', Schema::hasTable('request_events') ? RequestEvent::count() : 0],
                 ['Check-ins', AssetCheckin::count()],
                 ['Maintenance Events', MaintenanceEvent::count()],
                 ['Feedback', Feedback::count()],

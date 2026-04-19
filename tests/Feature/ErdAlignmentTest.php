@@ -3,9 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Asset;
-use App\Models\AssetRequest;
-use App\Models\Employee;
-use App\Models\RequestItem;
+use App\Models\InventoryCheck;
+use App\Models\InventoryCheckItem;
+use App\Models\MaintenanceDetail;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -41,43 +42,28 @@ class ErdAlignmentTest extends TestCase
         $this->assertSame('employee', $user->roleDefinition?->code);
     }
 
-    public function test_reviewing_request_creates_approval_record(): void
+    public function test_user_role_is_synced_to_account_role_pivot(): void
     {
-        $admin = User::factory()->admin()->create(['must_change_password' => false]);
-        $employee = Employee::factory()->create();
-        $requester = User::factory()->create([
-            'employee_id' => $employee->id,
-            'role' => 'employee',
+        $manager = User::factory()->manager()->create([
             'must_change_password' => false,
         ]);
 
-        $request = AssetRequest::create([
-            'code' => AssetRequest::generateCode(),
-            'type' => AssetRequest::TYPE_CONSUMABLE_REQUEST,
-            'status' => AssetRequest::STATUS_SUBMITTED,
-            'requested_by_employee_id' => $employee->id,
-            'title' => 'Need gloves',
+        $manager->refresh();
+
+        $this->assertDatabaseHas('account_roles', [
+            'user_id' => $manager->id,
+            'role_id' => $manager->role_id,
+            'status' => 'active',
         ]);
+    }
 
-        $request->items()->create([
-            'item_kind' => RequestItem::KIND_CONSUMABLE,
-            'name' => 'Gloves',
-            'qty' => 10,
-            'unit' => 'box',
-        ]);
+    public function test_roles_have_permission_foreign_key_records(): void
+    {
+        $permission = Permission::query()->where('code', 'inventory.manage')->first();
 
-        $response = $this->actingAs($admin)->postJson("/api/requests/{$request->id}/review", [
-            'action' => 'APPROVE',
-            'note' => 'Approved for stock replenishment',
-        ]);
-
-        $response->assertOk();
-
-        $this->assertDatabaseHas('approvals', [
-            'approvable_type' => AssetRequest::class,
-            'approvable_id' => $request->id,
-            'reviewer_user_id' => $admin->id,
-            'status' => 'approved',
+        $this->assertNotNull($permission);
+        $this->assertDatabaseHas('role_permissions', [
+            'permission_id' => $permission->id,
         ]);
     }
 
@@ -102,9 +88,14 @@ class ErdAlignmentTest extends TestCase
             'method' => 'liquidation',
             'reason' => 'End of life',
         ]);
+
+        $this->assertDatabaseHas('disposal_details', [
+            'asset_id' => $asset->id,
+            'proceeds_amount' => 120000,
+        ]);
     }
 
-    public function test_creating_repair_maintenance_event_writes_repair_log_and_assignment_fk(): void
+    public function test_creating_repair_maintenance_event_writes_detail_and_assignment_fk(): void
     {
         $technician = User::factory()->technician()->create(['must_change_password' => false]);
         $asset = Asset::factory()->create();
@@ -123,11 +114,37 @@ class ErdAlignmentTest extends TestCase
 
         $eventId = $response->json('data.id');
 
-        $this->assertDatabaseHas('repair_logs', [
+        $this->assertDatabaseHas('maintenance_details', [
             'maintenance_event_id' => $eventId,
             'asset_id' => $asset->id,
             'technician_user_id' => $technician->id,
             'status' => 'scheduled',
         ]);
+
+        $this->assertTrue(MaintenanceDetail::query()->where('maintenance_event_id', $eventId)->exists());
+    }
+
+    public function test_inventory_check_has_detail_items(): void
+    {
+        $technician = User::factory()->technician()->create(['must_change_password' => false]);
+        $asset = Asset::factory()->create([
+            'status' => Asset::STATUS_ACTIVE,
+            'location' => 'Room 101',
+        ]);
+
+        $response = $this->actingAs($technician)->postJson('/api/inventory/checks', [
+            'title' => 'Monthly inventory',
+            'asset_ids' => [$asset->id],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.items_count', 1);
+
+        $check = InventoryCheck::query()->first();
+        $item = InventoryCheckItem::query()->first();
+
+        $this->assertSame($check->id, $item->inventory_check_id);
+        $this->assertSame($asset->id, $item->asset_id);
+        $this->assertSame(InventoryCheckItem::RESULT_PENDING, $item->result);
     }
 }

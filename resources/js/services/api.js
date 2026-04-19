@@ -395,7 +395,7 @@ export const usersApi = {
 };
 
 // ============================================================================
-// Inventory API (Phase 6 - Admin/HR Only)
+// Inventory API
 // ============================================================================
 export const inventoryApi = {
     /**
@@ -436,6 +436,31 @@ export const inventoryApi = {
             responseType: 'blob' 
         });
         return response;
+    },
+
+    checks: async (params = {}) => {
+        const response = await axios.get('/api/inventory/checks', { params });
+        return response.data;
+    },
+
+    createCheck: async (data) => {
+        const response = await axios.post('/api/inventory/checks', data);
+        return response.data;
+    },
+
+    showCheck: async (id) => {
+        const response = await axios.get(`/api/inventory/checks/${id}`);
+        return response.data;
+    },
+
+    updateCheckItem: async (checkId, itemId, data) => {
+        const response = await axios.patch(`/api/inventory/checks/${checkId}/items/${itemId}`, data);
+        return response.data;
+    },
+
+    completeCheck: async (id, data = {}) => {
+        const response = await axios.post(`/api/inventory/checks/${id}/complete`, data);
+        return response.data;
     },
 };
 

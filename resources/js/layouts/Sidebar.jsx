@@ -63,16 +63,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 { path: '/purchase-orders', label: t('nav.purchaseOrders') },
             ]
         }] : []),
-        {
-            id: 'allocation-management',
-            path: '/requests',
-            labelKey: 'nav.allocationManagement',
-            icon: 'requests',
-            children: [
-                { path: '/requests', label: t('nav.requests') },
-                ...(isManager ? [{ path: '/review-requests', label: t('nav.reviewRequests') }] : []),
-            ]
-        },
         ...(isOperationalRole ? [{
             id: 'maintenance',
             path: '/maintenance', 

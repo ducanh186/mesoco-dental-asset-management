@@ -6,11 +6,14 @@
 - bỏ role `admin`, thay bằng `manager`
 - kỹ thuật viên giữ quyền vận hành nội bộ
 - bỏ module hợp đồng nhân viên khỏi phạm vi chính
-- chỉ tập trung vào 5 nhiệm vụ chính của DFD mức 0
+- chỉ tập trung vào 4 nghiệp vụ chính của ERD hiện tại
 - nhà cung cấp vẫn giữ lại như một thực thể quan trọng
 - thêm role `supplier`
 - thêm quản lý đơn hàng với sản phẩm, số lượng, đơn giá, thành tiền, phương thức thanh toán
 - quản lý trạng thái đơn hàng: `preparing`, `shipping`, `delivered`
+- bỏ bảng yêu cầu khỏi scope chính
+- thêm nghiệp vụ kiểm kê với bảng chính và bảng chi tiết
+- bổ sung Primary Key và Foreign Key rõ ràng cho tài khoản/quyền và các bảng nghiệp vụ
 
 ## 2. Checklist triển khai
 
@@ -27,6 +30,7 @@
 - [x] cấp phát
 - [x] bảo trì & sửa chữa
 - [x] thu hủy
+- [x] kiểm kê
 - [x] báo cáo & thống kê
 
 ### 2.3. Nhà cung cấp và đơn hàng
@@ -40,16 +44,24 @@
 - [x] supplier chỉ xem đơn của chính mình
 - [x] supplier cập nhật được trạng thái đơn hàng
 
-### 2.4. Hồ sơ người dùng
+### 2.4. Bảng detail theo nghiệp vụ
+
+- [x] đơn hàng có `purchase_order_items`
+- [x] bảo trì có `maintenance_details`
+- [x] thu hủy có `disposal_details`
+- [x] kiểm kê có `inventory_check_items`
+
+### 2.5. Hồ sơ người dùng
 
 - [x] employee profile giữ nguyên shape cũ
 - [x] supplier profile có shape riêng
 - [x] `/api/profile` xử lý được cả 2 loại profile
 
-### 2.5. Loại khỏi phạm vi chính
+### 2.6. Loại khỏi phạm vi chính
 
 - [x] route hợp đồng nhân viên trả `410 Gone`
-- [x] supplier không vào được các module nội bộ như `requests`, `my-assets`, `qr-scan`
+- [x] route request workflow trả `410 Gone`
+- [x] supplier không vào được các module nội bộ như `my-assets`, `qr-scan`
 
 ## 3. Tiêu chí nghiệm thu nhanh
 

@@ -4,13 +4,12 @@
 
 ## Phạm vi hiện tại
 
-Hệ thống đang bám đúng 5 nhiệm vụ chính của DFD mức 0:
+Hệ thống đang bám đúng 4 nghiệp vụ chính:
 
-1. Quản lý danh mục và hồ sơ
-2. Quản lý cấp phát
-3. Quản lý bảo trì và sửa chữa
-4. Quản lý thu hủy
-5. Báo cáo và thống kê
+1. Cấp phát / đơn hàng
+2. Bảo trì
+3. Thu hủy
+4. Kiểm kê
 
 Các chốt nghiệp vụ đang áp dụng:
 
@@ -19,6 +18,7 @@ Các chốt nghiệp vụ đang áp dụng:
 - `technician` giữ quyền vận hành nội bộ
 - `supplier` là vai trò cổng nhà cung cấp, chỉ theo dõi và cập nhật đơn hàng của chính mình
 - module hợp đồng nhân viên không còn trong phạm vi sản phẩm chính
+- module request/yêu cầu không còn trong phạm vi sản phẩm chính
 
 Mở rộng mới nhất:
 
@@ -26,6 +26,8 @@ Mở rộng mới nhất:
 - thêm module `purchase_orders` và `purchase_order_items`
 - đơn hàng có các trường: sản phẩm, số lượng, đơn giá, thành tiền, phương thức thanh toán
 - trạng thái đơn hàng: `preparing`, `shipping`, `delivered`
+- thêm bảng detail cho bảo trì, thu hủy và kiểm kê
+- thêm `permissions`, `role_permissions`, `account_roles` để thể hiện khóa chính/khóa ngoại cho tài khoản và quyền
 
 ## Khởi động nhanh
 

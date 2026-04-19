@@ -50,4 +50,9 @@ class Supplier extends Model
     {
         return $this->hasMany(RepairLog::class);
     }
+
+    public function maintenanceDetails(): HasMany
+    {
+        return $this->hasMany(MaintenanceDetail::class);
+    }
 }

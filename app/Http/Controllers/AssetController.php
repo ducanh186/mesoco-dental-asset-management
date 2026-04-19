@@ -166,7 +166,7 @@ class AssetController extends Controller
     }
 
     /**
-     * Get user's assigned assets in dropdown format for Justification requests.
+     * Get user's assigned assets in dropdown format for internal asset workflows.
      * All authenticated users can view their assigned assets.
      * 
      * GET /api/my-assigned-assets/dropdown
@@ -446,8 +446,8 @@ class AssetController extends Controller
     }
 
     /**
-     * Get assets available for loan (unassigned and movable).
-     * All authenticated users can view for creating Asset Loan requests.
+     * Get assets available for assignment (unassigned and movable).
+     * All authenticated internal users can view this dropdown.
      * 
      * GET /api/assets/available-for-loan
      * 

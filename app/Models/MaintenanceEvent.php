@@ -169,6 +169,11 @@ class MaintenanceEvent extends Model
         return $this->hasOne(RepairLog::class);
     }
 
+    public function detail(): HasOne
+    {
+        return $this->hasOne(MaintenanceDetail::class);
+    }
+
     // =========================================================================
     // Scopes
     // =========================================================================

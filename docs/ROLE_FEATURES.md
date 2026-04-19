@@ -5,11 +5,10 @@
 Manager có quyền hệ thống và quyền điều phối:
 
 - xem toàn bộ dashboard quản trị
-- duyệt phiếu cấp phát và phiếu báo sự cố
-- gán kỹ thuật viên xử lý sự cố
 - quản lý tài khoản người dùng và role
 - quản lý danh mục thiết bị, vị trí, nhà cung cấp
 - tạo, sửa, xóa đơn hàng
+- tạo và hoàn tất đợt kiểm kê
 - xem báo cáo và thống kê
 - tham gia bảo trì/thu hủy khi cần
 
@@ -25,6 +24,7 @@ Technician là vai trò vận hành nội bộ:
 - thao tác khóa/mở trạng thái off-service
 - xử lý thu hủy/thanh lý
 - tạo, sửa, xóa đơn hàng
+- tạo và cập nhật chi tiết kiểm kê
 - xem danh sách đơn hàng của tất cả nhà cung cấp
 
 Lưu ý:
@@ -40,9 +40,6 @@ Employee có thể:
 
 - xem thiết bị được giao
 - quét QR để tra cứu
-- tạo phiếu mượn thiết bị
-- tạo phiếu báo sự cố
-- theo dõi phiếu của chính mình
 - cập nhật hồ sơ cá nhân
 
 Employee không có quyền:
@@ -67,7 +64,6 @@ Supplier có thể:
 Supplier không có quyền:
 
 - xem thiết bị nội bộ
-- tạo phiếu cấp phát hoặc phiếu sự cố
 - xem báo cáo quản trị
 - quản lý danh mục, vị trí, user hoặc tài sản
 - xem đơn hàng của nhà cung cấp khác
@@ -83,16 +79,16 @@ Supplier không có quyền:
 
 ### 5.2. Quản lý cấp phát
 
-- Manager: duyệt và điều phối
-- Technician: tham gia vận hành và xem queue phù hợp
-- Employee: tạo và theo dõi phiếu của chính mình
+- Manager: tạo và kiểm soát đơn hàng/cấp phát
+- Technician: tham gia vận hành, tạo đơn hàng và cấp phát tài sản
+- Employee: xem tài sản được giao
 - Supplier: không truy cập
 
 ### 5.3. Bảo trì và sửa chữa
 
 - Manager: giám sát và can thiệp
 - Technician: vai trò chính
-- Employee: chỉ báo sự cố
+- Employee: không truy cập module nội bộ
 - Supplier: không truy cập module nội bộ
 
 ### 5.4. Thu hủy
@@ -109,7 +105,14 @@ Supplier không có quyền:
 - Employee: không truy cập
 - Supplier: không truy cập
 
-### 5.6. Đơn hàng nhà cung cấp
+### 5.6. Kiểm kê
+
+- Manager: tạo, xem, hoàn tất đợt kiểm kê
+- Technician: tạo, xem, cập nhật chi tiết kiểm kê
+- Employee: không truy cập
+- Supplier: không truy cập
+
+### 5.7. Đơn hàng nhà cung cấp
 
 - Manager: tạo, sửa, xóa, xem mọi đơn hàng
 - Technician: tạo, sửa, xóa, xem mọi đơn hàng

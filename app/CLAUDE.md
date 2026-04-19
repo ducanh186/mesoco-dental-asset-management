@@ -4,10 +4,9 @@
 
 - `AuthController` — login/logout/me, uses `AuthService`
 - `AssetController` — full CRUD + search, category/type enums
-- `AssetRequestController` — create/approve/reject/cancel with state machine
 - `AssetAssignmentController` — assign/unassign equipment to employees
 - `AssetCheckinController` — check-in/check-out tracking
-- `InventoryController` — inventory listing + valuation/depreciation calculations
+- `InventoryController` — inventory listing, valuation/depreciation calculations, inventory checks
 - `AssetOffServiceController` — lock/unlock assets (off-service management)
 - `MaintenanceEventController` — maintenance scheduling and records
 - `EmployeeController` — employee CRUD (HR records)
@@ -18,13 +17,14 @@
 ## Models (`Models/`)
 
 - `Asset` — core model, has depreciation calculation methods, status state machine
-- `AssetRequest` — request state machine (SUBMITTED → APPROVED|REJECTED|CANCELLED)
+- `InventoryCheck` / `InventoryCheckItem` — inventory audit header and detail rows
+- `MaintenanceDetail` / `DisposalDetail` — detail rows for maintenance and disposal
 - `Employee` — HR record, distinct from User
 - `User` — login account, has `employee_id` FK
 
 ## Middleware (`Http/Middleware/`)
 
-- `CheckRole` — RBAC gate (`role:admin,hr`)
+- `CheckRole` — RBAC gate (`role:manager,technician`)
 - `CheckMustChangePassword` — forces password change on first login
 
 ## Services (`Services/`)
@@ -33,7 +33,7 @@
 
 ## Policies (`Policies/`)
 
-- Ownership checks for requests, assignments, etc.
+- Ownership and role checks for assets, maintenance, check-ins, users, and feedback.
 
 ## FormRequests (`Http/Requests/`)
 

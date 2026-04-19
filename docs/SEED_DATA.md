@@ -17,9 +17,9 @@ Seeder hiện tập trung vào dữ liệu nội bộ:
 - manager
 - technician
 - assets
-- requests
 - maintenance
 - disposal
+- inventory checks
 - review log
 
 ## 3. Supplier role trong môi trường seed
@@ -27,8 +27,11 @@ Seeder hiện tập trung vào dữ liệu nội bộ:
 Hiện tại repo đã có:
 
 - role `supplier` trong bảng `roles`
+- quyền trong bảng `permissions`
+- pivot `role_permissions` và `account_roles`
 - bảng `suppliers`
 - schema `purchase_orders` và `purchase_order_items`
+- schema `maintenance_details`, `disposal_details`, `inventory_checks`, `inventory_check_items`
 - factory cho `Supplier`, `PurchaseOrder`, `PurchaseOrderItem`
 
 Nhưng seed demo mặc định chưa bắt buộc tạo sẵn tài khoản supplier portal. Nếu cần demo supplier login, nên:
@@ -58,5 +61,5 @@ php artisan test tests/Feature/SupplierApiTest.php
 Nếu thay đổi nghiệp vụ cấp phát/bảo trì:
 
 ```bash
-php artisan test tests/Feature/RequestTest.php tests/Feature/MaintenanceTest.php
+php artisan test tests/Feature/PurchaseOrderApiTest.php tests/Feature/MaintenanceTest.php tests/Feature/InventoryApiTest.php
 ```

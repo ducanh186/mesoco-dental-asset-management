@@ -30,23 +30,32 @@
 - `employees`
 - `purchase_orders`
 
-### 3.2. Cấp phát
+### 3.2. Cấp phát / đơn hàng
 
-- `requests`
-- `review-requests`
 - `asset assignments`
+- `purchase_orders`
+- `purchase_order_items`
 
 ### 3.3. Bảo trì và sửa chữa
 
 - `maintenance_events`
+- `maintenance_details`
 - `repair_logs`
 - `off service`
 
 ### 3.4. Thu hủy
 
 - `disposals`
+- `disposal_details`
 
-### 3.5. Báo cáo
+### 3.5. Kiểm kê
+
+- `inventory_checks`
+- `inventory_check_items`
+- `inventory/assets`
+- `inventory/valuation`
+
+### 3.6. Báo cáo
 
 - `reports/summary`
 - `reports/export`
@@ -71,6 +80,8 @@ Legacy mapping vẫn được giữ để không gãy dữ liệu cũ:
 - `supplier` là canonical role, không còn chỉ là danh mục
 - `purchase_orders` có `payment_method`
 - `purchase_order_items` lưu sản phẩm, số lượng, đơn giá, thành tiền
+- `maintenance_details`, `disposal_details`, `inventory_check_items` là các bảng detail theo ERD mới
+- `requests` đã được loại khỏi schema chính bằng migration mới
 - trạng thái đơn hàng chuẩn hóa thành `preparing`, `shipping`, `delivered`
 - `/api/profile` hỗ trợ cả profile nhân viên và profile nhà cung cấp
 

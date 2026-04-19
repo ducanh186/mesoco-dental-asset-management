@@ -1,207 +1,289 @@
 # Class Diagram
 
-Sơ đồ này được rút gọn để dùng trong báo cáo nghiệp vụ. Thay vì gom toàn bộ hệ thống vào một hình lớn, tài liệu chia thành 3 nhóm để dễ đọc và dễ đưa vào báo cáo.
+Tài liệu này phản ánh scope mới nhất theo yêu cầu khách hàng: phần tài khoản/quyền có khóa chính và khóa ngoại rõ ràng; phần nghiệp vụ chính gồm 4 luồng có bảng chính và bảng chi tiết.
 
-## 1. Người dùng và tài sản
+## 1. Tài khoản và phân quyền
+
+```mermaid
+classDiagram
+    direction LR
+
+    class Role {
+        +id PK
+        code
+        name
+        description
+        is_active
+    }
+
+    class Permission {
+        +id PK
+        code
+        name
+        description
+    }
+
+    class RolePermission {
+        +role_id PK, FK
+        +permission_id PK, FK
+        granted_at
+        note
+    }
+
+    class User {
+        +id PK
+        employee_id FK
+        supplier_id FK
+        role_id FK
+        employee_code
+        name
+        email
+        password
+        status
+    }
+
+    class AccountRole {
+        +user_id PK, FK
+        +role_id PK, FK
+        assigned_at
+        status
+        note
+    }
+
+    class Employee {
+        +id PK
+        employee_code
+        full_name
+        department
+        position
+        phone
+        status
+    }
+
+    class Supplier {
+        +id PK
+        code
+        name
+        contact_person
+        phone
+        email
+    }
+
+    Role "1" --> "0..*" RolePermission : grants
+    Permission "1" --> "0..*" RolePermission : included_in
+    User "1" --> "0..*" AccountRole : assigned
+    Role "1" --> "0..*" AccountRole : assigned_to
+    Role "1" --> "0..*" User : canonical_role
+    Employee "1" --> "0..1" User : login_account
+    Supplier "1" --> "0..1" User : portal_account
+```
+
+## 2. Danh mục tài sản
 
 ```mermaid
 classDiagram
     direction TB
 
-    class Role {
-        ma_vai_tro
-        ten_vai_tro
-        mo_ta
-    }
-
-    class User {
-        ma_nguoi_dung
-        ho_ten
-        email
-        vai_tro
-        trang_thai
-    }
-
-    class Employee {
-        ma_nhan_vien
-        ho_ten
-        phong_ban
-        chuc_vu
-        trang_thai
+    class Category {
+        +id PK
+        code
+        name
+        description
     }
 
     class Supplier {
-        ma_nha_cung_cap
-        ten_nha_cung_cap
-        nguoi_lien_he
-        email
-        so_dien_thoai
-    }
-
-    class Category {
-        ma_nhom
-        ten_nhom
-        mo_ta
+        +id PK
+        code
+        name
     }
 
     class Asset {
-        ma_tai_san
-        ten_tai_san
-        loai_tai_san
-        nhom_tai_san
-        vi_tri
-        trang_thai
-        nguyen_gia
-        ngay_het_bao_hanh
+        +id PK
+        category_id FK
+        supplier_id FK
+        asset_code
+        name
+        type
+        status
+        location
+        purchase_cost
+        warranty_expiry
     }
 
     class AssetAssignment {
-        ngay_ban_giao
-        ngay_thu_hoi
-        trang_thai_ban_giao
+        +id PK
+        asset_id FK
+        employee_id FK
+        assigned_by FK
+        assigned_at
+        unassigned_at
     }
-
-    Role "1" --> "0..*" User : phan_quyen
-    Employee "1" --> "0..1" User : co_tai_khoan
-    Supplier "1" --> "0..1" User : co_tai_khoan
-
-    Category "1" --> "0..*" Asset : phan_loai
-    Supplier "1" --> "0..*" Asset : cung_cap
-
-    Asset "1" --> "0..*" AssetAssignment : duoc_ban_giao
-    Employee "1" --> "0..*" AssetAssignment : nhan_tai_san
-    User "1" --> "0..*" AssetAssignment : thuc_hien_ban_giao
-```
-
-## 2. Yêu cầu, bảo trì và sửa chữa
-
-```mermaid
-classDiagram
-    direction TB
 
     class Employee {
-        ma_nhan_vien
-        ho_ten
-        phong_ban
-        chuc_vu
+        +id PK
+        employee_code
+        full_name
     }
 
     class User {
-        ma_nguoi_dung
-        ho_ten
-        vai_tro
+        +id PK
+        name
+        role_id FK
     }
 
-    class Asset {
-        ma_tai_san
-        ten_tai_san
-        trang_thai
-    }
-
-    class Supplier {
-        ma_nha_cung_cap
-        ten_nha_cung_cap
-    }
-
-    class AssetRequest {
-        ma_yeu_cau
-        loai_yeu_cau
-        tieu_de
-        muc_do_uu_tien
-        trang_thai_duyet
-        ngay_tao
-    }
-
-    class MaintenanceEvent {
-        ma_bao_tri
-        loai_bao_tri
-        ngay_du_kien
-        muc_do_uu_tien
-        trang_thai
-        chi_phi
-    }
-
-    class RepairLog {
-        tinh_trang_sua_chua
-        mo_ta_su_co
-        cach_xu_ly
-        chi_phi
-        ngay_hoan_thanh
-    }
-
-    Employee "1" --> "0..*" AssetRequest : gui_yeu_cau
-    Asset "0..1" --> "0..*" AssetRequest : lien_quan_den
-    User "1" --> "0..*" AssetRequest : duyet_yeu_cau
-
-    Asset "1" --> "0..*" MaintenanceEvent : duoc_bao_tri
-    User "1" --> "0..*" MaintenanceEvent : phu_trach
-
-    MaintenanceEvent "1" --> "0..1" RepairLog : ghi_nhan_sua_chua
-    Supplier "0..1" --> "0..*" RepairLog : ho_tro_sua_chua
+    Category "1" --> "0..*" Asset : classifies
+    Supplier "1" --> "0..*" Asset : supplies
+    Asset "1" --> "0..*" AssetAssignment : assigned_history
+    Employee "1" --> "0..*" AssetAssignment : receives
+    User "1" --> "0..*" AssetAssignment : performs
 ```
 
-## 3. Mua sắm và thu hủy tài sản
+## 3. Bốn nghiệp vụ chính
 
 ```mermaid
 classDiagram
     direction TB
 
-    class User {
-        ma_nguoi_dung
-        ho_ten
-        vai_tro
-    }
-
-    class Supplier {
-        ma_nha_cung_cap
-        ten_nha_cung_cap
-        nguoi_lien_he
-    }
-
-    class Asset {
-        ma_tai_san
-        ten_tai_san
-        trang_thai
-        gia_tri_con_lai
-    }
-
     class PurchaseOrder {
-        ma_don_hang
-        ngay_dat_hang
-        ngay_du_kien_giao
-        trang_thai
-        tong_tien
-        phuong_thuc_thanh_toan
+        +id PK
+        supplier_id FK
+        requested_by_user_id FK
+        approved_by_user_id FK
+        order_code
+        order_date
+        expected_delivery_date
+        status
+        total_amount
+        payment_method
     }
 
     class PurchaseOrderItem {
-        ten_hang
-        so_luong
-        don_vi
-        don_gia
-        thanh_tien
+        +id PK
+        purchase_order_id FK
+        asset_id FK
+        category_id FK
+        item_name
+        qty
+        unit
+        unit_price
+        line_total
+    }
+
+    class MaintenanceEvent {
+        +id PK
+        asset_id FK
+        assigned_to_user_id FK
+        code
+        type
+        status
+        planned_at
+        priority
+        cost
+    }
+
+    class MaintenanceDetail {
+        +id PK
+        maintenance_event_id FK
+        asset_id FK
+        technician_user_id FK
+        supplier_id FK
+        status
+        issue_description
+        action_taken
+        cost
+        completed_at
     }
 
     class Disposal {
-        ma_thu_huy
-        hinh_thuc_xu_ly
-        ly_do
-        gia_tri_con_lai
-        so_tien_thu_hoi
-        ngay_xu_ly
+        +id PK
+        asset_id FK
+        disposed_by_user_id FK
+        approved_by_user_id FK
+        code
+        method
+        reason
+        disposed_at
+        asset_book_value
+        proceeds_amount
     }
 
-    Supplier "1" --> "0..*" PurchaseOrder : nhan_don_hang
-    User "1" --> "0..*" PurchaseOrder : lap_hoac_duyet_don
-    PurchaseOrder "1" --> "1..*" PurchaseOrderItem : gom_cac_mat_hang
+    class DisposalDetail {
+        +id PK
+        disposal_id FK
+        asset_id FK
+        condition_summary
+        asset_book_value
+        proceeds_amount
+        processed_at
+    }
 
-    Asset "1" --> "0..*" Disposal : duoc_thu_huy
-    User "1" --> "0..*" Disposal : thuc_hien_hoac_duyet
+    class InventoryCheck {
+        +id PK
+        created_by_user_id FK
+        completed_by_user_id FK
+        code
+        title
+        check_date
+        status
+        location
+    }
+
+    class InventoryCheckItem {
+        +id PK
+        inventory_check_id FK
+        asset_id FK
+        counted_by_user_id FK
+        expected_status
+        actual_status
+        expected_location
+        actual_location
+        result
+        checked_at
+    }
+
+    class Asset {
+        +id PK
+        asset_code
+        name
+        status
+        location
+    }
+
+    class Supplier {
+        +id PK
+        name
+    }
+
+    class User {
+        +id PK
+        name
+        role_id FK
+    }
+
+    Supplier "1" --> "0..*" PurchaseOrder : receives
+    User "1" --> "0..*" PurchaseOrder : creates_or_approves
+    PurchaseOrder "1" --> "1..*" PurchaseOrderItem : has_details
+    Asset "0..1" --> "0..*" PurchaseOrderItem : created_or_linked
+
+    Asset "1" --> "0..*" MaintenanceEvent : maintained
+    User "0..1" --> "0..*" MaintenanceEvent : assigned
+    MaintenanceEvent "1" --> "0..1" MaintenanceDetail : has_detail
+    Supplier "0..1" --> "0..*" MaintenanceDetail : external_support
+
+    Asset "1" --> "0..*" Disposal : disposed
+    User "0..1" --> "0..*" Disposal : performs_or_approves
+    Disposal "1" --> "1..*" DisposalDetail : has_details
+    Asset "1" --> "0..*" DisposalDetail : disposed_item
+
+    User "0..1" --> "0..*" InventoryCheck : creates_or_completes
+    InventoryCheck "1" --> "1..*" InventoryCheckItem : has_details
+    Asset "1" --> "0..*" InventoryCheckItem : counted_item
+    User "0..1" --> "0..*" InventoryCheckItem : counted_by
 ```
 
 ## Ghi chú đọc sơ đồ
 
-- `1` nghĩa là một bản ghi duy nhất.
-- `0..1` nghĩa là có thể có hoặc không có.
-- `0..*` nghĩa là có thể có nhiều bản ghi.
-- Các sơ đồ chỉ giữ những lớp quan trọng cho báo cáo nghiệp vụ. Các lớp kỹ thuật như mã QR, lịch sử thao tác, sinh mã tự động không được đưa vào để tránh làm rối.
+- `PK` là Primary Key, định danh duy nhất của một bản ghi.
+- `FK` là Foreign Key, cột dùng để liên kết sang bảng khác.
+- `1`, `0..1`, `0..*`, `1..*` lần lượt nghĩa là một, có thể không có hoặc một, có thể nhiều, và ít nhất một.
+- Bảng `requests`, `request_items`, `request_events` không còn nằm trong scope hiện tại.

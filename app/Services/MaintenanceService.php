@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Asset;
+use App\Models\MaintenanceDetail;
 use App\Models\MaintenanceEvent;
 use App\Models\RepairLog;
 use App\Models\User;
@@ -54,7 +55,7 @@ class MaintenanceService
                 'updated_by' => $user->id,
             ]);
 
-            $this->syncRepairLog($event);
+            $this->syncMaintenanceDetail($event);
 
             return $event->fresh(['asset', 'creator', 'assignedUser']);
         });
@@ -106,7 +107,7 @@ class MaintenanceService
 
             $event->update($updateData);
 
-            $this->syncRepairLog($event->fresh());
+            $this->syncMaintenanceDetail($event->fresh());
 
             return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
@@ -157,7 +158,7 @@ class MaintenanceService
             // Lock the asset
             $this->lockAsset($asset, $user, "Maintenance in progress: {$event->code}");
 
-            $this->syncRepairLog($event->fresh());
+            $this->syncMaintenanceDetail($event->fresh());
 
             return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
@@ -205,7 +206,7 @@ class MaintenanceService
             // Check if we should unlock the asset
             $this->maybeUnlockAsset($asset, $event->id);
 
-            $this->syncRepairLog($event->fresh());
+            $this->syncMaintenanceDetail($event->fresh());
 
             return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
@@ -242,7 +243,7 @@ class MaintenanceService
                 $this->maybeUnlockAsset($asset, $event->id);
             }
 
-            $this->syncRepairLog($event->fresh());
+            $this->syncMaintenanceDetail($event->fresh());
 
             return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
         });
@@ -426,28 +427,37 @@ class MaintenanceService
         ];
     }
 
-    private function syncRepairLog(MaintenanceEvent $event): void
+    private function syncMaintenanceDetail(MaintenanceEvent $event): void
     {
         if (
             $event->type !== MaintenanceEvent::TYPE_REPAIR &&
+            !$event->detail()->exists() &&
             !$event->repairLog()->exists()
         ) {
             return;
         }
 
+        $detailData = [
+            'asset_id' => $event->asset_id,
+            'technician_user_id' => $event->assigned_to_user_id,
+            'status' => $event->status,
+            'issue_description' => $event->note,
+            'action_taken' => $event->result_note,
+            'cost' => $event->cost,
+            'started_at' => $event->started_at,
+            'completed_at' => $event->completed_at,
+            'logged_at' => $event->completed_at ?? $event->started_at ?? $event->planned_at,
+        ];
+
+        MaintenanceDetail::updateOrCreate(
+            ['maintenance_event_id' => $event->id],
+            $detailData
+        );
+
+        // Legacy compatibility: repair_logs remains readable for older screens/tests.
         RepairLog::updateOrCreate(
             ['maintenance_event_id' => $event->id],
-            [
-                'asset_id' => $event->asset_id,
-                'technician_user_id' => $event->assigned_to_user_id,
-                'status' => $event->status,
-                'issue_description' => $event->note,
-                'action_taken' => $event->result_note,
-                'cost' => $event->cost,
-                'started_at' => $event->started_at,
-                'completed_at' => $event->completed_at,
-                'logged_at' => $event->completed_at ?? $event->started_at ?? $event->planned_at,
-            ]
+            $detailData
         );
     }
 }

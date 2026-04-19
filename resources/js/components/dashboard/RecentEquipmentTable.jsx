@@ -16,7 +16,7 @@ import { hasOperationalAccess } from '../../utils/roles';
  * @param {Function} props.onView - View handler
  * @param {Function} props.onEdit - Edit handler (operational roles only)
  * @param {Function} props.onDelete - Delete handler (operational roles only)
- * @param {Function} props.onCreateRequest - Create request handler (requester roles)
+ * @param {Function} props.onCreateRequest - Optional legacy request handler
  */
 const RecentEquipmentTable = ({ 
     role, 
@@ -172,7 +172,7 @@ const RecentEquipmentTable = ({
                             </>
                         )}
 
-                        {!isOperationalRole && (
+                        {!isOperationalRole && onCreateRequest && (
                             <button 
                                 onClick={() => onCreateRequest?.(item)}
                                 className="action-btn p-2 text-text-muted hover:text-warning hover:bg-warning/10 rounded-md transition-colors"

@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Asset;
-use App\Models\AssetRequest;
 use App\Models\Category;
 use App\Models\Disposal;
+use App\Models\MaintenanceDetail;
 use App\Models\MaintenanceEvent;
 use App\Models\RepairLog;
 use App\Models\Role;
@@ -22,8 +22,7 @@ class ErdAlignmentSeeder extends Seeder
     {
         $this->syncRoles();
         $this->syncCategories();
-        $this->syncRequestPrimaryAssetsAndApprovals();
-        $this->syncMaintenanceAssignmentsAndRepairLogs();
+        $this->syncMaintenanceAssignmentsAndDetails();
         $this->syncDisposals();
     }
 
@@ -58,39 +57,7 @@ class ErdAlignmentSeeder extends Seeder
         }
     }
 
-    private function syncRequestPrimaryAssetsAndApprovals(): void
-    {
-        foreach (AssetRequest::query()->with('items')->cursor() as $request) {
-            $primaryAssetId = $request->items
-                ->pluck('asset_id')
-                ->filter()
-                ->first();
-
-            if ($primaryAssetId && $request->asset_id !== $primaryAssetId) {
-                $request->forceFill(['asset_id' => $primaryAssetId])->save();
-            }
-
-            if (
-                $request->reviewed_by_user_id &&
-                in_array($request->status, [AssetRequest::STATUS_APPROVED, AssetRequest::STATUS_REJECTED], true)
-            ) {
-                $status = $request->status === AssetRequest::STATUS_APPROVED ? 'approved' : 'rejected';
-
-                $request->approvals()->firstOrCreate(
-                    [
-                        'reviewer_user_id' => $request->reviewed_by_user_id,
-                        'status' => $status,
-                    ],
-                    [
-                        'note' => $request->review_note,
-                        'acted_at' => $request->reviewed_at,
-                    ]
-                );
-            }
-        }
-    }
-
-    private function syncMaintenanceAssignmentsAndRepairLogs(): void
+    private function syncMaintenanceAssignmentsAndDetails(): void
     {
         foreach (MaintenanceEvent::query()->cursor() as $event) {
             $assignedUserId = $event->assigned_to_user_id;
@@ -106,20 +73,27 @@ class ErdAlignmentSeeder extends Seeder
                 $event->forceFill(['assigned_to_user_id' => $assignedUserId])->save();
             }
 
-            if ($event->type === MaintenanceEvent::TYPE_REPAIR || $event->repairLog()->exists()) {
+            if ($event->type === MaintenanceEvent::TYPE_REPAIR || $event->detail()->exists() || $event->repairLog()->exists()) {
+                $detailData = [
+                    'asset_id' => $event->asset_id,
+                    'technician_user_id' => $assignedUserId,
+                    'status' => $event->status,
+                    'issue_description' => $event->note,
+                    'action_taken' => $event->result_note,
+                    'cost' => $event->cost,
+                    'started_at' => $event->started_at,
+                    'completed_at' => $event->completed_at,
+                    'logged_at' => $event->completed_at ?? $event->started_at ?? $event->planned_at,
+                ];
+
+                MaintenanceDetail::query()->updateOrCreate(
+                    ['maintenance_event_id' => $event->id],
+                    $detailData
+                );
+
                 RepairLog::query()->updateOrCreate(
                     ['maintenance_event_id' => $event->id],
-                    [
-                        'asset_id' => $event->asset_id,
-                        'technician_user_id' => $assignedUserId,
-                        'status' => $event->status,
-                        'issue_description' => $event->note,
-                        'action_taken' => $event->result_note,
-                        'cost' => $event->cost,
-                        'started_at' => $event->started_at,
-                        'completed_at' => $event->completed_at,
-                        'logged_at' => $event->completed_at ?? $event->started_at ?? $event->planned_at,
-                    ]
+                    $detailData
                 );
             }
         }
@@ -132,7 +106,7 @@ class ErdAlignmentSeeder extends Seeder
                 continue;
             }
 
-            $asset->disposals()->create([
+            $disposal = $asset->disposals()->create([
                 'code' => Disposal::generateCode(),
                 'method' => 'destroy',
                 'reason' => $asset->off_service_reason ?: 'Seeded from retired asset status',
@@ -141,6 +115,15 @@ class ErdAlignmentSeeder extends Seeder
                 'disposed_at' => $asset->off_service_from ?? now(),
                 'asset_book_value' => $asset->getCurrentBookValue(),
                 'note' => 'Backfilled by ErdAlignmentSeeder',
+            ]);
+
+            $disposal->details()->create([
+                'asset_id' => $asset->id,
+                'condition_summary' => $disposal->reason,
+                'asset_book_value' => $disposal->asset_book_value,
+                'proceeds_amount' => $disposal->proceeds_amount,
+                'processed_at' => $disposal->disposed_at,
+                'note' => $disposal->note,
             ]);
         }
     }

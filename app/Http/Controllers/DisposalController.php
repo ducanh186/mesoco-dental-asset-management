@@ -130,6 +130,15 @@ class DisposalController extends Controller
             ]);
         });
 
+        $disposal->details()->create([
+            'asset_id' => $asset->id,
+            'condition_summary' => $validated['reason'],
+            'asset_book_value' => $disposal->asset_book_value,
+            'proceeds_amount' => $disposal->proceeds_amount,
+            'processed_at' => $disposal->disposed_at,
+            'note' => $validated['note'] ?? null,
+        ]);
+
         return response()->json([
             'message' => 'Đã thu hủy thiết bị thành công.',
             'data' => [
@@ -142,6 +151,7 @@ class DisposalController extends Controller
                     'code' => $disposal->code,
                     'method' => $disposal->method,
                     'disposed_at' => $disposal->disposed_at?->toISOString(),
+                    'details_count' => $disposal->details()->count(),
                 ],
             ],
         ]);

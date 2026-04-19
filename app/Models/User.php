@@ -4,9 +4,12 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -119,6 +122,33 @@ class User extends Authenticatable
                 ['name' => self::roleLabel($normalizedRole)]
             )->id;
         });
+
+        static::saved(function (self $user) {
+            if (!Schema::hasTable('account_roles') || !$user->role_id) {
+                return;
+            }
+
+            DB::table('account_roles')
+                ->where('user_id', $user->id)
+                ->update([
+                    'status' => 'inactive',
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('account_roles')->updateOrInsert(
+                [
+                    'user_id' => $user->id,
+                    'role_id' => $user->role_id,
+                ],
+                [
+                    'assigned_at' => $user->created_at ?? now(),
+                    'status' => 'active',
+                    'note' => 'Synced from users.role_id',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        });
     }
 
     /**
@@ -137,6 +167,13 @@ class User extends Authenticatable
     public function roleDefinition(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'account_roles')
+            ->withPivot(['assigned_at', 'status', 'note'])
+            ->withTimestamps();
     }
 
     /**

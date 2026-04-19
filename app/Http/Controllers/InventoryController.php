@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\InventoryCheck;
+use App\Models\InventoryCheckItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -18,6 +22,193 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class InventoryController extends Controller
 {
+    public function checks(Request $request): JsonResponse
+    {
+        $perPage = min($request->integer('per_page', 15), 100);
+
+        $query = InventoryCheck::query()
+            ->with(['creator:id,name,email', 'completer:id,name,email'])
+            ->withCount('items');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('from_date')) {
+            $query->where('check_date', '>=', $request->input('from_date'));
+        }
+
+        if ($request->filled('to_date')) {
+            $query->where('check_date', '<=', $request->input('to_date'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                    ->orWhere('title', 'like', "%{$search}%");
+            });
+        }
+
+        $checks = $query->orderByDesc('check_date')->paginate($perPage);
+
+        return response()->json([
+            'data' => $checks->items(),
+            'pagination' => [
+                'current_page' => $checks->currentPage(),
+                'last_page' => $checks->lastPage(),
+                'per_page' => $checks->perPage(),
+                'total' => $checks->total(),
+            ],
+            'available_statuses' => InventoryCheck::STATUSES,
+            'available_results' => InventoryCheckItem::RESULTS,
+        ]);
+    }
+
+    public function storeCheck(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'title' => ['nullable', 'string', 'max:255'],
+            'check_date' => ['nullable', 'date'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'note' => ['nullable', 'string', 'max:2000'],
+            'asset_ids' => ['nullable', 'array'],
+            'asset_ids.*' => ['integer', 'exists:assets,id'],
+        ]);
+
+        $assetQuery = Asset::query()
+            ->where('status', '!=', Asset::STATUS_RETIRED)
+            ->orderBy('asset_code');
+
+        if (!empty($validated['asset_ids'])) {
+            $assetQuery->whereIn('id', array_unique($validated['asset_ids']));
+        }
+
+        if (!empty($validated['location'])) {
+            $assetQuery->where('location', $validated['location']);
+        }
+
+        $assets = $assetQuery->get(['id', 'status', 'location']);
+
+        $inventoryCheck = DB::transaction(function () use ($validated, $assets, $request) {
+            $check = InventoryCheck::create([
+                'title' => $validated['title'] ?? null,
+                'check_date' => $validated['check_date'] ?? now()->toDateString(),
+                'status' => InventoryCheck::STATUS_IN_PROGRESS,
+                'created_by_user_id' => $request->user()?->id,
+                'location' => $validated['location'] ?? null,
+                'note' => $validated['note'] ?? null,
+            ]);
+
+            foreach ($assets as $asset) {
+                $check->items()->create([
+                    'asset_id' => $asset->id,
+                    'expected_status' => $asset->status,
+                    'expected_location' => $asset->location,
+                    'result' => InventoryCheckItem::RESULT_PENDING,
+                ]);
+            }
+
+            return $check->fresh(['creator:id,name,email'])->loadCount('items');
+        });
+
+        return response()->json([
+            'message' => 'Inventory check created successfully.',
+            'data' => $inventoryCheck,
+        ], 201);
+    }
+
+    public function showCheck(InventoryCheck $inventoryCheck): JsonResponse
+    {
+        $inventoryCheck->load([
+            'creator:id,name,email',
+            'completer:id,name,email',
+            'items.asset:id,asset_code,name,status,location',
+            'items.countedBy:id,name,email',
+        ]);
+
+        return response()->json([
+            'data' => $inventoryCheck,
+            'available_results' => InventoryCheckItem::RESULTS,
+        ]);
+    }
+
+    public function updateCheckItem(
+        Request $request,
+        InventoryCheck $inventoryCheck,
+        InventoryCheckItem $inventoryCheckItem
+    ): JsonResponse {
+        if ($inventoryCheckItem->inventory_check_id !== $inventoryCheck->id) {
+            abort(404);
+        }
+
+        if ($inventoryCheck->status !== InventoryCheck::STATUS_IN_PROGRESS) {
+            return response()->json([
+                'message' => 'Only in-progress inventory checks can be updated.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'actual_status' => ['nullable', 'string', Rule::in(Asset::STATUSES)],
+            'actual_location' => ['nullable', 'string', 'max:255'],
+            'result' => ['nullable', 'string', Rule::in(InventoryCheckItem::RESULTS)],
+            'condition_note' => ['nullable', 'string', 'max:2000'],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if (!isset($validated['result'])) {
+            $actualStatus = $validated['actual_status'] ?? $inventoryCheckItem->actual_status;
+            $actualLocation = $validated['actual_location'] ?? $inventoryCheckItem->actual_location;
+
+            $statusMatches = !$actualStatus || $actualStatus === $inventoryCheckItem->expected_status;
+            $locationMatches = !$actualLocation || $actualLocation === $inventoryCheckItem->expected_location;
+
+            $validated['result'] = ($statusMatches && $locationMatches)
+                ? InventoryCheckItem::RESULT_MATCHED
+                : InventoryCheckItem::RESULT_MOVED;
+        }
+
+        $inventoryCheckItem->update([
+            ...$validated,
+            'counted_by_user_id' => $request->user()?->id,
+            'checked_at' => now(),
+        ]);
+
+        $inventoryCheckItem->load(['asset:id,asset_code,name,status,location', 'countedBy:id,name,email']);
+
+        return response()->json([
+            'message' => 'Inventory detail updated successfully.',
+            'data' => $inventoryCheckItem,
+        ]);
+    }
+
+    public function completeCheck(Request $request, InventoryCheck $inventoryCheck): JsonResponse
+    {
+        if ($inventoryCheck->status !== InventoryCheck::STATUS_IN_PROGRESS) {
+            return response()->json([
+                'message' => 'Only in-progress inventory checks can be completed.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $inventoryCheck->update([
+            'status' => InventoryCheck::STATUS_COMPLETED,
+            'completed_by_user_id' => $request->user()?->id,
+            'completed_at' => now(),
+            'note' => $validated['note'] ?? $inventoryCheck->note,
+        ]);
+
+        $inventoryCheck->load(['creator:id,name,email', 'completer:id,name,email'])->loadCount('items');
+
+        return response()->json([
+            'message' => 'Inventory check completed successfully.',
+            'data' => $inventoryCheck,
+        ]);
+    }
+
     /**
      * Get inventory summary statistics.
      * 
