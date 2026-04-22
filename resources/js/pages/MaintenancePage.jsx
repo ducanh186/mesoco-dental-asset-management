@@ -1,236 +1,58 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    Card, 
-    CardHeader, 
-    CardBody, 
-    Button, 
-    Input, 
+import React, { useEffect, useState } from 'react';
+import {
+    Button,
+    Card,
+    CardBody,
+    CardHeader,
+    ConfirmModal,
+    Input,
+    Modal,
     Select,
-    Badge,
     Table,
     TablePagination,
-    Modal,
-    ConfirmModal,
-    useToast 
+    Badge,
+    useToast,
 } from '../components/ui';
-import { useI18n } from '../i18n';
-import { maintenanceApi, assetsApi, usersApi, handleApiError } from '../services/api';
+import { assetsApi, handleApiError, maintenanceApi, usersApi } from '../services/api';
 import { hasOperationalAccess } from '../utils/roles';
 
-/**
- * MaintenancePage - Maintenance schedules and service records (Phase 7)
- * Real API integration replacing mock data
- */
+const emptyDetailLine = () => ({
+    asset_id: '',
+    qty: '1',
+});
+
 const MaintenancePage = ({ user }) => {
-    const { t } = useI18n();
     const toast = useToast();
-    
-    // State
+    const canManage = hasOperationalAccess(user);
+
     const [loading, setLoading] = useState(true);
     const [events, setEvents] = useState([]);
     const [summary, setSummary] = useState(null);
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0, per_page: 15 });
-    
-    // Filters
+
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    
-    // Modals
+
+    const [assets, setAssets] = useState([]);
+    const [technicians, setTechnicians] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [confirmAction, setConfirmAction] = useState(null);
-    
-    // Form state for create
+    const [formLoading, setFormLoading] = useState(false);
+
     const [formData, setFormData] = useState({
-        asset_id: '',
         type: 'inspection',
         planned_at: '',
         priority: 'normal',
         note: '',
         estimated_duration_minutes: '',
         assigned_to_user_id: '',
-    });
-    const [assets, setAssets] = useState([]);
-    const [technicians, setTechnicians] = useState([]);
-    const [formLoading, setFormLoading] = useState(false);
-
-    // Permission check
-    const canManage = hasOperationalAccess(user);
-
-    // Fetch data
-    const fetchEvents = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params = {
-                page: currentPage,
-                per_page: 15,
-            };
-            if (statusFilter) params.status = statusFilter;
-            if (typeFilter) params.type = typeFilter;
-            
-            const response = await maintenanceApi.list(params);
-            setEvents(response.data || []);
-            setPagination(response.pagination || { current_page: 1, last_page: 1, total: 0, per_page: 15 });
-        } catch (error) {
-            handleApiError(error, toast);
-        } finally {
-            setLoading(false);
-        }
-    }, [currentPage, statusFilter, typeFilter, toast]);
-
-    const fetchSummary = useCallback(async () => {
-        try {
-            const response = await maintenanceApi.summary();
-            setSummary(response);
-        } catch (error) {
-            // Summary is optional, don't block on error
-            console.error('Failed to fetch summary:', error);
-        }
-    }, []);
-
-    const fetchAssets = useCallback(async () => {
-        try {
-            const response = await assetsApi.list({ status: 'active', per_page: 100 });
-            setAssets(response.assets || response.data || []);
-        } catch (error) {
-            console.error('Failed to fetch assets:', error);
-        }
-    }, []);
-
-    const fetchTechnicians = useCallback(async () => {
-        try {
-            const response = await usersApi.list({ role: 'technician', per_page: 100 });
-            setTechnicians(response.users || []);
-        } catch (error) {
-            console.error('Failed to fetch technicians:', error);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchEvents();
-        fetchSummary();
-    }, [fetchEvents, fetchSummary]);
-
-    useEffect(() => {
-        if (showCreateModal) {
-            if (assets.length === 0) {
-                fetchAssets();
-            }
-
-            if (technicians.length === 0) {
-                fetchTechnicians();
-            }
-        }
-    }, [showCreateModal, assets.length, technicians.length, fetchAssets, fetchTechnicians]);
-
-    // Filter client-side by search query
-    const filteredEvents = events.filter(event => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-            event.code?.toLowerCase().includes(q) ||
-            event.asset?.name?.toLowerCase().includes(q) ||
-            event.asset?.asset_code?.toLowerCase().includes(q) ||
-            event.type?.toLowerCase().includes(q)
-        );
+        details: [emptyDetailLine()],
     });
 
-    // Handlers
-    const handleCreate = async () => {
-        if (!formData.asset_id || !formData.planned_at) {
-            toast.error('Vui lòng chọn tài sản và ngày dự kiến');
-            return;
-        }
-        setFormLoading(true);
-        try {
-            const payload = {
-                ...formData,
-                assigned_to_user_id: formData.assigned_to_user_id
-                    ? parseInt(formData.assigned_to_user_id, 10)
-                    : null,
-                estimated_duration_minutes: formData.estimated_duration_minutes 
-                    ? parseInt(formData.estimated_duration_minutes) 
-                    : null,
-            };
-            await maintenanceApi.create(payload);
-            toast.success('Tạo lịch bảo trì thành công');
-            setShowCreateModal(false);
-            setFormData({
-                asset_id: '',
-                type: 'inspection',
-                planned_at: '',
-                priority: 'normal',
-                note: '',
-                estimated_duration_minutes: '',
-                assigned_to_user_id: '',
-            });
-            fetchEvents();
-            fetchSummary();
-        } catch (error) {
-            handleApiError(error, toast);
-        } finally {
-            setFormLoading(false);
-        }
-    };
-
-    const handleStart = async (event) => {
-        try {
-            await maintenanceApi.start(event.id);
-            toast.success(`Đã bắt đầu bảo trì ${event.code}`);
-            fetchEvents();
-            fetchSummary();
-            setShowDetailModal(false);
-        } catch (error) {
-            handleApiError(error, toast);
-        }
-    };
-
-    const handleComplete = async (event) => {
-        try {
-            await maintenanceApi.complete(event.id, { result_note: 'Hoàn thành' });
-            toast.success(`Đã hoàn thành bảo trì ${event.code}`);
-            fetchEvents();
-            fetchSummary();
-            setShowDetailModal(false);
-        } catch (error) {
-            handleApiError(error, toast);
-        }
-    };
-
-    const handleCancel = async (event) => {
-        try {
-            await maintenanceApi.cancel(event.id, 'Hủy bởi người dùng');
-            toast.success(`Đã hủy bảo trì ${event.code}`);
-            fetchEvents();
-            fetchSummary();
-            setShowDetailModal(false);
-            setConfirmAction(null);
-        } catch (error) {
-            handleApiError(error, toast);
-        }
-    };
-
-    const handleDelete = async (event) => {
-        try {
-            await maintenanceApi.delete(event.id);
-            toast.success(`Đã xóa lịch bảo trì ${event.code}`);
-            fetchEvents();
-            fetchSummary();
-            setConfirmAction(null);
-        } catch (error) {
-            handleApiError(error, toast);
-        }
-    };
-
-    const openDetail = (event) => {
-        setSelectedEvent(event);
-        setShowDetailModal(true);
-    };
-
-    // Status options
     const statusOptions = [
         { value: '', label: 'Tất cả trạng thái' },
         { value: 'scheduled', label: 'Đã lên lịch' },
@@ -243,10 +65,10 @@ const MaintenancePage = ({ user }) => {
         { value: '', label: 'Tất cả loại' },
         { value: 'inspection', label: 'Kiểm tra' },
         { value: 'sterilization', label: 'Khử trùng' },
+        { value: 'filter_change', label: 'Thay bộ lọc' },
         { value: 'calibration', label: 'Hiệu chuẩn' },
         { value: 'repair', label: 'Sửa chữa' },
         { value: 'cleaning', label: 'Vệ sinh' },
-        { value: 'filter_change', label: 'Thay bộ lọc' },
         { value: 'replacement', label: 'Thay thế linh kiện' },
         { value: 'other', label: 'Khác' },
     ];
@@ -258,88 +80,356 @@ const MaintenancePage = ({ user }) => {
         { value: 'urgent', label: 'Khẩn cấp' },
     ];
 
-    const getTypeLabel = (type) => {
-        const found = typeOptions.find(o => o.value === type);
-        return found?.label || 'Khác';
-    };
+    useEffect(() => {
+        fetchEvents();
+    }, [currentPage, statusFilter, typeFilter]);
 
-    const getStatusVariant = (status) => {
-        switch (status) {
-            case 'completed': return 'success';
-            case 'in_progress': return 'primary';
-            case 'scheduled': return 'warning';
-            case 'canceled': return 'default';
-            default: return 'default';
+    useEffect(() => {
+        fetchSummary();
+    }, []);
+
+    useEffect(() => {
+        if (!showCreateModal) {
+            return;
+        }
+
+        if (assets.length === 0) {
+            fetchAssets();
+        }
+
+        if (technicians.length === 0) {
+            fetchTechnicians();
+        }
+    }, [showCreateModal]);
+
+    const fetchEvents = async () => {
+        setLoading(true);
+        try {
+            const response = await maintenanceApi.list({
+                page: currentPage,
+                per_page: 15,
+                status: statusFilter || undefined,
+                type: typeFilter || undefined,
+            });
+
+            setEvents(response.data || []);
+            setPagination(response.pagination || { current_page: 1, last_page: 1, total: 0, per_page: 15 });
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const getStatusLabel = (status) => {
-        const found = statusOptions.find(o => o.value === status);
-        return found?.label || 'Không xác định';
+    const fetchSummary = async () => {
+        try {
+            const response = await maintenanceApi.summary();
+            setSummary(response);
+        } catch (error) {
+            console.error('Failed to fetch maintenance summary', error);
+        }
+    };
+
+    const fetchAssets = async () => {
+        try {
+            const response = await assetsApi.list({ status: 'active', per_page: 100 });
+            setAssets(response.assets || []);
+        } catch (error) {
+            console.error('Failed to fetch assets', error);
+        }
+    };
+
+    const fetchTechnicians = async () => {
+        try {
+            const response = await usersApi.list({ role: 'technician', per_page: 100 });
+            setTechnicians(response.users || []);
+        } catch (error) {
+            console.error('Failed to fetch technicians', error);
+        }
+    };
+
+    const getTypeLabel = (type) => typeOptions.find((option) => option.value === type)?.label || 'Khác';
+    const getPriorityLabel = (priority) => priorityOptions.find((option) => option.value === priority)?.label || 'Không xác định';
+    const getStatusLabel = (status) => statusOptions.find((option) => option.value === status)?.label || 'Không xác định';
+
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'completed':
+                return 'success';
+            case 'in_progress':
+                return 'primary';
+            case 'scheduled':
+                return 'warning';
+            case 'canceled':
+                return 'default';
+            default:
+                return 'default';
+        }
     };
 
     const getPriorityVariant = (priority) => {
         switch (priority) {
-            case 'urgent': return 'danger';
-            case 'high': return 'warning';
-            case 'normal': return 'default';
-            case 'low': return 'info';
-            default: return 'default';
+            case 'urgent':
+                return 'danger';
+            case 'high':
+                return 'warning';
+            case 'low':
+                return 'info';
+            default:
+                return 'default';
         }
     };
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('vi-VN', { 
-            day: '2-digit', 
-            month: '2-digit', 
+    const formatDateTime = (value) => {
+        if (!value) {
+            return '-';
+        }
+
+        return new Date(value).toLocaleString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
         });
     };
 
-    // Table columns
+    const summarizeAssets = (event) => {
+        const detailLines = event.details || [];
+        if (detailLines.length === 0) {
+            return {
+                title: event.asset?.name || '-',
+                subtitle: event.asset?.asset_code || '',
+                totalLines: 0,
+                totalQty: 0,
+            };
+        }
+
+        const first = detailLines[0];
+        const totalQty = detailLines.reduce((sum, detail) => sum + Number(detail.qty || 0), 0);
+
+        if (detailLines.length === 1) {
+            return {
+                title: first.asset?.name || event.asset?.name || '-',
+                subtitle: `${first.asset?.asset_code || event.asset?.asset_code || ''} | SL: ${first.qty || 1}`,
+                totalLines: 1,
+                totalQty,
+            };
+        }
+
+        return {
+            title: `${first.asset?.name || event.asset?.name || 'Phiếu nhiều thiết bị'} +${detailLines.length - 1} thiết bị`,
+            subtitle: `${detailLines.length} dòng chi tiết | Tổng SL: ${totalQty}`,
+            totalLines: detailLines.length,
+            totalQty,
+        };
+    };
+
+    const filteredEvents = events.filter((event) => {
+        if (!searchQuery.trim()) {
+            return true;
+        }
+
+        const q = searchQuery.trim().toLowerCase();
+        const detailText = (event.details || [])
+            .map((detail) => `${detail.asset?.name || ''} ${detail.asset?.asset_code || ''}`)
+            .join(' ')
+            .toLowerCase();
+
+        return [
+            event.code,
+            event.type,
+            event.asset?.name,
+            event.asset?.asset_code,
+            detailText,
+        ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q);
+    });
+
+    const updateDetailLine = (index, field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            details: prev.details.map((line, lineIndex) => (
+                lineIndex === index ? { ...line, [field]: value } : line
+            )),
+        }));
+    };
+
+    const addDetailLine = () => {
+        setFormData((prev) => ({
+            ...prev,
+            details: [...prev.details, emptyDetailLine()],
+        }));
+    };
+
+    const removeDetailLine = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            details: prev.details.length === 1
+                ? prev.details
+                : prev.details.filter((_, lineIndex) => lineIndex !== index),
+        }));
+    };
+
+    const resetForm = () => {
+        setFormData({
+            type: 'inspection',
+            planned_at: '',
+            priority: 'normal',
+            note: '',
+            estimated_duration_minutes: '',
+            assigned_to_user_id: '',
+            details: [emptyDetailLine()],
+        });
+    };
+
+    const handleCreate = async () => {
+        const normalizedDetails = formData.details
+            .map((line) => ({
+                asset_id: Number(line.asset_id),
+                qty: Number(line.qty || 0),
+            }))
+            .filter((line) => line.asset_id && line.qty > 0);
+
+        if (normalizedDetails.length === 0) {
+            toast.error('Phiếu bảo trì phải có ít nhất một thiết bị.');
+            return;
+        }
+
+        setFormLoading(true);
+        try {
+            const payload = {
+                type: formData.type,
+                planned_at: formData.planned_at,
+                priority: formData.priority,
+                note: formData.note || null,
+                estimated_duration_minutes: formData.estimated_duration_minutes
+                    ? Number(formData.estimated_duration_minutes)
+                    : null,
+                assigned_to_user_id: formData.assigned_to_user_id
+                    ? Number(formData.assigned_to_user_id)
+                    : null,
+                details: normalizedDetails,
+            };
+
+            await maintenanceApi.create(payload);
+            toast.success('Đã tạo phiếu bảo trì.');
+            setShowCreateModal(false);
+            resetForm();
+            fetchEvents();
+            fetchSummary();
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setFormLoading(false);
+        }
+    };
+
+    const openDetail = async (event) => {
+        try {
+            const response = await maintenanceApi.get(event.id);
+            setSelectedEvent(response.data || event);
+            setShowDetailModal(true);
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
+    const handleStart = async (event) => {
+        try {
+            await maintenanceApi.start(event.id);
+            toast.success(`Đã bắt đầu ${event.code}.`);
+            setShowDetailModal(false);
+            fetchEvents();
+            fetchSummary();
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
+    const handleComplete = async (event) => {
+        try {
+            await maintenanceApi.complete(event.id, { result_note: 'Hoàn thành theo phiếu bảo trì' });
+            toast.success(`Đã hoàn thành ${event.code}.`);
+            setShowDetailModal(false);
+            fetchEvents();
+            fetchSummary();
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
+    const handleCancel = async (event) => {
+        try {
+            await maintenanceApi.cancel(event.id, 'Hủy bởi người dùng');
+            toast.success(`Đã hủy ${event.code}.`);
+            setConfirmAction(null);
+            setShowDetailModal(false);
+            fetchEvents();
+            fetchSummary();
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
+    const handleDelete = async (event) => {
+        try {
+            await maintenanceApi.delete(event.id);
+            toast.success(`Đã xóa ${event.code}.`);
+            setConfirmAction(null);
+            setShowDetailModal(false);
+            fetchEvents();
+            fetchSummary();
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
     const columns = [
-        { 
-            key: 'code', 
-            label: 'Mã',
-            width: '120px',
-            render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>
+        {
+            key: 'code',
+            label: 'Mã phiếu',
+            width: '140px',
+            render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>,
         },
-        { 
-            key: 'asset', 
-            label: 'Thiết bị',
-            render: (_, row) => (
-                <div>
-                    <p className="font-medium text-text">{row.asset?.name || '-'}</p>
-                    <p className="text-sm text-text-muted">{row.asset?.asset_code || ''}</p>
-                </div>
-            )
+        {
+            key: 'details',
+            label: 'Thiết bị bảo trì',
+            render: (_, row) => {
+                const summaryInfo = summarizeAssets(row);
+                return (
+                    <div>
+                        <div className="font-medium text-text">{summaryInfo.title}</div>
+                        <div className="text-xs text-text-muted">{summaryInfo.subtitle}</div>
+                    </div>
+                );
+            },
         },
-        { 
-            key: 'type', 
+        {
+            key: 'type',
             label: 'Loại',
-            render: (value) => <Badge variant="info" size="sm">{getTypeLabel(value)}</Badge>
+            width: '130px',
+            render: (value) => <Badge variant="info" size="sm">{getTypeLabel(value)}</Badge>,
         },
-        { 
-            key: 'planned_at', 
+        {
+            key: 'planned_at',
             label: 'Ngày dự kiến',
-            render: (value) => formatDate(value)
+            render: (value) => formatDateTime(value),
         },
-        { 
-            key: 'priority', 
+        {
+            key: 'priority',
             label: 'Ưu tiên',
-            render: (value) => {
-                const labels = { urgent: 'Khẩn', high: 'Cao', normal: 'TB', low: 'Thấp' };
-                return <Badge variant={getPriorityVariant(value)} size="sm" outline>{labels[value] || 'Không xác định'}</Badge>;
-            }
+            width: '120px',
+            render: (value) => <Badge variant={getPriorityVariant(value)} size="sm" outline>{getPriorityLabel(value)}</Badge>,
         },
-        { 
-            key: 'status', 
+        {
+            key: 'status',
             label: 'Trạng thái',
-            render: (value) => <Badge variant={getStatusVariant(value)} size="sm" dot>{getStatusLabel(value)}</Badge>
+            width: '140px',
+            render: (value) => <Badge variant={getStatusVariant(value)} size="sm" dot>{getStatusLabel(value)}</Badge>,
         },
         {
             key: 'actions',
@@ -356,334 +446,326 @@ const MaintenancePage = ({ user }) => {
                         </Button>
                     )}
                     {canManage && row.status === 'in_progress' && (
-                        <Button size="sm" variant="primary" onClick={() => handleComplete(row)}>
+                        <Button size="sm" onClick={() => handleComplete(row)}>
                             Hoàn thành
                         </Button>
                     )}
                 </div>
-            )
-        }
+            ),
+        },
     ];
 
-    // Stats from summary
     const stats = summary?.stats || { scheduled: 0, in_progress: 0, completed: 0, overdue: 0 };
 
     return (
-        <div className="maintenance-page space-y-6">
-            {/* Summary Cards */}
+        <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <Card>
-                    <CardBody>
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-warning/10 text-warning flex items-center justify-center">
-                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polyline points="12 6 12 12 16 14" />
-                                </svg>
+                {[
+                    { label: 'Đã lên lịch', value: stats.scheduled, tone: 'text-warning bg-warning/10' },
+                    { label: 'Đang thực hiện', value: stats.in_progress, tone: 'text-primary bg-primary/10' },
+                    { label: 'Hoàn thành', value: stats.completed, tone: 'text-success bg-success/10' },
+                    { label: 'Quá hạn', value: stats.overdue, tone: 'text-error bg-error/10' },
+                ].map((item) => (
+                    <Card key={item.label}>
+                        <CardBody>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${item.tone}`}>
+                                    <span className="text-lg font-semibold">{item.value}</span>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-text-muted">{item.label}</div>
+                                    <div className="text-xl font-bold text-text">{item.value}</div>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold text-text">{stats.scheduled}</p>
-                                <p className="text-sm text-text-muted">Đã lên lịch</p>
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
-                <Card>
-                    <CardBody>
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="3" />
-                                    <path d="M12 1v2M12 21v2" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-text">{stats.in_progress}</p>
-                                <p className="text-sm text-text-muted">Đang thực hiện</p>
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
-                <Card>
-                    <CardBody>
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-success/10 text-success flex items-center justify-center">
-                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-text">{stats.completed}</p>
-                                <p className="text-sm text-text-muted">Hoàn thành</p>
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
-                <Card>
-                    <CardBody>
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-error/10 text-error flex items-center justify-center">
-                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                                    <line x1="12" y1="9" x2="12" y2="13" />
-                                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-text">{stats.overdue}</p>
-                                <p className="text-sm text-text-muted">Quá hạn</p>
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
+                        </CardBody>
+                    </Card>
+                ))}
             </div>
 
-            {/* Maintenance Table */}
             <Card>
-                <CardHeader 
-                    title="Lịch bảo trì"
-                    subtitle="Quản lý lịch bảo trì và sửa chữa thiết bị"
-                    action={
-                        canManage && (
-                            <Button size="sm" onClick={() => setShowCreateModal(true)}>
-                                + Tạo lịch mới
-                            </Button>
-                        )
-                    }
+                <CardHeader
+                    title="Phiếu bảo trì"
+                    subtitle="Một phiếu có thể chứa nhiều thiết bị và số lượng trong từng dòng chi tiết."
+                    action={canManage ? (
+                        <Button size="sm" onClick={() => setShowCreateModal(true)}>
+                            + Tạo phiếu mới
+                        </Button>
+                    ) : null}
                 />
                 <CardBody>
-                    {/* Filter Bar */}
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Input
-                                placeholder="Tìm kiếm theo mã, thiết bị..."
+                                placeholder="Tìm theo mã phiếu, tên thiết bị, mã thiết bị..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                leftIcon={
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="11" cy="11" r="8" />
-                                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                                    </svg>
-                                }
                             />
                         </div>
-                        <div className="w-full sm:w-40">
+                        <div className="w-full sm:w-48">
                             <Select
                                 options={statusOptions}
                                 value={statusFilter}
-                                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                                onChange={(e) => {
+                                    setStatusFilter(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
-                        <div className="w-full sm:w-40">
+                        <div className="w-full sm:w-48">
                             <Select
                                 options={typeOptions}
                                 value={typeFilter}
-                                onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
+                                onChange={(e) => {
+                                    setTypeFilter(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
                     </div>
 
-                    {/* Table */}
-                    {loading ? (
-                        <div className="text-center py-12 text-text-muted">Đang tải...</div>
-                    ) : (
-                        <Table
-                            columns={columns}
-                            data={filteredEvents}
-                            emptyMessage="Không có lịch bảo trì nào"
-                            emptyState={
-                                <div className="text-center py-12">
-                                    <svg className="mx-auto h-12 w-12 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <circle cx="12" cy="12" r="3" />
-                                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42" />
-                                    </svg>
-                                    <h3 className="mt-3 text-sm font-medium text-text">Không có lịch bảo trì</h3>
-                                    <p className="mt-1 text-sm text-text-muted">Tạo lịch bảo trì mới để theo dõi công việc</p>
-                                </div>
-                            }
-                        />
-                    )}
+                    <Table
+                        columns={columns}
+                        data={filteredEvents}
+                        loading={loading}
+                        emptyMessage="Chưa có phiếu bảo trì nào"
+                    />
 
-                    {/* Pagination */}
                     {pagination.total > 0 && (
-                        <TablePagination
-                            currentPage={pagination.current_page}
-                            totalPages={pagination.last_page}
-                            totalItems={pagination.total}
-                            pageSize={pagination.per_page}
-                            onPageChange={setCurrentPage}
-                        />
+                        <div className="pt-4">
+                            <TablePagination
+                                currentPage={pagination.current_page}
+                                totalPages={pagination.last_page}
+                                totalItems={pagination.total}
+                                pageSize={pagination.per_page}
+                                onPageChange={setCurrentPage}
+                            />
+                        </div>
                     )}
                 </CardBody>
             </Card>
 
-            {/* Create Modal */}
             <Modal
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
-                title="Tạo lịch bảo trì mới"
-                size="md"
+                title="Tạo phiếu bảo trì"
+                size="lg"
             >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-text mb-1">Thiết bị *</label>
-                        <Select
-                            options={[
-                                { value: '', label: 'Chọn thiết bị...' },
-                                ...assets.map(a => ({ value: a.id, label: `${a.asset_code} - ${a.name}` }))
-                            ]}
-                            value={formData.asset_id}
-                            onChange={(e) => setFormData({ ...formData, asset_id: e.target.value })}
-                        />
+                <div className="space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-text mb-1">Loại bảo trì *</label>
+                            <Select
+                                options={typeOptions.filter((option) => option.value)}
+                                value={formData.type}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-text mb-1">Ngày dự kiến *</label>
+                            <Input
+                                type="datetime-local"
+                                value={formData.planned_at}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, planned_at: e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-text mb-1">Độ ưu tiên</label>
+                            <Select
+                                options={priorityOptions}
+                                value={formData.priority}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-text mb-1">Kỹ thuật viên phụ trách</label>
+                            <Select
+                                options={[
+                                    { value: '', label: 'Chưa phân công' },
+                                    ...technicians.map((technician) => ({
+                                        value: String(technician.id),
+                                        label: technician.name,
+                                    })),
+                                ]}
+                                value={formData.assigned_to_user_id}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, assigned_to_user_id: e.target.value }))}
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-text mb-1">Loại bảo trì *</label>
-                        <Select
-                            options={typeOptions.filter(o => o.value)}
-                            value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-text mb-1">Ngày dự kiến *</label>
-                        <Input
-                            type="datetime-local"
-                            value={formData.planned_at}
-                            onChange={(e) => setFormData({ ...formData, planned_at: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-text mb-1">Độ ưu tiên</label>
-                        <Select
-                            options={priorityOptions}
-                            value={formData.priority}
-                            onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                        />
-                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">Thời lượng dự kiến (phút)</label>
                         <Input
                             type="number"
-                            placeholder="60"
+                            min="1"
                             value={formData.estimated_duration_minutes}
-                            onChange={(e) => setFormData({ ...formData, estimated_duration_minutes: e.target.value })}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, estimated_duration_minutes: e.target.value }))}
+                            placeholder="VD: 90"
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium text-text mb-1">Phân công cho</label>
-                        <Select
-                            options={[
-                                { value: '', label: 'Chọn kỹ thuật viên...' },
-                                ...technicians.map((technician) => ({
-                                    value: String(technician.id),
-                                    label: technician.name,
-                                })),
-                            ]}
-                            value={formData.assigned_to_user_id}
-                            onChange={(e) => setFormData({ ...formData, assigned_to_user_id: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-text mb-1">Ghi chú</label>
+                        <label className="block text-sm font-medium text-text mb-1">Ghi chú chung</label>
                         <Input
-                            placeholder="Mô tả công việc cần thực hiện"
                             value={formData.note}
-                            onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, note: e.target.value }))}
+                            placeholder="Mô tả chung cho phiếu bảo trì"
                         />
                     </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                        <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Hủy</Button>
+
+                    <div className="border rounded-xl border-border">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface-muted/40">
+                            <div>
+                                <div className="font-medium text-text">Chi tiết thiết bị</div>
+                                <div className="text-xs text-text-muted">Mỗi dòng gồm thiết bị và số lượng cần bảo trì.</div>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={addDetailLine}>
+                                + Thêm dòng
+                            </Button>
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                            {formData.details.map((line, index) => (
+                                <div key={`detail-line-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_120px_90px] gap-3 items-end">
+                                    <div>
+                                        <label className="block text-sm font-medium text-text mb-1">
+                                            Thiết bị {index + 1}
+                                        </label>
+                                        <Select
+                                            options={[
+                                                { value: '', label: 'Chọn thiết bị...' },
+                                                ...assets.map((asset) => ({
+                                                    value: String(asset.id),
+                                                    label: `${asset.asset_code} - ${asset.name}`,
+                                                })),
+                                            ]}
+                                            value={line.asset_id}
+                                            onChange={(e) => updateDetailLine(index, 'asset_id', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-text mb-1">Số lượng</label>
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            value={line.qty}
+                                            onChange={(e) => updateDetailLine(index, 'qty', e.target.value)}
+                                        />
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        className="text-error"
+                                        onClick={() => removeDetailLine(index)}
+                                        disabled={formData.details.length === 1}
+                                    >
+                                        Xóa dòng
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                        <Button variant="ghost" onClick={() => setShowCreateModal(false)}>
+                            Hủy
+                        </Button>
                         <Button onClick={handleCreate} disabled={formLoading}>
-                            {formLoading ? 'Đang tạo...' : 'Tạo lịch'}
+                            {formLoading ? 'Đang tạo...' : 'Tạo phiếu'}
                         </Button>
                     </div>
                 </div>
             </Modal>
 
-            {/* Detail Modal */}
             <Modal
                 isOpen={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
-                title={`Chi tiết bảo trì ${selectedEvent?.code || ''}`}
-                size="md"
+                title={`Chi tiết ${selectedEvent?.code || ''}`}
+                size="lg"
             >
                 {selectedEvent && (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm text-text-muted">Thiết bị</p>
-                                <p className="font-medium">{selectedEvent.asset?.name}</p>
-                                <p className="text-sm text-text-muted">{selectedEvent.asset?.asset_code}</p>
+                                <div className="text-sm text-text-muted">Loại bảo trì</div>
+                                <div className="font-medium">{getTypeLabel(selectedEvent.type)}</div>
                             </div>
                             <div>
-                                <p className="text-sm text-text-muted">Loại</p>
-                                <p className="font-medium">{getTypeLabel(selectedEvent.type)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-text-muted">Trạng thái</p>
+                                <div className="text-sm text-text-muted">Trạng thái</div>
                                 <Badge variant={getStatusVariant(selectedEvent.status)} dot>
                                     {getStatusLabel(selectedEvent.status)}
                                 </Badge>
                             </div>
                             <div>
-                                <p className="text-sm text-text-muted">Ưu tiên</p>
+                                <div className="text-sm text-text-muted">Ưu tiên</div>
                                 <Badge variant={getPriorityVariant(selectedEvent.priority)} outline>
-                                    {priorityOptions.find(o => o.value === selectedEvent.priority)?.label}
+                                    {getPriorityLabel(selectedEvent.priority)}
                                 </Badge>
                             </div>
                             <div>
-                                <p className="text-sm text-text-muted">Ngày dự kiến</p>
-                                <p className="font-medium">{formatDate(selectedEvent.planned_at)}</p>
+                                <div className="text-sm text-text-muted">Ngày dự kiến</div>
+                                <div className="font-medium">{formatDateTime(selectedEvent.planned_at)}</div>
                             </div>
                             <div>
-                                <p className="text-sm text-text-muted">Phân công</p>
-                                <p className="font-medium">
-                                    {selectedEvent.assigned_user?.name || selectedEvent.assigned_to || '-'}
-                                </p>
+                                <div className="text-sm text-text-muted">Kỹ thuật viên phụ trách</div>
+                                <div className="font-medium">{selectedEvent.assigned_user?.name || selectedEvent.assigned_to || '-'}</div>
                             </div>
-                            {selectedEvent.started_at && (
-                                <div>
-                                    <p className="text-sm text-text-muted">Bắt đầu lúc</p>
-                                    <p className="font-medium">{formatDate(selectedEvent.started_at)}</p>
+                            <div>
+                                <div className="text-sm text-text-muted">Tổng thiết bị</div>
+                                <div className="font-medium">
+                                    {(selectedEvent.details || []).reduce((sum, detail) => sum + Number(detail.qty || 0), 0)}
                                 </div>
-                            )}
-                            {selectedEvent.completed_at && (
-                                <div>
-                                    <p className="text-sm text-text-muted">Hoàn thành lúc</p>
-                                    <p className="font-medium">{formatDate(selectedEvent.completed_at)}</p>
-                                </div>
-                            )}
+                            </div>
                         </div>
+
                         {selectedEvent.note && (
                             <div>
-                                <p className="text-sm text-text-muted">Ghi chú</p>
-                                <p>{selectedEvent.note}</p>
+                                <div className="text-sm text-text-muted">Ghi chú chung</div>
+                                <div className="text-text">{selectedEvent.note}</div>
                             </div>
                         )}
+
+                        <div className="border rounded-xl border-border">
+                            <div className="px-4 py-3 border-b border-border bg-surface-muted/40">
+                                <div className="font-medium text-text">Danh sách chi tiết</div>
+                            </div>
+                            <div className="divide-y divide-border">
+                                {(selectedEvent.details || []).map((detail) => (
+                                    <div key={`detail-${detail.id}`} className="px-4 py-3 flex items-start justify-between gap-4">
+                                        <div>
+                                            <div className="font-medium text-text">{detail.asset?.name || 'Thiết bị đã xóa'}</div>
+                                            <div className="text-sm text-text-muted">{detail.asset?.asset_code || '-'}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm text-text-muted">Số lượng</div>
+                                            <div className="font-semibold text-text">{detail.qty || 1}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {selectedEvent.result_note && (
                             <div>
-                                <p className="text-sm text-text-muted">Kết quả</p>
-                                <p>{selectedEvent.result_note}</p>
+                                <div className="text-sm text-text-muted">Kết quả</div>
+                                <div className="text-text">{selectedEvent.result_note}</div>
                             </div>
                         )}
-                        
+
                         {canManage && !['completed', 'canceled'].includes(selectedEvent.status) && (
-                            <div className="flex justify-end gap-3 pt-4 border-t">
-                                <Button 
-                                    variant="ghost" 
+                            <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                                <Button
+                                    variant="ghost"
                                     onClick={() => setConfirmAction({ type: 'cancel', event: selectedEvent })}
                                 >
-                                    Hủy bảo trì
+                                    Hủy phiếu
                                 </Button>
                                 {selectedEvent.status === 'scheduled' && (
                                     <>
-                                        <Button 
-                                            variant="ghost" 
+                                        <Button
+                                            variant="ghost"
                                             className="text-error"
                                             onClick={() => setConfirmAction({ type: 'delete', event: selectedEvent })}
                                         >
-                                            Xóa
+                                            Xóa phiếu
                                         </Button>
                                         <Button variant="outline" onClick={() => handleStart(selectedEvent)}>
                                             Bắt đầu
@@ -701,20 +783,23 @@ const MaintenancePage = ({ user }) => {
                 )}
             </Modal>
 
-            {/* Confirm Modal */}
             <ConfirmModal
                 isOpen={!!confirmAction}
                 onClose={() => setConfirmAction(null)}
                 onConfirm={() => {
-                    if (confirmAction?.type === 'cancel') handleCancel(confirmAction.event);
-                    if (confirmAction?.type === 'delete') handleDelete(confirmAction.event);
+                    if (confirmAction?.type === 'cancel') {
+                        handleCancel(confirmAction.event);
+                    }
+                    if (confirmAction?.type === 'delete') {
+                        handleDelete(confirmAction.event);
+                    }
                 }}
-                title={confirmAction?.type === 'delete' ? 'Xác nhận xóa' : 'Xác nhận hủy'}
-                message={confirmAction?.type === 'delete' 
-                    ? `Bạn có chắc muốn xóa lịch bảo trì ${confirmAction?.event?.code}?`
-                    : `Bạn có chắc muốn hủy bảo trì ${confirmAction?.event?.code}?`
+                title={confirmAction?.type === 'delete' ? 'Xác nhận xóa phiếu' : 'Xác nhận hủy phiếu'}
+                message={confirmAction?.type === 'delete'
+                    ? `Bạn có chắc muốn xóa ${confirmAction?.event?.code}?`
+                    : `Bạn có chắc muốn hủy ${confirmAction?.event?.code}?`
                 }
-                confirmText={confirmAction?.type === 'delete' ? 'Xóa' : 'Hủy bảo trì'}
+                confirmText={confirmAction?.type === 'delete' ? 'Xóa phiếu' : 'Hủy phiếu'}
                 variant="danger"
             />
         </div>

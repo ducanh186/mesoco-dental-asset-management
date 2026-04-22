@@ -39,7 +39,13 @@ class MaintenanceEventController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = MaintenanceEvent::query()
-            ->with(['asset:id,name,asset_code', 'creator:id,name', 'assignedUser:id,name,email']);
+            ->with([
+                'asset:id,name,asset_code',
+                'creator:id,name',
+                'assignedUser:id,name,email',
+                'details.asset:id,name,asset_code',
+            ])
+            ->withCount('details');
 
         // Filter by asset
         if ($request->filled('asset_id')) {
@@ -123,6 +129,9 @@ class MaintenanceEventController extends Controller
             'creator:id,name',
             'updater:id,name',
             'assignedUser:id,name,email',
+            'details.asset:id,name,asset_code,type,status,location',
+            'details.technician:id,name,email',
+            'details.supplier:id,name,code',
         ]);
 
         return response()->json([
@@ -142,7 +151,14 @@ class MaintenanceEventController extends Controller
             $request->user()
         );
 
-        $event->load(['asset:id,name,asset_code', 'creator:id,name', 'assignedUser:id,name,email']);
+        $event->load([
+            'asset:id,name,asset_code',
+            'creator:id,name',
+            'assignedUser:id,name,email',
+            'details.asset:id,name,asset_code,type,status,location',
+            'details.technician:id,name,email',
+            'details.supplier:id,name,code',
+        ]);
 
         return response()->json([
             'message' => 'Maintenance event scheduled successfully.',
@@ -165,7 +181,14 @@ class MaintenanceEventController extends Controller
             $request->user()
         );
 
-        $event->load(['asset:id,name,asset_code', 'creator:id,name', 'assignedUser:id,name,email']);
+        $event->load([
+            'asset:id,name,asset_code',
+            'creator:id,name',
+            'assignedUser:id,name,email',
+            'details.asset:id,name,asset_code,type,status,location',
+            'details.technician:id,name,email',
+            'details.supplier:id,name,code',
+        ]);
 
         return response()->json([
             'message' => 'Maintenance event updated successfully.',
@@ -204,7 +227,14 @@ class MaintenanceEventController extends Controller
             $request->user()
         );
 
-        $event->load(['asset:id,name,asset_code,status', 'creator:id,name', 'assignedUser:id,name,email']);
+        $event->load([
+            'asset:id,name,asset_code,status',
+            'creator:id,name',
+            'assignedUser:id,name,email',
+            'details.asset:id,name,asset_code,type,status,location',
+            'details.technician:id,name,email',
+            'details.supplier:id,name,code',
+        ]);
 
         return response()->json([
             'message' => 'Maintenance started. Asset is now locked.',
@@ -232,7 +262,14 @@ class MaintenanceEventController extends Controller
             $validated['actual_duration_minutes'] ?? null
         );
 
-        $event->load(['asset:id,name,asset_code,status', 'creator:id,name', 'assignedUser:id,name,email']);
+        $event->load([
+            'asset:id,name,asset_code,status',
+            'creator:id,name',
+            'assignedUser:id,name,email',
+            'details.asset:id,name,asset_code,type,status,location',
+            'details.technician:id,name,email',
+            'details.supplier:id,name,code',
+        ]);
 
         return response()->json([
             'message' => 'Maintenance completed successfully.',
@@ -256,7 +293,14 @@ class MaintenanceEventController extends Controller
             $request->input('reason')
         );
 
-        $event->load(['asset:id,name,asset_code,status', 'creator:id,name', 'assignedUser:id,name,email']);
+        $event->load([
+            'asset:id,name,asset_code,status',
+            'creator:id,name',
+            'assignedUser:id,name,email',
+            'details.asset:id,name,asset_code,type,status,location',
+            'details.technician:id,name,email',
+            'details.supplier:id,name,code',
+        ]);
 
         return response()->json([
             'message' => 'Maintenance canceled.',

@@ -225,6 +225,50 @@ class MaintenanceTest extends TestCase
         $this->assertFalse($this->asset->isLocked());
     }
 
+    public function test_multi_asset_maintenance_locks_and_unlocks_every_asset_in_the_ticket(): void
+    {
+        $secondAsset = Asset::factory()->create([
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+
+        $createResponse = $this->actingAs($this->technician)
+            ->postJson('/api/maintenance-events', [
+                'type' => 'inspection',
+                'planned_at' => now()->addDay()->toDateTimeString(),
+                'details' => [
+                    ['asset_id' => $this->asset->id, 'qty' => 1],
+                    ['asset_id' => $secondAsset->id, 'qty' => 2],
+                ],
+                'note' => 'Department batch maintenance',
+            ]);
+
+        $createResponse->assertCreated();
+
+        $eventId = $createResponse->json('data.id');
+
+        $this->actingAs($this->technician)
+            ->postJson("/api/maintenance-events/{$eventId}/start")
+            ->assertOk();
+
+        $this->asset->refresh();
+        $secondAsset->refresh();
+
+        $this->assertSame(Asset::STATUS_MAINTENANCE, $this->asset->status);
+        $this->assertSame(Asset::STATUS_MAINTENANCE, $secondAsset->status);
+
+        $this->actingAs($this->technician)
+            ->postJson("/api/maintenance-events/{$eventId}/complete", [
+                'result_note' => 'Completed batch maintenance',
+            ])
+            ->assertOk();
+
+        $this->asset->refresh();
+        $secondAsset->refresh();
+
+        $this->assertSame(Asset::STATUS_ACTIVE, $this->asset->status);
+        $this->assertSame(Asset::STATUS_ACTIVE, $secondAsset->status);
+    }
+
     public function test_complete_maintenance_keeps_lock_if_other_active(): void
     {
         // Create two in_progress events for same asset

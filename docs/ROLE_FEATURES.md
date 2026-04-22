@@ -38,8 +38,7 @@ Employee là người dùng nội bộ đầu cuối. Bác sĩ dùng chung role 
 
 Employee có thể:
 
-- xem thiết bị được giao
-- quét QR để tra cứu
+- xem thông tin chung của tài sản theo phạm vi được cấp
 - cập nhật hồ sơ cá nhân
 
 Employee không có quyền:
@@ -80,8 +79,8 @@ Supplier không có quyền:
 ### 5.2. Quản lý cấp phát
 
 - Manager: tạo và kiểm soát đơn hàng/cấp phát
-- Technician: tham gia vận hành, tạo đơn hàng và cấp phát tài sản
-- Employee: xem tài sản được giao
+- Technician: tham gia vận hành, tạo đơn hàng và bàn giao tài sản theo phòng ban
+- Employee: không còn là đối tượng nhận tài sản trực tiếp trong scope chính
 - Supplier: không truy cập
 
 ### 5.3. Bảo trì và sửa chữa

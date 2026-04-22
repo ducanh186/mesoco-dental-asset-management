@@ -16,6 +16,7 @@ class AssetAssignment extends Model
     protected $fillable = [
         'asset_id',
         'employee_id',
+        'department_name',
         'assigned_by',
         'assigned_at',
         'unassigned_at',
@@ -46,6 +47,11 @@ class AssetAssignment extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function getAssignmentTargetLabel(): ?string
+    {
+        return $this->department_name ?: $this->employee?->full_name;
     }
 
     /**
@@ -86,6 +92,14 @@ class AssetAssignment extends Model
     public function scopeForEmployee($query, int $employeeId)
     {
         return $query->where('employee_id', $employeeId);
+    }
+
+    /**
+     * Scope to get assignments for a specific department.
+     */
+    public function scopeForDepartment($query, string $departmentName)
+    {
+        return $query->where('department_name', $departmentName);
     }
 
     /**

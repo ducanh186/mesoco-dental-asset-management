@@ -128,13 +128,16 @@ export const assetsApi = {
     },
 
     /**
-     * Assign asset to employee
+     * Hand over asset to department.
+     * Backward compatible with legacy employee payloads.
      * POST /api/assets/{id}/assign
      */
-    assign: async (id, employeeId) => {
-        const response = await axios.post(`/api/assets/${id}/assign`, {
-            employee_id: employeeId
-        });
+    assign: async (id, payload) => {
+        const body = typeof payload === 'string'
+            ? { department_name: payload }
+            : payload;
+
+        const response = await axios.post(`/api/assets/${id}/assign`, body);
         return response.data;
     },
 

@@ -12,37 +12,32 @@ use InvalidArgumentException;
 
 /**
  * MaintenanceService
- * 
- * Handles state transitions for maintenance events with proper
- * asset locking/unlocking within database transactions.
- * 
- * Lock Rule:
- *   - When starting maintenance (in_progress), asset.status -> 'maintenance'
- *   - When completing/canceling AND no other in_progress events exist, 
- *     asset.status -> 'active' (only if currently 'maintenance')
+ *
+ * Business pivot:
+ * - One maintenance ticket can contain multiple detail lines.
+ * - Each detail line stores the asset and quantity being maintained.
+ * - Asset lock/unlock must apply to every asset referenced by the ticket.
  */
 class MaintenanceService
 {
-    // =========================================================================
-    // CRUD Operations
-    // =========================================================================
-
     /**
      * Create a new maintenance event.
-     * 
+     *
      * @throws InvalidArgumentException
      */
     public function create(array $data, User $user): MaintenanceEvent
     {
         $this->validateType($data['type'] ?? null);
-        $this->validatePriority($data['priority'] ?? 'normal');
+        $this->validatePriority($data['priority'] ?? MaintenanceEvent::PRIORITY_NORMAL);
 
         return DB::transaction(function () use ($data, $user) {
+            $detailLines = $this->normalizeDetailLines($data);
             $assignment = $this->resolveAssignmentData($data);
+            $primaryAssetId = $this->resolvePrimaryAssetId($data, $detailLines);
 
             $event = MaintenanceEvent::create([
                 'code' => MaintenanceEvent::generateCode(),
-                'asset_id' => $data['asset_id'],
+                'asset_id' => $primaryAssetId,
                 'type' => $data['type'],
                 'status' => MaintenanceEvent::STATUS_SCHEDULED,
                 'planned_at' => $data['planned_at'],
@@ -55,15 +50,22 @@ class MaintenanceService
                 'updated_by' => $user->id,
             ]);
 
-            $this->syncMaintenanceDetail($event);
+            $this->syncMaintenanceDetails($event, $detailLines);
 
-            return $event->fresh(['asset', 'creator', 'assignedUser']);
+            return $event->fresh([
+                'asset',
+                'creator',
+                'assignedUser',
+                'details.asset',
+                'details.technician',
+                'details.supplier',
+            ]);
         });
     }
 
     /**
      * Update a maintenance event (only if not in final state).
-     * 
+     *
      * @throws InvalidArgumentException
      */
     public function update(MaintenanceEvent $event, array $data, User $user): MaintenanceEvent
@@ -103,24 +105,34 @@ class MaintenanceService
                 $updateData['assigned_to_user_id'] = $assignment['assigned_to_user_id'];
             }
 
+            $detailLines = null;
+            if (array_key_exists('details', $data) || array_key_exists('asset_id', $data)) {
+                $detailLines = $this->normalizeDetailLines($data);
+                $updateData['asset_id'] = $this->resolvePrimaryAssetId($data, $detailLines);
+            }
+
             $updateData['updated_by'] = $user->id;
 
             $event->update($updateData);
 
-            $this->syncMaintenanceDetail($event->fresh());
+            $this->syncMaintenanceDetails($event->fresh(), $detailLines);
 
-            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
+            return $event->fresh([
+                'asset',
+                'creator',
+                'updater',
+                'assignedUser',
+                'details.asset',
+                'details.technician',
+                'details.supplier',
+            ]);
         });
     }
 
-    // =========================================================================
-    // State Transitions
-    // =========================================================================
-
     /**
      * Start maintenance (scheduled -> in_progress).
-     * Locks the asset with status='maintenance'.
-     * 
+     * Locks every asset referenced by the ticket.
+     *
      * @throws InvalidArgumentException
      */
     public function start(MaintenanceEvent $event, User $user, ?string $note = null): MaintenanceEvent
@@ -133,21 +145,27 @@ class MaintenanceService
         }
 
         return DB::transaction(function () use ($event, $user, $note) {
-            // Lock the asset row to prevent race conditions
-            $asset = Asset::lockForUpdate()->find($event->asset_id);
-            
-            if (!$asset) {
-                throw new InvalidArgumentException("Asset not found.");
+            $assetIds = $this->getAffectedAssetIds($event);
+            $assets = Asset::query()
+                ->whereIn('id', $assetIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($assetIds as $assetId) {
+                $asset = $assets->get($assetId);
+
+                if (!$asset) {
+                    throw new InvalidArgumentException("Asset not found.");
+                }
+
+                if ($asset->status === Asset::STATUS_RETIRED) {
+                    throw new InvalidArgumentException(
+                        "Cannot start maintenance on a retired asset."
+                    );
+                }
             }
 
-            // Check if asset is already retired (cannot maintain retired assets)
-            if ($asset->status === Asset::STATUS_RETIRED) {
-                throw new InvalidArgumentException(
-                    "Cannot start maintenance on a retired asset."
-                );
-            }
-
-            // Update event status
             $event->update([
                 'status' => MaintenanceEvent::STATUS_IN_PROGRESS,
                 'started_at' => now(),
@@ -155,24 +173,37 @@ class MaintenanceService
                 'updated_by' => $user->id,
             ]);
 
-            // Lock the asset
-            $this->lockAsset($asset, $user, "Maintenance in progress: {$event->code}");
+            foreach ($assetIds as $assetId) {
+                $this->lockAsset(
+                    $assets->get($assetId),
+                    $user,
+                    "Maintenance in progress: {$event->code}"
+                );
+            }
 
-            $this->syncMaintenanceDetail($event->fresh());
+            $this->syncMaintenanceDetails($event->fresh());
 
-            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
+            return $event->fresh([
+                'asset',
+                'creator',
+                'updater',
+                'assignedUser',
+                'details.asset',
+                'details.technician',
+                'details.supplier',
+            ]);
         });
     }
 
     /**
      * Complete maintenance (in_progress -> completed).
-     * Unlocks the asset if no other in_progress events exist.
-     * 
+     * Unlocks every asset that no longer has another active maintenance ticket.
+     *
      * @throws InvalidArgumentException
      */
     public function complete(
-        MaintenanceEvent $event, 
-        User $user, 
+        MaintenanceEvent $event,
+        User $user,
         ?string $resultNote = null,
         ?float $cost = null,
         ?int $actualDurationMinutes = null
@@ -185,15 +216,18 @@ class MaintenanceService
         }
 
         return DB::transaction(function () use ($event, $user, $resultNote, $cost, $actualDurationMinutes) {
-            $asset = Asset::lockForUpdate()->find($event->asset_id);
+            $assetIds = $this->getAffectedAssetIds($event);
 
-            // Calculate actual duration if not provided
+            Asset::query()
+                ->whereIn('id', $assetIds)
+                ->lockForUpdate()
+                ->get();
+
             $actualDuration = $actualDurationMinutes;
             if ($actualDuration === null && $event->started_at) {
                 $actualDuration = (int) $event->started_at->diffInMinutes(now());
             }
 
-            // Update event status
             $event->update([
                 'status' => MaintenanceEvent::STATUS_COMPLETED,
                 'completed_at' => now(),
@@ -203,19 +237,24 @@ class MaintenanceService
                 'updated_by' => $user->id,
             ]);
 
-            // Check if we should unlock the asset
-            $this->maybeUnlockAsset($asset, $event->id);
+            $this->maybeUnlockAssets($assetIds, $event->id);
+            $this->syncMaintenanceDetails($event->fresh());
 
-            $this->syncMaintenanceDetail($event->fresh());
-
-            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
+            return $event->fresh([
+                'asset',
+                'creator',
+                'updater',
+                'assignedUser',
+                'details.asset',
+                'details.technician',
+                'details.supplier',
+            ]);
         });
     }
 
     /**
      * Cancel maintenance (scheduled/in_progress -> canceled).
-     * Unlocks the asset if no other in_progress events exist.
-     * 
+     *
      * @throws InvalidArgumentException
      */
     public function cancel(MaintenanceEvent $event, User $user, ?string $reason = null): MaintenanceEvent
@@ -229,37 +268,44 @@ class MaintenanceService
 
         return DB::transaction(function () use ($event, $user, $reason) {
             $wasInProgress = $event->status === MaintenanceEvent::STATUS_IN_PROGRESS;
-            $asset = Asset::lockForUpdate()->find($event->asset_id);
+            $assetIds = $this->getAffectedAssetIds($event);
 
-            // Update event status
+            Asset::query()
+                ->whereIn('id', $assetIds)
+                ->lockForUpdate()
+                ->get();
+
             $event->update([
                 'status' => MaintenanceEvent::STATUS_CANCELED,
                 'result_note' => $reason ? "Canceled: {$reason}" : 'Canceled',
                 'updated_by' => $user->id,
             ]);
 
-            // Only check unlock if was in_progress
             if ($wasInProgress) {
-                $this->maybeUnlockAsset($asset, $event->id);
+                $this->maybeUnlockAssets($assetIds, $event->id);
             }
 
-            $this->syncMaintenanceDetail($event->fresh());
+            $this->syncMaintenanceDetails($event->fresh());
 
-            return $event->fresh(['asset', 'creator', 'updater', 'assignedUser']);
+            return $event->fresh([
+                'asset',
+                'creator',
+                'updater',
+                'assignedUser',
+                'details.asset',
+                'details.technician',
+                'details.supplier',
+            ]);
         });
     }
-
-    // =========================================================================
-    // Manual Off-Service Lock/Unlock
-    // =========================================================================
 
     /**
      * Manually lock an asset (set to off_service).
      * Used for non-maintenance reasons.
      */
     public function lockAssetManually(
-        Asset $asset, 
-        User $user, 
+        Asset $asset,
+        User $user,
         string $reason,
         ?\DateTimeInterface $until = null
     ): Asset {
@@ -288,20 +334,16 @@ class MaintenanceService
      */
     public function unlockAssetManually(Asset $asset, User $user): Asset
     {
-        return DB::transaction(function () use ($asset, $user) {
+        return DB::transaction(function () use ($asset) {
             $asset = Asset::lockForUpdate()->find($asset->id);
 
-            // Check if asset is in a lockable state
             if (!in_array($asset->status, [Asset::STATUS_OFF_SERVICE, Asset::STATUS_MAINTENANCE])) {
                 throw new InvalidArgumentException(
                     "Asset is not locked. Current status: {$asset->status}"
                 );
             }
 
-            // Check for in_progress maintenance
-            $hasInProgress = MaintenanceEvent::forAsset($asset->id)
-                ->inProgress()
-                ->exists();
+            $hasInProgress = $this->assetHasAnotherInProgressMaintenance($asset->id, 0);
 
             if ($hasInProgress) {
                 throw new InvalidArgumentException(
@@ -321,46 +363,42 @@ class MaintenanceService
         });
     }
 
-    // =========================================================================
-    // Private Helpers
-    // =========================================================================
-
     /**
      * Lock an asset when maintenance starts.
      */
     private function lockAsset(Asset $asset, User $user, string $reason): void
     {
-        // Only update if not already locked
-        if (!$asset->isLocked()) {
-            $asset->update([
-                'status' => Asset::STATUS_MAINTENANCE,
-                'off_service_reason' => $reason,
-                'off_service_from' => now(),
-                'off_service_until' => null,
-                'off_service_set_by' => $user->id,
-            ]);
-        }
-    }
-
-    /**
-     * Unlock asset if no other in_progress events exist.
-     * 
-     * @param int $excludeEventId Event to exclude from check (the one being completed/canceled)
-     */
-    private function maybeUnlockAsset(Asset $asset, int $excludeEventId): void
-    {
-        // Only attempt unlock if asset is in maintenance status
-        if ($asset->status !== Asset::STATUS_MAINTENANCE) {
+        if ($asset->isLocked()) {
             return;
         }
 
-        // Check for other in_progress events
-        $otherInProgress = MaintenanceEvent::forAsset($asset->id)
-            ->inProgress()
-            ->where('id', '!=', $excludeEventId)
-            ->exists();
+        $asset->update([
+            'status' => Asset::STATUS_MAINTENANCE,
+            'off_service_reason' => $reason,
+            'off_service_from' => now(),
+            'off_service_until' => null,
+            'off_service_set_by' => $user->id,
+        ]);
+    }
 
-        if (!$otherInProgress) {
+    /**
+     * Unlock every asset that no longer has another active maintenance event.
+     *
+     * @param array<int> $assetIds
+     */
+    private function maybeUnlockAssets(array $assetIds, int $excludeEventId): void
+    {
+        foreach ($assetIds as $assetId) {
+            $asset = Asset::query()->lockForUpdate()->find($assetId);
+
+            if (!$asset || $asset->status !== Asset::STATUS_MAINTENANCE) {
+                continue;
+            }
+
+            if ($this->assetHasAnotherInProgressMaintenance($assetId, $excludeEventId)) {
+                continue;
+            }
+
             $asset->update([
                 'status' => Asset::STATUS_ACTIVE,
                 'off_service_reason' => null,
@@ -371,9 +409,6 @@ class MaintenanceService
         }
     }
 
-    /**
-     * Validate maintenance type.
-     */
     private function validateType(?string $type): void
     {
         if (!$type || !in_array($type, MaintenanceEvent::TYPES)) {
@@ -383,9 +418,6 @@ class MaintenanceService
         }
     }
 
-    /**
-     * Validate priority.
-     */
     private function validatePriority(?string $priority): void
     {
         if ($priority && !in_array($priority, MaintenanceEvent::PRIORITIES)) {
@@ -427,37 +459,185 @@ class MaintenanceService
         ];
     }
 
-    private function syncMaintenanceDetail(MaintenanceEvent $event): void
+    /**
+     * Normalize incoming maintenance detail lines.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeDetailLines(array $data): array
     {
-        if (
-            $event->type !== MaintenanceEvent::TYPE_REPAIR &&
-            !$event->detail()->exists() &&
-            !$event->repairLog()->exists()
-        ) {
+        if (!empty($data['details']) && is_array($data['details'])) {
+            return collect($data['details'])
+                ->map(fn (array $line) => [
+                    'asset_id' => (int) $line['asset_id'],
+                    'qty' => max(1, (int) ($line['qty'] ?? 1)),
+                    'technician_user_id' => $line['technician_user_id'] ?? ($data['assigned_to_user_id'] ?? null),
+                    'supplier_id' => $line['supplier_id'] ?? null,
+                    'issue_description' => $line['issue_description'] ?? ($data['note'] ?? null),
+                ])
+                ->values()
+                ->all();
+        }
+
+        if (!empty($data['asset_id'])) {
+            return [[
+                'asset_id' => (int) $data['asset_id'],
+                'qty' => 1,
+                'technician_user_id' => $data['assigned_to_user_id'] ?? null,
+                'supplier_id' => null,
+                'issue_description' => $data['note'] ?? null,
+            ]];
+        }
+
+        return [];
+    }
+
+    /**
+     * Build detail payload from existing rows when caller only changes header state.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getExistingDetailLines(MaintenanceEvent $event): array
+    {
+        $event->loadMissing('details');
+
+        if ($event->details->isNotEmpty()) {
+            return $event->details
+                ->map(fn (MaintenanceDetail $detail) => [
+                    'asset_id' => $detail->asset_id,
+                    'qty' => $detail->qty ?? 1,
+                    'technician_user_id' => $detail->technician_user_id,
+                    'supplier_id' => $detail->supplier_id,
+                    'issue_description' => $detail->issue_description,
+                ])
+                ->values()
+                ->all();
+        }
+
+        if ($event->asset_id) {
+            return [[
+                'asset_id' => $event->asset_id,
+                'qty' => 1,
+                'technician_user_id' => $event->assigned_to_user_id,
+                'supplier_id' => null,
+                'issue_description' => $event->note,
+            ]];
+        }
+
+        return [];
+    }
+
+    /**
+     * Sync canonical maintenance detail rows and legacy repair logs.
+     *
+     * @param array<int, array<string, mixed>>|null $detailLines
+     */
+    private function syncMaintenanceDetails(MaintenanceEvent $event, ?array $detailLines = null): void
+    {
+        $detailLines = $detailLines ?? $this->getExistingDetailLines($event);
+
+        if ($detailLines === []) {
             return;
         }
 
-        $detailData = [
-            'asset_id' => $event->asset_id,
-            'technician_user_id' => $event->assigned_to_user_id,
-            'status' => $event->status,
-            'issue_description' => $event->note,
-            'action_taken' => $event->result_note,
-            'cost' => $event->cost,
-            'started_at' => $event->started_at,
-            'completed_at' => $event->completed_at,
-            'logged_at' => $event->completed_at ?? $event->started_at ?? $event->planned_at,
-        ];
+        $assetIds = [];
+        $lineCount = count($detailLines);
+        $detailCost = $lineCount === 1 ? $event->cost : null;
 
-        MaintenanceDetail::updateOrCreate(
-            ['maintenance_event_id' => $event->id],
-            $detailData
-        );
+        foreach ($detailLines as $line) {
+            $assetId = (int) $line['asset_id'];
+            $assetIds[] = $assetId;
 
-        // Legacy compatibility: repair_logs remains readable for older screens/tests.
-        RepairLog::updateOrCreate(
-            ['maintenance_event_id' => $event->id],
-            $detailData
-        );
+            $detailData = [
+                'asset_id' => $assetId,
+                'qty' => (int) ($line['qty'] ?? 1),
+                'technician_user_id' => $line['technician_user_id'] ?? $event->assigned_to_user_id,
+                'supplier_id' => $line['supplier_id'] ?? null,
+                'status' => $event->status,
+                'issue_description' => $line['issue_description'] ?? $event->note,
+                'action_taken' => $event->result_note,
+                'cost' => $detailCost,
+                'started_at' => $event->started_at,
+                'completed_at' => $event->completed_at,
+                'logged_at' => $event->completed_at ?? $event->started_at ?? $event->planned_at,
+            ];
+
+            MaintenanceDetail::updateOrCreate(
+                [
+                    'maintenance_event_id' => $event->id,
+                    'asset_id' => $assetId,
+                ],
+                $detailData
+            );
+
+            RepairLog::updateOrCreate(
+                [
+                    'maintenance_event_id' => $event->id,
+                    'asset_id' => $assetId,
+                ],
+                collect($detailData)
+                    ->except('qty')
+                    ->all()
+            );
+        }
+
+        MaintenanceDetail::query()
+            ->where('maintenance_event_id', $event->id)
+            ->whereNotIn('asset_id', $assetIds)
+            ->delete();
+
+        RepairLog::query()
+            ->where('maintenance_event_id', $event->id)
+            ->whereNotIn('asset_id', $assetIds)
+            ->delete();
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $detailLines
+     */
+    private function resolvePrimaryAssetId(array $data, array $detailLines): ?int
+    {
+        if (!empty($data['asset_id'])) {
+            return (int) $data['asset_id'];
+        }
+
+        return $detailLines[0]['asset_id'] ?? null;
+    }
+
+    /**
+     * @return array<int>
+     */
+    private function getAffectedAssetIds(MaintenanceEvent $event): array
+    {
+        $detailLines = $this->getExistingDetailLines($event);
+
+        return collect($detailLines)
+            ->pluck('asset_id')
+            ->map(fn ($assetId) => (int) $assetId)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function assetHasAnotherInProgressMaintenance(int $assetId, int $excludeEventId): bool
+    {
+        $existsInDetails = MaintenanceDetail::query()
+            ->where('asset_id', $assetId)
+            ->whereHas('maintenanceEvent', function ($query) use ($excludeEventId) {
+                $query->where('status', MaintenanceEvent::STATUS_IN_PROGRESS)
+                    ->where('id', '!=', $excludeEventId);
+            })
+            ->exists();
+
+        if ($existsInDetails) {
+            return true;
+        }
+
+        return MaintenanceEvent::query()
+            ->where('asset_id', $assetId)
+            ->where('status', MaintenanceEvent::STATUS_IN_PROGRESS)
+            ->where('id', '!=', $excludeEventId)
+            ->whereDoesntHave('details')
+            ->exists();
     }
 }

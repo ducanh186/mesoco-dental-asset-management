@@ -307,7 +307,7 @@ class InventoryController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $warrantyThresholdDays = config('inventory.warranty_expiry_threshold_days', 30);
 
-        $query = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -358,8 +358,10 @@ class InventoryController extends Controller
                 'current_book_value' => $asset->getCurrentBookValue(),
                 'qr_payload' => $asset->qrIdentity?->qr_payload,
                 'assigned_to' => $asset->currentAssignment ? [
-                    'id' => $asset->currentAssignment->employee_id,
-                    'name' => $asset->currentAssignment->employee?->name,
+                    'id' => $asset->currentAssignment->id,
+                    'name' => $asset->currentAssignment->department_name ?: $asset->currentAssignment->employee?->full_name,
+                    'type' => $asset->currentAssignment->department_name ? 'department' : 'employee',
+                    'department_name' => $asset->currentAssignment->department_name,
                     'assigned_at' => $asset->currentAssignment->assigned_at?->toISOString(),
                 ] : null,
                 'created_at' => $asset->created_at?->toISOString(),
@@ -405,7 +407,7 @@ class InventoryController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
 
         $query = Asset::withValuation()
-            ->with(['currentAssignment.employee'])
+            ->with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
             ->search($request->input('search'))
             ->byCategory($request->input('category'));
 
@@ -436,7 +438,7 @@ class InventoryController extends Controller
                 'type' => $asset->type,
                 'category' => $asset->category,
                 'status' => $asset->status,
-                'assigned_to' => $asset->currentAssignment?->employee?->name,
+                'assigned_to' => $asset->currentAssignment?->department_name ?: $asset->currentAssignment?->employee?->full_name,
                 'valuation' => $valuation,
             ];
         });
@@ -462,7 +464,7 @@ class InventoryController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        $query = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -529,7 +531,7 @@ class InventoryController extends Controller
                     $asset->category ?? '',
                     $asset->location ?? '',
                     $asset->status ?? '',
-                    $asset->currentAssignment?->employee?->name ?? '',
+                    $asset->currentAssignment?->department_name ?: ($asset->currentAssignment?->employee?->full_name ?? ''),
                     $asset->purchase_date?->toDateString() ?? '',
                     $asset->purchase_cost ? number_format((float) $asset->purchase_cost, 2, '.', '') : '',
                     $asset->warranty_expiry?->toDateString() ?? '',

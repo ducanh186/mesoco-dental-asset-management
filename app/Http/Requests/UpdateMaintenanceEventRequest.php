@@ -30,6 +30,29 @@ class UpdateMaintenanceEventRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'asset_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                'exists:assets,id',
+            ],
+            'details' => [
+                'sometimes',
+                'array',
+                'min:1',
+            ],
+            'details.*.asset_id' => [
+                'required_with:details',
+                'integer',
+                'exists:assets,id',
+                'distinct',
+            ],
+            'details.*.qty' => [
+                'required_with:details',
+                'integer',
+                'min:1',
+                'max:9999',
+            ],
             'type' => [
                 'sometimes',
                 'string',
@@ -74,6 +97,10 @@ class UpdateMaintenanceEventRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'asset_id' => 'tài sản',
+            'details' => 'chi tiết bảo trì',
+            'details.*.asset_id' => 'thiết bị trong chi tiết',
+            'details.*.qty' => 'số lượng thiết bị',
             'type' => 'loại bảo trì',
             'planned_at' => 'thời gian dự kiến',
             'priority' => 'mức độ ưu tiên',
@@ -90,6 +117,11 @@ class UpdateMaintenanceEventRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'details.min' => 'Phiếu bảo trì phải có ít nhất một thiết bị.',
+            'details.*.asset_id.required_with' => 'Mỗi dòng chi tiết phải chọn thiết bị.',
+            'details.*.asset_id.distinct' => 'Không được chọn trùng thiết bị trong cùng một phiếu bảo trì.',
+            'details.*.qty.required_with' => 'Vui lòng nhập số lượng cho từng thiết bị.',
+            'details.*.qty.min' => 'Số lượng phải lớn hơn 0.',
             'type.in' => 'Loại bảo trì không hợp lệ.',
             'priority.in' => 'Mức độ ưu tiên không hợp lệ.',
         ];

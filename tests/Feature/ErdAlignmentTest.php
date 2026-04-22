@@ -124,6 +124,60 @@ class ErdAlignmentTest extends TestCase
         $this->assertTrue(MaintenanceDetail::query()->where('maintenance_event_id', $eventId)->exists());
     }
 
+    public function test_creating_multi_asset_maintenance_event_writes_multiple_detail_rows(): void
+    {
+        $technician = User::factory()->technician()->create(['must_change_password' => false]);
+        $assetA = Asset::factory()->create();
+        $assetB = Asset::factory()->create();
+
+        $response = $this->actingAs($technician)->postJson('/api/maintenance-events', [
+            'type' => 'inspection',
+            'planned_at' => now()->addDay()->toDateTimeString(),
+            'details' => [
+                ['asset_id' => $assetA->id, 'qty' => 2],
+                ['asset_id' => $assetB->id, 'qty' => 1],
+            ],
+            'note' => 'Quarterly department inspection',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.asset_id', $assetA->id)
+            ->assertJsonCount(2, 'data.details');
+
+        $eventId = $response->json('data.id');
+
+        $this->assertDatabaseHas('maintenance_details', [
+            'maintenance_event_id' => $eventId,
+            'asset_id' => $assetA->id,
+            'qty' => 2,
+        ]);
+
+        $this->assertDatabaseHas('maintenance_details', [
+            'maintenance_event_id' => $eventId,
+            'asset_id' => $assetB->id,
+            'qty' => 1,
+        ]);
+    }
+
+    public function test_asset_handover_can_be_recorded_by_department_name(): void
+    {
+        $technician = User::factory()->technician()->create(['must_change_password' => false]);
+        $asset = Asset::factory()->create(['status' => Asset::STATUS_ACTIVE]);
+
+        $response = $this->actingAs($technician)->postJson("/api/assets/{$asset->id}/assign", [
+            'department_name' => 'Sterilization',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('assignment.department_name', 'Sterilization');
+
+        $this->assertDatabaseHas('asset_assignments', [
+            'asset_id' => $asset->id,
+            'department_name' => 'Sterilization',
+            'employee_id' => null,
+        ]);
+    }
+
     public function test_inventory_check_has_detail_items(): void
     {
         $technician = User::factory()->technician()->create(['must_change_password' => false]);

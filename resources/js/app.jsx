@@ -1257,9 +1257,7 @@ const App = () => {
                               </PurchaseOrderRoute>
                          } />
                          <Route path="/my-assets" element={
-                              <InternalRoute>
-                                   <MyAssetsPageWrapper />
-                              </InternalRoute>
+                              <Navigate to="/dashboard" replace />
                          } />
                          <Route path="/equipment" element={
                               <InternalRoute>
@@ -1272,9 +1270,7 @@ const App = () => {
                               </InternalRoute>
                          } />
                          <Route path="/qr-scan" element={
-                              <InternalRoute>
-                                   <QRScanPageWrapper />
-                              </InternalRoute>
+                              <Navigate to="/dashboard" replace />
                          } />
                          <Route path="/requests" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/requests/*" element={<Navigate to="/dashboard" replace />} />
@@ -1300,9 +1296,7 @@ const App = () => {
                               </OperatorRoute>
                          } />
                          <Route path="/my-asset-history" element={
-                              <InternalRoute>
-                                   <MyAssetHistoryPageWrapper />
-                              </InternalRoute>
+                              <Navigate to="/dashboard" replace />
                          } />
                          <Route path="/disposal" element={
                               <OperatorRoute>

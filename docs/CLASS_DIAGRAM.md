@@ -113,7 +113,8 @@ classDiagram
     class AssetAssignment {
         +id PK
         asset_id FK
-        employee_id FK
+        employee_id FK nullable
+        department_name
         assigned_by FK
         assigned_at
         unassigned_at
@@ -134,7 +135,7 @@ classDiagram
     Category "1" --> "0..*" Asset : classifies
     Supplier "1" --> "0..*" Asset : supplies
     Asset "1" --> "0..*" AssetAssignment : assigned_history
-    Employee "1" --> "0..*" AssetAssignment : receives
+    Employee "0..1" --> "0..*" AssetAssignment : legacy_receiver
     User "1" --> "0..*" AssetAssignment : performs
 ```
 
@@ -171,7 +172,7 @@ classDiagram
 
     class MaintenanceEvent {
         +id PK
-        asset_id FK
+        asset_id FK representative
         assigned_to_user_id FK
         code
         type
@@ -185,6 +186,7 @@ classDiagram
         +id PK
         maintenance_event_id FK
         asset_id FK
+        qty
         technician_user_id FK
         supplier_id FK
         status
@@ -265,9 +267,9 @@ classDiagram
     PurchaseOrder "1" --> "1..*" PurchaseOrderItem : has_details
     Asset "0..1" --> "0..*" PurchaseOrderItem : created_or_linked
 
-    Asset "1" --> "0..*" MaintenanceEvent : maintained
     User "0..1" --> "0..*" MaintenanceEvent : assigned
-    MaintenanceEvent "1" --> "0..1" MaintenanceDetail : has_detail
+    MaintenanceEvent "1" --> "1..*" MaintenanceDetail : has_details
+    Asset "1" --> "0..*" MaintenanceDetail : maintained_item
     Supplier "0..1" --> "0..*" MaintenanceDetail : external_support
 
     Asset "1" --> "0..*" Disposal : disposed
@@ -287,3 +289,5 @@ classDiagram
 - `FK` là Foreign Key, cột dùng để liên kết sang bảng khác.
 - `1`, `0..1`, `0..*`, `1..*` lần lượt nghĩa là một, có thể không có hoặc một, có thể nhiều, và ít nhất một.
 - Bảng `requests`, `request_items`, `request_events` không còn nằm trong scope hiện tại.
+- Theo scope mới, tài sản được bàn giao theo `department_name`; `employee_id` chỉ được giữ lại để tương thích lịch sử/legacy.
+- `maintenance_events.asset_id` chỉ còn vai trò đại diện cho dòng đầu tiên để giữ tương thích cũ; danh sách thiết bị chuẩn nằm ở `maintenance_details`.

@@ -20,7 +20,8 @@ class AssignAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => ['required', 'integer', 'exists:employees,id'],
+            'employee_id' => ['nullable', 'integer', 'exists:employees,id', 'required_without:department_name'],
+            'department_name' => ['nullable', 'string', 'max:150', 'required_without:employee_id'],
         ];
     }
 
@@ -30,8 +31,9 @@ class AssignAssetRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee_id.required' => 'Employee ID is required.',
-            'employee_id.exists' => 'The specified employee does not exist.',
+            'employee_id.required_without' => 'Vui lòng chọn nhân viên hoặc nhập phòng ban nhận bàn giao.',
+            'employee_id.exists' => 'Nhân viên được chọn không tồn tại.',
+            'department_name.required_without' => 'Vui lòng nhập phòng ban nhận bàn giao.',
         ];
     }
 }

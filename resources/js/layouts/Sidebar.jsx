@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, getUserRole, hasOperationalAccess } from '../utils/roles';
+import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, getUserRole, hasOperationalAccess } from '../utils/roles';
 
 /**
  * Sidebar focused on the 5 DFD level-0 tasks.
@@ -16,7 +16,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const isTechnician = role === ROLE_TECHNICIAN;
     const isSupplier = role === ROLE_SUPPLIER;
     const isOperationalRole = hasOperationalAccess(user);
-    const isRequesterOnlyRole = role === ROLE_EMPLOYEE;
 
     const navItems = isSupplier ? [
         {
@@ -37,18 +36,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             path: '/dashboard', 
             labelKey: 'nav.dashboard', 
             icon: 'dashboard'
-        },
-        { 
-            id: 'my-assets',
-            path: '/my-assets', 
-            labelKey: 'nav.myEquipment', 
-            icon: 'myAssets'
-        },
-        { 
-            id: 'qr-scan',
-            path: '/qr-scan', 
-            labelKey: 'nav.qrScan', 
-            icon: 'qrScan'
         },
         ...(isOperationalRole ? [{
             id: 'catalog-records',
@@ -80,12 +67,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             path: '/reports', 
             labelKey: 'nav.reports', 
             icon: 'reports'
-        }] : []),
-        ...(isRequesterOnlyRole || isTechnician ? [{
-            id: 'my-asset-history',
-            path: '/my-asset-history', 
-            labelKey: 'nav.myAssetHistory', 
-            icon: 'history'
         }] : []),
     ];
 

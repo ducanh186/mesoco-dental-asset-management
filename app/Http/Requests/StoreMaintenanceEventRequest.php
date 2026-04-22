@@ -30,9 +30,28 @@ class StoreMaintenanceEventRequest extends FormRequest
     {
         return [
             'asset_id' => [
-                'required',
+                'nullable',
                 'integer',
                 'exists:assets,id',
+                'required_without:details',
+            ],
+            'details' => [
+                'nullable',
+                'array',
+                'min:1',
+                'required_without:asset_id',
+            ],
+            'details.*.asset_id' => [
+                'required_with:details',
+                'integer',
+                'exists:assets,id',
+                'distinct',
+            ],
+            'details.*.qty' => [
+                'required_with:details',
+                'integer',
+                'min:1',
+                'max:9999',
             ],
             'type' => [
                 'required',
@@ -80,6 +99,9 @@ class StoreMaintenanceEventRequest extends FormRequest
     {
         return [
             'asset_id' => 'tài sản',
+            'details' => 'chi tiết bảo trì',
+            'details.*.asset_id' => 'thiết bị trong chi tiết',
+            'details.*.qty' => 'số lượng thiết bị',
             'type' => 'loại bảo trì',
             'planned_at' => 'thời gian dự kiến',
             'priority' => 'mức độ ưu tiên',
@@ -98,6 +120,12 @@ class StoreMaintenanceEventRequest extends FormRequest
         return [
             'asset_id.required' => 'Vui lòng chọn tài sản cần bảo trì.',
             'asset_id.exists' => 'Tài sản không tồn tại.',
+            'details.required_without' => 'Vui lòng thêm ít nhất một dòng chi tiết bảo trì.',
+            'details.min' => 'Phiếu bảo trì phải có ít nhất một thiết bị.',
+            'details.*.asset_id.required_with' => 'Mỗi dòng chi tiết phải chọn thiết bị.',
+            'details.*.asset_id.distinct' => 'Không được chọn trùng thiết bị trong cùng một phiếu bảo trì.',
+            'details.*.qty.required_with' => 'Vui lòng nhập số lượng cho từng thiết bị.',
+            'details.*.qty.min' => 'Số lượng phải lớn hơn 0.',
             'type.required' => 'Vui lòng chọn loại bảo trì.',
             'type.in' => 'Loại bảo trì không hợp lệ.',
             'planned_at.required' => 'Vui lòng chọn thời gian dự kiến.',

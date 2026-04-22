@@ -10,6 +10,7 @@ class MaintenanceDetail extends Model
     protected $fillable = [
         'maintenance_event_id',
         'asset_id',
+        'qty',
         'technician_user_id',
         'supplier_id',
         'status',
@@ -24,6 +25,7 @@ class MaintenanceDetail extends Model
     protected function casts(): array
     {
         return [
+            'qty' => 'integer',
             'cost' => 'decimal:2',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',

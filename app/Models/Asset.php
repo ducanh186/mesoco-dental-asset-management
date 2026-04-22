@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -205,12 +206,20 @@ class Asset extends Model
     }
 
     /**
-     * Get active (in_progress) maintenance events.
+     * Query active (in_progress) maintenance events affecting this asset.
+     * Supports both legacy single-asset tickets and new multi-detail tickets.
      */
-    public function activeMaintenanceEvents(): HasMany
+    public function activeMaintenanceEvents(): Builder
     {
-        return $this->hasMany(MaintenanceEvent::class)
-            ->where('status', MaintenanceEvent::STATUS_IN_PROGRESS);
+        return MaintenanceEvent::query()
+            ->where('status', MaintenanceEvent::STATUS_IN_PROGRESS)
+            ->where(function (Builder $query) {
+                $query->where('asset_id', $this->id)
+                    ->orWhereHas('details', function (Builder $detailQuery) {
+                        $detailQuery->where('asset_id', $this->id);
+                    });
+            })
+            ->distinct();
     }
 
     /**

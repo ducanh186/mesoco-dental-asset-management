@@ -9,6 +9,7 @@ use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetCheckin;
 use App\Models\AssetQrIdentity;
+use App\Models\Employee;
 use App\Models\Shift;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class AssetController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $includeCheckinStatus = $request->boolean('include_checkin_status', false);
 
-        $query = Asset::with(['currentAssignment.employee', 'qrIdentity', 'supplier'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'));
@@ -115,7 +116,7 @@ class AssetController extends Controller
             ]);
         }
 
-        $query = Asset::with(['currentAssignment.employee', 'qrIdentity', 'supplier'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier'])
             ->assignedTo($employeeId)
             ->search($request->input('search'))
             ->byType($request->input('type'))
@@ -185,7 +186,7 @@ class AssetController extends Controller
             ]);
         }
 
-        $assets = Asset::with(['currentAssignment.employee', 'qrIdentity'])
+        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity'])
             ->assignedTo($employeeId)
             ->where('status', Asset::STATUS_ACTIVE)
             ->orderBy('asset_code')
@@ -234,7 +235,7 @@ class AssetController extends Controller
         ]);
         $asset->update(['qr_value' => $qrIdentity->payload]);
 
-        $asset->load(['qrIdentity', 'currentAssignment', 'supplier']);
+        $asset->load(['qrIdentity', 'currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier']);
 
         return response()->json([
             'message' => 'Asset created successfully.',
@@ -283,7 +284,7 @@ class AssetController extends Controller
     {
         $asset->update($request->validated());
 
-        $asset->load(['currentAssignment.employee', 'qrIdentity', 'supplier']);
+        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier']);
 
         return response()->json([
             'message' => 'Asset updated successfully.',
@@ -316,11 +317,9 @@ class AssetController extends Controller
     }
 
     /**
-     * Assign asset to an employee.
-     * Manager/Technician only.
-     * Only 1 active assignee per asset.
-     * Uses transaction + pessimistic lock to prevent race conditions.
-     * 
+     * Hand over asset to a department.
+     * Legacy employee-based payloads are still accepted for backward compatibility.
+     *
      * POST /api/assets/{asset}/assign
      */
     public function assign(AssignAssetRequest $request, Asset $asset): JsonResponse
@@ -356,20 +355,29 @@ class AssetController extends Controller
             if ($existingAssignment) {
                 $currentAssignee = $existingAssignment->employee;
                 return response()->json([
-                    'message' => 'Asset is already assigned to another employee.',
+                    'message' => 'Asset is already handed over.',
                     'error' => 'ALREADY_ASSIGNED',
-                    'current_assignee' => [
-                        'employee_id' => $currentAssignee->id,
-                        'employee_code' => $currentAssignee->employee_code,
-                        'full_name' => $currentAssignee->full_name,
+                    'current_assignment' => [
+                        'department_name' => $existingAssignment->department_name,
+                        'employee_id' => $currentAssignee?->id,
+                        'employee_code' => $currentAssignee?->employee_code,
+                        'full_name' => $currentAssignee?->full_name,
                     ],
                 ], 422);
+            }
+
+            $employeeId = $request->integer('employee_id') ?: null;
+            $employee = $employeeId ? Employee::query()->find($employeeId) : null;
+            $departmentName = trim((string) $request->input('department_name', ''));
+            if ($departmentName === '' && $employee?->department) {
+                $departmentName = $employee->department;
             }
 
             // Create assignment
             $assignment = AssetAssignment::create([
                 'asset_id' => $lockedAsset->id,
-                'employee_id' => $request->employee_id,
+                'employee_id' => $employee?->id,
+                'department_name' => $departmentName !== '' ? $departmentName : null,
                 'assigned_by' => $request->user()->id,
                 'assigned_at' => now(),
             ]);
@@ -377,7 +385,7 @@ class AssetController extends Controller
             $assignment->load(['employee', 'assignedByUser']);
 
             return response()->json([
-                'message' => 'Asset assigned successfully.',
+                'message' => 'Asset handed over successfully.',
                 'assignment' => $assignment,
             ]);
         });
@@ -406,7 +414,7 @@ class AssetController extends Controller
                 ], 422);
             }
 
-            // Load employee before updating
+            // Load current assignment target before updating
             $currentAssignment->load('employee');
             $employee = $currentAssignment->employee;
 
@@ -416,11 +424,12 @@ class AssetController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Asset unassigned successfully.',
-                'previous_assignee' => [
-                    'employee_id' => $employee->id,
-                    'employee_code' => $employee->employee_code,
-                    'full_name' => $employee->full_name,
+                'message' => 'Asset handover cleared successfully.',
+                'previous_assignment' => [
+                    'department_name' => $currentAssignment->department_name,
+                    'employee_id' => $employee?->id,
+                    'employee_code' => $employee?->employee_code,
+                    'full_name' => $employee?->full_name,
                 ],
             ]);
         });
@@ -434,7 +443,7 @@ class AssetController extends Controller
      */
     public function available(Request $request): JsonResponse
     {
-        $assets = Asset::with(['qrIdentity', 'currentAssignment', 'supplier'])
+        $assets = Asset::with(['qrIdentity', 'currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier'])
             ->where('status', Asset::STATUS_ACTIVE)
             ->unassigned()
             ->orderBy('asset_code')
@@ -455,7 +464,7 @@ class AssetController extends Controller
      */
     public function availableForLoan(Request $request): JsonResponse
     {
-        $assets = Asset::with(['qrIdentity', 'currentAssignment'])
+        $assets = Asset::with(['qrIdentity', 'currentAssignment.employee', 'currentAssignment.assignedByUser'])
             ->availableForLoan()
             ->orderBy('asset_code')
             ->get();
@@ -494,7 +503,7 @@ class AssetController extends Controller
         ]);
         $asset->update(['qr_value' => $qrIdentity->payload]);
 
-        $asset->load(['currentAssignment.employee', 'qrIdentity', 'supplier']);
+        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier']);
 
         return response()->json([
             'message' => 'QR code regenerated successfully.',
@@ -522,6 +531,10 @@ class AssetController extends Controller
     {
         $currentAssignment = $asset->currentAssignment;
         $assignee = $currentAssignment?->employee;
+        $assignmentTargetName = $currentAssignment?->department_name ?: $assignee?->full_name;
+        $assignmentTargetType = $currentAssignment?->department_name
+            ? 'department'
+            : ($assignee ? 'employee' : null);
 
         $data = [
             'id' => $asset->id,
@@ -552,12 +565,17 @@ class AssetController extends Controller
             'current_assignment' => $currentAssignment ? [
                 'id' => $currentAssignment->id,
                 'assigned_at' => $currentAssignment->assigned_at,
-                'assignee' => [
+                'department_name' => $currentAssignment->department_name,
+                'assignment_target' => [
+                    'type' => $assignmentTargetType,
+                    'name' => $assignmentTargetName,
+                ],
+                'assignee' => $assignee ? [
                     'id' => $assignee->id,
                     'employee_code' => $assignee->employee_code,
                     'full_name' => $assignee->full_name,
                     'position' => $assignee->position,
-                ],
+                ] : null,
                 'assigned_by' => $currentAssignment->assignedByUser ? [
                     'id' => $currentAssignment->assignedByUser->id,
                     'name' => $currentAssignment->assignedByUser->name,
@@ -578,11 +596,16 @@ class AssetController extends Controller
                 'assigned_at' => $a->assigned_at,
                 'unassigned_at' => $a->unassigned_at,
                 'is_active' => $a->unassigned_at === null,
-                'employee' => [
+                'department_name' => $a->department_name,
+                'assignment_target' => [
+                    'type' => $a->department_name ? 'department' : ($a->employee ? 'employee' : null),
+                    'name' => $a->department_name ?: $a->employee?->full_name,
+                ],
+                'employee' => $a->employee ? [
                     'id' => $a->employee->id,
                     'employee_code' => $a->employee->employee_code,
                     'full_name' => $a->employee->full_name,
-                ],
+                ] : null,
                 'assigned_by' => $a->assignedByUser ? [
                     'id' => $a->assignedByUser->id,
                     'name' => $a->assignedByUser->name,
