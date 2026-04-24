@@ -307,7 +307,7 @@ class InventoryController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $warrantyThresholdDays = config('inventory.warranty_expiry_threshold_days', 30);
 
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -356,7 +356,6 @@ class InventoryController extends Controller
                 'warranty_days_left' => $asset->getWarrantyDaysLeft(),
                 'is_warranty_expiring_soon' => $asset->isWarrantyExpiringSoon($warrantyThresholdDays),
                 'current_book_value' => $asset->getCurrentBookValue(),
-                'qr_payload' => $asset->qrIdentity?->qr_payload,
                 'assigned_to' => $asset->currentAssignment ? [
                     'id' => $asset->currentAssignment->id,
                     'name' => $asset->currentAssignment->department_name ?: $asset->currentAssignment->employee?->full_name,
@@ -464,7 +463,7 @@ class InventoryController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -518,7 +517,6 @@ class InventoryController extends Controller
                 'Purchase Cost',
                 'Warranty Expiry',
                 'Current Book Value',
-                'QR Payload',
                 'Notes',
             ]);
 
@@ -536,7 +534,6 @@ class InventoryController extends Controller
                     $asset->purchase_cost ? number_format((float) $asset->purchase_cost, 2, '.', '') : '',
                     $asset->warranty_expiry?->toDateString() ?? '',
                     $asset->getCurrentBookValue() !== null ? number_format($asset->getCurrentBookValue(), 2, '.', '') : '',
-                    $asset->qrIdentity?->qr_payload ?? '',
                     $asset->notes ?? '',
                 ]);
             }

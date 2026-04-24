@@ -233,13 +233,15 @@ const DisposalPage = ({ user }) => {
                                 onChange={(e) => setCategoryFilter(e.target.value)}
                             >
                                 <option value="">{t('common.all')}</option>
-                                <option value="Imaging">Imaging</option>
-                                <option value="Sterilization">Sterilization</option>
-                                <option value="Treatment">Treatment</option>
-                                <option value="Cleaning">Cleaning</option>
-                                <option value="Furniture">Furniture</option>
-                                <option value="Infrastructure">Infrastructure</option>
-                                <option value="Handpieces">Handpieces</option>
+                                <option value="Laptop">Laptop</option>
+                                <option value="Desktop">Desktop</option>
+                                <option value="Monitor">Monitor</option>
+                                <option value="Network">Network</option>
+                                <option value="Server">Server</option>
+                                <option value="Peripheral">Peripheral</option>
+                                <option value="Printer">Printer</option>
+                                <option value="Mobile Device">Mobile Device</option>
+                                <option value="Office IT">Office IT</option>
                                 <option value="Other">Other</option>
                             </Select>
                         </div>

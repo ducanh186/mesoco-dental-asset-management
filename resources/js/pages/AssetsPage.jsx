@@ -427,7 +427,7 @@ const AssetsPage = () => {
                         label="Phòng ban nhận bàn giao *"
                         value={departmentName}
                         onChange={(e) => setDepartmentName(e.target.value)}
-                        placeholder="VD: Nha khoa tổng quát, Khử trùng, Hành chính"
+                        placeholder="VD: Engineering, IT Operations, Finance"
                     />
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">

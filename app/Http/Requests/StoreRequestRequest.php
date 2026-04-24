@@ -24,7 +24,7 @@ class StoreRequestRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'type' => ['required', 'string', Rule::in(AssetRequest::TYPES)],
+            'type' => ['required', 'string', Rule::in(AssetRequest::REQUESTABLE_TYPES)],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'severity' => ['nullable', 'string', Rule::in(AssetRequest::SEVERITIES)],
@@ -55,11 +55,6 @@ class StoreRequestRequest extends FormRequest
             $rules['items'] = ['required', 'array', 'min:1'];
         }
 
-        if ($type === AssetRequest::TYPE_ASSET_LOAN) {
-            // ASSET_LOAN must have ASSET items with shift/date range
-            $rules['items'] = ['required', 'array', 'min:1'];
-        }
-
         if ($type === AssetRequest::TYPE_CONSUMABLE_REQUEST) {
             // CONSUMABLE_REQUEST must have CONSUMABLE items
             $rules['items'] = ['required', 'array', 'min:1'];
@@ -74,7 +69,7 @@ class StoreRequestRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => 'Invalid request type. Valid types: ' . implode(', ', AssetRequest::TYPES),
+            'type.in' => 'Borrow/return requests are no longer supported. Valid types: ' . implode(', ', AssetRequest::REQUESTABLE_TYPES),
             'severity.in' => 'Invalid severity. Valid values: ' . implode(', ', AssetRequest::SEVERITIES),
             'severity.required' => 'Severity is required for justification requests.',
             'items.required' => 'At least one item is required.',
@@ -155,63 +150,12 @@ class StoreRequestRequest extends FormRequest
                             "items.{$index}.asset_id",
                             'Tài sản được chọn không tồn tại.'
                         );
-                    } elseif (!$asset->isAssignedToEmployee($employeeId)) {
+                    } elseif (!$employeeId || !$asset->isAssignedToEmployeeDepartment($user->employee)) {
                         $validator->errors()->add(
                             "items.{$index}.asset_id",
-                            'Bạn chỉ có thể báo cáo sự cố cho tài sản đã được giao cho mình.'
+                            'Bạn chỉ có thể báo cáo sự cố cho tài sản đã bàn giao cho phòng ban của mình.'
                         );
                     }
-                }
-            }
-
-            // ASSET_LOAN requires ASSET items with shift/date range
-            if ($type === AssetRequest::TYPE_ASSET_LOAN && $itemKind === RequestItem::KIND_ASSET) {
-                $assetId = $item['asset_id'] ?? null;
-                if (empty($assetId)) {
-                    $validator->errors()->add(
-                        "items.{$index}.asset_id",
-                        'Vui lòng chọn tài sản cần mượn.'
-                    );
-                } else {
-                    // Check availability using preloaded assets map
-                    $asset = $assetsMap[$assetId] ?? null;
-                    
-                    if (!$asset) {
-                        $validator->errors()->add(
-                            "items.{$index}.asset_id",
-                            'Tài sản được chọn không tồn tại.'
-                        );
-                    } elseif ($asset->isLocked()) {
-                        // Block locked assets (off_service or maintenance) - Phase 7
-                        $reason = $asset->getLockReason() ?? 'Tài sản đang tạm ngưng sử dụng';
-                        $validator->errors()->add(
-                            "items.{$index}.asset_id",
-                            $reason . '. Vui lòng chọn tài sản khác hoặc liên hệ kỹ thuật viên.'
-                        );
-                    } elseif (!$asset->isAvailableForLoan()) {
-                        // Provide specific error message based on reason
-                        if ($asset->status !== \App\Models\Asset::STATUS_ACTIVE) {
-                            $validator->errors()->add(
-                                "items.{$index}.asset_id",
-                                'Tài sản không khả dụng để mượn (trạng thái: ' . $asset->status . ').'
-                            );
-                        } else {
-                            $validator->errors()->add(
-                                "items.{$index}.asset_id",
-                                'Tài sản đã được giao cho người khác và không khả dụng để mượn.'
-                            );
-                        }
-                    }
-                }
-                
-                // Must have either shift range or date range
-                $hasShiftRange = !empty($item['from_shift_id']) && !empty($item['to_shift_id']);
-                $hasDateRange = !empty($item['from_date']) && !empty($item['to_date']);
-                if (!$hasShiftRange && !$hasDateRange) {
-                    $validator->errors()->add(
-                        "items.{$index}",
-                        'Yêu cầu mượn tài sản phải có khoảng ca làm hoặc khoảng ngày.'
-                    );
                 }
             }
 

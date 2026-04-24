@@ -20,7 +20,6 @@ import { requestsApi, usersApi, handleApiError } from '../services/api';
 // ============================================================================
 const REQUEST_TYPES = {
     JUSTIFICATION: 'JUSTIFICATION',
-    ASSET_LOAN: 'ASSET_LOAN',
     CONSUMABLE_REQUEST: 'CONSUMABLE_REQUEST',
 };
 
@@ -176,7 +175,6 @@ const ReviewRequestsPage = ({ user }) => {
     const getTypeLabel = (type) => {
         switch (type) {
             case REQUEST_TYPES.JUSTIFICATION: return t('requests.types.JUSTIFICATION');
-            case REQUEST_TYPES.ASSET_LOAN: return t('requests.types.ASSET_LOAN');
             case REQUEST_TYPES.CONSUMABLE_REQUEST: return t('requests.types.CONSUMABLE_REQUEST');
             default: return type;
         }
@@ -185,7 +183,6 @@ const ReviewRequestsPage = ({ user }) => {
     const getTypeVariant = (type) => {
         switch (type) {
             case REQUEST_TYPES.JUSTIFICATION: return 'warning';
-            case REQUEST_TYPES.ASSET_LOAN: return 'primary';
             case REQUEST_TYPES.CONSUMABLE_REQUEST: return 'info';
             default: return 'default';
         }
@@ -322,7 +319,6 @@ const ReviewRequestsPage = ({ user }) => {
     const typeOptions = [
         { value: '', label: t('requests.types.all') },
         { value: REQUEST_TYPES.JUSTIFICATION, label: t('requests.types.JUSTIFICATION') },
-        { value: REQUEST_TYPES.ASSET_LOAN, label: t('requests.types.ASSET_LOAN') },
         { value: REQUEST_TYPES.CONSUMABLE_REQUEST, label: t('requests.types.CONSUMABLE_REQUEST') },
     ];
 

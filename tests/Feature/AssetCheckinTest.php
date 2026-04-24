@@ -364,35 +364,10 @@ class AssetCheckinTest extends TestCase
     }
 
     // ========================================
-    // QR Resolve with check-in status
+    // QR and legacy my-assets routes
     // ========================================
 
-    public function test_qr_resolve_includes_checkin_status(): void
-    {
-        // Create QR identity for asset
-        $qrIdentity = \App\Models\AssetQrIdentity::create([
-            'asset_id' => $this->asset->id,
-        ]);
-
-        $response = $this->actingAs($this->employeeUser)
-            ->postJson('/api/qr/resolve', [
-                'payload' => $qrIdentity->payload,
-            ]);
-
-        $response->assertOk()
-            ->assertJsonStructure([
-                'asset',
-                'checkin_status' => [
-                    'current_shift',
-                    'today_checkin',
-                    'can_check_in',
-                    'blocked_reason',
-                ],
-                'actions',
-            ]);
-    }
-
-    public function test_qr_resolve_shows_can_checkin_for_assignee(): void
+    public function test_qr_resolve_route_returns_gone(): void
     {
         $qrIdentity = \App\Models\AssetQrIdentity::create([
             'asset_id' => $this->asset->id,
@@ -403,109 +378,22 @@ class AssetCheckinTest extends TestCase
                 'payload' => $qrIdentity->payload,
             ]);
 
-        $response->assertOk()
-            ->assertJsonPath('checkin_status.can_check_in', true);
+        $response->assertStatus(410);
     }
 
-    public function test_qr_resolve_blocks_checkin_for_off_service(): void
+    public function test_my_assets_route_returns_gone(): void
     {
-        $this->asset->update(['status' => 'off_service']);
-
-        $qrIdentity = \App\Models\AssetQrIdentity::create([
-            'asset_id' => $this->asset->id,
-        ]);
-
-        $response = $this->actingAs($this->employeeUser)
-            ->postJson('/api/qr/resolve', [
-                'payload' => $qrIdentity->payload,
-            ]);
-
-        $response->assertOk()
-            ->assertJsonPath('checkin_status.can_check_in', false)
-            ->assertJsonPath('checkin_status.blocked_reason', 'ASSET_OFF_SERVICE');
-    }
-
-    // ========================================
-    // Instructions field tests
-    // ========================================
-
-    public function test_qr_resolve_returns_instructions_available(): void
-    {
-        $this->asset->update(['instructions_url' => 'https://docs.example.com/test-asset']);
-
-        $qrIdentity = \App\Models\AssetQrIdentity::create([
-            'asset_id' => $this->asset->id,
-        ]);
-
-        $response = $this->actingAs($this->employeeUser)
-            ->postJson('/api/qr/resolve', [
-                'payload' => $qrIdentity->payload,
-            ]);
-
-        $response->assertOk()
-            ->assertJsonPath('asset.instructions.available', true)
-            ->assertJsonPath('asset.instructions.type', 'url')
-            ->assertJsonPath('asset.instructions.url', 'https://docs.example.com/test-asset');
-    }
-
-    public function test_qr_resolve_returns_instructions_not_available(): void
-    {
-        $qrIdentity = \App\Models\AssetQrIdentity::create([
-            'asset_id' => $this->asset->id,
-        ]);
-
-        $response = $this->actingAs($this->employeeUser)
-            ->postJson('/api/qr/resolve', [
-                'payload' => $qrIdentity->payload,
-            ]);
-
-        $response->assertOk()
-            ->assertJsonPath('asset.instructions.available', false)
-            ->assertJsonPath('asset.instructions.type', null)
-            ->assertJsonPath('asset.instructions.url', null);
-    }
-
-    public function test_my_assets_returns_instructions_field(): void
-    {
-        $this->asset->update(['instructions_url' => 'https://docs.example.com/asset-guide']);
-
         $response = $this->actingAs($this->employeeUser)
             ->getJson('/api/my-assets');
 
-        $response->assertOk()
-            ->assertJsonStructure([
-                'assets' => [
-                    '*' => [
-                        'instructions' => ['type', 'url', 'available'],
-                    ],
-                ],
-            ])
-            ->assertJsonPath('assets.0.instructions.available', true)
-            ->assertJsonPath('assets.0.instructions.url', 'https://docs.example.com/asset-guide');
+        $response->assertStatus(410);
     }
 
-    // ========================================
-    // My Assets with check-in status
-    // ========================================
-
-    public function test_my_assets_can_include_checkin_status(): void
+    public function test_my_assets_with_checkin_status_route_returns_gone(): void
     {
         $response = $this->actingAs($this->employeeUser)
             ->getJson('/api/my-assets?include_checkin_status=true');
 
-        $response->assertOk()
-            ->assertJsonStructure([
-                'assets' => [
-                    '*' => [
-                        'id',
-                        'asset_code',
-                        'checkin_status' => [
-                            'current_shift',
-                            'today_checkin',
-                            'is_checked_in',
-                        ],
-                    ],
-                ],
-            ]);
+        $response->assertStatus(410);
     }
 }

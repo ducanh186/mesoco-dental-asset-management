@@ -8,6 +8,7 @@ use App\Models\RequestEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class RequestController extends Controller
 {
@@ -21,6 +22,20 @@ class RequestController extends Controller
     {
         $user = $httpRequest->user();
         $perPage = min($httpRequest->input('per_page', 15), 100);
+
+        if (!Schema::hasTable('requests')) {
+            return response()->json([
+                'requests' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                ],
+                'available_types' => AssetRequest::REQUESTABLE_TYPES,
+                'available_statuses' => AssetRequest::STATUSES,
+            ]);
+        }
 
         $query = AssetRequest::with(['asset:id,asset_code,name', 'requester', 'reviewer', 'assignee:id,name,email']);
 
@@ -62,7 +77,7 @@ class RequestController extends Controller
                 'per_page' => $requests->perPage(),
                 'total' => $requests->total(),
             ],
-            'available_types' => AssetRequest::TYPES,
+            'available_types' => AssetRequest::REQUESTABLE_TYPES,
             'available_statuses' => AssetRequest::STATUSES,
         ]);
     }

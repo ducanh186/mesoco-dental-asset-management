@@ -13,7 +13,7 @@ import {
     ConfirmModal,
     useToast 
 } from '../components/ui';
-import { feedbackApi, myAssetsApi, handleApiError } from '../services/api';
+import { feedbackApi, departmentAssetsApi, handleApiError } from '../services/api';
 
 /**
  * FeedbackPage - Phase 8
@@ -54,7 +54,7 @@ const FeedbackPage = ({ user }) => {
     const [responseText, setResponseText] = useState('');
 
     // Permission check
-    const canManage = ['admin', 'hr', 'technician'].includes(user?.role);
+    const canManage = ['manager', 'technician'].includes(user?.role);
 
     // Fetch data
     const fetchFeedbacks = useCallback(async () => {
@@ -89,7 +89,7 @@ const FeedbackPage = ({ user }) => {
 
     const fetchAssets = useCallback(async () => {
         try {
-            const response = await myAssetsApi.dropdown();
+            const response = await departmentAssetsApi.dropdown();
             setAssets(response.data || []);
         } catch (error) {
             console.error('Failed to fetch assets:', error);

@@ -11,6 +11,7 @@ use App\Services\MaintenanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 
 class ReviewRequestController extends Controller
@@ -36,6 +37,20 @@ class ReviewRequestController extends Controller
         }
 
         $perPage = min($httpRequest->input('per_page', 15), 100);
+
+        if (!Schema::hasTable('requests')) {
+            return response()->json([
+                'requests' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                ],
+                'available_types' => AssetRequest::REQUESTABLE_TYPES,
+                'available_statuses' => AssetRequest::STATUSES,
+            ]);
+        }
 
         $query = AssetRequest::with([
             'asset:id,asset_code,name',
@@ -70,7 +85,7 @@ class ReviewRequestController extends Controller
                 'per_page' => $requests->perPage(),
                 'total' => $requests->total(),
             ],
-            'available_types' => AssetRequest::TYPES,
+            'available_types' => AssetRequest::REQUESTABLE_TYPES,
             'available_statuses' => AssetRequest::STATUSES,
         ]);
     }

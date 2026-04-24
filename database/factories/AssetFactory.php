@@ -98,8 +98,8 @@ class AssetFactory extends Factory
                 'category' => fake()->randomElement(Asset::CATEGORIES),
                 'location' => fake()->randomElement([
                     'Room 101', 'Room 102', 'Room 103', 'Room 104',
-                    'Lab Area', 'Storage', 'Utility Room', 'Imaging Room',
-                    'Sterilization Room', 'Reception', 'Main Clinic'
+                    'IT Storage', 'Server Room', 'Engineering Area', 'Finance Office',
+                    'Meeting Room A', 'Reception', 'Operations Office'
                 ]),
                 'purchase_date' => $purchaseDate,
                 'purchase_cost' => $purchaseCost,
@@ -112,7 +112,7 @@ class AssetFactory extends Factory
     }
 
     /**
-     * Create a high-value asset (e.g., X-ray machine).
+     * Create a high-value IT asset.
      */
     public function highValue(): static
     {
@@ -122,15 +122,15 @@ class AssetFactory extends Factory
             
             return [
                 'name' => fake()->randomElement([
-                    'Dental X-Ray Machine',
-                    'Panoramic X-Ray System',
-                    'CT Scanner',
-                    'CAD/CAM System',
-                    'Dental Laser Unit'
+                    'Dell PowerEdge Server',
+                    'MacBook Pro Fleet Unit',
+                    'Cisco Core Switch',
+                    'Synology NAS Storage',
+                    'Enterprise UPS System'
                 ]),
                 'type' => Asset::TYPE_MACHINE,
-                'category' => 'Imaging',
-                'location' => 'Imaging Room',
+                'category' => 'Server',
+                'location' => 'Server Room',
                 'purchase_date' => $purchaseDate,
                 'purchase_cost' => $purchaseCost,
                 'useful_life_months' => 120,

@@ -1,25 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import { Button, Card, CardBody } from './ui';
+import React, { useRef } from 'react';
+import { Button } from './ui';
 import { useI18n } from '../i18n';
 
 /**
- * PrintableAssetLabel - Generates a printable asset label with QR code
- * 
- * Uses the browser's native print functionality.
- * QR code is generated using a simple SVG-based approach without external libs.
+ * PrintableAssetLabel - printable department handover label for IT assets.
  */
 const PrintableAssetLabel = ({ asset, onClose }) => {
     const { t } = useI18n();
     const printRef = useRef(null);
-
-    // Generate QR code as a data URI using Google Charts API (lightweight fallback)
-    // For production, consider using a local QR library
-    const getQrCodeUrl = (payload) => {
-        if (!payload) return null;
-        const encoded = encodeURIComponent(payload);
-        // Using a simple QR code generator API
-        return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encoded}`;
-    };
 
     const handlePrint = () => {
         const printContent = printRef.current;
@@ -74,20 +62,6 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
                         margin-bottom: 12px;
                         color: #333;
                     }
-                    .qr-container {
-                        display: flex;
-                        justify-content: center;
-                        margin-bottom: 8px;
-                    }
-                    .qr-container img {
-                        width: 100px;
-                        height: 100px;
-                    }
-                    .scan-instruction {
-                        font-size: 8px;
-                        text-align: center;
-                        color: #999;
-                    }
                     .asset-details {
                         margin-top: 8px;
                         padding-top: 8px;
@@ -116,21 +90,8 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
                 ${printContent.innerHTML}
                 <script>
                     window.onload = function() {
-                        // Wait for QR image to load
-                        const img = document.querySelector('.qr-container img');
-                        if (img && !img.complete) {
-                            img.onload = function() {
-                                window.print();
-                                window.close();
-                            };
-                            img.onerror = function() {
-                                window.print();
-                                window.close();
-                            };
-                        } else {
-                            window.print();
-                            window.close();
-                        }
+                        window.print();
+                        window.close();
                     };
                 </script>
             </body>
@@ -139,16 +100,13 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
         printWindow.document.close();
     };
 
-    const qrPayload = asset.qr_payload || `MESOCO|ASSET|v1|${asset.id}`;
-    const qrUrl = getQrCodeUrl(qrPayload);
-
     return (
         <div className="space-y-4">
             {/* Preview */}
             <div className="flex justify-center">
                 <div ref={printRef} className="label-container w-[3in] p-4 border-2 border-border rounded-lg bg-white">
                     <div className="company-name text-xs uppercase tracking-wider text-text-muted text-center mb-2">
-                        MESOCO Dental
+                        MESOCO IT Asset Management
                     </div>
                     <div className="asset-code text-xl font-bold text-center mb-1 font-mono">
                         {asset.asset_code || 'N/A'}
@@ -156,22 +114,8 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
                     <div className="asset-name text-sm text-center mb-3 text-text-muted">
                         {asset.name || t('printableLabel.unnamedAsset')}
                     </div>
-                    <div className="qr-container flex justify-center mb-2">
-                        {qrUrl ? (
-                            <img 
-                                src={qrUrl} 
-                                alt={t('printableLabel.qrAlt')}
-                                className="w-24 h-24"
-                                crossOrigin="anonymous"
-                            />
-                        ) : (
-                            <div className="w-24 h-24 bg-surface-muted flex items-center justify-center text-text-light text-xs">
-                                {t('printableLabel.noQr')}
-                            </div>
-                        )}
-                    </div>
-                    <div className="scan-instruction text-[8px] text-center text-text-light">
-                        {t('printableLabel.scanInstruction')}
+                    <div className="handover-note my-2 p-2 border border-border rounded text-center text-xs">
+                        {t('printableLabel.handoverNote')}
                     </div>
                     <div className="asset-details mt-2 pt-2 border-t border-dashed border-border text-[9px]">
                         {asset.category && (
@@ -184,6 +128,12 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
                             <div className="detail-row flex justify-between mb-1">
                                 <span className="detail-label text-text-muted">{t('assets.location')}:</span>
                                 <span>{asset.location}</span>
+                            </div>
+                        )}
+                        {(asset.assignedTo || asset.department_name || asset.assigned_to?.name) && (
+                            <div className="detail-row flex justify-between mb-1">
+                                <span className="detail-label text-text-muted">{t('assets.handoverDepartment')}:</span>
+                                <span>{asset.assignedTo || asset.department_name || asset.assigned_to?.name}</span>
                             </div>
                         )}
                     </div>

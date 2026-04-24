@@ -10,10 +10,8 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MaintenanceEventController;
-use App\Http\Controllers\MyAssetHistoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
-use App\Http\Controllers\QrController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SupplierController;
@@ -26,9 +24,9 @@ $legacyContractModuleResponse = static function () {
     ], 410);
 };
 
-$removedRequestModuleResponse = static function () {
+$removedQrModuleResponse = static function () {
     return response()->json([
-        'message' => 'Request workflow has been removed from the main product scope. Use purchase orders, maintenance, disposal, and inventory checks instead.',
+        'message' => 'QR scanning and personal borrow/return flows have been removed. Assets are now managed by department handover.',
     ], 410);
 };
 
@@ -43,17 +41,17 @@ $removedRequestModuleResponse = static function () {
 | ├─────────────┼────────────────────────────────────────────────────────────────────┤
 | │ manager     │ Báo cáo, cấu hình, kiểm kê và điều phối hệ thống                   │
 | │ technician  │ Danh mục, cấp phát, bảo trì, thu hủy và vận hành thiết bị          │
-| │ employee    │ Báo sự cố / mượn thiết bị / theo dõi thiết bị cá nhân              │
+| │ employee    │ Báo sự cố thiết bị và yêu cầu vật tư IT theo phòng ban             │
 | │ supplier    │ Theo dõi và cập nhật trạng thái đơn hàng của chính nhà cung cấp     │
 | └─────────────┴────────────────────────────────────────────────────────────────────┘
 |
-| Ghi chú: bác sĩ dùng chung vai trò `employee`.
+| Ghi chú: các vai trò cũ được chuẩn hóa về manager/technician/employee.
 */
 
 /**
  * Authenticated Routes
  */
-Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () use ($legacyContractModuleResponse, $removedRequestModuleResponse) {
+Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () use ($legacyContractModuleResponse, $removedQrModuleResponse) {
     /**
      * GET /api/me
      * Get current authenticated user
@@ -79,18 +77,19 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
-    Route::middleware('role:manager,technician,employee')->group(function () use ($removedRequestModuleResponse) {
+    Route::middleware('role:manager,technician,employee')->group(function () use ($removedQrModuleResponse) {
         /**
-         * QR Resolve - core internal roles only
+         * Removed QR/personal asset routes retained as JSON contracts for old clients.
          */
-        Route::post('/qr/resolve', [QrController::class, 'resolve']);
+        Route::post('/qr/resolve', $removedQrModuleResponse);
 
         /**
-         * My Assets - internal users can view their assigned assets
+         * Department assets - internal users can pick assets handed over to their department.
          */
-        Route::get('/my-assets', [AssetController::class, 'myAssets']);
+        Route::get('/my-assets', $removedQrModuleResponse);
         Route::get('/my-assigned-assets/dropdown', [AssetController::class, 'myAssignedAssetsDropdown']);
-        Route::get('/assets/available-for-loan', [AssetController::class, 'availableForLoan']);
+        Route::get('/department-assets/dropdown', [AssetController::class, 'myAssignedAssetsDropdown']);
+        Route::get('/assets/available-for-loan', $removedQrModuleResponse);
 
         /**
          * Shifts and check-ins
@@ -102,16 +101,13 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::patch('/checkins/{checkin}/checkout', [CheckinController::class, 'checkout']);
         Route::get('/assets/{asset}/checkin-status', [CheckinController::class, 'assetCheckinStatus']);
 
-        /**
-         * My asset history
-         */
-        Route::get('/my-asset-history', [MyAssetHistoryController::class, 'index']);
-        Route::get('/my-asset-history/summary', [MyAssetHistoryController::class, 'summary']);
+        Route::get('/my-asset-history', $removedQrModuleResponse);
+        Route::get('/my-asset-history/summary', $removedQrModuleResponse);
 
-        Route::get('/requests', $removedRequestModuleResponse);
-        Route::post('/requests', $removedRequestModuleResponse);
-        Route::get('/requests/{id}', $removedRequestModuleResponse);
-        Route::post('/requests/{id}/cancel', $removedRequestModuleResponse);
+        Route::get('/requests', [\App\Http\Controllers\RequestController::class, 'index']);
+        Route::post('/requests', [\App\Http\Controllers\RequestController::class, 'store']);
+        Route::get('/requests/{id}', [\App\Http\Controllers\RequestController::class, 'show']);
+        Route::post('/requests/{id}/cancel', [\App\Http\Controllers\RequestController::class, 'cancel']);
 
         /*
         |--------------------------------------------------------------------------
@@ -148,13 +144,13 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     |--------------------------------------------------------------------------
     | Reporting and system-level governance
     */
-    Route::middleware('role:manager')->group(function () use ($removedRequestModuleResponse) {
+    Route::middleware('role:manager')->group(function () {
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
         Route::get('/roles', [UserController::class, 'roles']);
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
-        Route::get('/review-requests', $removedRequestModuleResponse);
-        Route::post('/requests/{id}/review', $removedRequestModuleResponse);
+        Route::get('/review-requests', [\App\Http\Controllers\ReviewRequestController::class, 'index']);
+        Route::post('/requests/{id}/review', [\App\Http\Controllers\ReviewRequestController::class, 'review']);
 
         Route::get('/reports/summary', [ReportController::class, 'summary']);
         Route::get('/reports/export', [ReportController::class, 'export']);
@@ -171,7 +167,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     | 4. Disposal
     | 5. Inventory checks
     */
-    Route::middleware('role:manager,technician')->group(function () {
+    Route::middleware('role:manager,technician')->group(function () use ($removedQrModuleResponse) {
         Route::get('/employees/available', [EmployeeController::class, 'available']);
         Route::apiResource('employees', EmployeeController::class);
 
@@ -187,7 +183,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
         Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
         Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
-        Route::post('/assets/{asset}/regenerate-qr', [AssetController::class, 'regenerateQr']);
+        Route::post('/assets/{asset}/regenerate-qr', $removedQrModuleResponse);
 
         Route::get('/inventory/summary', [InventoryController::class, 'summary']);
         Route::get('/inventory/assets', [InventoryController::class, 'assets']);

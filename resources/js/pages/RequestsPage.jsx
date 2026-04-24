@@ -13,7 +13,7 @@ import {
     useToast 
 } from '../components/ui';
 import { useI18n } from '../i18n';
-import { requestsApi, assetsApi, myAssetsApi, shiftsApi, handleApiError } from '../services/api';
+import { requestsApi, assetsApi, departmentAssetsApi, handleApiError } from '../services/api';
 import { hasOperationalAccess } from '../utils/roles';
 
 // ============================================================================
@@ -21,7 +21,6 @@ import { hasOperationalAccess } from '../utils/roles';
 // ============================================================================
 const REQUEST_TYPES = {
     JUSTIFICATION: 'JUSTIFICATION',
-    ASSET_LOAN: 'ASSET_LOAN',
     CONSUMABLE_REQUEST: 'CONSUMABLE_REQUEST',
 };
 
@@ -74,9 +73,8 @@ const RequestsPage = ({ user }) => {
     });
     const [submitting, setSubmitting] = useState(false);
     
-    // Asset/Shift options for form
+    // Asset options for incident reports.
     const [assetOptions, setAssetOptions] = useState([]);
-    const [shiftOptions, setShiftOptions] = useState([]);
 
     // ========================================
     // Data Fetching
@@ -104,7 +102,7 @@ const RequestsPage = ({ user }) => {
     }, [typeFilter, statusFilter, searchQuery, toast]);
 
     const fetchAssets = async () => {
-        // This is deprecated - use fetchAssetsForType instead
+        // Operational users can pick from the full active IT asset catalog.
         try {
             const data = await assetsApi.list({ per_page: 100 });
             setAssetOptions((data.assets || []).map(a => ({
@@ -129,12 +127,9 @@ const RequestsPage = ({ user }) => {
                         label: a.asset_code ? `${a.asset_code} - ${a.name}` : `${a.name} (ID: ${a.id})`,
                     })));
                 } else {
-                    response = await myAssetsApi.dropdown();
+                    response = await departmentAssetsApi.dropdown();
                     setAssetOptions(response.data || []);
                 }
-            } else if (requestType === REQUEST_TYPES.ASSET_LOAN) {
-                response = await myAssetsApi.availableForLoan();
-                setAssetOptions(response.data || []);
             } else {
                 response = await assetsApi.list({ per_page: 100 });
                 setAssetOptions((response.assets || []).map(a => ({
@@ -148,25 +143,12 @@ const RequestsPage = ({ user }) => {
         }
     };
 
-    const fetchShifts = async () => {
-        try {
-            const data = await shiftsApi.list();
-            setShiftOptions((data.data || []).map(s => ({
-                value: s.id,
-                label: `${s.code} - ${s.name} (${s.time_range})`,
-            })));
-        } catch (error) {
-            console.error('Failed to fetch shifts', error);
-        }
-    };
-
     useEffect(() => {
         fetchRequests();
     }, [fetchRequests]);
 
     useEffect(() => {
         fetchAssetsForType(formType);
-        fetchShifts();
     }, []);
 
     // Re-fetch assets when form type changes
@@ -242,7 +224,7 @@ const RequestsPage = ({ user }) => {
     const addItem = () => {
         const newItem = formType === REQUEST_TYPES.CONSUMABLE_REQUEST
             ? { item_kind: 'CONSUMABLE', name: '', qty: 1, unit: '' }
-            : { item_kind: 'ASSET', asset_id: '', from_shift_id: '', to_shift_id: '', from_date: '', to_date: '' };
+            : { item_kind: 'ASSET', asset_id: '' };
         
         setFormData(prev => ({
             ...prev,
@@ -272,7 +254,6 @@ const RequestsPage = ({ user }) => {
     const getTypeLabel = (type) => {
         switch (type) {
             case REQUEST_TYPES.JUSTIFICATION: return t('requests.types.JUSTIFICATION');
-            case REQUEST_TYPES.ASSET_LOAN: return t('requests.types.ASSET_LOAN');
             case REQUEST_TYPES.CONSUMABLE_REQUEST: return t('requests.types.CONSUMABLE_REQUEST');
             default: return type;
         }
@@ -281,7 +262,6 @@ const RequestsPage = ({ user }) => {
     const getTypeVariant = (type) => {
         switch (type) {
             case REQUEST_TYPES.JUSTIFICATION: return 'warning';
-            case REQUEST_TYPES.ASSET_LOAN: return 'primary';
             case REQUEST_TYPES.CONSUMABLE_REQUEST: return 'info';
             default: return 'default';
         }
@@ -399,7 +379,6 @@ const RequestsPage = ({ user }) => {
     const typeOptions = [
         { value: '', label: t('requests.types.all') },
         { value: REQUEST_TYPES.JUSTIFICATION, label: t('requests.types.JUSTIFICATION') },
-        { value: REQUEST_TYPES.ASSET_LOAN, label: t('requests.types.ASSET_LOAN') },
         { value: REQUEST_TYPES.CONSUMABLE_REQUEST, label: t('requests.types.CONSUMABLE_REQUEST') },
     ];
 
@@ -669,26 +648,6 @@ const RequestsPage = ({ user }) => {
                                                 onChange={(e) => updateItem(index, 'asset_id', e.target.value)}
                                             />
                                         </div>
-                                        {formType === REQUEST_TYPES.ASSET_LOAN && (
-                                            <>
-                                                <div className="w-40">
-                                                    <Select
-                                                        placeholder={t('requests.fromShift')}
-                                                        options={shiftOptions}
-                                                        value={item.from_shift_id}
-                                                        onChange={(e) => updateItem(index, 'from_shift_id', e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="w-40">
-                                                    <Select
-                                                        placeholder={t('requests.toShift')}
-                                                        options={shiftOptions}
-                                                        value={item.to_shift_id}
-                                                        onChange={(e) => updateItem(index, 'to_shift_id', e.target.value)}
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
                                     </>
                                 )}
                                 <Button 

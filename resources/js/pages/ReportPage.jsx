@@ -19,11 +19,12 @@ const ReportPage = ({ user }) => {
 
     const maintenanceTypeLabels = {
         inspection: 'Kiểm tra',
-        sterilization: 'Khử trùng',
+        preventive: 'Bảo trì định kỳ',
+        software_update: 'Cập nhật phần mềm',
+        hardware_upgrade: 'Nâng cấp phần cứng',
         calibration: 'Hiệu chuẩn',
         repair: 'Sửa chữa',
         cleaning: 'Vệ sinh',
-        filter_change: 'Thay bộ lọc',
         replacement: 'Thay thế linh kiện',
         other: 'Khác',
     };
@@ -204,8 +205,7 @@ const ReportPage = ({ user }) => {
                                 <p className="text-sm font-medium text-text mb-2">Theo loại yêu cầu:</p>
                                 <div className="flex flex-wrap gap-2">
                                     <Badge variant="info">Sự cố: {requests?.by_type?.justification || 0}</Badge>
-                                    <Badge variant="primary">Mượn thiết bị: {requests?.by_type?.asset_loan || 0}</Badge>
-                                    <Badge variant="default">Vật tư: {requests?.by_type?.consumable_request || 0}</Badge>
+                                    <Badge variant="default">Vật tư IT: {requests?.by_type?.consumable_request || 0}</Badge>
                                 </div>
                             </div>
                         </div>

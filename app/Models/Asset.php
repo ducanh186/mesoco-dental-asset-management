@@ -45,16 +45,18 @@ class Asset extends Model
     public const DEPRECIATION_METHODS = ['TIME', 'USAGE'];
 
     /**
-     * Common asset categories for dental clinics
+     * Common IT asset categories for company departments.
      */
     public const CATEGORIES = [
-        'Imaging',
-        'Sterilization', 
-        'Treatment',
-        'Cleaning',
-        'Furniture',
-        'Infrastructure',
-        'Handpieces',
+        'Laptop',
+        'Desktop',
+        'Monitor',
+        'Network',
+        'Server',
+        'Peripheral',
+        'Printer',
+        'Mobile Device',
+        'Office IT',
         'Other',
     ];
 
@@ -365,34 +367,61 @@ class Asset extends Model
     }
 
     /**
-     * Scope to get assets available for loan.
-     * Business rule: active status + not currently assigned
-     * 
-     * SINGLE SOURCE OF TRUTH for "available" logic.
-     * Used by: availableForLoan endpoint, StoreRequestRequest validation
+     * Scope to get assets available for a new department handover.
+     * Business rule: active status + not currently assigned.
      */
-    public function scopeAvailableForLoan($query)
+    public function scopeAvailableForHandover($query)
     {
         return $query->where('status', self::STATUS_ACTIVE)
             ->unassigned();
     }
 
     /**
-     * Check if asset is available for loan.
-     * Instance method for single asset check.
+     * Backward-compatible alias for removed borrow/return flows.
      */
-    public function isAvailableForLoan(): bool
+    public function scopeAvailableForLoan($query)
+    {
+        return $this->scopeAvailableForHandover($query);
+    }
+
+    /**
+     * Check if asset is available for a new department handover.
+     */
+    public function isAvailableForHandover(): bool
     {
         return $this->status === self::STATUS_ACTIVE && !$this->isAssigned();
     }
 
     /**
-     * Check if asset is assigned to specific employee.
-     * Instance method for ownership verification.
+     * Backward-compatible alias for removed borrow/return flows.
+     */
+    public function isAvailableForLoan(): bool
+    {
+        return $this->isAvailableForHandover();
+    }
+
+    /**
+     * Check if asset is visible to an employee through direct legacy assignment
+     * or through the employee's department handover.
      */
     public function isAssignedToEmployee(int $employeeId): bool
     {
         return $this->currentAssignment && $this->currentAssignment->employee_id === $employeeId;
+    }
+
+    public function isAssignedToEmployeeDepartment(Employee $employee): bool
+    {
+        if (!$this->currentAssignment) {
+            return false;
+        }
+
+        if ($this->currentAssignment->employee_id === $employee->id) {
+            return true;
+        }
+
+        return $employee->department
+            && $this->currentAssignment->department_name
+            && strcasecmp($employee->department, $this->currentAssignment->department_name) === 0;
     }
 
     // =========================================================================

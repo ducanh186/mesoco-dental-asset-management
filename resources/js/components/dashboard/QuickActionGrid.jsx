@@ -152,36 +152,25 @@ const QuickActionGrid = ({ role }) => {
 
         return [
             {
-                key: 'scanQrCode',
-                label: t('dashboard.scanQrCode'),
-                to: '/qr-scan',
+                key: 'newRequest',
+                label: t('requests.newRequest'),
+                to: '/requests',
                 icon: (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
+                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                        <rect x="9" y="3" width="6" height="4" rx="1" />
+                        <path d="M9 14l2 2 4-4" />
                     </svg>
                 )
             },
             {
-                key: 'myEquipment',
-                label: t('dashboard.myEquipment'),
-                to: '/my-assets',
+                key: 'profile',
+                label: t('nav.profile'),
+                to: '/profile',
                 icon: (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                    </svg>
-                )
-            },
-            {
-                key: 'myAssetHistory',
-                label: t('nav.myAssetHistory'),
-                to: '/my-asset-history',
-                icon: (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
+                        <path d="M20 21a8 8 0 1 0-16 0" />
+                        <circle cx="12" cy="7" r="4" />
                     </svg>
                 )
             }

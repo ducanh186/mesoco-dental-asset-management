@@ -1,5 +1,5 @@
 /**
- * API Client Module - Phase 3 Assets & QR
+ * API Client Module - IT Asset Management
  * Handles all API calls with consistent error handling
  */
 import axios from 'axios';
@@ -150,60 +150,18 @@ export const assetsApi = {
         return response.data;
     },
 
-    /**
-     * Regenerate QR code for asset
-     * POST /api/assets/{id}/regenerate-qr
-     */
-    regenerateQr: async (id) => {
-        const response = await axios.post(`/api/assets/${id}/regenerate-qr`);
-        return response.data;
-    },
 };
 
 // ============================================================================
-// My Assets API
+// Department Assets API
 // ============================================================================
-export const myAssetsApi = {
+export const departmentAssetsApi = {
     /**
-     * Get current user's assigned assets
-     * GET /api/my-assets
-     */
-    list: async (params = {}) => {
-        const response = await axios.get('/api/my-assets', { params });
-        return response.data;
-    },
-
-    /**
-     * Get current user's assigned assets in dropdown format
-     * GET /api/my-assigned-assets/dropdown
-     * @returns { data: [{ value, label, asset_code, name, type }] }
+     * Get assets handed over to the current user's department.
+     * GET /api/department-assets/dropdown
      */
     dropdown: async () => {
-        const response = await axios.get('/api/my-assigned-assets/dropdown');
-        return response.data;
-    },
-
-    /**
-     * Get available assets for loan in dropdown format
-     * GET /api/assets/available-for-loan
-     * @returns { data: [{ value, label, asset_code, name, type }] }
-     */
-    availableForLoan: async () => {
-        const response = await axios.get('/api/assets/available-for-loan');
-        return response.data;
-    },
-};
-
-// ============================================================================
-// QR API
-// ============================================================================
-export const qrApi = {
-    /**
-     * Resolve QR payload to asset info
-     * POST /api/qr/resolve
-     */
-    resolve: async (payload) => {
-        const response = await axios.post('/api/qr/resolve', { payload });
+        const response = await axios.get('/api/department-assets/dropdown');
         return response.data;
     },
 };
@@ -469,27 +427,6 @@ export const inventoryApi = {
 
 // ============================================================================
 // My Asset History API (Phase 6 - All Users)
-// ============================================================================
-export const myAssetHistoryApi = {
-    /**
-     * Get personal asset history timeline
-     * GET /api/my-asset-history
-     */
-    list: async (params = {}) => {
-        const response = await axios.get('/api/my-asset-history', { params });
-        return response.data;
-    },
-
-    /**
-     * Get history summary statistics
-     * GET /api/my-asset-history/summary
-     */
-    summary: async () => {
-        const response = await axios.get('/api/my-asset-history/summary');
-        return response.data;
-    },
-};
-
 // ============================================================================
 // Locations API
 // ============================================================================
@@ -912,14 +849,12 @@ export const disposalApi = {
 
 export default {
     assets: assetsApi,
-    myAssets: myAssetsApi,
-    qr: qrApi,
+    departmentAssets: departmentAssetsApi,
     employees: employeesApi,
     requests: requestsApi,
     shifts: shiftsApi,
     users: usersApi,
     inventory: inventoryApi,
-    myAssetHistory: myAssetHistoryApi,
     locations: locationsApi,
     suppliers: suppliersApi,
     purchaseOrders: purchaseOrdersApi,

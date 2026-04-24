@@ -1,7 +1,7 @@
 /**
  * Vietnamese Translations - Tiếng Việt
- * Mesoco Dental Asset Management
- * Quy ước: Dùng từ ngữ thân thiện vận hành phòng khám
+ * Mesoco IT Asset Management
+ * Quy ước: Dùng từ ngữ thân thiện vận hành công ty công nghệ
  * - "Phiếu" thay vì "Request"
  * - "Chờ duyệt" thay vì "Submitted"
  * - "Thiết bị" thay vì "Asset"
@@ -114,12 +114,12 @@ export default {
         employees: 'Hồ sơ nhân viên',
         assets: 'Danh mục tài sản',
         equipmentCatalog: 'Danh mục tài sản',
-        myEquipment: 'Thiết bị của tôi',
-        myAssets: 'Thiết bị của tôi',
+        myEquipment: 'Thiết bị phòng ban',
+        myAssets: 'Thiết bị phòng ban',
         equipment: 'Thiết bị',
         shifts: 'Ca làm',
         checkin: 'Ghi nhận ca',
-        requests: 'Phiếu cấp phát / báo sự cố',
+        requests: 'Phiếu sự cố / vật tư IT',
         reviewRequests: 'Duyệt yêu cầu',
         inventory: 'Kiểm kê định kì',
         inventoryValuation: 'Kiểm kê & định giá',
@@ -131,9 +131,9 @@ export default {
         admin: 'Quản trị',
         users: 'Người dùng',
         locations: 'Danh mục vị trí',
-        myAssetHistory: 'Lịch sử thiết bị',
+        myAssetHistory: 'Lịch sử bàn giao',
         equipmentLookup: 'Tra cứu thiết bị',
-        qrScan: 'Quét QR',
+        qrScan: 'Tra cứu thiết bị',
         contracts: 'Hợp đồng',
         disposal: 'Thu hủy',
         incidents: 'Quản lý sự cố',
@@ -357,9 +357,9 @@ export default {
     // ========================================================================
     assets: {
         title: 'Thiết bị',
-        subtitle: 'Quản lý dữ liệu và phân công thiết bị',
-        myAssets: 'Thiết bị của tôi',
-        myAssetsSubtitle: 'Xem thiết bị được giao và tra cứu QR',
+        subtitle: 'Quản lý dữ liệu và bàn giao thiết bị IT theo phòng ban',
+        myAssets: 'Thiết bị phòng ban',
+        myAssetsSubtitle: 'Xem thiết bị đã bàn giao cho phòng ban',
         allAssets: 'Tất cả thiết bị',
         createAsset: 'Tạo thiết bị mới',
         editAsset: 'Chỉnh sửa thiết bị',
@@ -403,8 +403,9 @@ export default {
         assignTo: 'Giao cho',
         assignAsset: 'Giao thiết bị',
         unassignAsset: 'Thu hồi thiết bị',
-        currentAssignee: 'Người đang sử dụng',
+        currentAssignee: 'Đơn vị đang nhận bàn giao',
         assignedTo: 'Đang giao cho',
+        handoverDepartment: 'Phòng ban nhận bàn giao',
         assignedSince: 'Được giao từ',
         assignmentHistory: 'Lịch sử phân công',
         noAssignment: 'Chưa được giao',
@@ -416,16 +417,16 @@ export default {
         // Condition
         condition: 'Tình trạng',
         
-        // QR
-        qrIdentity: 'Định danh QR',
-        qrCode: 'Mã QR',
-        qrPayload: 'Nội dung QR',
-        scanQr: 'Quét QR',
-        regenerateQr: 'Tạo lại QR',
-        regenerateQrConfirm: 'Mã QR cũ vẫn hoạt động (để tương thích ngược). Bạn có chắc muốn tạo mã QR mới?',
-        qrRegenerated: 'Đã tạo mã QR mới',
-        copyPayload: 'Sao chép nội dung QR',
-        noQrCode: 'Chưa có mã QR',
+        // Legacy labels retained for old saved translations.
+        qrIdentity: 'Định danh tài sản',
+        qrCode: 'Mã tài sản',
+        qrPayload: 'Mã định danh',
+        scanQr: 'Tra cứu thiết bị',
+        regenerateQr: 'Tạo lại mã định danh',
+        regenerateQrConfirm: 'Bạn có chắc muốn tạo mã định danh mới?',
+        qrRegenerated: 'Đã tạo mã định danh mới',
+        copyPayload: 'Sao chép mã định danh',
+        noQrCode: 'Chưa có mã định danh',
         viewAsset: 'Xem thiết bị',
         
         // QR Resolve
@@ -447,7 +448,7 @@ export default {
             status: 'Trạng thái',
             assignee: 'Người sử dụng',
             assignment: 'Phân công',
-            qr: 'QR',
+            qr: 'Mã định danh',
             assignedAt: 'Ngày giao',
             actions: 'Thao tác',
         },
@@ -644,7 +645,7 @@ export default {
     // ========================================================================
     requests: {
         title: 'Phiếu yêu cầu',
-        subtitle: 'Quản lý phiếu báo sự cố, mượn thiết bị và xin vật tư',
+        subtitle: 'Quản lý phiếu báo sự cố thiết bị IT và xin vật tư IT',
         myRequests: 'Phiếu của tôi',
         allRequests: 'Tất cả phiếu',
         totalRequests: 'Tổng phiếu',
@@ -687,11 +688,11 @@ export default {
         types: {
             all: 'Tất cả loại',
             JUSTIFICATION: 'Báo sự cố thiết bị',
-            ASSET_LOAN: 'Mượn thiết bị',
+            ASSET_LOAN: 'Luân chuyển đã ngừng dùng',
             CONSUMABLE_REQUEST: 'Xin vật tư',
             // Legacy
-            borrow: 'Mượn thiết bị',
-            return: 'Trả thiết bị',
+            borrow: 'Luân chuyển đã ngừng dùng',
+            return: 'Hoàn trả đã ngừng dùng',
             maintenance: 'Yêu cầu bảo trì',
         },
 
@@ -708,10 +709,10 @@ export default {
         incidentAt: 'Thời điểm xảy ra',
         suspectedCause: 'Nguyên nhân nghi ngờ',
         
-        // Asset Loan fields
+        // Legacy scheduling fields
         fromShift: 'Từ ca',
         toShift: 'Đến ca',
-        loanReason: 'Mục đích',
+        loanReason: 'Mục đích xử lý',
 
         // Consumable fields
         itemName: 'Tên vật tư',
@@ -1381,9 +1382,10 @@ export default {
         title: 'Nhãn thiết bị',
         popupBlocked: 'Vui lòng cho phép cửa sổ bật lên để in nhãn',
         unnamedAsset: 'Thiết bị chưa đặt tên',
-        qrAlt: 'Mã QR',
-        noQr: 'Không có QR',
-        scanInstruction: 'Quét mã QR để xem chi tiết thiết bị',
+        qrAlt: 'Mã định danh',
+        noQr: 'Không có mã định danh',
+        scanInstruction: 'Dùng nhãn này để đối chiếu thiết bị khi kiểm kê',
+        handoverNote: 'Tài sản IT bàn giao theo phòng ban',
     },
 
     // ========================================================================

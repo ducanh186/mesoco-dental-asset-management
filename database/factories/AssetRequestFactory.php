@@ -30,7 +30,7 @@ class AssetRequestFactory extends Factory
 
         return [
             'code' => sprintf('REQ-%s-%04d', now()->format('Ym'), static::$codeCounter++),
-            'type' => fake()->randomElement(AssetRequest::TYPES),
+            'type' => fake()->randomElement(AssetRequest::REQUESTABLE_TYPES),
             'status' => AssetRequest::STATUS_SUBMITTED,
             'requested_by_employee_id' => $employee->id,
             'title' => fake()->sentence(),
@@ -52,7 +52,7 @@ class AssetRequestFactory extends Factory
     }
 
     /**
-     * Request is an asset loan.
+     * Legacy helper retained for compatibility with older tests.
      */
     public function assetLoan(): static
     {

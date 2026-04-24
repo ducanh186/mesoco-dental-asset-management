@@ -37,8 +37,9 @@ class MaintenanceEvent extends Model
      */
     public const TYPES = [
         'inspection',
-        'sterilization',
-        'filter_change',
+        'preventive',
+        'software_update',
+        'hardware_upgrade',
         'calibration',
         'repair',
         'cleaning',
@@ -47,8 +48,9 @@ class MaintenanceEvent extends Model
     ];
 
     public const TYPE_INSPECTION = 'inspection';
-    public const TYPE_STERILIZATION = 'sterilization';
-    public const TYPE_FILTER_CHANGE = 'filter_change';
+    public const TYPE_PREVENTIVE = 'preventive';
+    public const TYPE_SOFTWARE_UPDATE = 'software_update';
+    public const TYPE_HARDWARE_UPGRADE = 'hardware_upgrade';
     public const TYPE_CALIBRATION = 'calibration';
     public const TYPE_REPAIR = 'repair';
     public const TYPE_CLEANING = 'cleaning';

@@ -85,6 +85,7 @@ class AssetController extends Controller
                 'total' => $assets->total(),
             ],
             'available_types' => Asset::TYPES,
+            'available_categories' => Asset::CATEGORIES,
             'available_statuses' => Asset::STATUSES,
         ]);
     }
@@ -167,27 +168,29 @@ class AssetController extends Controller
     }
 
     /**
-     * Get user's assigned assets in dropdown format for internal asset workflows.
-     * All authenticated users can view their assigned assets.
-     * 
-     * GET /api/my-assigned-assets/dropdown
-     * 
-     * @return JsonResponse { data: [{ value, label, asset_code, name, type }] }
+     * Get assets handed over to the user's department in dropdown format.
+     *
+     * GET /api/department-assets/dropdown
+     *
+     * @return JsonResponse { data: [{ value, label, asset_code, name, type, department_name }] }
      */
     public function myAssignedAssetsDropdown(Request $request): JsonResponse
     {
         $user = $request->user();
-        $employeeId = $user->employee?->id;
-        
-        // User has no employee record, return empty
-        if (!$employeeId) {
+        $employee = $user->employee;
+        $departmentName = trim((string) ($employee?->department ?? ''));
+
+        if (!$employee || $departmentName === '') {
             return response()->json([
                 'data' => [],
             ]);
         }
 
         $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity'])
-            ->assignedTo($employeeId)
+            ->whereHas('currentAssignment', function ($query) use ($employee, $departmentName) {
+                $query->where('employee_id', $employee->id)
+                    ->orWhere('department_name', $departmentName);
+            })
             ->where('status', Asset::STATUS_ACTIVE)
             ->orderBy('asset_code')
             ->get();
@@ -204,6 +207,11 @@ class AssetController extends Controller
                 'asset_code' => $asset->asset_code,
                 'name' => $asset->name,
                 'type' => $asset->type,
+                'category' => $asset->category,
+                'department_name' => $asset->currentAssignment?->department_name,
+                'assignedTo' => $asset->currentAssignment?->department_name ?: $asset->currentAssignment?->employee?->full_name,
+                'status' => $asset->status,
+                'is_locked' => $asset->isLocked(),
             ];
         });
 
@@ -254,9 +262,9 @@ class AssetController extends Controller
 
         if (!$user->hasOperationalAccess()) {
             $employeeId = $user->employee?->id;
-            if (!$employeeId || $asset->currentAssignment?->employee_id !== $employeeId) {
+            if (!$employeeId || !$asset->isAssignedToEmployeeDepartment($user->employee)) {
                 return response()->json([
-                    'message' => 'Forbidden. You can only view assets assigned to you.',
+                    'message' => 'Forbidden. You can only view assets handed over to your department.',
                 ], 403);
             }
         }

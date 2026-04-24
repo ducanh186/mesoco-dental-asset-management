@@ -11,7 +11,7 @@ import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, hasOperationalAccess, nor
  * 
  * - Manager: reporting overview
  * - Technician: operational overview for catalog, purchase orders, maintenance, disposal, and inventory
- * - Employee: personal equipment metrics
+ * - Employee: department handover metrics
  */
 const Dashboard = ({ user }) => {
     const { t } = useI18n();
@@ -27,7 +27,7 @@ const Dashboard = ({ user }) => {
     const [maintenanceEvents, setMaintenanceEvents] = useState([]);
     const [globalAssets, setGlobalAssets] = useState([]);
     
-    // Personal stats
+    // Department handover stats
     const [myAssets, setMyAssets] = useState([]);
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [purchaseOrderSummary, setPurchaseOrderSummary] = useState({
@@ -91,9 +91,9 @@ const Dashboard = ({ user }) => {
                     delivered: 0,
                 });
             } else {
-                const myAssetsRes = await axios.get('/api/my-assets').catch(() => ({ data: { assets: [] } }));
+                const myAssetsRes = await axios.get('/api/department-assets/dropdown').catch(() => ({ data: { data: [] } }));
                 
-                setMyAssets(myAssetsRes.data?.assets || myAssetsRes.data?.data || []);
+                setMyAssets(myAssetsRes.data?.data || []);
             }
         } catch (err) {
             console.error('Dashboard fetch error:', err);

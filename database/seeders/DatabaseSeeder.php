@@ -4,10 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Asset;
 use App\Models\AssetAssignment;
-use App\Models\AssetCheckin;
-use App\Models\AssetQrIdentity;
 use App\Models\Employee;
-use App\Models\Shift;
+use App\Models\MaintenanceEvent;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -18,489 +16,317 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
-     * 
-     * Creates test employees and user accounts for each role.
-     * Uses updateOrCreate for idempotent seeding (can run multiple times).
+     * Seed a small IT asset management dataset.
+     *
+     * This seeder is intentionally compact and idempotent:
+     * - creates a few employees and user accounts
+     * - creates representative IT assets
+     * - creates handover assignments to both employees and departments
+     * - creates a few maintenance events for reporting flows
      */
     public function run(): void
     {
-        // ========================================
-        // Phase 4: Seed Shifts (must be before any check-in data)
-        // ========================================
         $this->call(ShiftSeeder::class);
 
-        // ========================================
-        // Manager User (role: manager)
-        // ========================================
-        $adminEmployee = Employee::updateOrCreate(
-            ['employee_code' => 'E0001'],
-            [
-                'full_name' => 'Nguyễn Văn An',
+        $people = $this->seedEmployeesAndUsers();
+        $assets = $this->seedAssets();
+        $this->seedAssignments($people, $assets);
+        $this->seedMaintenanceEvents($people, $assets);
+    }
+
+    /**
+     * Create demo employees and matching user accounts.
+     *
+     * @return array<string, Employee>
+     */
+    private function seedEmployeesAndUsers(): array
+    {
+        $rows = [
+            'manager' => [
+                'employee_code' => 'E1001',
+                'full_name' => 'Nguyen Van An',
+                'position' => 'IT Operations Manager',
+                'department' => 'IT Operations',
                 'email' => 'manager@mesoco.vn',
-                'position' => 'Quản trị hệ thống',
-                'dob' => '1985-01-15',
-                'gender' => 'male',
-                'phone' => '0901234567',
-                'address' => '123 Admin Street, Ho Chi Minh City',
-                'status' => 'active',
-            ]
-        );
-
-        User::updateOrCreate(
-            ['employee_id' => $adminEmployee->id],
-            [
-                'employee_code' => $adminEmployee->employee_code,
-                'name' => $adminEmployee->full_name,
-                'email' => $adminEmployee->email,
-                'role' => 'manager',
-                'password' => Hash::make('password'),
-                'must_change_password' => false,
-                'status' => 'active',
-            ]
-        );
-
-        // ========================================
-        // Technician User (role: technician)
-        // ========================================
-        $hrEmployee = Employee::updateOrCreate(
-            ['employee_code' => 'E0002'],
-            [
-                'full_name' => 'Trần Thị Bình',
+                'role' => User::ROLE_MANAGER,
+            ],
+            'technician' => [
+                'employee_code' => 'E1002',
+                'full_name' => 'Tran Thi Binh',
+                'position' => 'IT Support Technician',
+                'department' => 'IT Support',
                 'email' => 'technician@mesoco.vn',
-                'position' => 'Trưởng phòng Nhân sự',
-                'dob' => '1988-05-20',
-                'gender' => 'female',
-                'phone' => '0901234568',
-                'address' => '456 Service Street, Ho Chi Minh City',
-                'status' => 'active',
-            ]
-        );
+                'role' => User::ROLE_TECHNICIAN,
+            ],
+            'finance' => [
+                'employee_code' => 'E1003',
+                'full_name' => 'Le Minh Cuong',
+                'position' => 'Finance Analyst',
+                'department' => 'Finance',
+                'email' => 'finance@mesoco.vn',
+                'role' => User::ROLE_EMPLOYEE,
+            ],
+            'sales' => [
+                'employee_code' => 'E1004',
+                'full_name' => 'Pham Thi Dung',
+                'position' => 'Sales Executive',
+                'department' => 'Sales',
+                'email' => 'sales@mesoco.vn',
+                'role' => User::ROLE_EMPLOYEE,
+            ],
+            'ops' => [
+                'employee_code' => 'E1005',
+                'full_name' => 'Hoang Van Em',
+                'position' => 'Operations Staff',
+                'department' => 'Operations',
+                'email' => 'ops@mesoco.vn',
+                'role' => User::ROLE_EMPLOYEE,
+            ],
+        ];
 
-        User::updateOrCreate(
-            ['employee_id' => $hrEmployee->id],
-            [
-                'employee_code' => $hrEmployee->employee_code,
-                'name' => $hrEmployee->full_name,
-                'email' => $hrEmployee->email,
-                'role' => 'technician',
-                'password' => Hash::make('password'),
-                'must_change_password' => false,
-                'status' => 'active',
-            ]
-        );
+        $people = [];
 
-        // ========================================
-        // Doctor User (role: doctor)
-        // ========================================
-        $doctorEmployee = Employee::updateOrCreate(
-            ['employee_code' => 'E0003'],
-            [
-                'full_name' => 'Lê Minh Cường',
-                'email' => 'doctor@mesoco.vn',
-                'position' => 'Bác sĩ Nha khoa',
-                'dob' => '1982-08-10',
-                'gender' => 'male',
-                'phone' => '0901234569',
-                'address' => '789 Medical Street, Ho Chi Minh City',
-                'status' => 'active',
-            ]
-        );
+        foreach ($rows as $key => $row) {
+            $employee = Employee::updateOrCreate(
+                ['employee_code' => $row['employee_code']],
+                [
+                    'full_name' => $row['full_name'],
+                    'position' => $row['position'],
+                    'department' => $row['department'],
+                    'email' => $row['email'],
+                    'dob' => '1990-01-01',
+                    'gender' => 'other',
+                    'phone' => null,
+                    'address' => 'Ho Chi Minh City',
+                    'status' => 'active',
+                ]
+            );
 
-        User::updateOrCreate(
-            ['employee_id' => $doctorEmployee->id],
-            [
-                'employee_code' => $doctorEmployee->employee_code,
-                'name' => $doctorEmployee->full_name,
-                'email' => $doctorEmployee->email,
-                'role' => 'doctor',
-                'password' => Hash::make('password'),
-                'must_change_password' => false,
-                'status' => 'active',
-            ]
-        );
+            User::updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'employee_code' => $employee->employee_code,
+                    'name' => $employee->full_name,
+                    'email' => $employee->email,
+                    'role' => $row['role'],
+                    'password' => Hash::make('password'),
+                    'must_change_password' => false,
+                    'status' => 'active',
+                ]
+            );
 
-        // ========================================
-        // Technician User (role: technician)
-        // ========================================
-        $techEmployee = Employee::updateOrCreate(
-            ['employee_code' => 'E0004'],
-            [
-                'full_name' => 'Phạm Văn Dũng',
-                'email' => 'tech@mesoco.vn',
-                'position' => 'Kỹ thuật viên Nha khoa',
-                'dob' => '1990-03-25',
-                'gender' => 'male',
-                'phone' => '0901234570',
-                'address' => '101 Tech Street, Ho Chi Minh City',
-                'status' => 'active',
-            ]
-        );
-
-        User::updateOrCreate(
-            ['employee_id' => $techEmployee->id],
-            [
-                'employee_code' => $techEmployee->employee_code,
-                'name' => $techEmployee->full_name,
-                'email' => $techEmployee->email,
-                'role' => 'technician',
-                'password' => Hash::make('password'),
-                'must_change_password' => false,
-                'status' => 'active',
-            ]
-        );
-
-        // ========================================
-        // Regular Employee (role: employee)
-        // ========================================
-        $regularEmployee = Employee::updateOrCreate(
-            ['employee_code' => 'E0005'],
-            [
-                'full_name' => 'Hoàng Thị Mai',
-                'email' => 'employee@mesoco.vn',
-                'position' => 'Lễ tân',
-                'dob' => '1995-12-01',
-                'gender' => 'female',
-                'phone' => '0901234571',
-                'address' => '202 Employee Street, Ho Chi Minh City',
-                'status' => 'active',
-            ]
-        );
-
-        User::updateOrCreate(
-            ['employee_id' => $regularEmployee->id],
-            [
-                'employee_code' => $regularEmployee->employee_code,
-                'name' => $regularEmployee->full_name,
-                'email' => $regularEmployee->email,
-                'role' => 'employee',
-                'password' => Hash::make('password'),
-                'must_change_password' => false,
-                'status' => 'active',
-            ]
-        );
-
-        // ========================================
-        // Employees without user accounts (for testing Add User popup)
-        // ========================================
-        Employee::updateOrCreate(
-            ['employee_code' => 'E0006'],
-            [
-                'full_name' => 'Pending User One',
-                'email' => 'pending1@mesoco.vn',
-                'position' => 'Dental Assistant',
-                'dob' => '1993-07-18',
-                'gender' => 'female',
-                'phone' => '0901234572',
-                'address' => '303 Pending Street, Ho Chi Minh City',
-                'status' => 'active',
-            ]
-        );
-
-        Employee::updateOrCreate(
-            ['employee_code' => 'E0007'],
-            [
-                'full_name' => 'Pending User Two',
-                'email' => 'pending2@mesoco.vn',
-                'position' => 'Lab Technician',
-                'dob' => '1991-11-30',
-                'gender' => 'male',
-                'phone' => '0901234573',
-                'address' => '404 Pending Street, Ho Chi Minh City',
-                'status' => 'active',
-            ]
-        );
-
-        // ========================================
-        // PHASE 3: Test Assets
-        // ========================================
-        
-        // Tray assets with valuation data
-        $tray1 = Asset::updateOrCreate(
-            ['asset_code' => 'TRAY-001'],
-            [
-                'name' => 'Basic Examination Tray',
-                'type' => 'tray',
-                'status' => 'active',
-                'notes' => 'Standard examination instruments set',
-                'instructions_url' => 'https://docs.mesoco.example/trays/basic-examination-tray',
-                'purchase_date' => '2024-02-15',
-                'purchase_cost' => 3500000.00, // 3.5M VND
-                'useful_life_months' => 24, // 2 years
-                'salvage_value' => 350000.00, // 350K VND
-                'warranty_expiry' => '2026-02-15', // Valid warranty
-            ]
-        );
-
-        $tray2 = Asset::updateOrCreate(
-            ['asset_code' => 'TRAY-002'],
-            [
-                'name' => 'Surgical Tray Set A',
-                'type' => 'tray',
-                'status' => 'active',
-                'notes' => 'For minor surgical procedures',
-                'purchase_date' => '2023-09-10',
-                'purchase_cost' => 6800000.00, // 6.8M VND
-                'useful_life_months' => 36, // 3 years
-                'salvage_value' => 680000.00, // 680K VND
-                'warranty_expiry' => '2025-12-31', // Expired warranty
-            ]
-        );
-
-        $tray3 = Asset::updateOrCreate(
-            ['asset_code' => 'TRAY-003'],
-            [
-                'name' => 'Orthodontic Tray',
-                'type' => 'tray',
-                'status' => 'active',
-                'notes' => 'Orthodontic adjustment instruments',
-                'purchase_date' => '2024-05-20',
-                'purchase_cost' => 4200000.00, // 4.2M VND
-                'useful_life_months' => 30, // 2.5 years
-                'salvage_value' => 420000.00, // 420K VND
-                'warranty_expiry' => '2026-05-20', // Valid warranty
-            ]
-        );
-
-        // Machine assets with valuation data
-        $machine1 = Asset::updateOrCreate(
-            ['asset_code' => 'MACH-001'],
-            [
-                'name' => 'Dental X-Ray Unit',
-                'type' => 'machine',
-                'status' => 'active',
-                'notes' => 'Digital X-ray machine, Room 101',
-                'instructions_url' => 'https://docs.mesoco.example/machines/dental-xray-unit',
-                'purchase_date' => '2023-01-15',
-                'purchase_cost' => 85000000.00, // 85M VND
-                'useful_life_months' => 120, // 10 years
-                'salvage_value' => 8500000.00, // 8.5M VND
-                'warranty_expiry' => '2026-01-15', // Valid warranty
-            ]
-        );
-
-        $machine2 = Asset::updateOrCreate(
-            ['asset_code' => 'MACH-002'],
-            [
-                'name' => 'Ultrasonic Scaler',
-                'type' => 'machine',
-                'status' => 'active',
-                'notes' => 'Piezoelectric scaler unit',
-                'purchase_date' => '2024-06-01',
-                'purchase_cost' => 12000000.00, // 12M VND
-                'useful_life_months' => 60, // 5 years
-                'salvage_value' => 1200000.00, // 1.2M VND
-                'warranty_expiry' => '2026-03-15', // Expiring soon (within 3 months)
-            ]
-        );
-
-        $machine3 = Asset::updateOrCreate(
-            ['asset_code' => 'MACH-003'],
-            [
-                'name' => 'Autoclave Sterilizer',
-                'type' => 'machine',
-                'status' => 'maintenance',
-                'notes' => 'Under scheduled maintenance',
-                'purchase_date' => '2022-03-10',
-                'purchase_cost' => 25000000.00, // 25M VND
-                'useful_life_months' => 84, // 7 years
-                'salvage_value' => 2500000.00, // 2.5M VND
-                'warranty_expiry' => '2025-03-10', // Expired warranty
-            ]
-        );
-
-        // Equipment assets with valuation data
-        $equip1 = Asset::updateOrCreate(
-            ['asset_code' => 'EQUIP-001'],
-            [
-                'name' => 'Dental Chair Unit #1',
-                'type' => 'equipment',
-                'status' => 'active',
-                'notes' => 'Main treatment room chair',
-                'purchase_date' => '2023-08-20',
-                'purchase_cost' => 45000000.00, // 45M VND
-                'useful_life_months' => 180, // 15 years
-                'salvage_value' => 4500000.00, // 4.5M VND
-                'warranty_expiry' => '2028-08-20', // Valid warranty (long term)
-            ]
-        );
-
-        $equip2 = Asset::updateOrCreate(
-            ['asset_code' => 'EQUIP-002'],
-            [
-                'name' => 'Light Curing Unit',
-                'type' => 'equipment',
-                'status' => 'active',
-                'notes' => 'LED curing light',
-                'purchase_date' => '2024-11-01',
-                'purchase_cost' => 8500000.00, // 8.5M VND
-                'useful_life_months' => 36, // 3 years
-                'salvage_value' => 850000.00, // 850K VND
-                'warranty_expiry' => '2026-02-01', // Expiring soon (within 1 month)
-            ]
-        );
-
-        // Off-service asset for testing
-        Asset::updateOrCreate(
-            ['asset_code' => 'EQUIP-003'],
-            [
-                'name' => 'Old Compressor',
-                'type' => 'equipment',
-                'status' => 'off_service',
-                'notes' => 'Decommissioned - awaiting disposal',
-            ]
-        );
-
-        // Create QR identities for assets
-        $assetsForQr = [$tray1, $tray2, $tray3, $machine1, $machine2, $machine3, $equip1, $equip2];
-        foreach ($assetsForQr as $asset) {
-            // Only create if not exists (firstOrCreate to handle idempotent seeding)
-            if (!$asset->qrIdentity) {
-                AssetQrIdentity::create([
-                    'qr_uid' => (string) \Illuminate\Support\Str::uuid(),
-                    'asset_id' => $asset->id,
-                    'payload_version' => 'v1',
-                ]);
-            }
+            $people[$key] = $employee;
         }
 
-        // Create some assignments for testing
-        // Assign TRAY-001 to Doctor (E0003)
-        $adminUser = User::where('employee_code', 'E0001')->first();
-        
-        AssetAssignment::updateOrCreate(
-            ['asset_id' => $tray1->id, 'unassigned_at' => null],
-            [
-                'employee_id' => $doctorEmployee->id,
-                'assigned_by' => $adminUser->id,
-                'assigned_at' => now()->subDays(30),
-            ]
-        );
+        return $people;
+    }
 
-        // Assign MACH-002 to Technician (E0004)
-        AssetAssignment::updateOrCreate(
-            ['asset_id' => $machine2->id, 'unassigned_at' => null],
-            [
-                'employee_id' => $techEmployee->id,
-                'assigned_by' => $adminUser->id,
-                'assigned_at' => now()->subDays(15),
-            ]
-        );
+    /**
+     * Create representative IT assets.
+     *
+     * @return array<string, Asset>
+     */
+    private function seedAssets(): array
+    {
+        $rows = [
+            'laptop' => [
+                'asset_code' => 'IT-LAP-001',
+                'name' => 'Dell Latitude 5440',
+                'type' => Asset::TYPE_EQUIPMENT,
+                'category' => 'Laptop',
+                'location' => 'IT Support Room',
+                'purchase_date' => '2025-01-10',
+                'purchase_cost' => 28000000,
+                'useful_life_months' => 48,
+                'salvage_value' => 2800000,
+                'status' => Asset::STATUS_ACTIVE,
+            ],
+            'desktop' => [
+                'asset_code' => 'IT-DES-001',
+                'name' => 'HP EliteDesk 800 G9',
+                'type' => Asset::TYPE_EQUIPMENT,
+                'category' => 'Desktop',
+                'location' => 'Finance Office',
+                'purchase_date' => '2024-10-18',
+                'purchase_cost' => 22000000,
+                'useful_life_months' => 60,
+                'salvage_value' => 2200000,
+                'status' => Asset::STATUS_ACTIVE,
+            ],
+            'monitor' => [
+                'asset_code' => 'IT-MON-001',
+                'name' => 'LG 27-inch Monitor',
+                'type' => Asset::TYPE_EQUIPMENT,
+                'category' => 'Monitor',
+                'location' => 'Sales Office',
+                'purchase_date' => '2024-08-21',
+                'purchase_cost' => 6500000,
+                'useful_life_months' => 36,
+                'salvage_value' => 650000,
+                'status' => Asset::STATUS_ACTIVE,
+            ],
+            'network' => [
+                'asset_code' => 'IT-NET-001',
+                'name' => 'Cisco Catalyst Switch',
+                'type' => Asset::TYPE_MACHINE,
+                'category' => 'Network',
+                'location' => 'Server Room',
+                'purchase_date' => '2024-05-05',
+                'purchase_cost' => 45000000,
+                'useful_life_months' => 72,
+                'salvage_value' => 4500000,
+                'status' => Asset::STATUS_ACTIVE,
+            ],
+            'server' => [
+                'asset_code' => 'IT-SRV-001',
+                'name' => 'Dell PowerEdge R450',
+                'type' => Asset::TYPE_MACHINE,
+                'category' => 'Server',
+                'location' => 'Server Room',
+                'purchase_date' => '2024-03-12',
+                'purchase_cost' => 98000000,
+                'useful_life_months' => 84,
+                'salvage_value' => 9800000,
+                'status' => Asset::STATUS_ACTIVE,
+            ],
+            'printer' => [
+                'asset_code' => 'IT-PRN-001',
+                'name' => 'HP LaserJet Pro M404dn',
+                'type' => Asset::TYPE_EQUIPMENT,
+                'category' => 'Printer',
+                'location' => 'Operations Office',
+                'purchase_date' => '2024-12-02',
+                'purchase_cost' => 8900000,
+                'useful_life_months' => 48,
+                'salvage_value' => 890000,
+                'status' => Asset::STATUS_ACTIVE,
+            ],
+        ];
 
-        // Assign EQUIP-002 to Doctor (E0003) - doctor has 2 assets
-        AssetAssignment::updateOrCreate(
-            ['asset_id' => $equip2->id, 'unassigned_at' => null],
-            [
-                'employee_id' => $doctorEmployee->id,
-                'assigned_by' => $adminUser->id,
+        $assets = [];
+
+        foreach ($rows as $key => $row) {
+            $assets[$key] = Asset::updateOrCreate(
+                ['asset_code' => $row['asset_code']],
+                $row + [
+                    'depreciation_method' => Asset::DEPRECIATION_TIME,
+                    'warranty_expiry' => now()->addYears(2)->toDateString(),
+                    'notes' => 'Seeded IT asset for company handover workflows.',
+                ]
+            );
+        }
+
+        return $assets;
+    }
+
+    /**
+     * Create active handover assignments.
+     *
+     * @param array<string, Employee> $people
+     * @param array<string, Asset> $assets
+     */
+    private function seedAssignments(array $people, array $assets): void
+    {
+        $assignments = [
+            ['asset' => 'laptop', 'employee' => 'technician', 'department' => 'IT Support'],
+            ['asset' => 'desktop', 'employee' => 'finance', 'department' => 'Finance'],
+            ['asset' => 'monitor', 'employee' => null, 'department' => 'Sales'],
+            ['asset' => 'network', 'employee' => 'manager', 'department' => 'IT Operations'],
+            ['asset' => 'server', 'employee' => null, 'department' => 'IT Operations'],
+            ['asset' => 'printer', 'employee' => 'ops', 'department' => 'Operations'],
+        ];
+
+        foreach ($assignments as $row) {
+            $asset = $assets[$row['asset']] ?? null;
+            if (!$asset || $asset->currentAssignment) {
+                continue;
+            }
+
+            AssetAssignment::create([
+                'asset_id' => $asset->id,
+                'employee_id' => $row['employee'] ? ($people[$row['employee']]?->id) : null,
+                'department_name' => $row['department'],
+                'assigned_by' => $people['manager']->user?->id,
                 'assigned_at' => now()->subDays(7),
-            ]
-        );
+            ]);
+        }
+    }
 
-        // ========================================
-        // Asset History Events - Create some check-in/check-out events
-        // ========================================
-        
-        // Get shifts for check-in data
-        $morningShift = \App\Models\Shift::where('name', 'Morning Shift')->first();
-        $eveningShift = \App\Models\Shift::where('name', 'Evening Shift')->first();
-        
-        // Doctor's check-ins with TRAY-001 (multiple events over time)
-        $doctorUser = User::where('employee_code', 'E0003')->first();
-        $techUser = User::where('employee_code', 'E0004')->first();
-        
-        // Historical check-in/check-out events
-        \App\Models\AssetCheckin::updateOrCreate(
-            [
-                'asset_id' => $tray1->id,
-                'employee_id' => $doctorUser->id,
-                'shift_date' => now()->subDays(10)->format('Y-m-d'),
-                'shift_id' => $morningShift->id,
-            ],
-            [
-                'checked_in_at' => now()->subDays(10)->setHour(8)->setMinute(30),
-                'checked_out_at' => now()->subDays(10)->setHour(17)->setMinute(45),
-                'source' => 'manual',
-                'notes' => 'Used for routine examinations',
-            ]
-        );
-        
-        \App\Models\AssetCheckin::updateOrCreate(
-            [
-                'asset_id' => $tray1->id,
-                'employee_id' => $doctorUser->id,
-                'shift_date' => now()->subDays(8)->format('Y-m-d'),
-                'shift_id' => $eveningShift->id,
-            ],
-            [
-                'checked_in_at' => now()->subDays(8)->setHour(14)->setMinute(15),
-                'checked_out_at' => now()->subDays(8)->setHour(21)->setMinute(30),
-                'source' => 'qr',
-                'notes' => 'Evening shift procedures',
-            ]
-        );
-        
-        // Technician's check-ins with MACH-002 (Ultrasonic Scaler)
-        \App\Models\AssetCheckin::updateOrCreate(
-            [
-                'asset_id' => $machine2->id,
-                'employee_id' => $techUser->id,
-                'shift_date' => now()->subDays(5)->format('Y-m-d'),
-                'shift_id' => $morningShift->id,
-            ],
-            [
-                'checked_in_at' => now()->subDays(5)->setHour(9)->setMinute(0),
-                'checked_out_at' => now()->subDays(5)->setHour(16)->setMinute(30),
-                'source' => 'qr',
-                'notes' => 'Deep cleaning procedures',
-            ]
-        );
-        
-        \App\Models\AssetCheckin::updateOrCreate(
-            [
-                'asset_id' => $machine2->id,
-                'employee_id' => $techUser->id,
-                'shift_date' => now()->subDays(3)->format('Y-m-d'),
-                'shift_id' => $morningShift->id,
-            ],
-            [
-                'checked_in_at' => now()->subDays(3)->setHour(8)->setMinute(45),
-                'checked_out_at' => now()->subDays(3)->setHour(15)->setMinute(20),
-                'source' => 'manual',
-                'notes' => 'Maintenance and calibration',
-            ]
-        );
-        
-        // Doctor's recent check-in with EQUIP-002 (Light Curing Unit) - still checked in
-        \App\Models\AssetCheckin::updateOrCreate(
-            [
-                'asset_id' => $equip2->id,
-                'employee_id' => $doctorUser->id,
-                'shift_date' => now()->format('Y-m-d'),
-                'shift_id' => $morningShift->id,
-            ],
-            [
-                'checked_in_at' => now()->setHour(8)->setMinute(0),
-                'checked_out_at' => null, // Still checked in
-                'source' => 'qr',
-                'notes' => 'Current day usage',
-            ]
-        );
+    /**
+     * Create a couple of maintenance events for reporting flows.
+     *
+     * @param array<string, Employee> $people
+     * @param array<string, Asset> $assets
+     */
+    private function seedMaintenanceEvents(array $people, array $assets): void
+    {
+        $managerUser = $people['manager']->user;
+        $technicianUser = $people['technician']->user;
 
-        // ========================================
-        // Historical Assignment Changes (for assignment history)
-        // ========================================
-        
-        // Show an asset that was reassigned from one employee to another
-        $staffEmployee = Employee::where('employee_code', 'E0005')->first();
-        
-        // Create a historical assignment (unassigned)
-        AssetAssignment::create([
-            'asset_id' => $equip2->id,
-            'employee_id' => $staffEmployee->id,
-            'assigned_by' => $adminUser->id,
-            'assigned_at' => now()->subDays(30),
-            'unassigned_at' => now()->subDays(7), // Unassigned 7 days ago
-        ]);
+        if (!$managerUser || !$technicianUser) {
+            return;
+        }
+
+        $events = [
+            [
+                'code' => 'MNT-IT-001',
+                'asset' => 'laptop',
+                'type' => MaintenanceEvent::TYPE_SOFTWARE_UPDATE,
+                'status' => MaintenanceEvent::STATUS_COMPLETED,
+                'planned_at' => now()->subDays(14),
+                'started_at' => now()->subDays(14)->addHours(2),
+                'completed_at' => now()->subDays(14)->addHours(4),
+                'priority' => MaintenanceEvent::PRIORITY_NORMAL,
+                'note' => 'Applied security updates and endpoint protection refresh.',
+                'result_note' => 'Completed successfully.',
+                'estimated_duration_minutes' => 120,
+                'actual_duration_minutes' => 110,
+                'cost' => 0,
+                'created_by' => $managerUser->id,
+                'updated_by' => $managerUser->id,
+                'assigned_to_user_id' => $technicianUser->id,
+            ],
+            [
+                'code' => 'MNT-IT-002',
+                'asset' => 'server',
+                'type' => MaintenanceEvent::TYPE_PREVENTIVE,
+                'status' => MaintenanceEvent::STATUS_SCHEDULED,
+                'planned_at' => now()->addDays(5),
+                'priority' => MaintenanceEvent::PRIORITY_HIGH,
+                'note' => 'Preventive check for CPU load, RAID health, and backup verification.',
+                'estimated_duration_minutes' => 180,
+                'created_by' => $managerUser->id,
+                'updated_by' => $managerUser->id,
+                'assigned_to_user_id' => $technicianUser->id,
+            ],
+        ];
+
+        foreach ($events as $event) {
+            $asset = $assets[$event['asset']] ?? null;
+            if (!$asset) {
+                continue;
+            }
+
+            MaintenanceEvent::updateOrCreate(
+                ['code' => $event['code']],
+                [
+                    'asset_id' => $asset->id,
+                    'type' => $event['type'],
+                    'status' => $event['status'],
+                    'planned_at' => $event['planned_at'],
+                    'started_at' => $event['started_at'] ?? null,
+                    'completed_at' => $event['completed_at'] ?? null,
+                    'priority' => $event['priority'],
+                    'note' => $event['note'],
+                    'result_note' => $event['result_note'] ?? null,
+                    'estimated_duration_minutes' => $event['estimated_duration_minutes'] ?? null,
+                    'actual_duration_minutes' => $event['actual_duration_minutes'] ?? null,
+                    'cost' => $event['cost'] ?? null,
+                    'assigned_to_user_id' => $event['assigned_to_user_id'] ?? null,
+                    'created_by' => $event['created_by'],
+                    'updated_by' => $event['updated_by'],
+                ]
+            );
+        }
     }
 }

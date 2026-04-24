@@ -274,7 +274,7 @@ const SuppliersPage = () => {
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
-                            placeholder="VD: Công ty Thiết bị Nha khoa ABC"
+                            placeholder="VD: Công ty Thiết bị CNTT ABC"
                             error={formErrors.name?.[0]}
                             required
                         />

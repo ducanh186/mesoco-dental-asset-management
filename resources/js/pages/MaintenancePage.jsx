@@ -64,8 +64,9 @@ const MaintenancePage = ({ user }) => {
     const typeOptions = [
         { value: '', label: 'Tất cả loại' },
         { value: 'inspection', label: 'Kiểm tra' },
-        { value: 'sterilization', label: 'Khử trùng' },
-        { value: 'filter_change', label: 'Thay bộ lọc' },
+        { value: 'preventive', label: 'Bảo trì định kỳ' },
+        { value: 'software_update', label: 'Cập nhật phần mềm' },
+        { value: 'hardware_upgrade', label: 'Nâng cấp phần cứng' },
         { value: 'calibration', label: 'Hiệu chuẩn' },
         { value: 'repair', label: 'Sửa chữa' },
         { value: 'cleaning', label: 'Vệ sinh' },

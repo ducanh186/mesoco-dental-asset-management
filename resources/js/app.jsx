@@ -15,19 +15,17 @@ import Dashboard from './pages/Dashboard';
 import UIKit from './pages/UIKit';
 import ProfilePage from './pages/ProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
-import MyEquipmentPage from './pages/MyEquipmentPage';
 import AssetsPage from './pages/AssetsPage';
-import MyAssetsPage from './pages/MyAssetsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import InventoryPage from './pages/InventoryPage';
 import LocationsPage from './pages/LocationsPage';
 import SuppliersPage from './pages/SuppliersPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import AdminPage from './pages/AdminPage';
-import MyAssetHistoryPage from './pages/MyAssetHistoryPage';
 import FeedbackPage from './pages/FeedbackPage';
 import ReportPage from './pages/ReportPage';
-import QRScanPage from './pages/QRScanPage';
+import RequestsPage from './pages/RequestsPage';
+import ReviewRequestsPage from './pages/ReviewRequestsPage';
 import ContractsPage from './pages/ContractsPage';
 import EmployeesPage from './pages/EmployeesPage';
 import DisposalPage from './pages/DisposalPage';
@@ -912,19 +910,6 @@ const AssetsPageWrapper = () => {
      );
 };
 
-const MyAssetsPageWrapper = () => {
-     const { user } = useAuth();
-     const { t } = useI18n();
-     return (
-          <AdminLayoutWrapper 
-               title={t('assets.myAssets')} 
-               breadcrumbs={[{ label: t('nav.myAssets') }]}
-          >
-               <MyAssetsPage user={user} />
-          </AdminLayoutWrapper>
-     );
-};
-
 const EquipmentPage = () => {
      const { t } = useI18n();
 
@@ -941,19 +926,6 @@ const EquipmentPage = () => {
                     <p>{t('placeholderPages.equipmentDescription')}</p>
                     <span className="coming-soon">{t('placeholderPages.comingSoon')}</span>
                </div>
-          </AdminLayoutWrapper>
-     );
-};
-
-const QRScanPageWrapper = () => {
-     const { user } = useAuth();
-     const { t } = useI18n();
-     return (
-          <AdminLayoutWrapper 
-               title={t('nav.qrScan')}
-               breadcrumbs={[{ label: t('nav.qrScan') }]}
-          >
-               <QRScanPage user={user} />
           </AdminLayoutWrapper>
      );
 };
@@ -1023,15 +995,28 @@ const PurchaseOrdersPageWrapper = () => {
      );
 };
 
-const MyAssetHistoryPageWrapper = () => {
+const RequestsPageWrapper = () => {
      const { user } = useAuth();
      const { t } = useI18n();
      return (
-          <AdminLayoutWrapper 
-               title={t('nav.myAssetHistory')} 
-               breadcrumbs={[{ label: t('nav.myAssetHistory') }]}
+          <AdminLayoutWrapper
+               title={t('nav.requests')}
+               breadcrumbs={[{ label: t('nav.requests') }]}
           >
-               <MyAssetHistoryPage user={user} />
+               <RequestsPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const ReviewRequestsPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+     return (
+          <AdminLayoutWrapper
+               title={t('nav.reviewRequests')}
+               breadcrumbs={[{ label: t('nav.reviewRequests') }]}
+          >
+               <ReviewRequestsPage user={user} />
           </AdminLayoutWrapper>
      );
 };
@@ -1272,9 +1257,16 @@ const App = () => {
                          <Route path="/qr-scan" element={
                               <Navigate to="/dashboard" replace />
                          } />
-                         <Route path="/requests" element={<Navigate to="/dashboard" replace />} />
-                         <Route path="/requests/*" element={<Navigate to="/dashboard" replace />} />
-                         <Route path="/review-requests" element={<Navigate to="/dashboard" replace />} />
+                         <Route path="/requests" element={
+                              <InternalRoute>
+                                   <RequestsPageWrapper />
+                              </InternalRoute>
+                         } />
+                         <Route path="/review-requests" element={
+                              <ManagerRoute>
+                                   <ReviewRequestsPageWrapper />
+                              </ManagerRoute>
+                         } />
                          <Route path="/maintenance" element={
                               <OperatorRoute>
                                    <MaintenancePageWrapper />

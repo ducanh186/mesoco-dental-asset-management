@@ -13,208 +13,153 @@ class AssetDropdownTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $doctor;
-    private Employee $doctorEmployee;
-    private User $admin;
-    private Asset $assignedAsset;
-    private Asset $unassignedAsset;
+    private User $employeeUser;
+    private Employee $employee;
+    private User $manager;
+    private Asset $employeeAssignedAsset;
+    private Asset $departmentAssignedAsset;
+    private Asset $inactiveAsset;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Create employee first, then user with employee_id link
-        $this->doctorEmployee = Employee::factory()->create([
-            'employee_code' => 'DOC001',
-            'full_name' => 'Dr. John Doe',
-        ]);
-        $this->doctor = User::factory()->create([
-            'role' => 'doctor',
-            'employee_id' => $this->doctorEmployee->id,
+        $this->manager = User::factory()->create([
+            'role' => 'manager',
+            'must_change_password' => false,
         ]);
 
-        // Create admin user
-        $this->admin = User::factory()->create(['role' => 'admin']);
+        $this->employee = Employee::factory()->create([
+            'employee_code' => 'EMP001',
+            'full_name' => 'IT Support Staff',
+            'department' => 'IT Support',
+        ]);
+        $this->employeeUser = User::factory()->create([
+            'employee_id' => $this->employee->id,
+            'role' => 'employee',
+            'must_change_password' => false,
+        ]);
 
-        // Create assets
-        $this->assignedAsset = Asset::factory()->create([
-            'asset_code' => 'EQUIP-202601-0001',
-            'name' => 'Dental Tool A',
+        $this->employeeAssignedAsset = Asset::factory()->create([
+            'asset_code' => 'IT-LAP-1001',
+            'name' => 'Employee Laptop',
             'status' => Asset::STATUS_ACTIVE,
+            'category' => 'Laptop',
         ]);
 
-        $this->unassignedAsset = Asset::factory()->create([
-            'asset_code' => 'EQUIP-202601-0002', 
-            'name' => 'Dental Tool B',
+        $this->departmentAssignedAsset = Asset::factory()->create([
+            'asset_code' => 'IT-MON-1001',
+            'name' => 'Shared Monitor',
             'status' => Asset::STATUS_ACTIVE,
+            'category' => 'Monitor',
         ]);
 
-        // Assign asset to doctor (assigned_by is required FK)
+        $this->inactiveAsset = Asset::factory()->create([
+            'asset_code' => 'IT-DES-1001',
+            'name' => 'Inactive Desktop',
+            'status' => Asset::STATUS_MAINTENANCE,
+            'category' => 'Desktop',
+        ]);
+
         AssetAssignment::create([
-            'asset_id' => $this->assignedAsset->id,
-            'employee_id' => $this->doctorEmployee->id,
-            'assigned_by' => $this->admin->id,
+            'asset_id' => $this->employeeAssignedAsset->id,
+            'employee_id' => $this->employee->id,
+            'department_name' => 'IT Support',
+            'assigned_by' => $this->manager->id,
+            'assigned_at' => now(),
+        ]);
+
+        AssetAssignment::create([
+            'asset_id' => $this->departmentAssignedAsset->id,
+            'employee_id' => null,
+            'department_name' => 'IT Support',
+            'assigned_by' => $this->manager->id,
+            'assigned_at' => now(),
+        ]);
+
+        AssetAssignment::create([
+            'asset_id' => $this->inactiveAsset->id,
+            'employee_id' => $this->employee->id,
+            'department_name' => 'IT Support',
+            'assigned_by' => $this->manager->id,
             'assigned_at' => now(),
         ]);
     }
 
-    /** @test */
-    public function doctor_can_only_see_assigned_assets_in_dropdown()
+    public function test_employee_can_see_employee_and_department_assets_in_dropdown(): void
     {
-        $response = $this->actingAs($this->doctor)
-            ->getJson('/api/my-assigned-assets/dropdown');
+        $response = $this->actingAs($this->employeeUser)
+            ->getJson('/api/department-assets/dropdown');
 
         $response->assertOk()
-            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data')
             ->assertJsonFragment([
-                'value' => $this->assignedAsset->id,
-                'label' => 'EQUIP-202601-0001 - Dental Tool A',
-                'asset_code' => 'EQUIP-202601-0001',
-                'name' => 'Dental Tool A',
+                'value' => $this->employeeAssignedAsset->id,
+                'label' => 'IT-LAP-1001 - Employee Laptop',
+                'asset_code' => 'IT-LAP-1001',
+                'name' => 'Employee Laptop',
+                'department_name' => 'IT Support',
+            ])
+            ->assertJsonFragment([
+                'value' => $this->departmentAssignedAsset->id,
+                'label' => 'IT-MON-1001 - Shared Monitor',
+                'asset_code' => 'IT-MON-1001',
+                'name' => 'Shared Monitor',
+                'department_name' => 'IT Support',
             ]);
 
-        // Should not contain unassigned asset
         $response->assertJsonMissing([
-            'value' => $this->unassignedAsset->id,
+            'value' => $this->inactiveAsset->id,
         ]);
     }
 
-    /** @test */
-    public function available_for_loan_contains_only_unassigned_assets()
+    public function test_department_dropdown_excludes_users_without_employee_profile(): void
     {
-        $response = $this->actingAs($this->doctor)
-            ->getJson('/api/assets/available-for-loan');
-
-        $response->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonFragment([
-                'value' => $this->unassignedAsset->id,
-                'label' => 'EQUIP-202601-0002 - Dental Tool B',
-                'asset_code' => 'EQUIP-202601-0002',
-                'name' => 'Dental Tool B',
-            ]);
-
-        // Should not contain assigned asset
-        $response->assertJsonMissing([
-            'value' => $this->assignedAsset->id,
+        $userWithoutEmployee = User::factory()->create([
+            'role' => 'employee',
+            'must_change_password' => false,
         ]);
-    }
-
-    /** @test */
-    public function doctor_without_employee_record_gets_empty_dropdown()
-    {
-        $userWithoutEmployee = User::factory()->create(['role' => 'doctor']);
 
         $response = $this->actingAs($userWithoutEmployee)
-            ->getJson('/api/my-assigned-assets/dropdown');
+            ->getJson('/api/department-assets/dropdown');
 
         $response->assertOk()
             ->assertJsonPath('data', []);
     }
 
-    /** @test */
-    public function inactive_assets_not_included_in_dropdowns()
+    public function test_removed_loan_route_returns_gone(): void
     {
-        // Create inactive assigned asset
-        $inactiveAsset = Asset::factory()->create([
-            'asset_code' => 'EQUIP-202601-0003',
-            'name' => 'Broken Tool',
-            'status' => Asset::STATUS_MAINTENANCE,
-        ]);
-
-        AssetAssignment::create([
-            'asset_id' => $inactiveAsset->id,
-            'employee_id' => $this->doctorEmployee->id,
-            'assigned_by' => $this->admin->id,
-            'assigned_at' => now(),
-        ]);
-
-        // Check assigned dropdown
-        $assignedResponse = $this->actingAs($this->doctor)
-            ->getJson('/api/my-assigned-assets/dropdown');
-
-        $assignedResponse->assertJsonMissing([
-            'value' => $inactiveAsset->id,
-        ]);
-
-        // Create inactive unassigned asset
-        $inactiveUnassigned = Asset::factory()->create([
-            'asset_code' => 'EQUIP-202601-0004',
-            'name' => 'Retired Tool',
-            'status' => Asset::STATUS_RETIRED,
-        ]);
-
-        // Check available dropdown
-        $availableResponse = $this->actingAs($this->doctor)
+        $response = $this->actingAs($this->employeeUser)
             ->getJson('/api/assets/available-for-loan');
 
-        $availableResponse->assertJsonMissing([
-            'value' => $inactiveUnassigned->id,
-        ]);
+        $response->assertStatus(410);
     }
 
-    /** @test */
-    public function dropdown_label_handles_null_asset_code()
+    public function test_dropdown_label_handles_null_asset_code(): void
     {
-        // Create asset without asset_code
         $assetWithoutCode = Asset::factory()->create([
             'asset_code' => null,
             'name' => 'No Code Asset',
             'status' => Asset::STATUS_ACTIVE,
+            'category' => 'Peripheral',
         ]);
 
-        // Assign to doctor
         AssetAssignment::create([
             'asset_id' => $assetWithoutCode->id,
-            'employee_id' => $this->doctorEmployee->id,
-            'assigned_by' => $this->admin->id,
+            'employee_id' => $this->employee->id,
+            'department_name' => 'IT Support',
+            'assigned_by' => $this->manager->id,
             'assigned_at' => now(),
         ]);
 
-        $response = $this->actingAs($this->doctor)
-            ->getJson('/api/my-assigned-assets/dropdown');
+        $response = $this->actingAs($this->employeeUser)
+            ->getJson('/api/department-assets/dropdown');
 
         $response->assertOk();
-        
-        // Label should fallback to name + ID when asset_code is null
-        $assets = $response->json('data');
-        $noCodeAsset = collect($assets)->firstWhere('value', $assetWithoutCode->id);
-        
+
+        $noCodeAsset = collect($response->json('data'))->firstWhere('value', $assetWithoutCode->id);
+
         $this->assertNotNull($noCodeAsset);
         $this->assertEquals("No Code Asset (ID: {$assetWithoutCode->id})", $noCodeAsset['label']);
-    }
-
-    /** @test */
-    public function response_schema_is_consistent_between_endpoints()
-    {
-        // Both endpoints should return { data: [...] } structure
-        $assignedResponse = $this->actingAs($this->doctor)
-            ->getJson('/api/my-assigned-assets/dropdown');
-
-        $loanResponse = $this->actingAs($this->doctor)
-            ->getJson('/api/assets/available-for-loan');
-
-        // Both should have 'data' key
-        $this->assertArrayHasKey('data', $assignedResponse->json());
-        $this->assertArrayHasKey('data', $loanResponse->json());
-
-        // Check item structure if data is not empty
-        if (!empty($assignedResponse->json('data'))) {
-            $firstItem = $assignedResponse->json('data.0');
-            $this->assertArrayHasKey('value', $firstItem);
-            $this->assertArrayHasKey('label', $firstItem);
-            $this->assertArrayHasKey('asset_code', $firstItem);
-            $this->assertArrayHasKey('name', $firstItem);
-            $this->assertArrayHasKey('type', $firstItem);
-        }
-
-        if (!empty($loanResponse->json('data'))) {
-            $firstItem = $loanResponse->json('data.0');
-            $this->assertArrayHasKey('value', $firstItem);
-            $this->assertArrayHasKey('label', $firstItem);
-            $this->assertArrayHasKey('asset_code', $firstItem);
-            $this->assertArrayHasKey('name', $firstItem);
-            $this->assertArrayHasKey('type', $firstItem);
-        }
     }
 }

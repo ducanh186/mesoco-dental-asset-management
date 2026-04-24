@@ -7,7 +7,7 @@ import { hasOperationalAccess } from '../../utils/roles';
  * RecentEquipmentTable - Role-based equipment table
  * 
  * - Quản lý/Kỹ thuật viên: Shows global assets with full actions
- * - Doctor/Employee: Shows "My Equipment" with limited actions
+ * - Employee: Shows department equipment with limited actions
  * 
  * @param {Object} props
  * @param {string} props.role - User role
@@ -250,8 +250,8 @@ const RecentEquipmentTable = ({
                 <h3 className="section-title text-text font-semibold">
                     {isOperationalRole ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
                 </h3>
-                <Link 
-                    to={isOperationalRole ? '/assets' : '/my-assets'} 
+                <Link
+                    to={isOperationalRole ? '/assets' : '/requests'}
                     className="view-all-link text-sm text-primary hover:text-primary-hover flex items-center gap-1"
                 >
                     {t('dashboard.viewAll')}

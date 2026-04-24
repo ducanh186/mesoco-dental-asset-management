@@ -1,6 +1,6 @@
 /**
  * English Translations
- * Mesoco Dental Asset Management
+ * Mesoco IT Asset Management
  */
 export default {
     // ========================================================================
@@ -110,12 +110,12 @@ export default {
         employees: 'Employee Profiles',
         assets: 'Asset Catalog',
         equipmentCatalog: 'Asset Catalog',
-        myEquipment: 'My Equipment',
-        myAssets: 'My Equipment',
+        myEquipment: 'Department Equipment',
+        myAssets: 'Department Equipment',
         equipment: 'Equipment',
         shifts: 'Shifts',
         checkin: 'Shift Check-in',
-        requests: 'Allocation & Incident Forms',
+        requests: 'IT Incident & Supply Forms',
         reviewRequests: 'Review Requests',
         inventory: 'Periodic Inventory',
         inventoryValuation: 'Inventory & Valuation',
@@ -127,9 +127,9 @@ export default {
         admin: 'Admin',
         users: 'Users',
         locations: 'Location Catalog',
-        myAssetHistory: 'My Asset History',
+        myAssetHistory: 'Handover History',
         equipmentLookup: 'Equipment Lookup',
-        qrScan: 'QR Scanner',
+        qrScan: 'Asset Lookup',
         contracts: 'Contracts',
         disposal: 'Disposal',
         incidents: 'Incident Management',
@@ -353,9 +353,9 @@ export default {
     // ========================================================================
     assets: {
         title: 'Assets',
-        subtitle: 'Manage master data and assignments',
-        myAssets: 'My Equipment',
-        myAssetsSubtitle: 'View your assigned equipment and lookup QR codes',
+        subtitle: 'Manage IT asset records and department handovers',
+        myAssets: 'Department Equipment',
+        myAssetsSubtitle: 'View equipment handed over to your department',
         allAssets: 'All Equipment',
         createAsset: 'Create New Equipment',
         editAsset: 'Edit Equipment',
@@ -399,8 +399,9 @@ export default {
         assignTo: 'Assign to',
         assignAsset: 'Assign Equipment',
         unassignAsset: 'Unassign Equipment',
-        currentAssignee: 'Current Assignee',
+        currentAssignee: 'Current Handover Unit',
         assignedTo: 'Assigned To',
+        handoverDepartment: 'Handover Department',
         assignedSince: 'Assigned since',
         assignmentHistory: 'Assignment History',
         noAssignment: 'Currently unassigned',
@@ -412,16 +413,16 @@ export default {
         // Condition
         condition: 'Condition',
         
-        // QR
-        qrIdentity: 'QR Identity',
-        qrCode: 'QR Code',
-        qrPayload: 'QR Payload',
-        scanQr: 'Scan QR',
-        regenerateQr: 'Regenerate QR',
-        regenerateQrConfirm: 'The old QR code will still work (for backward compatibility). Are you sure you want to generate a new QR code?',
-        qrRegenerated: 'QR code regenerated successfully',
-        copyPayload: 'Copy Payload',
-        noQrCode: 'No QR code generated',
+        // Legacy labels retained for old saved translations.
+        qrIdentity: 'Asset Identifier',
+        qrCode: 'Asset Code',
+        qrPayload: 'Identifier Payload',
+        scanQr: 'Lookup Asset',
+        regenerateQr: 'Regenerate Identifier',
+        regenerateQrConfirm: 'Are you sure you want to generate a new asset identifier?',
+        qrRegenerated: 'Asset identifier regenerated successfully',
+        copyPayload: 'Copy Identifier',
+        noQrCode: 'No identifier generated',
         viewAsset: 'View Equipment',
         
         // QR Resolve
@@ -443,7 +444,7 @@ export default {
             status: 'Status',
             assignee: 'Assignee',
             assignment: 'Assignment',
-            qr: 'QR',
+            qr: 'Identifier',
             assignedAt: 'Assigned At',
             actions: 'Actions',
         },
@@ -640,7 +641,7 @@ export default {
     // ========================================================================
     requests: {
         title: 'Requests',
-        subtitle: 'Manage equipment issue reports, loans, and consumable requests',
+        subtitle: 'Manage IT equipment incident reports and IT consumable requests',
         myRequests: 'My Requests',
         allRequests: 'All Requests',
         totalRequests: 'Total Requests',
@@ -683,11 +684,11 @@ export default {
         types: {
             all: 'All Types',
             JUSTIFICATION: 'Equipment Issue Report',
-            ASSET_LOAN: 'Equipment Loan',
+            ASSET_LOAN: 'Retired circulation flow',
             CONSUMABLE_REQUEST: 'Consumable Request',
             // Legacy
-            borrow: 'Borrow Equipment',
-            return: 'Return Equipment',
+            borrow: 'Retired circulation flow',
+            return: 'Retired return flow',
             maintenance: 'Request Maintenance',
         },
 
@@ -704,10 +705,10 @@ export default {
         incidentAt: 'Incident Time',
         suspectedCause: 'Suspected Cause',
         
-        // Asset Loan fields
+        // Legacy scheduling fields
         fromShift: 'From Shift',
         toShift: 'To Shift',
-        loanReason: 'Purpose',
+        loanReason: 'Handling Purpose',
 
         // Consumable fields
         itemName: 'Item Name',
@@ -1358,9 +1359,10 @@ export default {
         title: 'Asset Label',
         popupBlocked: 'Please allow popups to print the label',
         unnamedAsset: 'Unnamed Asset',
-        qrAlt: 'QR Code',
-        noQr: 'No QR',
-        scanInstruction: 'Scan QR code to view asset details',
+        qrAlt: 'Asset Identifier',
+        noQr: 'No identifier',
+        scanInstruction: 'Use this label for inventory reconciliation',
+        handoverNote: 'IT asset handed over by department',
     },
 
     // ========================================================================
