@@ -6,7 +6,7 @@ use App\Models\Asset;
 use Illuminate\Database\Seeder;
 
 /**
- * Phase 6: Seed valuation data for existing assets and create demo assets.
+ * Seed valuation data for IT assets and create demo IT inventory records.
  */
 class InventoryValuationSeeder extends Seeder
 {
@@ -50,29 +50,29 @@ class InventoryValuationSeeder extends Seeder
     {
         $valuationProfiles = [
             Asset::TYPE_MACHINE => [
-                'category' => 'Imaging',
-                'cost_range' => [20000, 100000],
+                'category' => 'Server',
+                'cost_range' => [20000, 150000],
                 'life_months' => 120,
                 'salvage_pct' => 0.10,
                 'warranty_years' => 5,
             ],
             Asset::TYPE_EQUIPMENT => [
-                'category' => 'Treatment',
-                'cost_range' => [5000, 30000],
+                'category' => 'Laptop',
+                'cost_range' => [800, 35000],
                 'life_months' => 60,
                 'salvage_pct' => 0.10,
                 'warranty_years' => 3,
             ],
             Asset::TYPE_TOOL => [
-                'category' => 'Handpieces',
-                'cost_range' => [500, 3000],
+                'category' => 'Peripheral',
+                'cost_range' => [50, 3000],
                 'life_months' => 36,
                 'salvage_pct' => 0.05,
                 'warranty_years' => 2,
             ],
             Asset::TYPE_TRAY => [
-                'category' => 'Sterilization',
-                'cost_range' => [100, 500],
+                'category' => 'Office IT',
+                'cost_range' => [100, 1200],
                 'life_months' => 24,
                 'salvage_pct' => 0,
                 'warranty_years' => 1,
@@ -93,8 +93,9 @@ class InventoryValuationSeeder extends Seeder
         
         $asset->category = $profile['category'];
         $asset->location = fake()->randomElement([
-            'Room 101', 'Room 102', 'Room 103', 'Lab Area', 
-            'Storage', 'Imaging Room', 'Sterilization Room'
+            'IT Storage', 'Server Room', 'Engineering Area',
+            'Finance Office', 'Sales Office', 'Operations Office',
+            'Meeting Room A', 'Reception'
         ]);
         $asset->purchase_date = $purchaseDate;
         $asset->purchase_cost = $purchaseCost;
@@ -109,7 +110,7 @@ class InventoryValuationSeeder extends Seeder
      */
     private function createDemoAssets(): void
     {
-        // 1. High-value imaging equipment
+        // 1. High-value server/network equipment
         Asset::factory()
             ->count(2)
             ->highValue()

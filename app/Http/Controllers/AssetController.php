@@ -8,7 +8,6 @@ use App\Http\Requests\UpdateAssetRequest;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetCheckin;
-use App\Models\AssetQrIdentity;
 use App\Models\Employee;
 use App\Models\Shift;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +20,7 @@ class AssetController extends Controller
      * 
      * SECURITY: This endpoint is protected by route middleware (role:manager,technician).
      * DO NOT add auto-filtering logic here - that's a security footgun.
-     * Use myAssets() for user's own assets instead.
+     * Use department-assets/dropdown for employee-facing department assets.
      * 
      * GET /api/assets (Manager/Technician only via route middleware)
      * Query params: search, type, status, per_page, include_checkin_status
@@ -31,7 +30,7 @@ class AssetController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $includeCheckinStatus = $request->boolean('include_checkin_status', false);
 
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'));
@@ -91,83 +90,6 @@ class AssetController extends Controller
     }
 
     /**
-     * Display assets assigned to the current user (All authenticated users).
-     * 
-     * GET /api/my-assets
-     * Query params: search, type, status, per_page, include_checkin_status
-     */
-    public function myAssets(Request $request): JsonResponse
-    {
-        $user = $request->user();
-        $perPage = min($request->input('per_page', 15), 100);
-        $includeCheckinStatus = $request->boolean('include_checkin_status', false);
-
-        $employeeId = $user->employee?->id;
-        
-        // User has no employee record, return empty
-        if (!$employeeId) {
-            return response()->json([
-                'assets' => [],
-                'pagination' => [
-                    'current_page' => 1,
-                    'last_page' => 1,
-                    'per_page' => $perPage,
-                    'total' => 0,
-                ],
-            ]);
-        }
-
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier'])
-            ->assignedTo($employeeId)
-            ->search($request->input('search'))
-            ->byType($request->input('type'))
-            ->byStatus($request->input('status'));
-
-        $assets = $query->orderBy('asset_code')->paginate($perPage);
-
-        // Phase 4: Batch load check-in status
-        $checkinMap = [];
-        $currentShift = null;
-        if ($includeCheckinStatus) {
-            $currentShift = Shift::getCurrentShift();
-            if ($currentShift) {
-                $assetIds = collect($assets->items())->pluck('id');
-                $today = now()->toDateString();
-                
-                $checkins = AssetCheckin::whereIn('asset_id', $assetIds)
-                    ->where('shift_id', $currentShift->id)
-                    ->where('shift_date', $today)
-                    ->get()
-                    ->keyBy('asset_id');
-                
-                $checkinMap = $checkins->toArray();
-            }
-        }
-
-        $transformedAssets = collect($assets->items())->map(
-            fn($asset) => $this->transformAsset(
-                $asset, 
-                false, 
-                $includeCheckinStatus,
-                $currentShift,
-                $checkinMap[$asset->id] ?? null
-            )
-        );
-
-        return response()->json([
-            'assets' => $transformedAssets,
-            'pagination' => [
-                'current_page' => $assets->currentPage(),
-                'last_page' => $assets->lastPage(),
-                'per_page' => $assets->perPage(),
-                'total' => $assets->total(),
-            ],
-            'available_types' => Asset::TYPES,
-            'available_statuses' => Asset::STATUSES,
-        ]);
-    }
-
-    /**
      * Get assets handed over to the user's department in dropdown format.
      *
      * GET /api/department-assets/dropdown
@@ -186,7 +108,7 @@ class AssetController extends Controller
             ]);
         }
 
-        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity'])
+        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
             ->whereHas('currentAssignment', function ($query) use ($employee, $departmentName) {
                 $query->where('employee_id', $employee->id)
                     ->orWhere('department_name', $departmentName);
@@ -237,13 +159,7 @@ class AssetController extends Controller
 
         $asset = Asset::create($validatedData);
 
-        // Auto-generate QR identity for new asset
-        $qrIdentity = AssetQrIdentity::create([
-            'asset_id' => $asset->id,
-        ]);
-        $asset->update(['qr_value' => $qrIdentity->payload]);
-
-        $asset->load(['qrIdentity', 'currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier']);
+        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier']);
 
         return response()->json([
             'message' => 'Asset created successfully.',
@@ -272,7 +188,6 @@ class AssetController extends Controller
         $asset->load([
             'currentAssignment.employee',
             'currentAssignment.assignedByUser',
-            'qrIdentity',
             'supplier',
             'assignments' => fn($q) => $q->with(['employee', 'assignedByUser'])->orderByDesc('assigned_at')->limit(10),
         ]);
@@ -292,7 +207,7 @@ class AssetController extends Controller
     {
         $asset->update($request->validated());
 
-        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier']);
+        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier']);
 
         return response()->json([
             'message' => 'Asset updated successfully.',
@@ -451,7 +366,7 @@ class AssetController extends Controller
      */
     public function available(Request $request): JsonResponse
     {
-        $assets = Asset::with(['qrIdentity', 'currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier'])
+        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier'])
             ->where('status', Asset::STATUS_ACTIVE)
             ->unassigned()
             ->orderBy('asset_code')
@@ -459,63 +374,6 @@ class AssetController extends Controller
 
         return response()->json([
             'assets' => $assets->map(fn($asset) => $this->transformAsset($asset)),
-        ]);
-    }
-
-    /**
-     * Get assets available for assignment (unassigned and movable).
-     * All authenticated internal users can view this dropdown.
-     * 
-     * GET /api/assets/available-for-loan
-     * 
-     * @return JsonResponse { data: [{ value, label, asset_code, name, type }] }
-     */
-    public function availableForLoan(Request $request): JsonResponse
-    {
-        $assets = Asset::with(['qrIdentity', 'currentAssignment.employee', 'currentAssignment.assignedByUser'])
-            ->availableForLoan()
-            ->orderBy('asset_code')
-            ->get();
-
-        // Transform to dropdown format with null-safe label
-        $dropdownAssets = $assets->map(function($asset) {
-            $label = $asset->asset_code 
-                ? $asset->asset_code . ' - ' . $asset->name 
-                : $asset->name . ' (ID: ' . $asset->id . ')';
-            
-            return [
-                'value' => $asset->id,
-                'label' => $label,
-                'asset_code' => $asset->asset_code,
-                'name' => $asset->name,
-                'type' => $asset->type,
-            ];
-        });
-
-        return response()->json([
-            'data' => $dropdownAssets,
-        ]);
-    }
-
-    /**
-     * Regenerate QR identity for an asset.
-     * Admin/HR only. Creates new QR code (old one becomes invalid).
-     * 
-     * POST /api/assets/{asset}/regenerate-qr
-     */
-    public function regenerateQr(Request $request, Asset $asset): JsonResponse
-    {
-        // Create new QR identity (old one stays in DB but new one is "active")
-        $qrIdentity = AssetQrIdentity::create([
-            'asset_id' => $asset->id,
-        ]);
-        $asset->update(['qr_value' => $qrIdentity->payload]);
-
-        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'qrIdentity', 'supplier']);
-
-        return response()->json([
-            'message' => 'QR code regenerated successfully.',
-            'asset' => $this->transformAsset($asset),
         ]);
     }
 
@@ -568,7 +426,6 @@ class AssetController extends Controller
                 'url' => $asset->instructions_url,
                 'available' => $asset->instructions_url !== null,
             ],
-            'qr_value' => $asset->qr_value ?? $asset->qrIdentity?->payload,
             'is_assigned' => $currentAssignment !== null,
             'current_assignment' => $currentAssignment ? [
                 'id' => $currentAssignment->id,
@@ -588,10 +445,6 @@ class AssetController extends Controller
                     'id' => $currentAssignment->assignedByUser->id,
                     'name' => $currentAssignment->assignedByUser->name,
                 ] : null,
-            ] : null,
-            'qr' => $asset->qrIdentity ? [
-                'uid' => $asset->qrIdentity->qr_uid,
-                'payload' => $asset->qrIdentity->payload,
             ] : null,
             'created_at' => $asset->created_at,
             'updated_at' => $asset->updated_at,

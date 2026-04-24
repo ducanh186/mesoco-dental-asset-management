@@ -761,75 +761,6 @@ export const reportsApi = {
 };
 
 // ============================================================================
-// Employee Contracts API (Admin Only)
-// ============================================================================
-export const contractsApi = {
-    /**
-     * List contracts for an employee
-     * GET /api/employees/{employeeId}/contracts
-     */
-    listByEmployee: async (employeeId, params = {}) => {
-        const response = await axios.get(`/api/employees/${employeeId}/contracts`, { params });
-        return response.data;
-    },
-
-    /**
-     * Get single contract details
-     * GET /api/contracts/{id}
-     */
-    get: async (id) => {
-        const response = await axios.get(`/api/contracts/${id}`);
-        return response.data;
-    },
-
-    /**
-     * Create contract for employee
-     * POST /api/employees/{employeeId}/contracts
-     * @param {number} employeeId
-     * @param {FormData} data - includes pdf_file if uploading
-     */
-    create: async (employeeId, data) => {
-        const response = await axios.post(`/api/employees/${employeeId}/contracts`, data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response.data;
-    },
-
-    /**
-     * Update contract
-     * PUT /api/contracts/{id}
-     * @param {number} id
-     * @param {FormData} data
-     */
-    update: async (id, data) => {
-        const response = await axios.put(`/api/contracts/${id}`, data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response.data;
-    },
-
-    /**
-     * Delete contract
-     * DELETE /api/contracts/{id}
-     */
-    delete: async (id) => {
-        const response = await axios.delete(`/api/contracts/${id}`);
-        return response.data;
-    },
-
-    /**
-     * Stream/download PDF file
-     * GET /api/contracts/{id}/file
-     */
-    streamFile: async (id) => {
-        const response = await axios.get(`/api/contracts/${id}/file`, {
-            responseType: 'blob'
-        });
-        return response;
-    },
-};
-
-// ============================================================================
 // Disposal API (Thu hủy)
 // ============================================================================
 export const disposalApi = {
@@ -861,7 +792,6 @@ export default {
     maintenance: maintenanceApi,
     feedback: feedbackApi,
     reports: reportsApi,
-    contracts: contractsApi,
     disposal: disposalApi,
     handleApiError,
 };

@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 /**
  * Phase 6: Inventory API Tests
- * Tests RBAC for inventory endpoints (admin/hr only)
+ * Tests RBAC for inventory endpoints.
  */
 class InventoryApiTest extends TestCase
 {
@@ -23,7 +23,7 @@ class InventoryApiTest extends TestCase
 
     protected User $admin;
     protected User $hr;
-    protected User $doctor;
+    protected User $employee;
     protected User $staff;
 
     protected function setUp(): void
@@ -33,7 +33,7 @@ class InventoryApiTest extends TestCase
         // Create users with different roles
         $this->admin = User::factory()->create(['role' => 'admin', 'must_change_password' => false]);
         $this->hr = User::factory()->create(['role' => 'hr', 'must_change_password' => false]);
-        $this->doctor = User::factory()->create(['role' => 'doctor', 'must_change_password' => false]);
+        $this->employee = User::factory()->create(['role' => 'employee', 'must_change_password' => false]);
         $this->staff = User::factory()->create(['role' => 'staff', 'must_change_password' => false]);
 
         // Create some assets with valuation data
@@ -79,9 +79,9 @@ class InventoryApiTest extends TestCase
             ->assertJsonStructure(['summary', 'valuation']);
     }
 
-    public function test_doctor_cannot_access_inventory_summary(): void
+    public function test_employee_cannot_access_inventory_summary(): void
     {
-        $response = $this->actingAs($this->doctor)->getJson('/api/inventory/summary');
+        $response = $this->actingAs($this->employee)->getJson('/api/inventory/summary');
 
         $response->assertStatus(403);
     }
@@ -124,9 +124,9 @@ class InventoryApiTest extends TestCase
             ->assertJsonStructure(['assets', 'pagination']);
     }
 
-    public function test_doctor_cannot_list_inventory_assets(): void
+    public function test_employee_cannot_list_inventory_assets(): void
     {
-        $response = $this->actingAs($this->doctor)->getJson('/api/inventory/assets');
+        $response = $this->actingAs($this->employee)->getJson('/api/inventory/assets');
 
         $response->assertStatus(403);
     }
@@ -147,17 +147,17 @@ class InventoryApiTest extends TestCase
     {
         // Create asset with specific category
         Asset::factory()->create([
-            'category' => 'Imaging',
+            'category' => 'Server',
             'purchase_cost' => 10000,
         ]);
 
-        $response = $this->actingAs($this->admin)->getJson('/api/inventory/assets?category=Imaging');
+        $response = $this->actingAs($this->admin)->getJson('/api/inventory/assets?category=Server');
 
         $response->assertStatus(200);
         
         $assets = $response->json('assets');
         foreach ($assets as $asset) {
-            $this->assertEquals('Imaging', $asset['category']);
+            $this->assertEquals('Server', $asset['category']);
         }
     }
 
@@ -224,9 +224,9 @@ class InventoryApiTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_doctor_cannot_access_valuation_report(): void
+    public function test_employee_cannot_access_valuation_report(): void
     {
-        $response = $this->actingAs($this->doctor)->getJson('/api/inventory/valuation');
+        $response = $this->actingAs($this->employee)->getJson('/api/inventory/valuation');
 
         $response->assertStatus(403);
     }
@@ -362,9 +362,9 @@ class InventoryApiTest extends TestCase
         $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
     }
 
-    public function test_doctor_cannot_export_inventory_csv(): void
+    public function test_employee_cannot_export_inventory_csv(): void
     {
-        $response = $this->actingAs($this->doctor)->get('/api/inventory/export');
+        $response = $this->actingAs($this->employee)->get('/api/inventory/export');
 
         $response->assertStatus(403);
     }

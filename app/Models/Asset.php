@@ -74,8 +74,6 @@ class Asset extends Model
         'status',
         'notes',
         'instructions_url',
-        'qr_value',
-        'qr_image_path',
         'purchase_date',
         'purchase_cost',
         'useful_life_months',
@@ -141,8 +139,7 @@ class Asset extends Model
      * Use this method everywhere instead of checking status directly.
      * 
      * Locked assets cannot be:
-     * - Requested for loan
-     * - Assigned to employees
+     * - Assigned to a department
      * - Checked in/out
      */
     public function isLocked(): bool
@@ -248,22 +245,6 @@ class Asset extends Model
         return $this->hasOne(AssetAssignment::class)
             ->whereNull('unassigned_at')
             ->latest('assigned_at');
-    }
-
-    /**
-     * Get the QR identities for this asset.
-     */
-    public function qrIdentities(): HasMany
-    {
-        return $this->hasMany(AssetQrIdentity::class);
-    }
-
-    /**
-     * Get the primary/active QR identity.
-     */
-    public function qrIdentity(): HasOne
-    {
-        return $this->hasOne(AssetQrIdentity::class)->latest();
     }
 
     public function disposals(): HasMany
@@ -377,27 +358,11 @@ class Asset extends Model
     }
 
     /**
-     * Backward-compatible alias for removed borrow/return flows.
-     */
-    public function scopeAvailableForLoan($query)
-    {
-        return $this->scopeAvailableForHandover($query);
-    }
-
-    /**
      * Check if asset is available for a new department handover.
      */
     public function isAvailableForHandover(): bool
     {
         return $this->status === self::STATUS_ACTIVE && !$this->isAssigned();
-    }
-
-    /**
-     * Backward-compatible alias for removed borrow/return flows.
-     */
-    public function isAvailableForLoan(): bool
-    {
-        return $this->isAvailableForHandover();
     }
 
     /**

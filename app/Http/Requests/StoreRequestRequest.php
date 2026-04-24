@@ -69,7 +69,7 @@ class StoreRequestRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => 'Borrow/return requests are no longer supported. Valid types: ' . implode(', ', AssetRequest::REQUESTABLE_TYPES),
+            'type.in' => 'Legacy asset circulation requests are no longer supported. Valid types: ' . implode(', ', AssetRequest::REQUESTABLE_TYPES),
             'severity.in' => 'Invalid severity. Valid values: ' . implode(', ', AssetRequest::SEVERITIES),
             'severity.required' => 'Severity is required for justification requests.',
             'items.required' => 'At least one item is required.',

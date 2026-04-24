@@ -1,666 +1,224 @@
--- schema.sql
--- MySQL schema extracted from Laravel migrations, Eloquent models, and DB docs.
--- Target: MySQL / InnoDB / utf8mb4.
+-- SQLite schema generated from Laravel migrations.
+-- Source: php artisan migrate:fresh on a temporary SQLite database.
 
-CREATE TABLE `cache` (
-  `key` VARCHAR(255) NOT NULL,
-  `value` MEDIUMTEXT NOT NULL,
-  `expiration` INT NOT NULL,
-  PRIMARY KEY (`key`),
-  KEY `idx_cache_expiration` (`expiration`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+PRAGMA foreign_keys=OFF;
 
-CREATE TABLE `cache_locks` (
-  `key` VARCHAR(255) NOT NULL,
-  `owner` VARCHAR(255) NOT NULL,
-  `expiration` INT NOT NULL,
-  PRIMARY KEY (`key`),
-  KEY `idx_cache_locks_expiration` (`expiration`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "account_roles" ("user_id" integer not null, "role_id" integer not null, "assigned_at" datetime, "status" varchar not null default 'active', "note" text, "created_at" datetime, "updated_at" datetime, foreign key("user_id") references "users"("id") on delete cascade, foreign key("role_id") references "roles"("id") on delete cascade, primary key ("user_id", "role_id"));
 
-CREATE TABLE `jobs` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `queue` VARCHAR(255) NOT NULL,
-  `payload` LONGTEXT NOT NULL,
-  `attempts` TINYINT UNSIGNED NOT NULL,
-  `reserved_at` INT UNSIGNED NULL DEFAULT NULL,
-  `available_at` INT UNSIGNED NOT NULL,
-  `created_at` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_jobs_queue` (`queue`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "approvals" ("id" integer primary key autoincrement not null, "approvable_type" varchar not null, "approvable_id" integer not null, "reviewer_user_id" integer, "status" varchar not null, "note" text, "acted_at" datetime, "created_at" datetime, "updated_at" datetime, foreign key("reviewer_user_id") references "users"("id") on delete set null);
 
-CREATE TABLE `job_batches` (
-  `id` VARCHAR(255) NOT NULL,
-  `name` VARCHAR(255) NOT NULL,
-  `total_jobs` INT NOT NULL,
-  `pending_jobs` INT NOT NULL,
-  `failed_jobs` INT NOT NULL,
-  `failed_job_ids` LONGTEXT NOT NULL,
-  `options` MEDIUMTEXT NULL,
-  `cancelled_at` INT NULL DEFAULT NULL,
-  `created_at` INT NOT NULL,
-  `finished_at` INT NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "asset_assignments" ("id" integer primary key autoincrement not null, "asset_id" integer not null, "employee_id" integer, "assigned_by" integer not null, "assigned_at" datetime not null, "unassigned_at" datetime, "created_at" datetime, "updated_at" datetime, "department_name" varchar, foreign key("assigned_by") references users("id") on delete restrict on update no action, foreign key("employee_id") references employees("id") on delete cascade on update no action, foreign key("asset_id") references assets("id") on delete cascade on update no action);
 
-CREATE TABLE `failed_jobs` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `uuid` VARCHAR(255) NOT NULL,
-  `connection` TEXT NOT NULL,
-  `queue` TEXT NOT NULL,
-  `payload` LONGTEXT NOT NULL,
-  `exception` LONGTEXT NOT NULL,
-  `failed_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_failed_jobs_uuid` (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "asset_checkins" ("id" integer primary key autoincrement not null, "asset_id" integer not null, "employee_id" integer not null, "shift_id" integer not null, "shift_date" date not null, "checked_in_at" datetime not null, "checked_out_at" datetime, "source" varchar check ("source" in ('qr', 'manual')) not null default 'manual', "notes" text, "created_at" datetime, "updated_at" datetime, foreign key("asset_id") references "assets"("id") on delete cascade, foreign key("employee_id") references "users"("id") on delete cascade, foreign key("shift_id") references "shifts"("id") on delete cascade);
 
-CREATE TABLE `locations` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(255) NOT NULL,
-  `description` TEXT NULL,
-  `address` VARCHAR(255) NULL,
-  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_locations_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "asset_code_sequences" ("id" integer primary key autoincrement not null, "prefix" varchar not null, "year_month" varchar not null, "last_number" integer not null default '0', "created_at" datetime, "updated_at" datetime);
 
-CREATE TABLE `employees` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `employee_code` VARCHAR(255) NOT NULL,
-  `full_name` VARCHAR(255) NOT NULL,
-  `position` VARCHAR(255) NULL,
-  `department` VARCHAR(100) NULL,
-  `dob` DATE NULL,
-  `gender` ENUM('male', 'female', 'other') NULL,
-  `phone` VARCHAR(255) NULL,
-  `email` VARCHAR(255) NOT NULL,
-  `address` TEXT NULL,
-  `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_employees_employee_code` (`employee_code`),
-  UNIQUE KEY `uniq_employees_email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "asset_qr_identities" ("id" integer primary key autoincrement not null, "qr_uid" varchar not null, "asset_id" integer not null, "payload_version" varchar not null default 'v1', "printed_at" datetime, "created_at" datetime, "updated_at" datetime, foreign key("asset_id") references "assets"("id") on delete cascade);
 
-CREATE TABLE `roles` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(50) NOT NULL,
-  `name` VARCHAR(100) NOT NULL,
-  `description` TEXT NULL,
-  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_roles_code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "assets" ("id" integer primary key autoincrement not null, "asset_code" varchar, "name" varchar not null, "type" varchar not null default ('equipment'), "status" varchar not null default ('active'), "notes" text, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, "instructions_url" text, "purchase_date" date, "purchase_cost" numeric, "useful_life_months" integer, "salvage_value" numeric not null default ('0'), "depreciation_method" varchar not null default ('TIME'), "category" varchar, "location" varchar, "warranty_expiry" date, "off_service_reason" varchar, "off_service_from" datetime, "off_service_until" datetime, "off_service_set_by" integer, "category_id" integer, "supplier_id" integer, "warranty_period_months" integer, "depreciation_rate" numeric, "qr_value" varchar, "qr_image_path" varchar, foreign key("off_service_set_by") references users("id") on delete set null on update no action, foreign key("category_id") references "categories"("id") on delete set null, foreign key("supplier_id") references "suppliers"("id") on delete set null);
 
-CREATE TABLE `suppliers` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(50) NULL,
-  `name` VARCHAR(150) NOT NULL,
-  `contact_person` VARCHAR(255) NULL,
-  `phone` VARCHAR(50) NULL,
-  `email` VARCHAR(255) NULL,
-  `address` TEXT NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_suppliers_code` (`code`),
-  UNIQUE KEY `uniq_suppliers_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "cache" ("key" varchar not null, "value" text not null, "expiration" integer not null, primary key ("key"));
 
-CREATE TABLE `users` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `employee_id` BIGINT UNSIGNED NULL,
-  `supplier_id` BIGINT UNSIGNED NULL,
-  `employee_code` VARCHAR(255) NOT NULL,
-  `name` VARCHAR(255) NOT NULL,
-  `email` VARCHAR(255) NOT NULL,
-  `role` VARCHAR(255) NOT NULL DEFAULT 'employee',
-  `role_id` BIGINT UNSIGNED NULL,
-  `status` VARCHAR(255) NOT NULL DEFAULT 'active',
-  `must_change_password` TINYINT(1) NOT NULL DEFAULT 0,
-  `email_verified_at` TIMESTAMP NULL DEFAULT NULL,
-  `password` VARCHAR(255) NOT NULL,
-  `remember_token` VARCHAR(100) NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_users_employee_code` (`employee_code`),
-  UNIQUE KEY `uniq_users_email` (`email`),
-  UNIQUE KEY `uniq_users_supplier_id` (`supplier_id`),
-  KEY `idx_users_employee_id` (`employee_id`),
-  KEY `idx_users_role_id` (`role_id`),
-  CONSTRAINT `fk_users_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_users_supplier_id` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_users_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "cache_locks" ("key" varchar not null, "owner" varchar not null, "expiration" integer not null, primary key ("key"));
 
-CREATE TABLE `password_reset_tokens` (
-  `email` VARCHAR(255) NOT NULL,
-  `token` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "categories" ("id" integer primary key autoincrement not null, "code" varchar not null, "name" varchar not null, "description" text, "created_at" datetime, "updated_at" datetime);
 
-CREATE TABLE `sessions` (
-  `id` VARCHAR(255) NOT NULL,
-  `user_id` BIGINT UNSIGNED NULL,
-  `ip_address` VARCHAR(45) NULL,
-  `user_agent` TEXT NULL,
-  `payload` LONGTEXT NOT NULL,
-  `last_activity` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_sessions_user_id` (`user_id`),
-  KEY `idx_sessions_last_activity` (`last_activity`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "disposal_details" ("id" integer primary key autoincrement not null, "disposal_id" integer not null, "asset_id" integer not null, "condition_summary" varchar, "asset_book_value" numeric, "proceeds_amount" numeric, "processed_at" datetime, "note" text, "created_at" datetime, "updated_at" datetime, foreign key("disposal_id") references "disposals"("id") on delete cascade, foreign key("asset_id") references "assets"("id") on delete cascade);
 
-CREATE TABLE `personal_access_tokens` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `tokenable_type` VARCHAR(255) NOT NULL,
-  `tokenable_id` BIGINT UNSIGNED NOT NULL,
-  `name` TEXT NOT NULL,
-  `token` VARCHAR(64) NOT NULL,
-  `abilities` TEXT NULL,
-  `last_used_at` TIMESTAMP NULL DEFAULT NULL,
-  `expires_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_personal_access_tokens_token` (`token`),
-  KEY `idx_personal_access_tokens_tokenable` (`tokenable_type`, `tokenable_id`),
-  KEY `idx_personal_access_tokens_expires_at` (`expires_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "disposals" ("id" integer primary key autoincrement not null, "code" varchar not null, "asset_id" integer not null, "method" varchar not null default 'destroy', "reason" text not null, "disposed_by_user_id" integer, "approved_by_user_id" integer, "disposed_at" datetime not null, "asset_book_value" numeric, "proceeds_amount" numeric, "note" text, "created_at" datetime, "updated_at" datetime, foreign key("asset_id") references "assets"("id") on delete cascade, foreign key("disposed_by_user_id") references "users"("id") on delete set null, foreign key("approved_by_user_id") references "users"("id") on delete set null);
 
-CREATE TABLE `password_reset_codes` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `email` VARCHAR(255) NOT NULL,
-  `code_hash` VARCHAR(255) NOT NULL,
-  `expires_at` TIMESTAMP NOT NULL,
-  `used_at` TIMESTAMP NULL DEFAULT NULL,
-  `resend_available_at` TIMESTAMP NULL DEFAULT NULL,
-  `last_sent_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_password_reset_codes_email` (`email`),
-  KEY `idx_password_reset_codes_email_expires_at` (`email`, `expires_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "employee_contracts" ("id" integer primary key autoincrement not null, "employee_id" integer not null, "department" varchar, "contract_type" varchar not null, "start_date" date not null, "end_date" date, "status" varchar not null default 'ACTIVE', "pdf_path" varchar, "created_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("employee_id") references "employees"("id") on delete cascade, foreign key("created_by") references "users"("id") on delete set null);
 
-CREATE TABLE `shifts` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(10) NOT NULL,
-  `name` VARCHAR(100) NOT NULL,
-  `start_time` TIME NOT NULL,
-  `end_time` TIME NOT NULL,
-  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-  `sort_order` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_shifts_code` (`code`),
-  KEY `idx_shifts_is_active` (`is_active`),
-  KEY `idx_shifts_sort_order` (`sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "employees" ("id" integer primary key autoincrement not null, "employee_code" varchar not null, "full_name" varchar not null, "position" varchar, "dob" date, "gender" varchar check ("gender" in ('male', 'female', 'other')), "phone" varchar, "email" varchar not null, "address" text, "status" varchar check ("status" in ('active', 'inactive')) not null default 'active', "created_at" datetime, "updated_at" datetime, "department" varchar);
 
-CREATE TABLE `asset_code_sequences` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `prefix` VARCHAR(20) NOT NULL,
-  `year_month` VARCHAR(6) NOT NULL,
-  `last_number` INT UNSIGNED NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `asset_code_seq_prefix_ym_unique` (`prefix`, `year_month`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "failed_jobs" ("id" integer primary key autoincrement not null, "uuid" varchar not null, "connection" text not null, "queue" text not null, "payload" text not null, "exception" text not null, "failed_at" datetime not null default CURRENT_TIMESTAMP);
 
-CREATE TABLE `categories` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(100) NOT NULL,
-  `name` VARCHAR(100) NOT NULL,
-  `description` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_categories_code` (`code`),
-  UNIQUE KEY `uniq_categories_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "feedbacks" ("id" integer primary key autoincrement not null, "code" varchar not null, "user_id" integer not null, "asset_id" integer, "maintenance_event_id" integer, "content" text not null, "rating" integer, "status" varchar check ("status" in ('new', 'in_progress', 'resolved')) not null default 'new', "type" varchar check ("type" in ('issue', 'suggestion', 'praise', 'other')) not null default 'other', "response" text, "resolved_by" integer, "resolved_at" datetime, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, foreign key("user_id") references "users"("id") on delete cascade, foreign key("asset_id") references "assets"("id") on delete set null, foreign key("maintenance_event_id") references "maintenance_events"("id") on delete set null, foreign key("resolved_by") references "users"("id") on delete set null);
 
-CREATE TABLE `assets` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `asset_code` VARCHAR(50) NULL,
-  `name` VARCHAR(255) NOT NULL,
-  `type` ENUM('tray', 'machine', 'tool', 'equipment', 'other') NOT NULL DEFAULT 'equipment',
-  `category` VARCHAR(100) NULL,
-  `category_id` BIGINT UNSIGNED NULL,
-  `supplier_id` BIGINT UNSIGNED NULL,
-  `location` VARCHAR(100) NULL,
-  `warranty_expiry` DATE NULL,
-  `warranty_period_months` INT UNSIGNED NULL,
-  `status` ENUM('active', 'off_service', 'maintenance', 'retired') NOT NULL DEFAULT 'active',
-  `off_service_reason` VARCHAR(255) NULL,
-  `off_service_from` TIMESTAMP NULL DEFAULT NULL,
-  `off_service_until` TIMESTAMP NULL DEFAULT NULL,
-  `off_service_set_by` BIGINT UNSIGNED NULL,
-  `notes` TEXT NULL,
-  `instructions_url` TEXT NULL,
-  `qr_value` VARCHAR(255) NULL,
-  `qr_image_path` VARCHAR(255) NULL,
-  `purchase_date` DATE NULL,
-  `purchase_cost` DECIMAL(12, 2) NULL,
-  `useful_life_months` INT UNSIGNED NULL,
-  `salvage_value` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
-  `depreciation_method` ENUM('TIME', 'USAGE') NOT NULL DEFAULT 'TIME',
-  `depreciation_rate` DECIMAL(8, 4) NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_assets_asset_code` (`asset_code`),
-  KEY `idx_assets_type` (`type`),
-  KEY `idx_assets_status` (`status`),
-  KEY `idx_assets_deleted_at` (`deleted_at`),
-  KEY `idx_assets_purchase_date` (`purchase_date`),
-  KEY `idx_assets_category` (`category`),
-  KEY `idx_assets_location` (`location`),
-  KEY `idx_assets_status_off_service_from` (`status`, `off_service_from`),
-  KEY `idx_assets_category_id` (`category_id`),
-  KEY `idx_assets_supplier_id` (`supplier_id`),
-  KEY `idx_assets_off_service_set_by` (`off_service_set_by`),
-  CONSTRAINT `fk_assets_category_id` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_assets_supplier_id` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_assets_off_service_set_by` FOREIGN KEY (`off_service_set_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "inventory_check_items" ("id" integer primary key autoincrement not null, "inventory_check_id" integer not null, "asset_id" integer not null, "expected_status" varchar, "actual_status" varchar, "expected_location" varchar, "actual_location" varchar, "result" varchar not null default 'pending', "condition_note" text, "counted_by_user_id" integer, "checked_at" datetime, "note" text, "created_at" datetime, "updated_at" datetime, foreign key("inventory_check_id") references "inventory_checks"("id") on delete cascade, foreign key("asset_id") references "assets"("id") on delete cascade, foreign key("counted_by_user_id") references "users"("id") on delete set null);
 
-CREATE TABLE `asset_assignments` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `employee_id` BIGINT UNSIGNED NOT NULL,
-  `assigned_by` BIGINT UNSIGNED NOT NULL,
-  `assigned_at` TIMESTAMP NOT NULL,
-  `unassigned_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_asset_assignments_asset_unassigned` (`asset_id`, `unassigned_at`),
-  KEY `idx_asset_assignments_employee_unassigned` (`employee_id`, `unassigned_at`),
-  KEY `idx_asset_assignments_assigned_by` (`assigned_by`),
-  CONSTRAINT `fk_asset_assignments_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_asset_assignments_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_asset_assignments_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "inventory_checks" ("id" integer primary key autoincrement not null, "code" varchar not null, "title" varchar, "check_date" date not null, "status" varchar not null default 'in_progress', "created_by_user_id" integer, "completed_by_user_id" integer, "completed_at" datetime, "location" varchar, "note" text, "created_at" datetime, "updated_at" datetime, foreign key("created_by_user_id") references "users"("id") on delete set null, foreign key("completed_by_user_id") references "users"("id") on delete set null);
 
-CREATE TABLE `asset_qr_identities` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `qr_uid` CHAR(36) NOT NULL,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `payload_version` VARCHAR(255) NOT NULL DEFAULT 'v1',
-  `printed_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_asset_qr_identities_qr_uid` (`qr_uid`),
-  KEY `idx_asset_qr_identities_asset_id` (`asset_id`),
-  CONSTRAINT `fk_asset_qr_identities_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "job_batches" ("id" varchar not null, "name" varchar not null, "total_jobs" integer not null, "pending_jobs" integer not null, "failed_jobs" integer not null, "failed_job_ids" text not null, "options" text, "cancelled_at" integer, "created_at" integer not null, "finished_at" integer, primary key ("id"));
 
-CREATE TABLE `asset_checkins` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `employee_id` BIGINT UNSIGNED NOT NULL,
-  `shift_id` BIGINT UNSIGNED NOT NULL,
-  `shift_date` DATE NOT NULL,
-  `checked_in_at` TIMESTAMP NOT NULL,
-  `checked_out_at` TIMESTAMP NULL DEFAULT NULL,
-  `source` ENUM('qr', 'manual') NOT NULL DEFAULT 'manual',
-  `notes` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_asset_shift_date` (`asset_id`, `shift_id`, `shift_date`),
-  KEY `idx_asset_checkins_employee_shift_date` (`employee_id`, `shift_date`),
-  KEY `idx_asset_checkins_shift_date_shift` (`shift_date`, `shift_id`),
-  KEY `idx_asset_checkins_checked_in_at` (`checked_in_at`),
-  KEY `idx_asset_checkins_shift_id` (`shift_id`),
-  CONSTRAINT `fk_asset_checkins_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_asset_checkins_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_asset_checkins_shift_id` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "jobs" ("id" integer primary key autoincrement not null, "queue" varchar not null, "payload" text not null, "attempts" integer not null, "reserved_at" integer, "available_at" integer not null, "created_at" integer not null);
 
-CREATE TABLE `maintenance_events` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(20) NOT NULL,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `type` VARCHAR(50) NOT NULL,
-  `status` ENUM('scheduled', 'in_progress', 'completed', 'canceled') NOT NULL DEFAULT 'scheduled',
-  `planned_at` TIMESTAMP NOT NULL,
-  `priority` VARCHAR(20) NOT NULL DEFAULT 'normal',
-  `started_at` TIMESTAMP NULL DEFAULT NULL,
-  `completed_at` TIMESTAMP NULL DEFAULT NULL,
-  `note` TEXT NULL,
-  `result_note` TEXT NULL,
-  `estimated_duration_minutes` INT UNSIGNED NULL,
-  `actual_duration_minutes` INT UNSIGNED NULL,
-  `cost` DECIMAL(12, 2) NULL,
-  `assigned_to` VARCHAR(100) NULL,
-  `assigned_to_user_id` BIGINT UNSIGNED NULL,
-  `created_by` BIGINT UNSIGNED NULL,
-  `updated_by` BIGINT UNSIGNED NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_maintenance_events_code` (`code`),
-  KEY `idx_maintenance_events_asset_status` (`asset_id`, `status`),
-  KEY `idx_maintenance_events_status_planned` (`status`, `planned_at`),
-  KEY `idx_maintenance_events_planned_at` (`planned_at`),
-  KEY `idx_maintenance_events_type` (`type`),
-  KEY `idx_maintenance_events_assigned_to_user_id` (`assigned_to_user_id`),
-  KEY `idx_maintenance_events_created_by` (`created_by`),
-  KEY `idx_maintenance_events_updated_by` (`updated_by`),
-  CONSTRAINT `fk_maintenance_events_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_maintenance_events_assigned_to_user_id` FOREIGN KEY (`assigned_to_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_maintenance_events_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_maintenance_events_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "locations" ("id" integer primary key autoincrement not null, "name" varchar not null, "description" text, "address" varchar, "is_active" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime);
 
-CREATE TABLE `feedbacks` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(20) NOT NULL,
-  `user_id` BIGINT UNSIGNED NOT NULL,
-  `asset_id` BIGINT UNSIGNED NULL,
-  `maintenance_event_id` BIGINT UNSIGNED NULL,
-  `content` TEXT NOT NULL,
-  `rating` TINYINT UNSIGNED NULL,
-  `status` ENUM('new', 'in_progress', 'resolved') NOT NULL DEFAULT 'new',
-  `type` ENUM('issue', 'suggestion', 'praise', 'other') NOT NULL DEFAULT 'other',
-  `response` TEXT NULL,
-  `resolved_by` BIGINT UNSIGNED NULL,
-  `resolved_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_feedbacks_code` (`code`),
-  KEY `idx_feedbacks_status` (`status`),
-  KEY `idx_feedbacks_type` (`type`),
-  KEY `idx_feedbacks_user_created` (`user_id`, `created_at`),
-  KEY `idx_feedbacks_asset_id` (`asset_id`),
-  KEY `idx_feedbacks_maintenance_event_id` (`maintenance_event_id`),
-  KEY `idx_feedbacks_resolved_by` (`resolved_by`),
-  CONSTRAINT `fk_feedbacks_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_feedbacks_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_feedbacks_maintenance_event_id` FOREIGN KEY (`maintenance_event_id`) REFERENCES `maintenance_events` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_feedbacks_resolved_by` FOREIGN KEY (`resolved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "maintenance_details" ("id" integer primary key autoincrement not null, "maintenance_event_id" integer not null, "asset_id" integer not null, "technician_user_id" integer, "supplier_id" integer, "status" varchar not null default 'scheduled', "issue_description" text, "action_taken" text, "cost" numeric, "started_at" datetime, "completed_at" datetime, "logged_at" datetime, "created_at" datetime, "updated_at" datetime, "qty" integer not null default '1', foreign key("maintenance_event_id") references "maintenance_events"("id") on delete cascade, foreign key("asset_id") references "assets"("id") on delete cascade, foreign key("technician_user_id") references "users"("id") on delete set null, foreign key("supplier_id") references "suppliers"("id") on delete set null);
 
-CREATE TABLE `employee_contracts` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `employee_id` BIGINT UNSIGNED NOT NULL,
-  `department` VARCHAR(255) NULL,
-  `contract_type` VARCHAR(255) NOT NULL,
-  `start_date` DATE NOT NULL,
-  `end_date` DATE NULL,
-  `status` VARCHAR(255) NOT NULL DEFAULT 'ACTIVE',
-  `pdf_path` VARCHAR(255) NULL,
-  `created_by` BIGINT UNSIGNED NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_employee_contracts_employee_id` (`employee_id`),
-  KEY `idx_employee_contracts_status` (`status`),
-  KEY `idx_employee_contracts_start_date` (`start_date`),
-  KEY `idx_employee_contracts_employee_status` (`employee_id`, `status`),
-  KEY `idx_employee_contracts_created_by` (`created_by`),
-  CONSTRAINT `fk_employee_contracts_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_employee_contracts_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "maintenance_events" ("id" integer primary key autoincrement not null, "code" varchar not null, "asset_id" integer not null, "type" varchar not null, "status" varchar not null default ('scheduled'), "planned_at" datetime not null, "priority" varchar not null default ('normal'), "started_at" datetime, "completed_at" datetime, "note" text, "result_note" text, "estimated_duration_minutes" integer, "actual_duration_minutes" integer, "cost" numeric, "assigned_to" varchar, "created_by" integer, "updated_by" integer, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, "assigned_to_user_id" integer, foreign key("updated_by") references users("id") on delete set null on update no action, foreign key("created_by") references users("id") on delete set null on update no action, foreign key("asset_id") references assets("id") on delete cascade on update no action, foreign key("assigned_to_user_id") references "users"("id") on delete set null);
 
-CREATE TABLE `purchase_orders` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `order_code` VARCHAR(50) NOT NULL,
-  `supplier_id` BIGINT UNSIGNED NULL,
-  `requested_by_user_id` BIGINT UNSIGNED NULL,
-  `approved_by_user_id` BIGINT UNSIGNED NULL,
-  `order_date` DATE NULL,
-  `expected_delivery_date` DATE NULL,
-  `status` VARCHAR(30) NOT NULL DEFAULT 'draft',
-  `total_amount` DECIMAL(14, 2) NULL,
-  `payment_method` VARCHAR(100) NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_purchase_orders_order_code` (`order_code`),
-  KEY `idx_purchase_orders_status_order_date` (`status`, `order_date`),
-  KEY `idx_purchase_orders_supplier_id` (`supplier_id`),
-  KEY `idx_purchase_orders_requested_by_user_id` (`requested_by_user_id`),
-  KEY `idx_purchase_orders_approved_by_user_id` (`approved_by_user_id`),
-  CONSTRAINT `fk_purchase_orders_supplier_id` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_purchase_orders_requested_by_user_id` FOREIGN KEY (`requested_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_purchase_orders_approved_by_user_id` FOREIGN KEY (`approved_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "migrations" ("id" integer primary key autoincrement not null, "migration" varchar not null, "batch" integer not null);
 
-CREATE TABLE `purchase_order_items` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `purchase_order_id` BIGINT UNSIGNED NOT NULL,
-  `asset_id` BIGINT UNSIGNED NULL,
-  `category_id` BIGINT UNSIGNED NULL,
-  `item_name` VARCHAR(255) NOT NULL,
-  `qty` DECIMAL(12, 2) NOT NULL DEFAULT 1.00,
-  `unit` VARCHAR(30) NULL,
-  `unit_price` DECIMAL(14, 2) NULL,
-  `line_total` DECIMAL(14, 2) NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_purchase_order_items_purchase_order_id` (`purchase_order_id`),
-  KEY `idx_purchase_order_items_asset_id` (`asset_id`),
-  KEY `idx_purchase_order_items_category_id` (`category_id`),
-  CONSTRAINT `fk_purchase_order_items_purchase_order_id` FOREIGN KEY (`purchase_order_id`) REFERENCES `purchase_orders` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_purchase_order_items_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_purchase_order_items_category_id` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "password_reset_codes" ("id" integer primary key autoincrement not null, "email" varchar not null, "code_hash" varchar not null, "expires_at" datetime not null, "used_at" datetime, "resend_available_at" datetime, "last_sent_at" datetime, "created_at" datetime, "updated_at" datetime);
 
-CREATE TABLE `approvals` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `approvable_type` VARCHAR(255) NOT NULL,
-  `approvable_id` BIGINT UNSIGNED NOT NULL,
-  `reviewer_user_id` BIGINT UNSIGNED NULL,
-  `status` VARCHAR(30) NOT NULL,
-  `note` TEXT NULL,
-  `acted_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `approvals_approvable_idx` (`approvable_type`, `approvable_id`),
-  KEY `idx_approvals_status_acted_at` (`status`, `acted_at`),
-  KEY `idx_approvals_reviewer_user_id` (`reviewer_user_id`),
-  CONSTRAINT `fk_approvals_reviewer_user_id` FOREIGN KEY (`reviewer_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "password_reset_tokens" ("email" varchar not null, "token" varchar not null, "created_at" datetime, primary key ("email"));
 
-CREATE TABLE `repair_logs` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `maintenance_event_id` BIGINT UNSIGNED NULL,
-  `technician_user_id` BIGINT UNSIGNED NULL,
-  `supplier_id` BIGINT UNSIGNED NULL,
-  `status` VARCHAR(30) NOT NULL DEFAULT 'scheduled',
-  `issue_description` TEXT NULL,
-  `action_taken` TEXT NULL,
-  `cost` DECIMAL(14, 2) NULL,
-  `started_at` TIMESTAMP NULL DEFAULT NULL,
-  `completed_at` TIMESTAMP NULL DEFAULT NULL,
-  `logged_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_repair_logs_asset_status` (`asset_id`, `status`),
-  KEY `idx_repair_logs_maintenance_event_id` (`maintenance_event_id`),
-  KEY `idx_repair_logs_technician_user_id` (`technician_user_id`),
-  KEY `idx_repair_logs_supplier_id` (`supplier_id`),
-  CONSTRAINT `fk_repair_logs_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_repair_logs_maintenance_event_id` FOREIGN KEY (`maintenance_event_id`) REFERENCES `maintenance_events` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_repair_logs_technician_user_id` FOREIGN KEY (`technician_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_repair_logs_supplier_id` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "permissions" ("id" integer primary key autoincrement not null, "code" varchar not null, "name" varchar not null, "description" text, "created_at" datetime, "updated_at" datetime);
 
-CREATE TABLE `disposals` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(50) NOT NULL,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `method` VARCHAR(30) NOT NULL DEFAULT 'destroy',
-  `reason` TEXT NOT NULL,
-  `disposed_by_user_id` BIGINT UNSIGNED NULL,
-  `approved_by_user_id` BIGINT UNSIGNED NULL,
-  `disposed_at` TIMESTAMP NOT NULL,
-  `asset_book_value` DECIMAL(14, 2) NULL,
-  `proceeds_amount` DECIMAL(14, 2) NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_disposals_code` (`code`),
-  KEY `idx_disposals_method_disposed_at` (`method`, `disposed_at`),
-  KEY `idx_disposals_asset_id` (`asset_id`),
-  KEY `idx_disposals_disposed_by_user_id` (`disposed_by_user_id`),
-  KEY `idx_disposals_approved_by_user_id` (`approved_by_user_id`),
-  CONSTRAINT `fk_disposals_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_disposals_disposed_by_user_id` FOREIGN KEY (`disposed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_disposals_approved_by_user_id` FOREIGN KEY (`approved_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "personal_access_tokens" ("id" integer primary key autoincrement not null, "tokenable_type" varchar not null, "tokenable_id" integer not null, "name" text not null, "token" varchar not null, "abilities" text, "last_used_at" datetime, "expires_at" datetime, "created_at" datetime, "updated_at" datetime);
 
-CREATE TABLE `permissions` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(100) NOT NULL,
-  `name` VARCHAR(150) NOT NULL,
-  `description` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_permissions_code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "purchase_order_items" ("id" integer primary key autoincrement not null, "purchase_order_id" integer not null, "asset_id" integer, "category_id" integer, "item_name" varchar not null, "qty" numeric not null default '1', "unit" varchar, "unit_price" numeric, "line_total" numeric, "note" text, "created_at" datetime, "updated_at" datetime, foreign key("purchase_order_id") references "purchase_orders"("id") on delete cascade, foreign key("asset_id") references "assets"("id") on delete set null, foreign key("category_id") references "categories"("id") on delete set null);
 
-CREATE TABLE `role_permissions` (
-  `role_id` BIGINT UNSIGNED NOT NULL,
-  `permission_id` BIGINT UNSIGNED NOT NULL,
-  `granted_at` TIMESTAMP NULL DEFAULT NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`role_id`, `permission_id`),
-  KEY `idx_role_permissions_permission_id` (`permission_id`),
-  CONSTRAINT `fk_role_permissions_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_role_permissions_permission_id` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "purchase_orders" ("id" integer primary key autoincrement not null, "order_code" varchar not null, "supplier_id" integer, "requested_by_user_id" integer, "approved_by_user_id" integer, "order_date" date, "expected_delivery_date" date, "status" varchar not null default 'draft', "total_amount" numeric, "note" text, "created_at" datetime, "updated_at" datetime, "payment_method" varchar, foreign key("supplier_id") references "suppliers"("id") on delete set null, foreign key("requested_by_user_id") references "users"("id") on delete set null, foreign key("approved_by_user_id") references "users"("id") on delete set null);
 
-CREATE TABLE `account_roles` (
-  `user_id` BIGINT UNSIGNED NOT NULL,
-  `role_id` BIGINT UNSIGNED NOT NULL,
-  `assigned_at` TIMESTAMP NULL DEFAULT NULL,
-  `status` VARCHAR(30) NOT NULL DEFAULT 'active',
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`user_id`, `role_id`),
-  KEY `idx_account_roles_role_status` (`role_id`, `status`),
-  CONSTRAINT `fk_account_roles_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_account_roles_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "repair_logs" ("id" integer primary key autoincrement not null, "asset_id" integer not null, "maintenance_event_id" integer, "technician_user_id" integer, "supplier_id" integer, "status" varchar not null default 'scheduled', "issue_description" text, "action_taken" text, "cost" numeric, "started_at" datetime, "completed_at" datetime, "logged_at" datetime, "created_at" datetime, "updated_at" datetime, foreign key("asset_id") references "assets"("id") on delete cascade, foreign key("maintenance_event_id") references "maintenance_events"("id") on delete set null, foreign key("technician_user_id") references "users"("id") on delete set null, foreign key("supplier_id") references "suppliers"("id") on delete set null);
 
-CREATE TABLE `maintenance_details` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `maintenance_event_id` BIGINT UNSIGNED NOT NULL,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `technician_user_id` BIGINT UNSIGNED NULL,
-  `supplier_id` BIGINT UNSIGNED NULL,
-  `status` VARCHAR(30) NOT NULL DEFAULT 'scheduled',
-  `issue_description` TEXT NULL,
-  `action_taken` TEXT NULL,
-  `cost` DECIMAL(14, 2) NULL,
-  `started_at` TIMESTAMP NULL DEFAULT NULL,
-  `completed_at` TIMESTAMP NULL DEFAULT NULL,
-  `logged_at` TIMESTAMP NULL DEFAULT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_maintenance_details_maintenance_event_id` (`maintenance_event_id`),
-  KEY `idx_maintenance_details_asset_status` (`asset_id`, `status`),
-  KEY `idx_maintenance_details_technician_user_id` (`technician_user_id`),
-  KEY `idx_maintenance_details_supplier_id` (`supplier_id`),
-  CONSTRAINT `fk_maintenance_details_maintenance_event_id` FOREIGN KEY (`maintenance_event_id`) REFERENCES `maintenance_events` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_maintenance_details_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_maintenance_details_technician_user_id` FOREIGN KEY (`technician_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_maintenance_details_supplier_id` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "role_permissions" ("role_id" integer not null, "permission_id" integer not null, "granted_at" datetime, "note" text, "created_at" datetime, "updated_at" datetime, foreign key("role_id") references "roles"("id") on delete cascade, foreign key("permission_id") references "permissions"("id") on delete cascade, primary key ("role_id", "permission_id"));
 
-CREATE TABLE `disposal_details` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `disposal_id` BIGINT UNSIGNED NOT NULL,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `condition_summary` VARCHAR(255) NULL,
-  `asset_book_value` DECIMAL(14, 2) NULL,
-  `proceeds_amount` DECIMAL(14, 2) NULL,
-  `processed_at` TIMESTAMP NULL DEFAULT NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_disposal_details_asset_processed` (`asset_id`, `processed_at`),
-  KEY `idx_disposal_details_disposal_id` (`disposal_id`),
-  CONSTRAINT `fk_disposal_details_disposal_id` FOREIGN KEY (`disposal_id`) REFERENCES `disposals` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_disposal_details_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "roles" ("id" integer primary key autoincrement not null, "code" varchar not null, "name" varchar not null, "description" text, "is_active" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime);
 
-CREATE TABLE `inventory_checks` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(50) NOT NULL,
-  `title` VARCHAR(255) NULL,
-  `check_date` DATE NOT NULL,
-  `status` VARCHAR(30) NOT NULL DEFAULT 'in_progress',
-  `created_by_user_id` BIGINT UNSIGNED NULL,
-  `completed_by_user_id` BIGINT UNSIGNED NULL,
-  `completed_at` TIMESTAMP NULL DEFAULT NULL,
-  `location` VARCHAR(255) NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_inventory_checks_code` (`code`),
-  KEY `idx_inventory_checks_status_check_date` (`status`, `check_date`),
-  KEY `idx_inventory_checks_created_by_user_id` (`created_by_user_id`),
-  KEY `idx_inventory_checks_completed_by_user_id` (`completed_by_user_id`),
-  CONSTRAINT `fk_inventory_checks_created_by_user_id` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_inventory_checks_completed_by_user_id` FOREIGN KEY (`completed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "sessions" ("id" varchar not null, "user_id" integer, "ip_address" varchar, "user_agent" text, "payload" text not null, "last_activity" integer not null, primary key ("id"));
 
-CREATE TABLE `inventory_check_items` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `inventory_check_id` BIGINT UNSIGNED NOT NULL,
-  `asset_id` BIGINT UNSIGNED NOT NULL,
-  `expected_status` VARCHAR(30) NULL,
-  `actual_status` VARCHAR(30) NULL,
-  `expected_location` VARCHAR(255) NULL,
-  `actual_location` VARCHAR(255) NULL,
-  `result` VARCHAR(30) NOT NULL DEFAULT 'pending',
-  `condition_note` TEXT NULL,
-  `counted_by_user_id` BIGINT UNSIGNED NULL,
-  `checked_at` TIMESTAMP NULL DEFAULT NULL,
-  `note` TEXT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `inventory_check_asset_unique` (`inventory_check_id`, `asset_id`),
-  KEY `idx_inventory_check_items_asset_result` (`asset_id`, `result`),
-  KEY `idx_inventory_check_items_counted_by_user_id` (`counted_by_user_id`),
-  CONSTRAINT `fk_inventory_check_items_inventory_check_id` FOREIGN KEY (`inventory_check_id`) REFERENCES `inventory_checks` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_inventory_check_items_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_inventory_check_items_counted_by_user_id` FOREIGN KEY (`counted_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE "shifts" ("id" integer primary key autoincrement not null, "code" varchar not null, "name" varchar not null, "start_time" time not null, "end_time" time not null, "is_active" tinyint(1) not null default '1', "sort_order" integer not null default '0', "created_at" datetime, "updated_at" datetime);
+
+CREATE TABLE "suppliers" ("id" integer primary key autoincrement not null, "code" varchar, "name" varchar not null, "contact_person" varchar, "phone" varchar, "email" varchar, "address" text, "note" text, "created_at" datetime, "updated_at" datetime);
+
+CREATE TABLE "users" ("id" integer primary key autoincrement not null, "name" varchar not null, "email" varchar not null, "email_verified_at" datetime, "password" varchar not null, "remember_token" varchar, "created_at" datetime, "updated_at" datetime, "employee_code" varchar not null, "role" varchar not null default ('employee'), "status" varchar not null default ('active'), "employee_id" integer, "must_change_password" tinyint(1) not null default ('0'), "role_id" integer, "supplier_id" integer, foreign key("role_id") references roles("id") on delete set null on update no action, foreign key("employee_id") references employees("id") on delete cascade on update no action, foreign key("supplier_id") references "suppliers"("id") on delete set null);
+
+CREATE INDEX "account_roles_role_id_status_index" on "account_roles" ("role_id", "status");
+
+CREATE INDEX "approvals_approvable_idx" on "approvals" ("approvable_type", "approvable_id");
+
+CREATE INDEX "approvals_status_acted_at_index" on "approvals" ("status", "acted_at");
+
+CREATE INDEX "asset_assignments_asset_id_unassigned_at_index" on "asset_assignments" ("asset_id", "unassigned_at");
+
+CREATE INDEX "asset_assignments_department_active_idx" on "asset_assignments" ("department_name", "unassigned_at");
+
+CREATE INDEX "asset_assignments_employee_id_unassigned_at_index" on "asset_assignments" ("employee_id", "unassigned_at");
+
+CREATE INDEX "asset_checkins_checked_in_at_index" on "asset_checkins" ("checked_in_at");
+
+CREATE INDEX "asset_checkins_employee_id_shift_date_index" on "asset_checkins" ("employee_id", "shift_date");
+
+CREATE INDEX "asset_checkins_shift_date_shift_id_index" on "asset_checkins" ("shift_date", "shift_id");
+
+CREATE UNIQUE INDEX "asset_code_seq_prefix_ym_unique" on "asset_code_sequences" ("prefix", "year_month");
+
+CREATE INDEX "asset_qr_identities_qr_uid_index" on "asset_qr_identities" ("qr_uid");
+
+CREATE UNIQUE INDEX "asset_qr_identities_qr_uid_unique" on "asset_qr_identities" ("qr_uid");
+
+CREATE UNIQUE INDEX "assets_asset_code_unique" on "assets" ("asset_code");
+
+CREATE INDEX "assets_category_index" on "assets" ("category");
+
+CREATE INDEX "assets_deleted_at_index" on "assets" ("deleted_at");
+
+CREATE INDEX "assets_location_index" on "assets" ("location");
+
+CREATE INDEX "assets_purchase_date_index" on "assets" ("purchase_date");
+
+CREATE INDEX "assets_status_index" on "assets" ("status");
+
+CREATE INDEX "assets_status_off_service_from_index" on "assets" ("status", "off_service_from");
+
+CREATE INDEX "assets_type_index" on "assets" ("type");
+
+CREATE INDEX "cache_expiration_index" on "cache" ("expiration");
+
+CREATE INDEX "cache_locks_expiration_index" on "cache_locks" ("expiration");
+
+CREATE UNIQUE INDEX "categories_code_unique" on "categories" ("code");
+
+CREATE UNIQUE INDEX "categories_name_unique" on "categories" ("name");
+
+CREATE INDEX "disposal_details_asset_id_processed_at_index" on "disposal_details" ("asset_id", "processed_at");
+
+CREATE UNIQUE INDEX "disposals_code_unique" on "disposals" ("code");
+
+CREATE INDEX "disposals_method_disposed_at_index" on "disposals" ("method", "disposed_at");
+
+CREATE INDEX "employee_contracts_employee_id_index" on "employee_contracts" ("employee_id");
+
+CREATE INDEX "employee_contracts_employee_id_status_index" on "employee_contracts" ("employee_id", "status");
+
+CREATE INDEX "employee_contracts_start_date_index" on "employee_contracts" ("start_date");
+
+CREATE INDEX "employee_contracts_status_index" on "employee_contracts" ("status");
+
+CREATE UNIQUE INDEX "employees_email_unique" on "employees" ("email");
+
+CREATE UNIQUE INDEX "employees_employee_code_unique" on "employees" ("employee_code");
+
+CREATE UNIQUE INDEX "failed_jobs_uuid_unique" on "failed_jobs" ("uuid");
+
+CREATE UNIQUE INDEX "feedbacks_code_unique" on "feedbacks" ("code");
+
+CREATE INDEX "feedbacks_status_index" on "feedbacks" ("status");
+
+CREATE INDEX "feedbacks_type_index" on "feedbacks" ("type");
+
+CREATE INDEX "feedbacks_user_id_created_at_index" on "feedbacks" ("user_id", "created_at");
+
+CREATE UNIQUE INDEX "inventory_check_asset_unique" on "inventory_check_items" ("inventory_check_id", "asset_id");
+
+CREATE INDEX "inventory_check_items_asset_id_result_index" on "inventory_check_items" ("asset_id", "result");
+
+CREATE UNIQUE INDEX "inventory_checks_code_unique" on "inventory_checks" ("code");
+
+CREATE INDEX "inventory_checks_status_check_date_index" on "inventory_checks" ("status", "check_date");
+
+CREATE INDEX "jobs_queue_index" on "jobs" ("queue");
+
+CREATE UNIQUE INDEX "locations_name_unique" on "locations" ("name");
+
+CREATE INDEX "maintenance_details_asset_id_status_index" on "maintenance_details" ("asset_id", "status");
+
+CREATE UNIQUE INDEX "maintenance_details_event_asset_unique" on "maintenance_details" ("maintenance_event_id", "asset_id");
+
+CREATE INDEX "maintenance_events_asset_id_status_index" on "maintenance_events" ("asset_id", "status");
+
+CREATE UNIQUE INDEX "maintenance_events_code_unique" on "maintenance_events" ("code");
+
+CREATE INDEX "maintenance_events_planned_at_index" on "maintenance_events" ("planned_at");
+
+CREATE INDEX "maintenance_events_status_planned_at_index" on "maintenance_events" ("status", "planned_at");
+
+CREATE INDEX "maintenance_events_type_index" on "maintenance_events" ("type");
+
+CREATE INDEX "password_reset_codes_email_expires_at_index" on "password_reset_codes" ("email", "expires_at");
+
+CREATE INDEX "password_reset_codes_email_index" on "password_reset_codes" ("email");
+
+CREATE UNIQUE INDEX "permissions_code_unique" on "permissions" ("code");
+
+CREATE INDEX "personal_access_tokens_expires_at_index" on "personal_access_tokens" ("expires_at");
+
+CREATE UNIQUE INDEX "personal_access_tokens_token_unique" on "personal_access_tokens" ("token");
+
+CREATE INDEX "personal_access_tokens_tokenable_type_tokenable_id_index" on "personal_access_tokens" ("tokenable_type", "tokenable_id");
+
+CREATE UNIQUE INDEX "purchase_orders_order_code_unique" on "purchase_orders" ("order_code");
+
+CREATE INDEX "purchase_orders_status_order_date_index" on "purchase_orders" ("status", "order_date");
+
+CREATE INDEX "repair_logs_asset_id_status_index" on "repair_logs" ("asset_id", "status");
+
+CREATE INDEX "role_permissions_permission_id_index" on "role_permissions" ("permission_id");
+
+CREATE UNIQUE INDEX "roles_code_unique" on "roles" ("code");
+
+CREATE INDEX "sessions_last_activity_index" on "sessions" ("last_activity");
+
+CREATE INDEX "sessions_user_id_index" on "sessions" ("user_id");
+
+CREATE UNIQUE INDEX "shifts_code_unique" on "shifts" ("code");
+
+CREATE INDEX "shifts_is_active_index" on "shifts" ("is_active");
+
+CREATE INDEX "shifts_sort_order_index" on "shifts" ("sort_order");
+
+CREATE UNIQUE INDEX "suppliers_code_unique" on "suppliers" ("code");
+
+CREATE UNIQUE INDEX "suppliers_name_unique" on "suppliers" ("name");
+
+CREATE UNIQUE INDEX "unique_asset_shift_date" on "asset_checkins" ("asset_id", "shift_id", "shift_date");
+
+CREATE UNIQUE INDEX "users_email_unique" on "users" ("email");
+
+CREATE UNIQUE INDEX "users_employee_code_unique" on "users" ("employee_code");
+
+CREATE UNIQUE INDEX "users_supplier_id_unique" on "users" ("supplier_id");

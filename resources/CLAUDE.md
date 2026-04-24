@@ -1,43 +1,29 @@
-# Frontend Architecture (resources/)
+# Frontend Guide
 
-## React SPA (`js/`)
+Frontend là React SPA trong `resources/js`. Scope UI hiện tại là IT Asset Management theo phòng ban.
 
-Entry point: `app.jsx` — contains AuthContext, I18nProvider, React Router, Axios CSRF setup.
+## Page Active
 
-### Pages (`js/pages/`)
+- `Dashboard.jsx`
+- `AssetsPage.jsx`
+- `RequestsPage.jsx`
+- `ReviewRequestsPage.jsx`
+- `MaintenancePage.jsx`
+- `InventoryPage.jsx`
+- `LocationsPage.jsx`
+- `SuppliersPage.jsx`
+- `PurchaseOrdersPage.jsx`
+- `DisposalPage.jsx`
+- `ReportPage.jsx`
+- `ProfilePage.jsx`
 
-- `Dashboard.jsx` — overview with stats, quick actions, recent equipment
-- `AssetsPage.jsx` — equipment catalog (admin/HR), CRUD
-- `InventoryPage.jsx` — inventory & valuation, two tabs: inventory list + depreciation view
-- `MaintenancePage.jsx` — maintenance & repair scheduling
-- `FeedbackPage.jsx` — feedback & suggestions
-- `ReportPage.jsx` — reports & statistics
-- `EmployeesPage.jsx` — employee profiles (admin/HR)
-- `LocationsPage.jsx` — location catalog
-- `MyAssetsPage.jsx` / `MyEquipmentPage.jsx` — user's assigned equipment
-- `MyAssetHistoryPage.jsx` — equipment history for non-admin roles
-- `QRScanPage.jsx` — QR code scanner
-- `ProfilePage.jsx` / `ChangePasswordPage.jsx` — user settings
+## Quy Tắc UI
 
-### Components (`js/components/`)
+- Không thêm lại page quét mã cá nhân, personal asset history, available-for-loan hoặc employee contract CRUD.
+- Label phải dùng wording IT asset, department handover, maintenance, inventory, purchase order, request.
+- Nếu thêm i18n key mới, cập nhật cả `en.js` và `vi.js`.
+- Sau khi sửa i18n, chạy `npm run check:i18n`.
 
-- `ui/` — shared primitives: Button, Input, Select, Card, Badge, Table, Modal, Toast, LoadingSpinner
-- `dashboard/` — StatCard, QuickActionGrid, RecentEquipmentTable
-- `PrintableAssetLabel.jsx` — QR label printing
+## API Client
 
-### Layouts (`js/layouts/`)
-
-- `AdminLayout.jsx` — main layout with sidebar + topbar
-- `Sidebar.jsx` — role-based navigation menu
-- `Topbar.jsx` — header bar
-- `Breadcrumbs.jsx` — breadcrumb navigation
-
-### i18n (`js/i18n/`)
-
-- `index.jsx` — I18nProvider, useI18n hook, useTranslation hook
-- `locales/vi.js` — Vietnamese translations (default)
-- `locales/en.js` — English translations
-
-## Blade (`views/`)
-
-- `spa.blade.php` — single template that loads the React SPA
+`resources/js/services/api.js` chỉ nên expose API wrapper cho module active. Legacy endpoint không cần wrapper frontend.

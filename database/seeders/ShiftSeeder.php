@@ -8,7 +8,7 @@ use App\Models\Shift;
 class ShiftSeeder extends Seeder
 {
     /**
-     * Seed the default clinic shifts.
+     * Seed the default work shifts.
      * 
      * Default 3 shifts:
      * - S1: 08:00-12:00 (Morning)

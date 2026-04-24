@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 /**
  * Controller for shift management.
  * 
- * Phase 4: Read-only access to clinic shifts.
+ * Phase 4: Read-only access to work shifts.
  */
 class ShiftController extends Controller
 {

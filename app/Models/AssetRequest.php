@@ -28,14 +28,10 @@ class AssetRequest extends Model
     /**
      * Request types
      */
-    public const TYPES = ['JUSTIFICATION', 'ASSET_LOAN', 'CONSUMABLE_REQUEST'];
+    public const TYPES = ['JUSTIFICATION', 'CONSUMABLE_REQUEST'];
     public const REQUESTABLE_TYPES = ['JUSTIFICATION', 'CONSUMABLE_REQUEST'];
 
     public const TYPE_JUSTIFICATION = 'JUSTIFICATION';
-    /**
-     * Legacy value retained only so existing historical records can still load.
-     */
-    public const TYPE_ASSET_LOAN = 'ASSET_LOAN';
     public const TYPE_CONSUMABLE_REQUEST = 'CONSUMABLE_REQUEST';
 
     /**

@@ -58,11 +58,11 @@ class ReportTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_doctor_cannot_access_report_summary(): void
+    public function test_employee_cannot_access_report_summary(): void
     {
-        $doctor = User::factory()->doctor()->create();
+        $employee = User::factory()->employee()->create();
 
-        $response = $this->actingAs($doctor)->getJson('/api/reports/summary');
+        $response = $this->actingAs($employee)->getJson('/api/reports/summary');
 
         $response->assertForbidden();
     }

@@ -32,7 +32,14 @@ class EmployeeFactory extends Factory
         return [
             'employee_code' => 'EMP' . str_pad((string) static::$employeeCodeCounter++, 4, '0', STR_PAD_LEFT),
             'full_name' => fake()->name(),
-            'position' => fake()->randomElement(['Doctor', 'Technician', 'Nurse', 'Receptionist', 'Admin']),
+            'position' => fake()->randomElement([
+                'IT Support Technician',
+                'Software Engineer',
+                'Finance Analyst',
+                'Sales Executive',
+                'Operations Staff',
+                'Office Administrator',
+            ]),
             'dob' => fake()->date('Y-m-d', '-25 years'),
             'gender' => fake()->randomElement(['male', 'female']),
             'phone' => fake()->phoneNumber(),

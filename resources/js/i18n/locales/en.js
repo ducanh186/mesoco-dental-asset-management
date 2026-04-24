@@ -111,7 +111,6 @@ export default {
         assets: 'Asset Catalog',
         equipmentCatalog: 'Asset Catalog',
         myEquipment: 'Department Equipment',
-        myAssets: 'Department Equipment',
         equipment: 'Equipment',
         shifts: 'Shifts',
         checkin: 'Shift Check-in',
@@ -124,13 +123,9 @@ export default {
         feedback: 'Feedback & Suggestions',
         reports: 'Reports & Statistics',
         settings: 'Settings',
-        admin: 'Admin',
         users: 'Users',
         locations: 'Location Catalog',
-        myAssetHistory: 'Handover History',
         equipmentLookup: 'Equipment Lookup',
-        qrScan: 'Asset Lookup',
-        contracts: 'Contracts',
         disposal: 'Disposal',
         incidents: 'Incident Management',
         disposalForms: 'Disposal Forms',
@@ -241,12 +236,8 @@ export default {
     roles: {
         staff: 'Staff',
         employee: 'Staff', // DB value 'employee' displays as 'Staff'
-        doctor: 'Staff',
-        nurse: 'Nurse',
         technician: 'Technician',
-        receptionist: 'Receptionist',
         manager: 'Manager',
-        admin: 'Manager',
         owner: 'Owner',
         hr: 'Technician',
         supplier: 'Supplier',
@@ -259,7 +250,7 @@ export default {
         title: 'Dashboard',
         welcome: 'Welcome back, {name}!',
         welcomeSubtitle: "Here's what's happening with your equipment today.",
-        welcomeSubtitleAdmin: 'Overview of dental equipment management system.',
+        welcomeSubtitleAdmin: 'Overview of the IT asset management system.',
         welcomeSubtitleUser: 'View your assigned equipment and manage requests.',
         welcomeSubtitleTechnician: 'Track maintenance schedules and manage equipment.',
         welcomeSubtitleSupplier: 'Track purchase orders and update delivery progress for your supplier account.',
@@ -278,8 +269,8 @@ export default {
         upcomingTasks: 'Upcoming tasks',
         noScheduled: 'No scheduled tasks',
         
-        // Doctor/Staff Cards
-        myEquipmentCount: 'My Equipment',
+        // Employee cards
+        myEquipmentCount: 'Department Equipment',
         myActiveRequests: 'My Active Requests',
         alerts: 'Alerts',
         lockedCount: '{count} locked',
@@ -306,7 +297,6 @@ export default {
         quickActions: 'Quick Actions',
         addEquipment: 'Add Equipment',
         newRequest: 'New Request',
-        scanQrCode: 'Scan QR Code',
         viewReports: 'View Reports',
         myEquipment: 'My Equipment',
         myRequests: 'My Requests',
@@ -354,8 +344,6 @@ export default {
     assets: {
         title: 'Assets',
         subtitle: 'Manage IT asset records and department handovers',
-        myAssets: 'Department Equipment',
-        myAssetsSubtitle: 'View equipment handed over to your department',
         allAssets: 'All Equipment',
         createAsset: 'Create New Equipment',
         editAsset: 'Edit Equipment',
@@ -413,28 +401,7 @@ export default {
         // Condition
         condition: 'Condition',
         
-        // Legacy labels retained for old saved translations.
-        qrIdentity: 'Asset Identifier',
-        qrCode: 'Asset Code',
-        qrPayload: 'Identifier Payload',
-        scanQr: 'Lookup Asset',
-        regenerateQr: 'Regenerate Identifier',
-        regenerateQrConfirm: 'Are you sure you want to generate a new asset identifier?',
-        qrRegenerated: 'Asset identifier regenerated successfully',
-        copyPayload: 'Copy Identifier',
-        noQrCode: 'No identifier generated',
         viewAsset: 'View Equipment',
-        
-        // QR Resolve
-        qrLookup: 'QR Code Lookup',
-        qrLookupSubtitle: 'Enter or scan a QR payload to find equipment details',
-        enterQrPayload: 'Enter QR payload (e.g., MESO-xxxx-xxxx-xxxx)',
-        resolve: 'Resolve',
-        assetFound: 'Equipment found!',
-        assetNotFound: 'Equipment not found or has been deleted',
-        qrEnterHint: 'Enter a QR payload to see equipment details',
-        qrHelpTitle: 'How to use QR Lookup',
-        qrHelpDesc: 'Scan the QR code on equipment using your phone camera or any QR scanner app, then paste the payload (e.g., MESO-xxxx-xxxx-xxxx) in the input field above.',
         
         // Table columns
         columns: {
@@ -444,7 +411,6 @@ export default {
             status: 'Status',
             assignee: 'Assignee',
             assignment: 'Assignment',
-            qr: 'Identifier',
             assignedAt: 'Assigned At',
             actions: 'Actions',
         },
@@ -533,9 +499,7 @@ export default {
         
         // Roles
         roles: {
-            admin: 'Manager',
             hr: 'Technician',
-            doctor: 'Staff',
             technician: 'Technician',
             staff: 'Staff',
         },
@@ -587,8 +551,6 @@ export default {
         joined: 'Joined',
         equipmentAssigned: 'Equipment Assigned',
         items: 'items',
-        borrowedEquipment: 'Borrowed equipment',
-        returnedEquipment: 'Returned equipment',
         maintenanceRequest: 'Maintenance request',
         active: 'active',
         completed: 'completed',
@@ -684,11 +646,7 @@ export default {
         types: {
             all: 'All Types',
             JUSTIFICATION: 'Equipment Issue Report',
-            ASSET_LOAN: 'Retired circulation flow',
             CONSUMABLE_REQUEST: 'Consumable Request',
-            // Legacy
-            borrow: 'Retired circulation flow',
-            return: 'Retired return flow',
             maintenance: 'Request Maintenance',
         },
 
@@ -708,7 +666,7 @@ export default {
         // Legacy scheduling fields
         fromShift: 'From Shift',
         toShift: 'To Shift',
-        loanReason: 'Handling Purpose',
+        handlingPurpose: 'Handling purpose',
 
         // Consumable fields
         itemName: 'Item Name',
@@ -819,7 +777,7 @@ export default {
     // ========================================================================
     requestType: {
         justification: 'Equipment Issue Report',
-        assetLoan: 'Equipment Loan',
+        retiredCirculation: 'Retired circulation flow',
         consumableRequest: 'Consumable Request',
     },
 
@@ -853,17 +811,6 @@ export default {
         medium: 'Medium',
         high: 'High',
         urgent: 'Urgent',
-    },
-
-    // ========================================================================
-    // Asset Loan
-    // ========================================================================
-    assetLoan: {
-        title: 'Equipment Loan',
-        selectAsset: 'Select equipment to loan',
-        fromShift: 'From shift',
-        toShift: 'To shift',
-        purpose: 'Purpose',
     },
 
     // ========================================================================
@@ -1000,208 +947,6 @@ export default {
     },
 
     // ========================================================================
-    // QR Scanner
-    // ========================================================================
-    qrScan: {
-        title: 'QR Scanner',
-        subtitle: 'Scan or enter QR code to lookup equipment',
-        scannerTitle: 'Asset QR Scanner',
-        enterPayload: 'Please enter a QR payload',
-        inputPlaceholder: 'Enter QR payload (e.g., MESOCO|ASSET|v1|uuid)',
-        inputHint: 'Scan the QR code on equipment or paste the payload above',
-        expectedFormat: 'Format: MESOCO|ASSET|v1|<uuid>',
-        viewfinderHint: 'Point camera at QR code',
-        resolve: 'Lookup',
-        
-        // Camera controls
-        useCamera: 'Camera',
-        manualInput: 'Manual',
-        startScanning: 'Start Scanning',
-        stopScanning: 'Stop Scanning',
-        scanning: 'Scanning...',
-        resolving: 'Looking up...',
-        tapToStart: 'Tap "Start Scanning" to begin',
-        noCameraAvailable: 'No camera available on this device',
-        cameraPermissionDenied: 'Camera access denied. Please use manual input.',
-        
-        // Results
-        assetFound: 'Asset found!',
-        assetResolved: 'Asset Identified',
-        identified: 'Identified',
-        offService: 'Off Service',
-        scanAnother: 'Scan Another',
-        
-        // Error messages - matching checklist
-        invalidFormat: 'Invalid QR code.',
-        assetNotFound: 'Asset not found.',
-        unsupportedVersion: 'Unsupported QR version.',
-        resolveFailed: 'Failed to resolve QR code',
-        notFound: 'Not Found',
-        
-        // Off-service warning
-        offServiceWarning: 'This asset is off-service. Do not use.',
-        offServiceDetail: 'This equipment is currently unavailable for use. Contact a technician for more information.',
-        
-        // Check-in blocked reasons
-        blockedReason: {
-            ASSET_OFF_SERVICE: 'Asset is off-service',
-            ASSET_NOT_ASSIGNED: 'Asset is not assigned to anyone',
-            NO_ACTIVE_SHIFT: 'No active shift right now',
-            ALREADY_CHECKED_IN: 'Already checked in today',
-            NOT_ASSIGNEE: 'You are not the assignee',
-        },
-        
-        // Instructions
-        instructions: 'Usage Instructions',
-        viewInstructions: 'View Instructions',
-        instructionsNotAvailable: 'No instructions available for this asset',
-        
-        // Actions
-        viewAsset: 'View Asset',
-        viewDetails: 'View Details',
-        assetInfo: 'Asset Info',
-        checkinFromMyAssets: 'Please use My Equipment page to check-in',
-
-        // Help
-        helpTitle: 'How to use QR Scanner',
-        helpDesc: 'Scan the QR code on equipment using your phone camera or paste the payload manually.',
-        helpStep1: 'Click "Start Scanning" and point camera at QR code',
-        helpStep2: 'Or switch to Manual mode and paste the payload',
-        helpStep3: 'View asset details and check-in if assigned to you',
-
-        // Legacy keys for backwards compatibility
-        tryAgain: 'Try Again',
-        found: 'Found',
-        noResult: 'No asset found',
-        noResultMessage: 'The QR code is invalid or the asset does not exist in the system.',
-        processing: 'Processing...',
-    },
-
-    // ========================================================================
-    // Contracts
-    // ========================================================================
-    contracts: {
-        title: 'Employee Contracts',
-        subtitle: 'Manage employee contracts and documents',
-        create: 'Create Contract',
-        edit: 'Edit Contract',
-        view: 'View Contract',
-        delete: 'Delete Contract',
-        allEmployees: 'All Employees',
-        contractId: 'Contract ID',
-        employee: 'Employee',
-        type: 'Contract Type',
-        contractType: 'Contract Type',
-        department: 'Department',
-        departmentPlaceholder: 'e.g., Dental, Admin, etc.',
-        startDate: 'Start Date',
-        endDate: 'End Date',
-        indefinite: 'Indefinite',
-        pdfFile: 'Contract PDF',
-        pdfHint: 'Upload contract document (PDF only, max 10MB)',
-        viewPdf: 'View PDF',
-        pdfNotAvailable: 'PDF file not available',
-        addContract: 'Add Contract',
-        contractDetails: 'Contract Details',
-        selectEmployee: 'Select an employee',
-        selectEmployeeFirst: 'Select an Employee',
-        selectEmployeeHint: 'Choose an employee from the dropdown above to view their contracts',
-        selectEmployeePlaceholder: '-- Select Employee --',
-        startDateRequired: 'Start date is required',
-        noContracts: 'No contracts found',
-        noContractsHint: 'Add a contract for this employee',
-        noContractsForEmployee: 'This employee has no contracts yet',
-        createSuccess: 'Contract created successfully',
-        updateSuccess: 'Contract updated successfully',
-        deleteSuccess: 'Contract deleted successfully',
-        created: 'Contract created',
-        updated: 'Contract updated',
-        deleted: 'Contract deleted',
-        deleteConfirm: 'Are you sure you want to delete this contract?',
-
-        // Form fields
-        notes: 'Notes',
-        document: 'Attached Document',
-        uploadDocument: 'Upload Document',
-        viewDocument: 'View Document',
-        downloadDocument: 'Download',
-        noDocument: 'No document available',
-
-        types: {
-            probation: 'Probation',
-            fixed_term: 'Fixed-term',
-            indefinite: 'Indefinite',
-            seasonal: 'Seasonal',
-            contractor: 'Contractor',
-            fullTime: 'Full Time',
-            partTime: 'Part Time',
-            intern: 'Intern',
-            outsource: 'Outsource',
-            other: 'Other',
-        },
-        statuses: {
-            active: 'Active',
-            expired: 'Expired',
-            terminated: 'Terminated',
-            pending: 'Pending',
-        },
-        status: 'Status',
-        period: 'Period',
-        actions: 'Actions',
-        uploadSuccess: 'Document uploaded successfully',
-        uploadError: 'Failed to upload document',
-        invalidFileType: 'Invalid file type. PDF only.',
-        fileTooLarge: 'File is too large. Maximum size: 5MB.',
-    },
-
-    // ========================================================================
-    // Employees
-    // ========================================================================
-    employees: {
-        title: 'Employee Management',
-        subtitle: 'Manage employee records and contracts',
-        addEmployee: 'Add Employee',
-        editEmployee: 'Edit Employee',
-        employeeCode: 'Employee Code',
-        fullName: 'Full Name',
-        position: 'Position',
-        noPosition: 'No position',
-        dob: 'Date of Birth',
-        gender: 'Gender',
-        phone: 'Phone',
-        address: 'Address',
-        userAccount: 'User Account',
-        hasUser: 'Has Account',
-        noUser: 'No Account',
-        viewContracts: 'View Contracts',
-        codeNotEditable: 'Employee code cannot be changed',
-        emailNotEditable: 'Email cannot be changed',
-        requiredFields: 'Employee code and full name are required',
-        createSuccess: 'Employee created successfully',
-        updateSuccess: 'Employee updated successfully',
-        deleteSuccess: 'Employee deleted successfully',
-        deleteConfirm: 'Are you sure you want to delete {{name}}?',
-        noEmployees: 'No employees found',
-        noEmployeesHint: 'Add your first employee to get started',
-        searchPlaceholder: 'Search by code or name...',
-        selectEmployeeFirst: 'Select an Employee',
-        selectEmployeeHint: 'Click "View Contracts" on an employee row to see their contracts',
-        tabs: {
-            general: 'General Information',
-            contract: 'Contract',
-        },
-        statuses: {
-            active: 'Active',
-            inactive: 'Inactive',
-        },
-        genders: {
-            male: 'Male',
-            female: 'Female',
-            other: 'Other',
-        },
-    },
-
-    // ========================================================================
     // Disposal
     // ========================================================================
     disposal: {
@@ -1258,7 +1003,7 @@ export default {
         deleteAssetMessage: 'Are you sure you want to delete "{name}"? This action cannot be undone.',
         unassign: 'Confirm Unassign',
         unassignMessage: 'Are you sure you want to unassign "{name}" from {assignee}?',
-        regenerateQr: 'Confirm Regenerate QR',
+        regenerateIdentifier: 'Regenerate identifier',
         logout: 'Confirm Logout',
         logoutMessage: 'Are you sure you want to logout?',
     },
@@ -1294,58 +1039,6 @@ export default {
     },
 
     // ========================================================================
-    // Admin / System Administration
-    // ========================================================================
-    admin: {
-        title: 'System Administration',
-        subtitle: 'Manage users, permissions and system settings',
-        
-        // Tabs
-        users: 'Users',
-        rolesPermissions: 'Roles & Permissions',
-        systemSettings: 'System Settings',
-        auditLog: 'Audit Log',
-        
-        // User Management
-        searchUsers: 'Search users...',
-        createUser: 'Create Account',
-        noUsers: 'No users found',
-        employeeCode: 'Employee ID',
-        userName: 'Name',
-        role: 'Role',
-        changeRole: 'Change Role',
-        currentUser: 'Current User',
-        newRole: 'New Role',
-        selectEmployee: 'Select Employee',
-        selectEmployeePlaceholder: '-- Select Employee --',
-        defaultPassword: 'Default Password',
-        defaultPasswordPlaceholder: 'Enter default password',
-        userCreated: 'Account created successfully',
-        userDeleted: 'Account deleted',
-        roleUpdated: 'Role updated successfully',
-        deleteConfirm: 'Are you sure you want to delete this account?',
-        
-        // RBAC
-        rbacMatrix: 'Permissions Matrix (RBAC)',
-        permission: 'Permission',
-        
-        // System Settings
-        companyProfile: 'Company Profile',
-        companyName: 'Company Name',
-        companyEmail: 'Email',
-        companyPhone: 'Phone',
-        companyAddress: 'Address',
-        codeGeneration: 'Code Generation Rules',
-        assetCodeFormat: 'Asset Code Format',
-        employeeCodeFormat: 'Employee Code Format',
-        requestCodeFormat: 'Request Code Format',
-        settingsComingSoon: 'Edit functionality coming soon.',
-        
-        // Audit
-        auditComingSoon: 'Audit log coming soon.',
-    },
-
-    // ========================================================================
     // Topbar
     // ========================================================================
     topbar: {
@@ -1359,8 +1052,6 @@ export default {
         title: 'Asset Label',
         popupBlocked: 'Please allow popups to print the label',
         unnamedAsset: 'Unnamed Asset',
-        qrAlt: 'Asset Identifier',
-        noQr: 'No identifier',
         scanInstruction: 'Use this label for inventory reconciliation',
         handoverNote: 'IT asset handed over by department',
     },
@@ -1377,7 +1068,7 @@ export default {
         showInactive: 'Show inactive locations',
         noLocations: 'No locations found',
         locationName: 'Location Name',
-        locationNamePlaceholder: 'e.g., Clinic Floor 1',
+        locationNamePlaceholder: 'e.g., Server Room or Office Floor 1',
         descriptionPlaceholder: 'Optional description...',
         address: 'Address',
         addressPlaceholder: 'Optional address...',
@@ -1420,77 +1111,11 @@ export default {
     },
 
     // ========================================================================
-    // My Equipment Page
-    // ========================================================================
-    myEquipmentPage: {
-        title: 'My Equipment',
-        subtitle: '{count} items assigned to you',
-        totalAssigned: 'Total Assigned',
-        inMaintenance: 'In Maintenance',
-        requestEquipment: 'Request Equipment',
-        searchPlaceholder: 'Search by name or code...',
-        filterByStatus: 'Filter by status',
-        noEquipment: 'No equipment assigned',
-        noEquipmentHint: 'Get started by requesting equipment.',
-        openRequestForm: 'Opening equipment request form...',
-        view: 'View',
-        return: 'Return',
-        viewing: 'Viewing {name}',
-        requestReturn: 'Request return for {name}',
-        columns: {
-            equipment: 'Equipment',
-            category: 'Category',
-            assignedDate: 'Assigned Date',
-            condition: 'Condition',
-            status: 'Status',
-            nextMaintenance: 'Next Maintenance',
-            actions: 'Actions',
-        },
-        conditions: {
-            excellent: 'Excellent',
-            good: 'Good',
-            fair: 'Fair',
-        },
-        statusFilters: {
-            all: 'All Status',
-            active: 'Active',
-            maintenance: 'In Maintenance',
-            pending: 'Pending Return',
-        },
-    },
-
-    // ========================================================================
-    // My Asset History Page
-    // ========================================================================
-    myAssetHistoryPage: {
-        title: 'My Asset History',
-        subtitle: 'Timeline of your asset assignments and check-ins',
-        currentAssignments: 'Current Assignments',
-        totalAssignments: 'Total Assignments',
-        totalCheckIns: 'Total Check-ins',
-        checkInsThisMonth: 'Check-ins This Month',
-        clearFilters: 'Clear Filters',
-        fromDate: 'From date',
-        toDate: 'To date',
-        noHistoryFound: 'No history found',
-        adjustFilters: 'Try adjusting your filters.',
-        historyWillAppear: 'Your asset history will appear here.',
-        allEvents: 'All Events',
-        performedBy: 'by {name}',
-        eventTypes: {
-            assigned: 'Assigned',
-            unassigned: 'Unassigned',
-            checkin: 'Check-in',
-            checkout: 'Check-out',
-        },
-    },
-
-    // ========================================================================
     // Placeholder Pages
     // ========================================================================
     placeholderPages: {
         equipmentTitle: 'Equipment Management',
-        equipmentDescription: 'Manage all dental equipment and devices.',
+        equipmentDescription: 'Manage company IT equipment.',
         usersTitle: 'User Management',
         usersDescription: 'Manage users and access permissions.',
         settingsTitle: 'System Settings',

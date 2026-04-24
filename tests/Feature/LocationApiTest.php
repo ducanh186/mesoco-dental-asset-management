@@ -47,9 +47,9 @@ class LocationApiTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_doctor_cannot_access_locations(): void
+    public function test_employee_cannot_access_locations(): void
     {
-        $user = $this->createUserWithRole('doctor');
+        $user = $this->createUserWithRole('employee');
 
         $response = $this->actingAs($user)->getJson('/api/locations');
         $response->assertStatus(403);

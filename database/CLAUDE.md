@@ -1,34 +1,21 @@
-# Database (database/)
+# Database Guide
 
-## Migrations
+Migration Laravel là nguồn sự thật. Không rewrite migration lịch sử và không drop bảng/cột cũ trong cleanup thông thường.
 
-Key tables:
-- `users` — login accounts with `employee_id` FK, `role`, `must_change_password`
-- `employees` — HR records: `full_name`, `department`, `employee_code`
-- `assets` — equipment with valuation fields (`purchase_cost`, `useful_life_months`, `salvage_value`, `depreciation_method`) and off-service fields
-- `asset_assignments` — tracks which employee has which asset
-- `asset_checkins` — check-in/check-out logs
-- `maintenance_events` — maintenance/repair records
-- `maintenance_details` — detail rows for maintenance work
-- `disposals` / `disposal_details` — disposal header and detail rows
-- `inventory_checks` / `inventory_check_items` — inventory audit header and detail rows
-- `locations` — physical locations/rooms
-- `asset_qr_identities` — QR code tracking
-- `asset_code_sequences` — auto-generated asset codes
+## Seed Data
 
-## Seeders
+Seeder active phải tạo dữ liệu IT:
 
-- All demo accounts use password `password`
-- Employee codes: E0001 (admin), E0002 (hr), E0003 (doctor), E0004 (technician), E0005 (employee)
-- Run `php artisan migrate:fresh --seed` to reset
+- Laptop, desktop, monitor, server, network, printer, peripheral.
+- Phòng ban như IT Operations, IT Support, Finance, Sales, Operations, Engineering.
+- Supplier thiết bị IT.
+- Maintenance theo phần mềm, phần cứng, kiểm tra định kỳ, sửa chữa.
+- Inventory valuation với purchase cost, useful life, salvage value và warranty.
 
-## Depreciation
+## Schema Export
 
-Straight-line method:
-```
-Monthly Depreciation = (Purchase Cost - Salvage Value) / Useful Life (months)
-Accumulated Depreciation = Monthly × Months Elapsed
-Current Book Value = Purchase Cost - Accumulated Depreciation
-```
+`schema.sql` được export từ SQLite database tạm sau khi chạy migrate fresh. Không export từ database local có dữ liệu thật.
 
-Business rule: Depreciation > 70% → eligible for disposal (phiếu thu hủy)
+## Legacy
+
+Bảng legacy có thể còn trong migration/schema vì lý do compatibility. Không dùng chúng cho UI hoặc API active mới.

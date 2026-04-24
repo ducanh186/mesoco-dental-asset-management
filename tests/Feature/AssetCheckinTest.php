@@ -131,7 +131,7 @@ class AssetCheckinTest extends TestCase
         $response = $this->actingAs($this->adminUser)
             ->postJson('/api/checkins', [
                 'asset_id' => $this->asset->id,
-                'source' => 'qr',
+                'source' => 'manual',
             ]);
 
         $response->assertCreated();
@@ -369,13 +369,9 @@ class AssetCheckinTest extends TestCase
 
     public function test_qr_resolve_route_returns_gone(): void
     {
-        $qrIdentity = \App\Models\AssetQrIdentity::create([
-            'asset_id' => $this->asset->id,
-        ]);
-
         $response = $this->actingAs($this->employeeUser)
             ->postJson('/api/qr/resolve', [
-                'payload' => $qrIdentity->payload,
+                'payload' => 'MESOCO|ASSET|v1|legacy',
             ]);
 
         $response->assertStatus(410);

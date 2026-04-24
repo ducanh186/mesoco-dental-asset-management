@@ -1,166 +1,99 @@
-# Quy ước database
+# Database Conventions
 
-## 1. Nguyên tắc chung
+`Database` là nơi lưu dữ liệu nghiệp vụ. Trong dự án này, migration Laravel là nguồn sự thật. `schema.sql` chỉ là bản export để đọc nhanh cấu trúc sau khi chạy migrate mới.
 
-- Mỗi bảng nghiệp vụ dùng `id` làm Primary Key nếu không phải bảng pivot.
-- Bảng pivot như `account_roles` và `role_permissions` dùng composite Primary Key để tránh trùng quan hệ.
-- Mọi liên kết nghiệp vụ chính đều có Foreign Key rõ ràng.
-- `users.role` vẫn là role canonical để tương thích code cũ, nhưng `users.role_id` và `account_roles` là liên kết chuẩn về bảng `roles`.
-- `requests`, `request_items`, `request_events` đã bị loại khỏi scope chính theo yêu cầu mới.
+## Nguyên Tắc Chung
 
-## 2. Tài khoản và phân quyền
+- Không rewrite migration lịch sử trong cleanup hiện tại.
+- Không drop bảng/cột legacy nếu chưa có plan migration phá vỡ tương thích.
+- Model và API active chỉ dùng scope IT Asset Management.
+- Seed data mới chỉ tạo thiết bị IT và phòng ban công ty.
+- Legacy endpoint trả `410 Gone` thay vì xóa route.
 
-### 2.1. `roles`
+## Bảng Chính
 
-- Primary Key: `id`
-- Unique: `code`
-- Dùng cho 4 role canonical: `manager`, `technician`, `employee`, `supplier`
+| Bảng | Vai trò |
+| --- | --- |
+| `users` | Tài khoản đăng nhập, role canonical và liên kết employee/supplier |
+| `roles`, `account_roles` | Chuẩn hóa role và lịch sử gán role |
+| `employees` | Hồ sơ nhân viên nội bộ |
+| `suppliers` | Nhà cung cấp thiết bị/vật tư |
+| `assets` | Tài sản IT, trạng thái, chi phí, khấu hao, phòng ban |
+| `categories` | Danh mục category cho asset |
+| `asset_assignments` | Lịch sử bàn giao tài sản |
+| `maintenance_events` | Phiếu bảo trì cấp sự kiện |
+| `maintenance_details` | Chi tiết xử lý bảo trì |
+| `repair_logs` | Nhật ký sửa chữa |
+| `inventory_checks` | Đợt kiểm kê |
+| `inventory_check_items` | Từng dòng thiết bị trong đợt kiểm kê |
+| `purchase_orders` | Đơn mua hàng |
+| `purchase_order_items` | Dòng thiết bị/vật tư trong đơn mua |
+| `requests` | Phiếu báo sự cố hoặc xin vật tư IT |
+| `request_items` | Dòng vật tư trong request |
+| `request_events` | Lịch sử trạng thái request |
+| `disposals`, `disposal_details` | Thanh lý hoặc loại bỏ tài sản |
 
-### 2.2. `permissions`
+## Asset Type Và Category
 
-- Primary Key: `id`
-- Unique: `code`
-- Lưu quyền nghiệp vụ dạng nhỏ, ví dụ `inventory.manage`, `maintenance.manage`, `reports.view`
+`assets.type` vẫn giữ enum generic để tránh migration rủi ro:
 
-### 2.3. `role_permissions`
+- `machine`
+- `equipment`
+- `tool`
+- `tray`
+- `other`
 
-- Composite Primary Key: `role_id`, `permission_id`
-- Foreign Key:
-  - `role_id -> roles.id`
-  - `permission_id -> permissions.id`
-- Dùng để mô tả role nào có permission nào.
+Ý nghĩa IT hiện được thể hiện qua `category`:
 
-### 2.4. `account_roles`
+- `Laptop`
+- `Desktop`
+- `Monitor`
+- `Network`
+- `Server`
+- `Peripheral`
+- `Printer`
+- `Mobile Device`
+- `Office IT`
+- `Other`
 
-- Composite Primary Key: `user_id`, `role_id`
-- Foreign Key:
-  - `user_id -> users.id`
-  - `role_id -> roles.id`
-- Dùng để thể hiện tài khoản được gán role nào. Hiện code vẫn giữ một role chính tại `users.role_id`.
+Trade-off: giữ `type` generic giúp ít rủi ro dữ liệu hơn, nhưng khi làm báo cáo cần đọc `category` để biết thiết bị là laptop hay printer.
 
-## 3. Bốn nghiệp vụ chính
+## Maintenance Types
 
-### 3.1. Cấp phát / đơn hàng
+Các type active:
 
-`purchase_orders`
+- `inspection`
+- `preventive`
+- `software_update`
+- `hardware_upgrade`
+- `calibration`
+- `repair`
+- `cleaning`
+- `replacement`
+- `other`
 
-- Primary Key: `id`
-- Foreign Key:
-  - `supplier_id -> suppliers.id`
-  - `requested_by_user_id -> users.id`
-  - `approved_by_user_id -> users.id`
+Dữ liệu cũ nếu còn sẽ được map ở tầng validation/normalization khi cần đọc lại.
 
-`purchase_order_items`
+## Request Types
 
-- Primary Key: `id`
-- Foreign Key:
-  - `purchase_order_id -> purchase_orders.id`
-  - `asset_id -> assets.id`
-  - `category_id -> categories.id`
-- `line_total` luôn do backend tính từ `qty * unit_price`.
+Request active chỉ gồm:
 
-### 3.2. Bảo trì
+- `JUSTIFICATION`: báo sự cố thiết bị IT.
+- `CONSUMABLE_REQUEST`: xin vật tư hoặc linh kiện IT.
 
-`maintenance_events`
+Request mượn/trả thiết bị không còn thuộc scope active và bị reject bằng validation.
 
-- Primary Key: `id`
-- Foreign Key:
-  - `asset_id -> assets.id`
-  - `assigned_to_user_id -> users.id`
-  - `created_by -> users.id`
-  - `updated_by -> users.id`
+## Legacy Tables
 
-`maintenance_details`
+Một số bảng hoặc cột legacy có thể còn trong migration/schema vì lý do compatibility. Chúng không nên được dùng để xây UI mới. Nếu cần xóa thật sự, hãy lập migration riêng với backup, data mapping và regression test.
 
-- Primary Key: `id`
-- Foreign Key:
-  - `maintenance_event_id -> maintenance_events.id`
-  - `asset_id -> assets.id`
-  - `technician_user_id -> users.id`
-  - `supplier_id -> suppliers.id`
-- Bảng này là bảng chi tiết chuẩn cho nghiệp vụ bảo trì. `repair_logs` được giữ để tương thích legacy.
+## Regenerate Schema
 
-### 3.3. Thu hủy
+Quy trình regenerate `schema.sql`:
 
-`disposals`
+1. Tạo SQLite database tạm.
+2. Chạy `php artisan migrate:fresh --force` với `DB_DATABASE` trỏ vào file tạm.
+3. Export schema từ SQLite.
+4. Xóa database tạm.
 
-- Primary Key: `id`
-- Foreign Key:
-  - `asset_id -> assets.id`
-  - `disposed_by_user_id -> users.id`
-  - `approved_by_user_id -> users.id`
-
-`disposal_details`
-
-- Primary Key: `id`
-- Foreign Key:
-  - `disposal_id -> disposals.id`
-  - `asset_id -> assets.id`
-- Bảng này lưu chi tiết tài sản thu hủy, tình trạng xử lý, giá trị còn lại và số tiền thu hồi.
-
-### 3.4. Kiểm kê
-
-`inventory_checks`
-
-- Primary Key: `id`
-- Foreign Key:
-  - `created_by_user_id -> users.id`
-  - `completed_by_user_id -> users.id`
-- Đại diện cho một đợt kiểm kê.
-
-`inventory_check_items`
-
-- Primary Key: `id`
-- Foreign Key:
-  - `inventory_check_id -> inventory_checks.id`
-  - `asset_id -> assets.id`
-  - `counted_by_user_id -> users.id`
-- Unique: `inventory_check_id`, `asset_id`
-- Lưu từng dòng kiểm kê tài sản: trạng thái kỳ vọng, trạng thái thực tế, vị trí kỳ vọng, vị trí thực tế và kết quả.
-
-## 4. Bảng lõi hỗ trợ
-
-### 4.1. `users`
-
-Cột chính:
-
-- `employee_code`
-- `employee_id`
-- `supplier_id`
-- `role`
-- `role_id`
-- `status`
-- `must_change_password`
-
-Quy ước:
-
-- User nội bộ liên kết qua `employee_id`.
-- Supplier portal liên kết qua `supplier_id`.
-- Một user không nên đồng thời dùng cả `employee_id` và `supplier_id`.
-
-### 4.2. `assets`
-
-Foreign Key chính:
-
-- `category_id -> categories.id`
-- `supplier_id -> suppliers.id`
-
-`assets.status` là nguồn trạng thái vận hành của tài sản: `active`, `off_service`, `maintenance`, `retired`.
-
-### 4.3. `suppliers`
-
-Dùng cho:
-
-- danh mục nhà cung cấp
-- tài khoản supplier portal
-- đơn hàng
-- bảo trì có hỗ trợ bên ngoài
-
-## 5. Migration liên quan gần nhất
-
-- `2026_04_07_180000_create_erd_alignment_tables.php`
-- `2026_04_07_180100_align_existing_tables_with_erd.php`
-- `2026_04_07_190000_normalize_roles_for_dfd_scope.php`
-- `2026_04_07_230000_merge_doctor_into_employee_role.php`
-- `2026_04_09_140000_add_supplier_role_and_purchase_order_payment_method.php`
-- `2026_04_19_090000_align_business_tables_with_client_scope.php`
+Không dùng database local có dữ liệu thật để export schema.

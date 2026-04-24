@@ -21,13 +21,10 @@ import InventoryPage from './pages/InventoryPage';
 import LocationsPage from './pages/LocationsPage';
 import SuppliersPage from './pages/SuppliersPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
-import AdminPage from './pages/AdminPage';
 import FeedbackPage from './pages/FeedbackPage';
 import ReportPage from './pages/ReportPage';
 import RequestsPage from './pages/RequestsPage';
 import ReviewRequestsPage from './pages/ReviewRequestsPage';
-import ContractsPage from './pages/ContractsPage';
-import EmployeesPage from './pages/EmployeesPage';
 import DisposalPage from './pages/DisposalPage';
 
 // UI Components
@@ -1060,58 +1057,6 @@ const FeedbackPageWrapper = () => {
      );
 };
 
-const ContractsPageWrapper = () => {
-     const { user } = useAuth();
-     const navigate = useNavigate();
-     const { t } = useI18n();
-     
-     // RBAC check - only admin can access
-     useEffect(() => {
-          if (user && user.role !== 'admin') {
-               navigate('/dashboard', { replace: true });
-          }
-     }, [user, navigate]);
-     
-     if (!user || user.role !== 'admin') {
-          return null;
-     }
-     
-     return (
-          <AdminLayoutWrapper 
-               title={t('nav.contracts')}
-               breadcrumbs={[{ label: t('nav.contracts') }]}
-          >
-               <ContractsPage user={user} />
-          </AdminLayoutWrapper>
-     );
-};
-
-const EmployeesPageWrapper = () => {
-     const { user } = useAuth();
-     const navigate = useNavigate();
-     const { t } = useI18n();
-     
-     // RBAC check - only admin/hr can access
-     useEffect(() => {
-          if (user && user.role !== 'admin' && user.role !== 'hr') {
-               navigate('/dashboard', { replace: true });
-          }
-     }, [user, navigate]);
-     
-     if (!user || (user.role !== 'admin' && user.role !== 'hr')) {
-          return null;
-     }
-     
-     return (
-          <AdminLayoutWrapper 
-               title={t('nav.employees')}
-               breadcrumbs={[{ label: t('nav.employees') }]}
-          >
-               <EmployeesPage user={user} />
-          </AdminLayoutWrapper>
-     );
-};
-
 const UsersPage = () => {
      const { t } = useI18n();
 
@@ -1131,19 +1076,6 @@ const UsersPage = () => {
                     <p>{t('placeholderPages.usersDescription')}</p>
                     <span className="coming-soon">{t('placeholderPages.comingSoon')}</span>
                </div>
-          </AdminLayoutWrapper>
-     );
-};
-
-const AdminPageWrapper = () => {
-     const { user } = useAuth();
-     const { t } = useI18n();
-     return (
-          <AdminLayoutWrapper 
-               title={t('admin.title')} 
-               breadcrumbs={[{ label: t('nav.admin') }]}
-          >
-               <AdminPage user={user} />
           </AdminLayoutWrapper>
      );
 };
@@ -1241,12 +1173,9 @@ const App = () => {
                                    <PurchaseOrdersPageWrapper />
                               </PurchaseOrderRoute>
                          } />
-                         <Route path="/my-assets" element={
-                              <Navigate to="/dashboard" replace />
-                         } />
-                         <Route path="/equipment" element={
-                              <InternalRoute>
-                                   <EquipmentPage />
+                          <Route path="/equipment" element={
+                               <InternalRoute>
+                                    <EquipmentPage />
                               </InternalRoute>
                          } />
                          <Route path="/equipment/*" element={
@@ -1254,12 +1183,9 @@ const App = () => {
                                    <EquipmentPage />
                               </InternalRoute>
                          } />
-                         <Route path="/qr-scan" element={
-                              <Navigate to="/dashboard" replace />
-                         } />
-                         <Route path="/requests" element={
-                              <InternalRoute>
-                                   <RequestsPageWrapper />
+                          <Route path="/requests" element={
+                               <InternalRoute>
+                                    <RequestsPageWrapper />
                               </InternalRoute>
                          } />
                          <Route path="/review-requests" element={
@@ -1287,12 +1213,9 @@ const App = () => {
                                    <SuppliersPageWrapper />
                               </OperatorRoute>
                          } />
-                         <Route path="/my-asset-history" element={
-                              <Navigate to="/dashboard" replace />
-                         } />
-                         <Route path="/disposal" element={
-                              <OperatorRoute>
-                                   <DisposalPageWrapper />
+                          <Route path="/disposal" element={
+                               <OperatorRoute>
+                                    <DisposalPageWrapper />
                               </OperatorRoute>
                           } />
                          <Route path="/reports" element={
@@ -1301,8 +1224,7 @@ const App = () => {
                               </ManagerRoute>
                           } />
                          <Route path="/feedback" element={<Navigate to="/dashboard" replace />} />
-                         <Route path="/contracts" element={<Navigate to="/dashboard" replace />} />
-                         <Route path="/employees" element={<Navigate to="/dashboard" replace />} />
+                          <Route path="/employees" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/users" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
                          <Route path="/settings" element={<Navigate to="/dashboard" replace />} />

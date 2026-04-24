@@ -1,67 +1,35 @@
-# Bộ tài liệu dự án
+# Tài Liệu Dự Án IT Asset Management
 
-Thư mục `docs/` là nguồn tài liệu chính của repo. Toàn bộ file `.md` trong thư mục này đã được cập nhật theo scope mới nhất.
+Thư mục này mô tả hệ thống theo hướng báo cáo/luận văn: bài toán nhỏ, đúng nghiệp vụ và dễ giải thích. Dự án không còn lấy domain chuyên môn cũ làm trọng tâm; scope hiện tại là quản lý thiết bị IT theo phòng ban trong công ty công nghệ.
 
-## 1. Phạm vi nghiệp vụ
+## Bài Toán
 
-Sản phẩm hiện tập trung vào 4 nghiệp vụ chính:
+Công ty cần biết mỗi thiết bị IT đang ở đâu, thuộc phòng ban nào, mua từ ngày nào, còn bảo hành không, đã bảo trì gần nhất khi nào, còn bao nhiêu giá trị sổ sách và khi nào cần thanh lý. Người dùng chính là manager, technician, employee và supplier.
 
-1. Cấp phát / đơn hàng
-2. Bảo trì
-3. Thu hủy
-4. Kiểm kê
+## Mục Lục
 
-Các quyết định đã chốt:
-
-- `employee` là người dùng nội bộ đầu cuối; bác sĩ được gộp vào `employee`
-- `manager` thay cho `admin`
-- `technician` là vai trò vận hành nội bộ
-- `supplier` là vai trò mới cho cổng nhà cung cấp
-- bảng `requests` không còn thuộc scope chính
-- mỗi nghiệp vụ chính có một bảng detail tương ứng
-- hợp đồng nhân viên và các module cũ ngoài 4 nghiệp vụ chính không còn là phạm vi sản phẩm
-
-## 2. Luồng cốt lõi
-
-Luồng bảo trì:
-
-`manager/technician tạo lịch bảo trì -> technician xử lý -> ghi maintenance detail`
-
-Luồng đơn hàng nhà cung cấp:
-
-`quản lý/kỹ thuật viên tạo đơn hàng -> nhà cung cấp theo dõi -> nhà cung cấp cập nhật trạng thái chuẩn bị / đang giao / giao thành công`
-
-Luồng kiểm kê:
-
-`manager/technician tạo đợt kiểm kê -> kiểm từng tài sản -> hoàn tất inventory check`
-
-## 3. Thứ tự nên đọc
-
-Nếu cần nắm hệ thống nhanh:
-
-1. [STACK.md](STACK.md)
-2. [ROLE_FEATURES.md](ROLE_FEATURES.md)
-3. [RBAC_MATRIX.md](RBAC_MATRIX.md)
-
-Nếu cần nắm dữ liệu:
-
-1. [DB_CONVENTIONS.md](DB_CONVENTIONS.md)
-2. [SEED_DATA.md](SEED_DATA.md)
-
-Nếu cần nghiệm thu theo chốt khách hàng:
-
-1. [feat_role.md](feat_role.md)
-2. [ROLE_FEATURES.md](ROLE_FEATURES.md)
-3. [RBAC_MATRIX.md](RBAC_MATRIX.md)
-
-## 4. Danh sách tài liệu
-
-| File | Nội dung |
+| Tài liệu | Nội dung |
 | --- | --- |
-| [STACK.md](STACK.md) | Stack kỹ thuật, cấu trúc app, lệnh dev/test/build |
-| [ROLE_FEATURES.md](ROLE_FEATURES.md) | Tính năng của từng vai trò theo từng phân hệ |
-| [RBAC_MATRIX.md](RBAC_MATRIX.md) | Ma trận phân quyền route và quyền nghiệp vụ |
-| [DB_CONVENTIONS.md](DB_CONVENTIONS.md) | Quy ước schema, bảng lõi, enum và ràng buộc dữ liệu |
-| [SEED_DATA.md](SEED_DATA.md) | Seeder, dữ liệu demo, factory và ghi chú môi trường test |
-| [feat_role.md](feat_role.md) | Checklist chốt phạm vi và tiêu chí nghiệm thu |
-| [CLASS_DIAGRAM.md](CLASS_DIAGRAM.md) | Class diagram Mermaid cho các model và quan hệ domain chính |
+| [STACK.md](STACK.md) | Công nghệ, cấu trúc repo, lệnh chạy và flow runtime |
+| [RBAC_MATRIX.md](RBAC_MATRIX.md) | Ma trận quyền theo role |
+| [ROLE_FEATURES.md](ROLE_FEATURES.md) | Tính năng nhìn từ từng người dùng |
+| [DB_CONVENTIONS.md](DB_CONVENTIONS.md) | Database, bảng chính, enum và legacy compatibility |
+| [SEED_DATA.md](SEED_DATA.md) | Tài khoản mẫu và dữ liệu demo IT |
+| [CLASS_DIAGRAM.md](CLASS_DIAGRAM.md) | Class diagram Mermaid cho báo cáo |
+| [feat_role.md](feat_role.md) | Checklist nghiệm thu theo yêu cầu khách |
+
+## Module Chính
+
+- `Asset Catalog`: danh mục tài sản IT và thông tin vòng đời.
+- `Department Handover`: bàn giao tài sản cho phòng ban, không dùng flow mượn/trả cá nhân.
+- `Maintenance`: bảo trì một hoặc nhiều thiết bị, có chi tiết xử lý và chi phí.
+- `Inventory & Valuation`: kiểm kê, khấu hao, giá trị còn lại và bảo hành.
+- `Purchase Orders`: nhà cung cấp, đơn mua hàng và trạng thái giao.
+- `Requests`: báo sự cố thiết bị và xin vật tư/linh kiện IT.
+- `Disposal`: khóa sử dụng, thu hồi khỏi vận hành, thanh lý.
+
+## Legacy Compatibility
+
+Một số endpoint cũ vẫn tồn tại để trả `410 Gone`. Đây là quyết định kỹ thuật nhằm báo rõ rằng chức năng đã bị loại khỏi scope, thay vì để client cũ nhận HTML của SPA hoặc lỗi `404` không rõ nguyên nhân.
+
+Các migration và bảng lịch sử vẫn giữ lại. Dự án chỉ gỡ code active, UI active, seed data và docs active khỏi domain cũ.

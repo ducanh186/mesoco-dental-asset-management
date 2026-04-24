@@ -1,118 +1,68 @@
-# Stack kỹ thuật
+# Stack Và Runtime Flow
 
-## 1. Công nghệ chính
+`Stack` là bộ công nghệ dùng để xây hệ thống. Dự án này dùng Laravel cho backend, React cho frontend và SQLite cho local/test để dễ chạy trên máy cá nhân.
 
-- Backend: Laravel 12, Sanctum, Eloquent ORM
-- Frontend: React, React Router, Vite
-- Database dev/test: SQLite
-- Styling: CSS nội bộ + component UI dùng lại trong `resources/js/components/ui`
+## Công Nghệ
 
-## 2. Cấu trúc repo quan trọng
+| Lớp | Công nghệ | Vai trò |
+| --- | --- | --- |
+| Backend | Laravel 12, PHP 8.2 | API, validation, authentication, business logic |
+| Auth | Laravel Sanctum | Đăng nhập và bảo vệ API bằng session/token |
+| Frontend | React 19, Vite 7 | SPA UI, route, form, dashboard |
+| HTTP client | Axios | Gọi API từ React |
+| Database | SQLite local/test | Lưu asset, department, maintenance, inventory, purchase order |
+| Test | PHPUnit, npm scripts | Regression backend, build frontend, check i18n |
 
-- `app/Http/Controllers`: API controller theo từng phân hệ
-- `app/Http/Requests`: validation request
-- `app/Models`: model Eloquent
-- `database/migrations`: schema và các migration chuẩn hóa
-- `database/seeders`: dữ liệu demo
-- `resources/js/pages`: màn hình React
-- `resources/js/services/api.js`: client API cho frontend
-- `routes/api.php`: map route và RBAC
-- `tests/Feature`: test API và nghiệp vụ
+## Cấu Trúc Repo
 
-## 3. Các module đang hoạt động
+| Path | Ý nghĩa |
+| --- | --- |
+| `app/Models` | Model nghiệp vụ: Asset, MaintenanceEvent, InventoryCheck, PurchaseOrder |
+| `app/Http/Controllers` | API controller cho từng module |
+| `app/Http/Requests` | Validation request đầu vào |
+| `routes/api.php` | Khai báo API và legacy endpoint `410 Gone` |
+| `database/migrations` | Lịch sử schema, không rewrite trong cleanup hiện tại |
+| `database/seeders` | Demo data theo IT Asset Management |
+| `resources/js/pages` | Page React theo module |
+| `resources/js/components` | Component dùng chung |
+| `resources/js/i18n` | Dịch EN/VI, có script kiểm tra key parity |
+| `tests/Feature` | Feature tests cho API và nghiệp vụ |
+| `docs` | Tài liệu báo cáo/luận văn |
 
-### 3.1. Danh mục và hồ sơ
+## Runtime Flow
 
-- `assets`
-- `locations`
-- `suppliers`
-- `users`
-- `employees`
-- `purchase_orders`
-
-### 3.2. Cấp phát / đơn hàng
-
-- `asset assignments`
-- `purchase_orders`
-- `purchase_order_items`
-
-### 3.3. Bảo trì và sửa chữa
-
-- `maintenance_events`
-- `maintenance_details`
-- `repair_logs`
-- `off service`
-
-### 3.4. Thu hủy
-
-- `disposals`
-- `disposal_details`
-
-### 3.5. Kiểm kê
-
-- `inventory_checks`
-- `inventory_check_items`
-- `inventory/assets`
-- `inventory/valuation`
-
-### 3.6. Báo cáo
-
-- `reports/summary`
-- `reports/export`
-
-## 4. Role hiện tại trong code
-
-- `manager`: duyệt, điều phối, báo cáo, quản lý user/role
-- `technician`: vận hành danh mục, cấp phát, bảo trì, thu hủy, đơn hàng
-- `employee`: người dùng nội bộ đầu cuối
-- `supplier`: tài khoản nhà cung cấp, chỉ xem và cập nhật đơn hàng của chính mình
-
-Legacy mapping vẫn được giữ để không gãy dữ liệu cũ:
-
-- `admin -> manager`
-- `hr -> technician`
-- `doctor -> employee`
-- `staff -> employee`
-
-## 5. Điểm kỹ thuật mới nhất
-
-- `users` giờ có thể liên kết `employee_id` hoặc `supplier_id`
-- `supplier` là canonical role, không còn chỉ là danh mục
-- `purchase_orders` có `payment_method`
-- `purchase_order_items` lưu sản phẩm, số lượng, đơn giá, thành tiền
-- `maintenance_details`, `disposal_details`, `inventory_check_items` là các bảng detail theo ERD mới
-- `requests` đã được loại khỏi schema chính bằng migration mới
-- trạng thái đơn hàng chuẩn hóa thành `preparing`, `shipping`, `delivered`
-- `/api/profile` hỗ trợ cả profile nhân viên và profile nhà cung cấp
-
-## 6. Lệnh làm việc
-
-Chạy backend + frontend dev:
-
-```bash
-composer run dev
+```mermaid
+flowchart LR
+    U["User trên trình duyệt"] --> R["React Router"]
+    R --> P["Page theo module"]
+    P --> A["Axios API client"]
+    A --> L["Laravel route /api/*"]
+    L --> C["Controller"]
+    C --> V["Form Request validation"]
+    C --> M["Eloquent Model"]
+    M --> D["SQLite Database"]
+    C --> J["JSON response"]
+    J --> P
 ```
 
-Build frontend:
+## Lệnh Phát Triển
 
 ```bash
+composer install
+npm install
+php artisan migrate --seed
+php artisan serve
+npm run dev
+```
+
+## Lệnh Kiểm Tra
+
+```bash
+npm run check:i18n
 npm run build
-```
-
-Chạy migrate:
-
-```bash
-php artisan migrate --force
-```
-
-Chạy test:
-
-```bash
 php artisan test
 ```
 
-Chạy một nhóm test quan trọng:
+## Ghi Chú Về Compatibility
 
-```bash
-php artisan test tests/Feature/PurchaseOrderApiTest.php tests/Feature/ProfileTest.php
-```
+Schema hiện tại vẫn giữ migration lịch sử. Một số bảng/cột cũ có thể còn tồn tại trong database để tránh phá dữ liệu, nhưng không còn được UI active sử dụng. Nếu muốn xóa vật lý, cần migration riêng và kế hoạch backup.

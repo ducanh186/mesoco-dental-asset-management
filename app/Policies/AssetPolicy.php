@@ -83,12 +83,4 @@ class AssetPolicy
         return $user->hasOperationalAccess();
     }
 
-    /**
-     * Determine whether the user can resolve QR codes.
-     * All authenticated users can resolve QR codes.
-     */
-    public function resolveQr(User $user): bool
-    {
-        return true;
-    }
 }

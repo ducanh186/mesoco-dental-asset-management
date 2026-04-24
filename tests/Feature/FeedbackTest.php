@@ -26,7 +26,7 @@ class FeedbackTest extends TestCase
     public function test_any_authenticated_user_can_create_feedback(): void
     {
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
 
         $response = $this->actingAs($user)->postJson('/api/feedbacks', [
             'content' => 'This is a test feedback with enough characters.',
@@ -63,7 +63,7 @@ class FeedbackTest extends TestCase
     public function test_feedback_with_rating(): void
     {
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
 
         $response = $this->actingAs($user)->postJson('/api/feedbacks', [
             'content' => 'Great service, very satisfied with maintenance.',
@@ -123,10 +123,10 @@ class FeedbackTest extends TestCase
     public function test_user_sees_only_own_feedback(): void
     {
         $employee1 = Employee::factory()->create();
-        $user1 = User::factory()->create(['employee_id' => $employee1->id, 'role' => 'doctor']);
+        $user1 = User::factory()->create(['employee_id' => $employee1->id, 'role' => 'employee']);
         
         $employee2 = Employee::factory()->create();
-        $user2 = User::factory()->create(['employee_id' => $employee2->id, 'role' => 'doctor']);
+        $user2 = User::factory()->create(['employee_id' => $employee2->id, 'role' => 'employee']);
 
         Feedback::factory()->count(3)->create(['user_id' => $user1->id]);
         Feedback::factory()->count(5)->create(['user_id' => $user2->id]);
@@ -142,7 +142,7 @@ class FeedbackTest extends TestCase
         $admin = User::factory()->admin()->create();
         
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
 
         Feedback::factory()->count(3)->create(['user_id' => $admin->id]);
         Feedback::factory()->count(5)->create(['user_id' => $user->id]);
@@ -158,7 +158,7 @@ class FeedbackTest extends TestCase
         $technician = User::factory()->technician()->create();
         
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
 
         Feedback::factory()->count(2)->create(['user_id' => $technician->id]);
         Feedback::factory()->count(4)->create(['user_id' => $user->id]);
@@ -202,7 +202,7 @@ class FeedbackTest extends TestCase
     public function test_user_can_view_own_feedback(): void
     {
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
         $feedback = Feedback::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->getJson("/api/feedbacks/{$feedback->id}");
@@ -214,10 +214,10 @@ class FeedbackTest extends TestCase
     public function test_user_cannot_view_others_feedback(): void
     {
         $employee1 = Employee::factory()->create();
-        $user1 = User::factory()->create(['employee_id' => $employee1->id, 'role' => 'doctor']);
+        $user1 = User::factory()->create(['employee_id' => $employee1->id, 'role' => 'employee']);
         
         $employee2 = Employee::factory()->create();
-        $user2 = User::factory()->create(['employee_id' => $employee2->id, 'role' => 'doctor']);
+        $user2 = User::factory()->create(['employee_id' => $employee2->id, 'role' => 'employee']);
         
         $feedback = Feedback::factory()->create(['user_id' => $user2->id]);
 
@@ -231,7 +231,7 @@ class FeedbackTest extends TestCase
         $admin = User::factory()->admin()->create();
         
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
         $feedback = Feedback::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($admin)->getJson("/api/feedbacks/{$feedback->id}");
@@ -247,7 +247,7 @@ class FeedbackTest extends TestCase
     public function test_user_can_update_own_new_feedback(): void
     {
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
         $feedback = Feedback::factory()->create([
             'user_id' => $user->id,
             'status' => 'new',
@@ -265,7 +265,7 @@ class FeedbackTest extends TestCase
     public function test_user_cannot_update_in_progress_feedback(): void
     {
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
         $feedback = Feedback::factory()->create([
             'user_id' => $user->id,
             'status' => 'in_progress',
@@ -320,16 +320,16 @@ class FeedbackTest extends TestCase
         $this->assertNotNull(Feedback::find($feedback->id)->resolved_at);
     }
 
-    public function test_doctor_cannot_manage_feedback(): void
+    public function test_employee_cannot_manage_feedback(): void
     {
         $employee1 = Employee::factory()->create();
-        $doctor = User::factory()->create(['employee_id' => $employee1->id, 'role' => 'doctor']);
+        $employeeUser = User::factory()->create(['employee_id' => $employee1->id, 'role' => 'employee']);
         
         $employee2 = Employee::factory()->create();
         $user = User::factory()->create(['employee_id' => $employee2->id]);
         $feedback = Feedback::factory()->create(['user_id' => $user->id, 'status' => 'new']);
 
-        $response = $this->actingAs($doctor)->patchJson("/api/feedbacks/{$feedback->id}/status", [
+        $response = $this->actingAs($employeeUser)->patchJson("/api/feedbacks/{$feedback->id}/status", [
             'status' => 'in_progress',
         ]);
 
@@ -380,7 +380,7 @@ class FeedbackTest extends TestCase
     public function test_user_cannot_delete_own_feedback(): void
     {
         $employee = Employee::factory()->create();
-        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'doctor']);
+        $user = User::factory()->create(['employee_id' => $employee->id, 'role' => 'employee']);
         $feedback = Feedback::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->deleteJson("/api/feedbacks/{$feedback->id}");

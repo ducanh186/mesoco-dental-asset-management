@@ -1,79 +1,45 @@
-# Ma trận phân quyền
+# RBAC Matrix
 
-## 1. Vai trò canonical
+`RBAC` là Role-Based Access Control, nghĩa là hệ thống quyết định người dùng được làm gì dựa trên role. Dự án hiện dùng 4 role canonical: `manager`, `technician`, `employee`, `supplier`.
 
-- `manager`
-- `technician`
-- `employee`
-- `supplier`
+## Ma Trận Quyền
 
-## 2. Ma trận quyền theo module
-
-| Module / API | manager | technician | employee | supplier |
+| Module | manager | technician | employee | supplier |
 | --- | --- | --- | --- | --- |
-| `/api/profile` | Có | Có | Có | Có |
-| `/api/assets` | Có | Có | Không | Không |
-| `/api/inventory/*` | Có | Có | Không | Không |
-| `/api/inventory/checks*` | Có | Có | Không | Không |
-| `/api/locations` | Có | Có | Không | Không |
-| `/api/suppliers` | Có | Có | Không | Không |
-| `/api/purchase-orders` GET | Có | Có | Không | Có, chỉ đơn của mình |
-| `/api/purchase-orders` POST/PUT/DELETE | Có | Có | Không | Không |
-| `/api/purchase-orders/{id}/status` | Có | Có | Không | Có, chỉ đơn của mình |
-| `/api/maintenance-events` | Có | Có | Không | Không |
-| `/api/disposal/*` | Có | Có | Không | Không |
-| `/api/reports/*` | Có | Không | Không | Không |
-| `/api/users` list/create/show | Có | Có | Không | Không |
-| `/api/users/{id}/role` | Có | Không | Không | Không |
-| `/api/roles` | Có | Không | Không | Không |
+| Dashboard | Xem toàn hệ thống | Xem vận hành | Xem phòng ban | Xem đơn hàng |
+| Asset Catalog | CRUD | CRUD | Xem thiết bị phòng ban | Không |
+| Department Handover | Bàn giao/thu hồi | Bàn giao/thu hồi | Xem | Không |
+| Maintenance | CRUD, điều phối | CRUD, xử lý | Xem liên quan | Không |
+| Inventory | Xem, tạo, hoàn tất | Xem, tạo, hoàn tất | Không | Không |
+| Valuation/Depreciation | Xem báo cáo | Xem vận hành | Không | Không |
+| Purchase Orders | CRUD, xem tất cả | CRUD, xem tất cả | Không | Xem/cập nhật đơn của mình |
+| Requests | Tạo/xem | Tạo/xem | Tạo/xem của mình | Không |
+| Review Requests | Duyệt/từ chối | Không | Không | Không |
+| Disposal | Duyệt/xử lý | Xử lý | Không | Không |
+| Reports | Xem/export | Không | Không | Không |
+| User/Profile | Quản lý user | Xem user vận hành | Hồ sơ cá nhân | Hồ sơ supplier |
 
-## 3. Route group hiện tại
+## Role Canonical
 
-### 3.1. Mọi người dùng đã đăng nhập
+- `manager`: người quản lý hệ thống, báo cáo và phê duyệt.
+- `technician`: kỹ thuật viên IT vận hành tài sản, bảo trì, kiểm kê.
+- `employee`: nhân viên công ty gửi request và xem thiết bị phòng ban.
+- `supplier`: nhà cung cấp theo dõi purchase order liên quan.
 
-- `/api/me`
-- `/api/change-password`
-- `/api/profile`
+## Legacy Endpoint
 
-### 3.2. Nội bộ: manager + technician + employee
+Các API cũ ngoài scope active vẫn trả HTTP `410 Gone`. Mục tiêu là báo rõ chức năng đã dừng, không để client cũ hiểu nhầm rằng endpoint mất ngẫu nhiên.
 
-- QR
-- my-assets
-- shifts
-- checkin
-- my-asset-history
-- feedback
+| Endpoint legacy | Hành vi |
+| --- | --- |
+| `/api/qr/resolve` | `410 Gone` |
+| `/api/my-assets` | `410 Gone` |
+| `/api/my-asset-history*` | `410 Gone` |
+| `/api/assets/available-for-loan` | `410 Gone` |
+| `/api/assets/{asset}/regenerate-qr` | `410 Gone` |
+| `/api/employees/{employee}/contracts` | `410 Gone` |
+| `/api/contracts/{contract}*` | `410 Gone` |
 
-### 3.3. Manager בלבד
+## Nguyên Tắc
 
-- review queue
-- report summary/export
-- update user role
-- delete user
-
-### 3.4. Manager + technician
-
-- employees
-- users list/create/show
-- assets
-- inventory
-- inventory checks
-- locations
-- suppliers
-- maintenance
-- disposal
-- purchase order create/update/delete
-
-### 3.5. Manager + technician + supplier
-
-- purchase order list/show
-- purchase order status update
-
-## 4. Ràng buộc quan trọng
-
-- Supplier không được nhìn thấy route người dùng nội bộ như `my-assets`, `qr-scan`
-- Supplier chỉ nhìn thấy đơn hàng có `supplier_id` trùng với `users.supplier_id`
-- Manager không được tự đổi role của chính mình qua API đổi role
-- Tài khoản supplier không thể đổi sang role nội bộ nếu không có `employee_id`
-- Tài khoản nội bộ không thể đổi sang `supplier` nếu không có `supplier_id`
-- Các route legacy `/api/requests` và `/api/review-requests` trả `410 Gone`
+Employee không quản lý tài sản cá nhân theo flow mượn/trả. Tài sản được nhìn theo phòng ban nhận bàn giao. Technician và manager chịu trách nhiệm vận hành, kiểm kê và bảo trì.

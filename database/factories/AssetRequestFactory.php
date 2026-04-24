@@ -52,16 +52,6 @@ class AssetRequestFactory extends Factory
     }
 
     /**
-     * Legacy helper retained for compatibility with older tests.
-     */
-    public function assetLoan(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'type' => AssetRequest::TYPE_ASSET_LOAN,
-        ]);
-    }
-
-    /**
      * Request is a consumable request.
      */
     public function consumableRequest(): static

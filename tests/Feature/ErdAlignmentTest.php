@@ -29,19 +29,6 @@ class ErdAlignmentTest extends TestCase
         $this->assertSame('employee', $user->roleDefinition?->code);
     }
 
-    public function test_doctor_role_is_now_collapsed_into_employee(): void
-    {
-        $user = User::factory()->create([
-            'role' => 'doctor',
-            'must_change_password' => false,
-        ]);
-
-        $user->refresh()->load('roleDefinition');
-
-        $this->assertSame('employee', $user->role);
-        $this->assertSame('employee', $user->roleDefinition?->code);
-    }
-
     public function test_user_role_is_synced_to_account_role_pivot(): void
     {
         $manager = User::factory()->manager()->create([
@@ -165,15 +152,15 @@ class ErdAlignmentTest extends TestCase
         $asset = Asset::factory()->create(['status' => Asset::STATUS_ACTIVE]);
 
         $response = $this->actingAs($technician)->postJson("/api/assets/{$asset->id}/assign", [
-            'department_name' => 'Sterilization',
+            'department_name' => 'IT Support',
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('assignment.department_name', 'Sterilization');
+            ->assertJsonPath('assignment.department_name', 'IT Support');
 
         $this->assertDatabaseHas('asset_assignments', [
             'asset_id' => $asset->id,
-            'department_name' => 'Sterilization',
+            'department_name' => 'IT Support',
             'employee_id' => null,
         ]);
     }

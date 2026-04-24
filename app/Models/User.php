@@ -24,7 +24,6 @@ class User extends Authenticatable
     public const ROLES = ['manager', 'technician', 'employee', 'supplier'];
 
     public const ROLE_MANAGER = 'manager';
-    public const ROLE_DOCTOR = 'doctor';
     public const ROLE_TECHNICIAN = 'technician';
     public const ROLE_EMPLOYEE = 'employee';
     public const ROLE_SUPPLIER = 'supplier';
@@ -38,7 +37,6 @@ class User extends Authenticatable
     public const LEGACY_ROLE_MAP = [
         self::ROLE_ADMIN => self::ROLE_MANAGER,
         self::ROLE_HR => self::ROLE_TECHNICIAN,
-        self::ROLE_DOCTOR => self::ROLE_EMPLOYEE,
         self::ROLE_STAFF => self::ROLE_EMPLOYEE,
     ];
 

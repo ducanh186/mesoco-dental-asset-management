@@ -115,7 +115,6 @@ export default {
         assets: 'Danh mục tài sản',
         equipmentCatalog: 'Danh mục tài sản',
         myEquipment: 'Thiết bị phòng ban',
-        myAssets: 'Thiết bị phòng ban',
         equipment: 'Thiết bị',
         shifts: 'Ca làm',
         checkin: 'Ghi nhận ca',
@@ -128,13 +127,9 @@ export default {
         feedback: 'Phản hồi & đề xuất',
         reports: 'Báo cáo & thống kê',
         settings: 'Cài đặt',
-        admin: 'Quản trị',
         users: 'Người dùng',
         locations: 'Danh mục vị trí',
-        myAssetHistory: 'Lịch sử bàn giao',
         equipmentLookup: 'Tra cứu thiết bị',
-        qrScan: 'Tra cứu thiết bị',
-        contracts: 'Hợp đồng',
         disposal: 'Thu hủy',
         incidents: 'Quản lý sự cố',
         disposalForms: 'Phiếu thu hủy',
@@ -245,12 +240,8 @@ export default {
     roles: {
         staff: 'Nhân viên',
         employee: 'Nhân viên', // DB value 'employee' displays as 'Nhân viên'
-        doctor: 'Nhân viên',
-        nurse: 'Y tá',
         technician: 'Kỹ thuật viên',
-        receptionist: 'Lễ tân',
         manager: 'Quản lý',
-        admin: 'Quản lý',
         owner: 'Chủ phòng khám',
         hr: 'Kỹ thuật viên',
         supplier: 'Nhà cung cấp',
@@ -263,7 +254,7 @@ export default {
         title: 'Tổng quan',
         welcome: 'Chào mừng trở lại, {name}!',
         welcomeSubtitle: 'Đây là tình hình thiết bị của bạn hôm nay.',
-        welcomeSubtitleAdmin: 'Tổng quan về hệ thống quản lý thiết bị nha khoa.',
+        welcomeSubtitleAdmin: 'Tổng quan hệ thống quản lý thiết bị IT.',
         welcomeSubtitleUser: 'Xem thiết bị được giao và quản lý phiếu yêu cầu của bạn.',
         welcomeSubtitleTechnician: 'Theo dõi lịch bảo trì và quản lý thiết bị.',
         welcomeSubtitleSupplier: 'Theo dõi đơn hàng và cập nhật tiến độ giao hàng của nhà cung cấp.',
@@ -282,8 +273,8 @@ export default {
         upcomingTasks: 'Có công việc sắp tới',
         noScheduled: 'Không có lịch',
         
-        // Doctor/Staff Cards
-        myEquipmentCount: 'Thiết bị của tôi',
+        // Employee cards
+        myEquipmentCount: 'Thiết bị phòng ban',
         myActiveRequests: 'Phiếu đang xử lý',
         alerts: 'Cảnh báo',
         lockedCount: '{count} đang khóa',
@@ -310,7 +301,6 @@ export default {
         quickActions: 'Thao tác nhanh',
         addEquipment: 'Thêm thiết bị',
         newRequest: 'Tạo phiếu',
-        scanQrCode: 'Quét mã QR',
         viewReports: 'Xem báo cáo',
         myEquipment: 'Thiết bị của tôi',
         myRequests: 'Phiếu của tôi',
@@ -358,8 +348,6 @@ export default {
     assets: {
         title: 'Thiết bị',
         subtitle: 'Quản lý dữ liệu và bàn giao thiết bị IT theo phòng ban',
-        myAssets: 'Thiết bị phòng ban',
-        myAssetsSubtitle: 'Xem thiết bị đã bàn giao cho phòng ban',
         allAssets: 'Tất cả thiết bị',
         createAsset: 'Tạo thiết bị mới',
         editAsset: 'Chỉnh sửa thiết bị',
@@ -417,28 +405,7 @@ export default {
         // Condition
         condition: 'Tình trạng',
         
-        // Legacy labels retained for old saved translations.
-        qrIdentity: 'Định danh tài sản',
-        qrCode: 'Mã tài sản',
-        qrPayload: 'Mã định danh',
-        scanQr: 'Tra cứu thiết bị',
-        regenerateQr: 'Tạo lại mã định danh',
-        regenerateQrConfirm: 'Bạn có chắc muốn tạo mã định danh mới?',
-        qrRegenerated: 'Đã tạo mã định danh mới',
-        copyPayload: 'Sao chép mã định danh',
-        noQrCode: 'Chưa có mã định danh',
         viewAsset: 'Xem thiết bị',
-        
-        // QR Resolve
-        qrLookup: 'Tra cứu QR',
-        qrLookupSubtitle: 'Nhập hoặc quét mã QR để xem thông tin thiết bị',
-        enterQrPayload: 'Nhập nội dung QR (VD: MESO-xxxx-xxxx-xxxx)',
-        resolve: 'Tra cứu',
-        assetFound: 'Đã tìm thấy thiết bị!',
-        assetNotFound: 'Không tìm thấy thiết bị hoặc đã bị xóa',
-        qrEnterHint: 'Nhập mã QR để xem thông tin thiết bị',
-        qrHelpTitle: 'Hướng dẫn tra cứu QR',
-        qrHelpDesc: 'Quét mã QR trên thiết bị bằng camera điện thoại hoặc ứng dụng quét QR, sau đó dán nội dung (VD: MESO-xxxx-xxxx-xxxx) vào ô nhập liệu phía trên.',
         
         // Table columns
         columns: {
@@ -448,7 +415,6 @@ export default {
             status: 'Trạng thái',
             assignee: 'Người sử dụng',
             assignment: 'Phân công',
-            qr: 'Mã định danh',
             assignedAt: 'Ngày giao',
             actions: 'Thao tác',
         },
@@ -487,15 +453,15 @@ export default {
         itemsCount: '{count} thiết bị',
 
         // Check-in / Check-out (Phase 4)
-        checkIn: 'Nhận thiết bị',
-        checkOut: 'Trả thiết bị',
-        checkinStatus: 'Trạng thái nhận',
-        checkedIn: 'Đã nhận',
-        notCheckedIn: 'Chưa nhận',
-        checkinSuccess: 'Nhận thiết bị thành công',
-        checkoutSuccess: 'Trả thiết bị thành công',
-        checkedInAt: 'Đã nhận lúc',
-        notCheckedInYet: 'Chưa nhận hôm nay',
+        checkIn: 'Ghi nhận',
+        checkOut: 'Kết thúc ghi nhận',
+        checkinStatus: 'Trạng thái ghi nhận',
+        checkedIn: 'Đã ghi nhận',
+        notCheckedIn: 'Chưa ghi nhận',
+        checkinSuccess: 'Ghi nhận thành công',
+        checkoutSuccess: 'Kết thúc ghi nhận thành công',
+        checkedInAt: 'Đã ghi nhận lúc',
+        notCheckedInYet: 'Chưa ghi nhận hôm nay',
         currentShift: 'Ca hiện tại',
         noActiveShift: 'Không có ca đang hoạt động',
         viewDetails: 'Xem chi tiết',
@@ -537,9 +503,7 @@ export default {
         
         // Roles (dùng chung từ roles section)
         roles: {
-            admin: 'Quản lý',
             hr: 'Kỹ thuật viên',
-            doctor: 'Nhân viên',
             technician: 'Kỹ thuật viên',
             staff: 'Nhân viên',
         },
@@ -591,8 +555,6 @@ export default {
         joined: 'Ngày tham gia',
         equipmentAssigned: 'Thiết bị được giao',
         items: 'mục',
-        borrowedEquipment: 'Mượn thiết bị',
-        returnedEquipment: 'Trả thiết bị',
         maintenanceRequest: 'Yêu cầu bảo trì',
         active: 'đang hoạt động',
         completed: 'hoàn thành',
@@ -688,11 +650,7 @@ export default {
         types: {
             all: 'Tất cả loại',
             JUSTIFICATION: 'Báo sự cố thiết bị',
-            ASSET_LOAN: 'Luân chuyển đã ngừng dùng',
             CONSUMABLE_REQUEST: 'Xin vật tư',
-            // Legacy
-            borrow: 'Luân chuyển đã ngừng dùng',
-            return: 'Hoàn trả đã ngừng dùng',
             maintenance: 'Yêu cầu bảo trì',
         },
 
@@ -712,7 +670,7 @@ export default {
         // Legacy scheduling fields
         fromShift: 'Từ ca',
         toShift: 'Đến ca',
-        loanReason: 'Mục đích xử lý',
+        handlingPurpose: 'Mục đích xử lý',
 
         // Consumable fields
         itemName: 'Tên vật tư',
@@ -833,7 +791,7 @@ export default {
     // ========================================================================
     requestType: {
         justification: 'Báo sự cố thiết bị',
-        assetLoan: 'Mượn thiết bị',
+        retiredCirculation: 'Luồng cũ đã ngừng dùng',
         consumableRequest: 'Xin vật tư',
     },
 
@@ -867,17 +825,6 @@ export default {
         medium: 'Bình thường',
         high: 'Nghiêm trọng',
         urgent: 'Khẩn',
-    },
-
-    // ========================================================================
-    // Asset Loan / Mượn thiết bị
-    // ========================================================================
-    assetLoan: {
-        title: 'Mượn thiết bị',
-        selectAsset: 'Chọn thiết bị cần mượn',
-        fromShift: 'Từ ca',
-        toShift: 'Đến ca',
-        purpose: 'Mục đích',
     },
 
     // ========================================================================
@@ -1070,7 +1017,7 @@ export default {
         deleteAssetMessage: 'Bạn có chắc muốn xóa thiết bị "{name}"? Thao tác này không thể hoàn tác.',
         unassign: 'Xác nhận thu hồi',
         unassignMessage: 'Bạn có chắc muốn thu hồi thiết bị "{name}" khỏi {assignee}?',
-        regenerateQr: 'Xác nhận tạo lại QR',
+        regenerateIdentifier: 'Tạo lại định danh',
         logout: 'Xác nhận đăng xuất',
         logoutMessage: 'Bạn có chắc muốn đăng xuất?',
     },
@@ -1106,269 +1053,6 @@ export default {
     },
 
     // ========================================================================
-    // Admin / Quản trị hệ thống
-    // ========================================================================
-    admin: {
-        title: 'Quản trị Hệ thống',
-        subtitle: 'Quản lý người dùng, phân quyền và cài đặt hệ thống',
-        
-        // Tabs
-        users: 'Người dùng',
-        rolesPermissions: 'Quyền & Vai trò',
-        systemSettings: 'Cài đặt hệ thống',
-        auditLog: 'Nhật ký hệ thống',
-        
-        // User Management
-        searchUsers: 'Tìm kiếm người dùng...',
-        createUser: 'Tạo tài khoản',
-        noUsers: 'Chưa có người dùng nào',
-        employeeCode: 'Mã NV',
-        userName: 'Họ tên',
-        role: 'Vai trò',
-        changeRole: 'Đổi quyền',
-        currentUser: 'Người dùng hiện tại',
-        newRole: 'Vai trò mới',
-        selectEmployee: 'Chọn nhân viên',
-        selectEmployeePlaceholder: '-- Chọn nhân viên --',
-        defaultPassword: 'Mật khẩu mặc định',
-        defaultPasswordPlaceholder: 'Nhập mật khẩu mặc định',
-        userCreated: 'Tạo tài khoản thành công',
-        userDeleted: 'Đã xóa tài khoản',
-        roleUpdated: 'Đã cập nhật vai trò',
-        deleteConfirm: 'Bạn có chắc muốn xóa tài khoản này?',
-        
-        // RBAC
-        rbacMatrix: 'Ma trận Phân quyền (RBAC)',
-        permission: 'Quyền hạn',
-        
-        // System Settings
-        companyProfile: 'Hồ sơ Công ty',
-        companyName: 'Tên công ty',
-        companyEmail: 'Email',
-        companyPhone: 'Điện thoại',
-        companyAddress: 'Địa chỉ',
-        codeGeneration: 'Quy tắc tạo mã',
-        assetCodeFormat: 'Mã thiết bị',
-        employeeCodeFormat: 'Mã nhân viên',
-        requestCodeFormat: 'Mã phiếu yêu cầu',
-        settingsComingSoon: 'Chức năng chỉnh sửa sẽ sớm ra mắt.',
-        
-        // Audit
-        auditComingSoon: 'Nhật ký hệ thống sẽ sớm ra mắt.',
-    },
-
-    // ========================================================================
-    // QR Scan / Quét QR
-    // ========================================================================
-    qrScan: {
-        title: 'Quét mã QR',
-        subtitle: 'Hướng camera vào mã QR thiết bị hoặc nhập thủ công',
-        scannerTitle: 'Quét QR thiết bị',
-        enterPayload: 'Vui lòng nhập mã QR',
-        inputPlaceholder: 'Nhập mã QR (vd: MESOCO|ASSET|v1|uuid)',
-        inputHint: 'Quét mã QR trên thiết bị hoặc dán mã vào ô trên',
-        expectedFormat: 'Định dạng: MESOCO|ASSET|v1|<uuid>',
-        viewfinderHint: 'Hướng camera vào mã QR',
-        resolve: 'Tra cứu',
-        
-        // Camera controls
-        useCamera: 'Camera',
-        manualInput: 'Thủ công',
-        startScanning: 'Bắt đầu quét',
-        stopScanning: 'Dừng quét',
-        scanning: 'Đang quét...',
-        resolving: 'Đang tra cứu...',
-        tapToStart: 'Nhấn "Bắt đầu quét" để bắt đầu',
-        noCameraAvailable: 'Thiết bị không có camera',
-        cameraPermissionDenied: 'Không có quyền truy cập camera. Vui lòng nhập thủ công.',
-        
-        // Results
-        assetFound: 'Đã tìm thấy thiết bị!',
-        assetResolved: 'Thiết bị được xác định',
-        identified: 'Đã xác định',
-        offService: 'Ngừng hoạt động',
-        scanAnother: 'Quét mã khác',
-        
-        // Error messages - matching checklist
-        invalidFormat: 'Mã QR không hợp lệ.',
-        assetNotFound: 'Không tìm thấy thiết bị.',
-        unsupportedVersion: 'Phiên bản QR không được hỗ trợ.',
-        resolveFailed: 'Không thể tra cứu mã QR',
-        notFound: 'Không tìm thấy',
-        
-        // Off-service warning
-        offServiceWarning: 'Thiết bị này đang ngừng hoạt động. Không sử dụng.',
-        offServiceDetail: 'Thiết bị này hiện không khả dụng. Liên hệ kỹ thuật viên để biết thêm thông tin.',
-        
-        // Check-in blocked reasons
-        blockedReason: {
-            ASSET_OFF_SERVICE: 'Thiết bị đang ngừng hoạt động',
-            ASSET_NOT_ASSIGNED: 'Thiết bị chưa được phân công',
-            NO_ACTIVE_SHIFT: 'Không có ca làm việc hiện tại',
-            ALREADY_CHECKED_IN: 'Đã ghi nhận hôm nay',
-            NOT_ASSIGNEE: 'Bạn không phải người được phân công',
-        },
-        
-        // Instructions
-        instructions: 'Hướng dẫn sử dụng',
-        viewInstructions: 'Xem hướng dẫn',
-        instructionsNotAvailable: 'Không có hướng dẫn cho thiết bị này',
-        
-        // Actions
-        viewAsset: 'Xem thiết bị',
-        viewDetails: 'Xem chi tiết',
-        assetInfo: 'Thông tin thiết bị',
-        checkinFromMyAssets: 'Vui lòng sử dụng trang Thiết bị của tôi để ghi nhận',
-        
-        // Help
-        helpTitle: 'Cách sử dụng',
-        helpDesc: 'Quét mã QR trên thiết bị bằng camera điện thoại hoặc nhập mã thủ công.',
-        helpStep1: 'Nhấn "Bắt đầu quét" và hướng camera vào mã QR',
-        helpStep2: 'Hoặc chuyển sang chế độ Thủ công và dán mã',
-        helpStep3: 'Xem thông tin thiết bị và ghi nhận nếu được phân công',
-        
-        // Legacy keys for backwards compatibility
-        tryAgain: 'Thử lại',
-        found: 'Đã tìm thấy',
-        noResult: 'Không tìm thấy thiết bị',
-        noResultMessage: 'Mã QR không hợp lệ hoặc thiết bị không tồn tại trong hệ thống.',
-        processing: 'Đang xử lý...',
-    },
-
-    // ========================================================================
-    // Contracts / Hợp đồng
-    // ========================================================================
-    contracts: {
-        title: 'Quản lý Hợp đồng',
-        subtitle: 'Hợp đồng lao động nhân viên',
-        create: 'Tạo hợp đồng',
-        edit: 'Sửa hợp đồng',
-        view: 'Xem hợp đồng',
-        delete: 'Xóa hợp đồng',
-        noContracts: 'Chưa có hợp đồng',
-        noContractsHint: 'Thêm hợp đồng cho nhân viên này',
-        noContractsForEmployee: 'Nhân viên này chưa có hợp đồng',
-        selectEmployee: 'Chọn nhân viên',
-        selectEmployeeFirst: 'Chọn một nhân viên',
-        selectEmployeeHint: 'Chọn nhân viên từ danh sách phía trên để xem hợp đồng',
-        selectEmployeePlaceholder: '-- Chọn nhân viên --',
-        allEmployees: 'Tất cả nhân viên',
-        addContract: 'Thêm hợp đồng',
-        contractId: 'Mã hợp đồng',
-        contractDetails: 'Chi tiết hợp đồng',
-        indefinite: 'Không thời hạn',
-        department: 'Phòng ban',
-        departmentPlaceholder: 'VD: Nha khoa, Hành chính...',
-        pdfFile: 'Tệp PDF',
-        pdfHint: 'Tải hợp đồng (chỉ PDF, tối đa 10MB)',
-        viewPdf: 'Xem PDF',
-        pdfNotAvailable: 'Không có tệp PDF',
-        startDateRequired: 'Ngày bắt đầu là bắt buộc',
-        selectEmployeeFirst: 'Chọn một nhân viên',
-        selectEmployeeHint: 'Chọn nhân viên từ danh sách ở trên để xem hợp đồng của họ',
-        createSuccess: 'Tạo hợp đồng thành công',
-        updateSuccess: 'Cập nhật hợp đồng thành công',
-        deleteSuccess: 'Xóa hợp đồng thành công',
-        
-        // Form fields
-        contractType: 'Loại hợp đồng',
-        startDate: 'Ngày bắt đầu',
-        endDate: 'Ngày kết thúc',
-        notes: 'Ghi chú',
-        document: 'Tài liệu đính kèm',
-        uploadDocument: 'Tải tài liệu lên',
-        viewDocument: 'Xem tài liệu',
-        downloadDocument: 'Tải xuống',
-        noDocument: 'Không có tài liệu',
-        
-        // Types
-        types: {
-            probation: 'Thử việc',
-            fixed_term: 'Có thời hạn',
-            indefinite: 'Không thời hạn',
-            seasonal: 'Thời vụ',
-            contractor: 'Cộng tác viên',
-            fullTime: 'Toàn thời gian',
-            partTime: 'Bán thời gian',
-            intern: 'Thực tập',
-            outsource: 'Thuê ngoài',
-            other: 'Khác',
-        },
-        
-        // Statuses
-        statuses: {
-            active: 'Đang hiệu lực',
-            expired: 'Hết hạn',
-            terminated: 'Đã chấm dứt',
-            pending: 'Chờ duyệt',
-        },
-        
-        // Table headers
-        employee: 'Nhân viên',
-        type: 'Loại',
-        status: 'Trạng thái',
-        period: 'Thời hạn',
-        actions: 'Thao tác',
-        
-        // Messages
-        created: 'Đã tạo hợp đồng',
-        updated: 'Đã cập nhật hợp đồng',
-        deleted: 'Đã xóa hợp đồng',
-        deleteConfirm: 'Bạn có chắc muốn xóa hợp đồng này?',
-        uploadSuccess: 'Đã tải tài liệu lên',
-        uploadError: 'Lỗi tải tài liệu',
-        invalidFileType: 'Loại tệp không hợp lệ. Chỉ chấp nhận PDF.',
-        fileTooLarge: 'Tệp quá lớn. Dung lượng tối đa: 5MB.',
-    },
-
-    // ========================================================================
-    // Employees / Nhân viên
-    // ========================================================================
-    employees: {
-        title: 'Quản lý Nhân viên',
-        subtitle: 'Quản lý hồ sơ nhân viên và hợp đồng',
-        addEmployee: 'Thêm nhân viên',
-        editEmployee: 'Sửa thông tin nhân viên',
-        employeeCode: 'Mã nhân viên',
-        fullName: 'Họ và tên',
-        position: 'Chức vụ',
-        noPosition: 'Chưa có chức vụ',
-        dob: 'Ngày sinh',
-        gender: 'Giới tính',
-        phone: 'Số điện thoại',
-        address: 'Địa chỉ',
-        userAccount: 'Tài khoản',
-        hasUser: 'Có tài khoản',
-        noUser: 'Chưa có tài khoản',
-        viewContracts: 'Xem hợp đồng',
-        codeNotEditable: 'Mã nhân viên không thể thay đổi',
-        emailNotEditable: 'Email không thể thay đổi',
-        requiredFields: 'Mã nhân viên và họ tên là bắt buộc',
-        createSuccess: 'Thêm nhân viên thành công',
-        updateSuccess: 'Cập nhật nhân viên thành công',
-        deleteSuccess: 'Xóa nhân viên thành công',
-        deleteConfirm: 'Bạn có chắc muốn xóa {{name}}?',
-        noEmployees: 'Chưa có nhân viên',
-        noEmployeesHint: 'Thêm nhân viên đầu tiên để bắt đầu',
-        searchPlaceholder: 'Tìm theo mã hoặc tên...',
-        selectEmployeeFirst: 'Chọn một nhân viên',
-        selectEmployeeHint: 'Nhấn "Xem hợp đồng" trên dòng nhân viên để xem hợp đồng của họ',
-        tabs: {
-            general: 'Thông tin chung',
-            contract: 'Hợp đồng',
-        },
-        statuses: {
-            active: 'Đang làm việc',
-            inactive: 'Nghỉ việc',
-        },
-        genders: {
-            male: 'Nam',
-            female: 'Nữ',
-            other: 'Khác',
-        },
-    },
-
-    // ========================================================================
     // Topbar / Thanh trên
     // ========================================================================
     topbar: {
@@ -1382,8 +1066,6 @@ export default {
         title: 'Nhãn thiết bị',
         popupBlocked: 'Vui lòng cho phép cửa sổ bật lên để in nhãn',
         unnamedAsset: 'Thiết bị chưa đặt tên',
-        qrAlt: 'Mã định danh',
-        noQr: 'Không có mã định danh',
         scanInstruction: 'Dùng nhãn này để đối chiếu thiết bị khi kiểm kê',
         handoverNote: 'Tài sản IT bàn giao theo phòng ban',
     },
@@ -1400,7 +1082,7 @@ export default {
         showInactive: 'Hiển thị vị trí ngừng hoạt động',
         noLocations: 'Không tìm thấy vị trí nào',
         locationName: 'Tên vị trí',
-        locationNamePlaceholder: 'Ví dụ: Phòng khám tầng 1',
+        locationNamePlaceholder: 'Ví dụ: Phòng server hoặc Văn phòng tầng 1',
         descriptionPlaceholder: 'Mô tả thêm (không bắt buộc)...',
         address: 'Địa chỉ',
         addressPlaceholder: 'Địa chỉ (không bắt buộc)...',
@@ -1443,77 +1125,11 @@ export default {
     },
 
     // ========================================================================
-    // My Equipment Page / Trang thiết bị của tôi
-    // ========================================================================
-    myEquipmentPage: {
-        title: 'Thiết bị của tôi',
-        subtitle: '{count} mục đang được phân công cho bạn',
-        totalAssigned: 'Tổng thiết bị được giao',
-        inMaintenance: 'Đang bảo trì',
-        requestEquipment: 'Yêu cầu thiết bị',
-        searchPlaceholder: 'Tìm theo tên hoặc mã...',
-        filterByStatus: 'Lọc theo trạng thái',
-        noEquipment: 'Chưa có thiết bị nào được giao',
-        noEquipmentHint: 'Hãy bắt đầu bằng cách gửi yêu cầu thiết bị.',
-        openRequestForm: 'Đang mở biểu mẫu yêu cầu thiết bị...',
-        view: 'Xem',
-        return: 'Trả lại',
-        viewing: 'Đang xem {name}',
-        requestReturn: 'Yêu cầu trả lại {name}',
-        columns: {
-            equipment: 'Thiết bị',
-            category: 'Nhóm',
-            assignedDate: 'Ngày giao',
-            condition: 'Tình trạng',
-            status: 'Trạng thái',
-            nextMaintenance: 'Bảo trì tiếp theo',
-            actions: 'Thao tác',
-        },
-        conditions: {
-            excellent: 'Rất tốt',
-            good: 'Tốt',
-            fair: 'Tạm ổn',
-        },
-        statusFilters: {
-            all: 'Tất cả trạng thái',
-            active: 'Hoạt động',
-            maintenance: 'Đang bảo trì',
-            pending: 'Chờ trả lại',
-        },
-    },
-
-    // ========================================================================
-    // My Asset History Page / Lịch sử thiết bị của tôi
-    // ========================================================================
-    myAssetHistoryPage: {
-        title: 'Lịch sử thiết bị của tôi',
-        subtitle: 'Dòng thời gian các lần được phân công và ghi nhận thiết bị',
-        currentAssignments: 'Đang được phân công',
-        totalAssignments: 'Tổng số lần phân công',
-        totalCheckIns: 'Tổng số lần ghi nhận',
-        checkInsThisMonth: 'Ghi nhận trong tháng này',
-        clearFilters: 'Xóa bộ lọc',
-        fromDate: 'Từ ngày',
-        toDate: 'Đến ngày',
-        noHistoryFound: 'Không tìm thấy lịch sử',
-        adjustFilters: 'Hãy thử điều chỉnh bộ lọc.',
-        historyWillAppear: 'Lịch sử thiết bị của bạn sẽ hiển thị ở đây.',
-        allEvents: 'Tất cả sự kiện',
-        performedBy: 'bởi {name}',
-        eventTypes: {
-            assigned: 'Được giao',
-            unassigned: 'Thu hồi',
-            checkin: 'Nhận thiết bị',
-            checkout: 'Trả thiết bị',
-        },
-    },
-
-    // ========================================================================
     // Placeholder Pages / Trang chờ triển khai
     // ========================================================================
     placeholderPages: {
         equipmentTitle: 'Quản lý thiết bị',
-        equipmentDescription: 'Quản lý toàn bộ thiết bị và máy móc nha khoa.',
+        equipmentDescription: 'Quản lý thiết bị IT của công ty.',
         usersTitle: 'Quản lý người dùng',
         usersDescription: 'Quản lý người dùng và quyền truy cập hệ thống.',
         settingsTitle: 'Cài đặt hệ thống',

@@ -1,65 +1,69 @@
-# Seeder và dữ liệu mẫu
+# Seed Data
 
-## 1. Seeder đang dùng
+Seed data dùng để demo hệ thống IT Asset Management sau khi migrate fresh. Dữ liệu mẫu tập trung vào thiết bị máy tính, phòng ban công ty, nhà cung cấp, maintenance, inventory và purchase order.
 
-Các seeder chính trong repo:
-
-- `ShiftSeeder`
-- `FinalMvpSeeder`
-- `DemoSeeder`
-- `ErdAlignmentSeeder`
-
-## 2. Dữ liệu demo hiện có
-
-Seeder hiện tập trung vào dữ liệu nội bộ:
-
-- employee
-- manager
-- technician
-- assets
-- maintenance
-- disposal
-- inventory checks
-- review log
-
-## 3. Supplier role trong môi trường seed
-
-Hiện tại repo đã có:
-
-- role `supplier` trong bảng `roles`
-- quyền trong bảng `permissions`
-- pivot `role_permissions` và `account_roles`
-- bảng `suppliers`
-- schema `purchase_orders` và `purchase_order_items`
-- schema `maintenance_details`, `disposal_details`, `inventory_checks`, `inventory_check_items`
-- factory cho `Supplier`, `PurchaseOrder`, `PurchaseOrderItem`
-
-Nhưng seed demo mặc định chưa bắt buộc tạo sẵn tài khoản supplier portal. Nếu cần demo supplier login, nên:
-
-1. seed dữ liệu chuẩn
-2. tạo nhà cung cấp trong `suppliers`
-3. tạo user role `supplier` gắn `supplier_id`
-4. tạo đơn hàng mẫu qua API hoặc factory
-
-## 4. Factory phục vụ test
-
-Các factory mới và đang dùng:
-
-- `SupplierFactory`
-- `PurchaseOrderFactory`
-- `PurchaseOrderItemFactory`
-- `UserFactory::supplier()`
-
-## 5. Test quan trọng cần chạy sau khi đụng seed/schema
+## Chạy Seed
 
 ```bash
-php artisan test tests/Feature/PurchaseOrderApiTest.php
-php artisan test tests/Feature/ProfileTest.php
-php artisan test tests/Feature/SupplierApiTest.php
+php artisan migrate:fresh --seed
 ```
 
-Nếu thay đổi nghiệp vụ cấp phát/bảo trì:
+Nếu chỉ muốn chạy seeder chính:
 
 ```bash
-php artisan test tests/Feature/PurchaseOrderApiTest.php tests/Feature/MaintenanceTest.php tests/Feature/InventoryApiTest.php
+php artisan db:seed --class=DatabaseSeeder
 ```
+
+## Tài Khoản Mẫu
+
+| Role | Email | Password | Mục đích |
+| --- | --- | --- | --- |
+| manager | manager@mesoco.vn | password | Quản lý toàn hệ thống |
+| technician | technician@mesoco.vn | password | Vận hành IT asset |
+| employee | employee@mesoco.vn | password | Gửi request và xem thiết bị phòng ban |
+| supplier | supplier@mesoco.vn | password | Theo dõi purchase order |
+
+## Phòng Ban Mẫu
+
+- IT Operations
+- IT Support
+- Finance
+- Sales
+- Operations
+- Engineering
+
+## Thiết Bị Mẫu
+
+| Asset code | Tên | Category | Vị trí |
+| --- | --- | --- | --- |
+| IT-LAP-001 | Dell Latitude 5440 | Laptop | IT Support Room |
+| IT-DES-001 | HP EliteDesk 800 G9 | Desktop | Finance Office |
+| IT-MON-001 | LG 27-inch Monitor | Monitor | Sales Office |
+| IT-NET-001 | Cisco Catalyst Switch | Network | Server Room |
+| IT-SRV-001 | Dell PowerEdge R450 | Server | Server Room |
+| IT-PRN-001 | HP LaserJet Pro M404dn | Printer | Operations Office |
+
+## Maintenance Demo
+
+Seeder tạo ví dụ:
+
+- Cập nhật phần mềm và bảo mật endpoint cho laptop.
+- Kiểm tra server theo lịch: CPU load, RAID health, backup verification.
+- Tài sản trong trạng thái maintenance/off service để test dashboard và inventory.
+
+## Inventory Demo
+
+Seeder bổ sung dữ liệu:
+
+- `purchase_date`
+- `purchase_cost`
+- `useful_life_months`
+- `salvage_value`
+- `depreciation_method`
+- `warranty_expiry`
+
+Mục tiêu là có dữ liệu để xem valuation, depreciation và warranty expiring soon.
+
+## Lưu Ý
+
+Seed data không tạo flow mượn/trả và không tạo dữ liệu quét mã cá nhân. Các helper/factory active chỉ nên tạo request loại `JUSTIFICATION` hoặc `CONSUMABLE_REQUEST`.

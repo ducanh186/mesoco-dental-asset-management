@@ -1,13 +1,11 @@
 export const ROLE_MANAGER = 'manager';
 export const ROLE_TECHNICIAN = 'technician';
-export const ROLE_DOCTOR = 'doctor';
 export const ROLE_EMPLOYEE = 'employee';
 export const ROLE_SUPPLIER = 'supplier';
 
 const LEGACY_ROLE_MAP = {
     admin: ROLE_MANAGER,
     hr: ROLE_TECHNICIAN,
-    doctor: ROLE_EMPLOYEE,
     staff: ROLE_EMPLOYEE,
 };
 

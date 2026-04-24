@@ -1,40 +1,24 @@
-# Backend Architecture (app/)
+# Backend Guide
 
-## Controllers (`Http/Controllers/`)
+Backend dùng Laravel 12. Mục tiêu nghiệp vụ là IT Asset Management theo phòng ban.
 
-- `AuthController` — login/logout/me, uses `AuthService`
-- `AssetController` — full CRUD + search, category/type enums
-- `AssetAssignmentController` — assign/unassign equipment to employees
-- `AssetCheckinController` — check-in/check-out tracking
-- `InventoryController` — inventory listing, valuation/depreciation calculations, inventory checks
-- `AssetOffServiceController` — lock/unlock assets (off-service management)
-- `MaintenanceEventController` — maintenance scheduling and records
-- `EmployeeController` — employee CRUD (HR records)
-- `LocationController` — location/room management
-- `FeedbackController` — user feedback/suggestions
-- `ReportController` — reports and statistics
+## Quy Tắc
 
-## Models (`Models/`)
+- Controller trả JSON rõ ràng, không để legacy API rơi vào SPA HTML.
+- Validation nằm trong `app/Http/Requests` khi input phức tạp.
+- Model giữ relationship cần thiết cho module active.
+- Không thêm lại relationship hoặc serialization cho module đã remove khỏi UI active.
+- Role phải đi qua canonical role: `manager`, `technician`, `employee`, `supplier`.
 
-- `Asset` — core model, has depreciation calculation methods, status state machine
-- `InventoryCheck` / `InventoryCheckItem` — inventory audit header and detail rows
-- `MaintenanceDetail` / `DisposalDetail` — detail rows for maintenance and disposal
-- `Employee` — HR record, distinct from User
-- `User` — login account, has `employee_id` FK
+## Module Chính
 
-## Middleware (`Http/Middleware/`)
+- `Asset`: danh mục thiết bị IT, category, supplier, valuation, department handover.
+- `MaintenanceEvent`: bảo trì, sửa chữa, cập nhật phần mềm, nâng cấp phần cứng.
+- `InventoryCheck`: kiểm kê và đối chiếu tình trạng.
+- `PurchaseOrder`: mua sắm thiết bị/vật tư từ supplier.
+- `AssetRequest`: báo sự cố thiết bị hoặc xin vật tư IT.
+- `Disposal`: đưa asset khỏi vận hành và ghi nhận thanh lý.
 
-- `CheckRole` — RBAC gate (`role:manager,technician`)
-- `CheckMustChangePassword` — forces password change on first login
+## Legacy
 
-## Services (`Services/`)
-
-- `AuthService` — authentication logic, password reset
-
-## Policies (`Policies/`)
-
-- Ownership and role checks for assets, maintenance, check-ins, users, and feedback.
-
-## FormRequests (`Http/Requests/`)
-
-- Server-side validation with `authorize()` method for role checks
+Route legacy phải trả `410 Gone`. Không tạo controller mới cho flow đã bỏ khỏi scope trừ khi mục tiêu là giữ compatibility rõ ràng.

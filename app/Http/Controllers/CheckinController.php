@@ -37,7 +37,7 @@ class CheckinController extends Controller
             'asset_id' => 'required|integer|exists:assets,id',
             'shift_id' => 'nullable|integer|exists:shifts,id',
             'shift_date' => 'nullable|date_format:Y-m-d',
-            'source' => 'nullable|in:qr,manual',
+            'source' => 'nullable|in:manual',
             'notes' => 'nullable|string|max:500',
         ]);
 

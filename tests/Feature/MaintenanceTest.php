@@ -19,7 +19,7 @@ class MaintenanceTest extends TestCase
 
     protected User $admin;
     protected User $technician;
-    protected User $doctor;
+    protected User $employee;
     protected Asset $asset;
 
     protected function setUp(): void
@@ -28,7 +28,7 @@ class MaintenanceTest extends TestCase
 
         $this->admin = User::factory()->admin()->create();
         $this->technician = User::factory()->technician()->create();
-        $this->doctor = User::factory()->doctor()->create();
+        $this->employee = User::factory()->employee()->create();
         $this->asset = Asset::factory()->create([
             'status' => Asset::STATUS_ACTIVE,
         ]);
@@ -74,9 +74,9 @@ class MaintenanceTest extends TestCase
         $response->assertStatus(201);
     }
 
-    public function test_doctor_cannot_create_maintenance_event(): void
+    public function test_employee_cannot_create_maintenance_event(): void
     {
-        $response = $this->actingAs($this->doctor)
+        $response = $this->actingAs($this->employee)
             ->postJson('/api/maintenance-events', [
                 'asset_id' => $this->asset->id,
                 'type' => 'inspection',
@@ -366,9 +366,9 @@ class MaintenanceTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_doctor_cannot_lock_asset(): void
+    public function test_employee_cannot_lock_asset(): void
     {
-        $response = $this->actingAs($this->doctor)
+        $response = $this->actingAs($this->employee)
             ->postJson("/api/assets/{$this->asset->id}/lock", [
                 'reason' => 'Test lock',
             ]);
@@ -436,7 +436,7 @@ class MaintenanceTest extends TestCase
             'off_service_until' => now()->addDays(7),
         ]);
 
-        $response = $this->actingAs($this->doctor)
+        $response = $this->actingAs($this->employee)
             ->getJson("/api/assets/{$this->asset->id}/lock-status");
 
         $response->assertOk()

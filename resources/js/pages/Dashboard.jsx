@@ -28,7 +28,7 @@ const Dashboard = ({ user }) => {
     const [globalAssets, setGlobalAssets] = useState([]);
     
     // Department handover stats
-    const [myAssets, setMyAssets] = useState([]);
+    const [departmentAssets, setDepartmentAssets] = useState([]);
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [purchaseOrderSummary, setPurchaseOrderSummary] = useState({
         total: 0,
@@ -91,9 +91,9 @@ const Dashboard = ({ user }) => {
                     delivered: 0,
                 });
             } else {
-                const myAssetsRes = await axios.get('/api/department-assets/dropdown').catch(() => ({ data: { data: [] } }));
+                const departmentAssetsRes = await axios.get('/api/department-assets/dropdown').catch(() => ({ data: { data: [] } }));
                 
-                setMyAssets(myAssetsRes.data?.data || []);
+                setDepartmentAssets(departmentAssetsRes.data?.data || []);
             }
         } catch (err) {
             console.error('Dashboard fetch error:', err);
@@ -257,8 +257,8 @@ const Dashboard = ({ user }) => {
             ];
         }
 
-        const myEquipmentCount = myAssets.length;
-        const lockedCount = myAssets.filter(a => a.is_locked || a.status === 'off_service').length;
+        const myEquipmentCount = departmentAssets.length;
+        const lockedCount = departmentAssets.filter(a => a.is_locked || a.status === 'off_service').length;
 
         return [
             {
@@ -303,7 +303,7 @@ const Dashboard = ({ user }) => {
         if (isOperationalRole) {
             return globalAssets.slice(0, 5);
         }
-        return myAssets.slice(0, 5);
+        return departmentAssets.slice(0, 5);
     };
 
     const stats = getStats();
