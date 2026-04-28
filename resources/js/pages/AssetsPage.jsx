@@ -12,13 +12,15 @@ import {
     TablePagination,
     useToast,
 } from '../components/ui';
-import { assetsApi, handleApiError, suppliersApi } from '../services/api';
+import { assetsApi, employeesApi, handleApiError, locationsApi, suppliersApi } from '../services/api';
 
 const AssetsPage = () => {
     const toast = useToast();
 
     const [assets, setAssets] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
+    const [employees, setEmployees] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [loading, setLoading] = useState(true);
 
@@ -43,12 +45,18 @@ const AssetsPage = () => {
         asset_code: '',
         name: '',
         type: 'equipment',
+        category: '',
+        location_id: '',
         status: 'active',
         supplier_id: '',
+        purchase_date: '',
+        purchase_cost: '',
+        useful_life_months: '',
+        warranty_expiry: '',
         notes: '',
     });
 
-    const [departmentName, setDepartmentName] = useState('');
+    const [responsibleEmployeeId, setResponsibleEmployeeId] = useState('');
 
     const assetTypes = [
         { value: '', label: 'Tất cả loại' },
@@ -64,13 +72,13 @@ const AssetsPage = () => {
         { value: 'active', label: 'Đang hoạt động' },
         { value: 'off_service', label: 'Ngưng sử dụng' },
         { value: 'maintenance', label: 'Đang bảo trì' },
-        { value: 'retired', label: 'Đã thu hồi' },
+        { value: 'retired', label: 'Đã thu hủy' },
     ];
 
     const assignmentOptions = [
-        { value: '', label: 'Tất cả bàn giao' },
-        { value: 'assigned', label: 'Đã bàn giao' },
-        { value: 'unassigned', label: 'Chưa bàn giao' },
+        { value: '', label: 'Tất cả phụ trách' },
+        { value: 'assigned', label: 'Có người phụ trách' },
+        { value: 'unassigned', label: 'Chưa có người phụ trách' },
     ];
 
     useEffect(() => {
@@ -79,6 +87,8 @@ const AssetsPage = () => {
 
     useEffect(() => {
         fetchSuppliers();
+        fetchEmployees();
+        fetchLocations();
     }, []);
 
     const fetchAssets = async () => {
@@ -117,8 +127,43 @@ const AssetsPage = () => {
         }
     };
 
+    const fetchEmployees = async () => {
+        try {
+            const response = await employeesApi.list({ per_page: 100, status: 'active' });
+            setEmployees(response.employees || []);
+        } catch (error) {
+            console.error('Failed to fetch employees', error);
+        }
+    };
+
+    const fetchLocations = async () => {
+        try {
+            const response = await locationsApi.dropdown();
+            setLocations(response.data || []);
+        } catch (error) {
+            console.error('Failed to fetch locations', error);
+        }
+    };
+
     const getAssetTypeLabel = (type) => assetTypes.find((option) => option.value === type)?.label || 'Khác';
-    const getAssignmentTarget = (asset) => asset.current_assignment?.assignment_target?.name || 'Chưa bàn giao';
+    const getResponsibleEmployee = (asset) => asset.responsible_employee?.full_name || asset.current_assignment?.assignment_target?.name || 'Chưa có';
+    const getLocationLabel = (asset) => {
+        if (asset.location?.code && asset.location?.name) {
+            return `${asset.location.code} - ${asset.location.name}`;
+        }
+        return asset.location_name || 'Chưa chọn';
+    };
+
+    const normalizeAssetPayload = (form) => ({
+        ...form,
+        category: form.category || null,
+        location_id: form.location_id ? Number(form.location_id) : null,
+        supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
+        purchase_date: form.purchase_date || null,
+        purchase_cost: form.purchase_cost === '' ? null : Number(form.purchase_cost),
+        useful_life_months: form.useful_life_months === '' ? null : Number(form.useful_life_months),
+        warranty_expiry: form.warranty_expiry || null,
+    });
 
     const handleViewAsset = async (asset) => {
         try {
@@ -136,15 +181,21 @@ const AssetsPage = () => {
         setCreateErrors({});
 
         try {
-            const response = await assetsApi.create(createForm);
+            const response = await assetsApi.create(normalizeAssetPayload(createForm));
             toast.success('Đã tạo tài sản.');
             setCreateModalOpen(false);
             setCreateForm({
                 asset_code: '',
                 name: '',
                 type: 'equipment',
+                category: '',
+                location_id: '',
                 status: 'active',
                 supplier_id: '',
+                purchase_date: '',
+                purchase_cost: '',
+                useful_life_months: '',
+                warranty_expiry: '',
                 notes: '',
             });
             fetchAssets();
@@ -161,22 +212,22 @@ const AssetsPage = () => {
     };
 
     const openHandoverModal = () => {
-        setDepartmentName(selectedAsset?.current_assignment?.department_name || '');
+        setResponsibleEmployeeId(selectedAsset?.responsible_employee?.id ? String(selectedAsset.responsible_employee.id) : '');
         setHandoverModalOpen(true);
     };
 
     const handleHandoverAsset = async () => {
-        if (!selectedAsset || !departmentName.trim()) {
-            toast.error('Vui lòng nhập phòng ban nhận bàn giao.');
+        if (!selectedAsset || !responsibleEmployeeId) {
+            toast.error('Vui lòng chọn nhân viên chịu trách nhiệm.');
             return;
         }
 
         setHandoverLoading(true);
         try {
-            await assetsApi.assign(selectedAsset.id, { department_name: departmentName.trim() });
-            toast.success('Đã bàn giao tài sản cho phòng ban.');
+            await assetsApi.assign(selectedAsset.id, { employee_id: Number(responsibleEmployeeId) });
+            toast.success('Đã gán nhân viên chịu trách nhiệm.');
             setHandoverModalOpen(false);
-            setDepartmentName('');
+            setResponsibleEmployeeId('');
 
             const updated = await assetsApi.get(selectedAsset.id);
             setSelectedAsset(updated.asset);
@@ -195,7 +246,7 @@ const AssetsPage = () => {
 
         try {
             await assetsApi.unassign(selectedAsset.id);
-            toast.success('Đã kết thúc bàn giao.');
+            toast.success('Đã bỏ nhân viên chịu trách nhiệm.');
             setConfirmUnassignOpen(false);
             const updated = await assetsApi.get(selectedAsset.id);
             setSelectedAsset(updated.asset);
@@ -247,17 +298,22 @@ const AssetsPage = () => {
         },
         {
             key: 'current_assignment',
-            label: 'Phòng ban nhận bàn giao',
+            label: 'Nhân viên chịu trách nhiệm',
             render: (_, row) => (
                 <div>
-                    <div className="font-medium text-text">{getAssignmentTarget(row)}</div>
+                    <div className="font-medium text-text">{getResponsibleEmployee(row)}</div>
                     <div className="text-xs text-text-muted">
                         {row.current_assignment?.assigned_at
                             ? `Từ ${new Date(row.current_assignment.assigned_at).toLocaleDateString('vi-VN')}`
-                            : 'Chưa có bản ghi bàn giao'}
+                            : 'Chưa có người phụ trách'}
                     </div>
                 </div>
             ),
+        },
+        {
+            key: 'location',
+            label: 'Vị trí',
+            render: (_, row) => <span className="text-sm text-text-muted">{getLocationLabel(row)}</span>,
         },
         {
             key: 'actions',
@@ -283,7 +339,7 @@ const AssetsPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-text">Danh mục tài sản</h2>
-                    <p className="text-sm text-text-muted">Theo scope mới, tài sản được bàn giao theo phòng ban thay vì gắn cho từng nhân viên.</p>
+                    <p className="text-sm text-text-muted">Quản lý tài sản theo vị trí và nhân viên chịu trách nhiệm.</p>
                 </div>
                 <Button onClick={() => setCreateModalOpen(true)}>
                     + Tạo tài sản
@@ -377,6 +433,25 @@ const AssetsPage = () => {
                         value={createForm.type}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, type: e.target.value }))}
                     />
+                    <Input
+                        label="Danh mục"
+                        value={createForm.category}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, category: e.target.value }))}
+                        placeholder="VD: Laptop, Printer, Network"
+                        error={createErrors.category?.[0]}
+                    />
+                    <Select
+                        label="Vị trí"
+                        options={[
+                            { value: '', label: 'Chọn vị trí' },
+                            ...locations.map((location) => ({
+                                value: location.id,
+                                label: `${location.code} - ${location.name}`,
+                            })),
+                        ]}
+                        value={createForm.location_id}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, location_id: e.target.value }))}
+                    />
                     <Select
                         label="Trạng thái"
                         options={assetStatuses.filter((option) => option.value)}
@@ -394,6 +469,36 @@ const AssetsPage = () => {
                         ]}
                         value={createForm.supplier_id}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, supplier_id: e.target.value }))}
+                    />
+                    <Input
+                        label="Ngày mua"
+                        type="date"
+                        value={createForm.purchase_date}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, purchase_date: e.target.value }))}
+                        error={createErrors.purchase_date?.[0]}
+                    />
+                    <Input
+                        label="Giá mua"
+                        type="number"
+                        min="0"
+                        value={createForm.purchase_cost}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, purchase_cost: e.target.value }))}
+                        error={createErrors.purchase_cost?.[0]}
+                    />
+                    <Input
+                        label="Thời gian sử dụng dự kiến (tháng)"
+                        type="number"
+                        min="1"
+                        value={createForm.useful_life_months}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, useful_life_months: e.target.value }))}
+                        error={createErrors.useful_life_months?.[0]}
+                    />
+                    <Input
+                        label="Ngày hết bảo hành"
+                        type="date"
+                        value={createForm.warranty_expiry}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, warranty_expiry: e.target.value }))}
+                        error={createErrors.warranty_expiry?.[0]}
                     />
                     <Input
                         label="Ghi chú"
@@ -415,7 +520,7 @@ const AssetsPage = () => {
             <Modal
                 isOpen={handoverModalOpen}
                 onClose={() => setHandoverModalOpen(false)}
-                title="Bàn giao cho phòng ban"
+                title="Gán nhân viên chịu trách nhiệm"
                 size="sm"
             >
                 <div className="space-y-4">
@@ -423,11 +528,17 @@ const AssetsPage = () => {
                         <div className="font-medium text-text">{selectedAsset?.name}</div>
                         <div className="text-xs text-text-muted font-mono">{selectedAsset?.asset_code}</div>
                     </div>
-                    <Input
-                        label="Phòng ban nhận bàn giao *"
-                        value={departmentName}
-                        onChange={(e) => setDepartmentName(e.target.value)}
-                        placeholder="VD: Engineering, IT Operations, Finance"
+                    <Select
+                        label="Nhân viên chịu trách nhiệm *"
+                        options={[
+                            { value: '', label: 'Chọn nhân viên' },
+                            ...employees.map((employee) => ({
+                                value: employee.id,
+                                label: `${employee.employee_code} - ${employee.full_name}${employee.position ? ` (${employee.position})` : ''}`,
+                            })),
+                        ]}
+                        value={responsibleEmployeeId}
+                        onChange={(e) => setResponsibleEmployeeId(e.target.value)}
                     />
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
@@ -435,7 +546,7 @@ const AssetsPage = () => {
                         Hủy
                     </Button>
                     <Button onClick={handleHandoverAsset} disabled={handoverLoading}>
-                        {handoverLoading ? 'Đang lưu...' : 'Xác nhận bàn giao'}
+                        {handoverLoading ? 'Đang lưu...' : 'Xác nhận'}
                     </Button>
                 </div>
             </Modal>
@@ -477,6 +588,10 @@ const AssetsPage = () => {
                                         <span className="text-sm font-medium">{getAssetTypeLabel(selectedAsset.type)}</span>
                                     </div>
                                     <div className="flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Vị trí</span>
+                                        <span className="text-sm font-medium text-right">{getLocationLabel(selectedAsset)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
                                         <span className="text-xs font-semibold text-text-muted uppercase">Nhà cung cấp</span>
                                         <div className="text-right">
                                             <div className="text-sm font-medium text-text">{selectedAsset.supplier?.name || 'Chưa chọn'}</div>
@@ -496,23 +611,23 @@ const AssetsPage = () => {
                                 <CardBody className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <div className="text-xs font-semibold text-text-muted uppercase">Bàn giao hiện tại</div>
-                                            <div className="font-medium text-text">{getAssignmentTarget(selectedAsset)}</div>
+                                            <div className="text-xs font-semibold text-text-muted uppercase">Nhân viên chịu trách nhiệm</div>
+                                            <div className="font-medium text-text">{getResponsibleEmployee(selectedAsset)}</div>
                                             <div className="text-xs text-text-muted">
                                                 {selectedAsset.current_assignment?.assigned_at
                                                     ? `Từ ${new Date(selectedAsset.current_assignment.assigned_at).toLocaleDateString('vi-VN')}`
-                                                    : 'Chưa có bản ghi bàn giao'}
+                                                    : 'Chưa có người phụ trách'}
                                             </div>
                                         </div>
                                     </div>
 
                                     {selectedAsset.current_assignment ? (
                                         <Button variant="danger" fullWidth onClick={() => setConfirmUnassignOpen(true)}>
-                                            Kết thúc bàn giao
+                                            Bỏ người phụ trách
                                         </Button>
                                     ) : (
                                         <Button fullWidth onClick={openHandoverModal}>
-                                            Bàn giao cho phòng ban
+                                            Gán người phụ trách
                                         </Button>
                                     )}
                                 </CardBody>
@@ -521,7 +636,7 @@ const AssetsPage = () => {
                             {selectedAsset.assignment_history?.length > 0 && (
                                 <Card>
                                     <CardBody className="space-y-3">
-                                        <div className="font-semibold text-text">Lịch sử bàn giao</div>
+                                        <div className="font-semibold text-text">Lịch sử người phụ trách</div>
                                         <div className="divide-y divide-border">
                                             {selectedAsset.assignment_history.slice(0, 5).map((history) => (
                                                 <div key={history.id} className="py-3">
@@ -554,9 +669,9 @@ const AssetsPage = () => {
                 isOpen={confirmUnassignOpen}
                 onClose={() => setConfirmUnassignOpen(false)}
                 onConfirm={handleUnassignAsset}
-                title="Kết thúc bàn giao"
-                message={`Bạn có chắc muốn kết thúc bàn giao ${selectedAsset?.name || ''}?`}
-                confirmText="Kết thúc"
+                title="Bỏ người phụ trách"
+                message={`Bạn có chắc muốn bỏ người phụ trách của ${selectedAsset?.name || ''}?`}
+                confirmText="Xác nhận"
                 variant="warning"
             />
 

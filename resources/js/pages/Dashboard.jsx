@@ -11,7 +11,7 @@ import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, hasOperationalAccess, nor
  * 
  * - Manager: reporting overview
  * - Technician: operational overview for catalog, purchase orders, maintenance, disposal, and inventory
- * - Employee: department handover metrics
+ * - Employee: responsible asset metrics
  */
 const Dashboard = ({ user }) => {
     const { t } = useI18n();
@@ -27,8 +27,8 @@ const Dashboard = ({ user }) => {
     const [maintenanceEvents, setMaintenanceEvents] = useState([]);
     const [globalAssets, setGlobalAssets] = useState([]);
     
-    // Department handover stats
-    const [departmentAssets, setDepartmentAssets] = useState([]);
+    // Responsible asset stats
+    const [responsibleAssets, setResponsibleAssets] = useState([]);
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [purchaseOrderSummary, setPurchaseOrderSummary] = useState({
         total: 0,
@@ -91,9 +91,9 @@ const Dashboard = ({ user }) => {
                     delivered: 0,
                 });
             } else {
-                const departmentAssetsRes = await axios.get('/api/department-assets/dropdown').catch(() => ({ data: { data: [] } }));
-                
-                setDepartmentAssets(departmentAssetsRes.data?.data || []);
+                const responsibleAssetsRes = await axios.get('/api/my-assigned-assets/dropdown').catch(() => ({ data: { data: [] } }));
+
+                setResponsibleAssets(responsibleAssetsRes.data?.data || []);
             }
         } catch (err) {
             console.error('Dashboard fetch error:', err);
@@ -257,8 +257,8 @@ const Dashboard = ({ user }) => {
             ];
         }
 
-        const myEquipmentCount = departmentAssets.length;
-        const lockedCount = departmentAssets.filter(a => a.is_locked || a.status === 'off_service').length;
+        const myEquipmentCount = responsibleAssets.length;
+        const lockedCount = responsibleAssets.filter(a => a.is_locked || a.status === 'off_service').length;
 
         return [
             {
@@ -303,7 +303,7 @@ const Dashboard = ({ user }) => {
         if (isOperationalRole) {
             return globalAssets.slice(0, 5);
         }
-        return departmentAssets.slice(0, 5);
+        return responsibleAssets.slice(0, 5);
     };
 
     const stats = getStats();

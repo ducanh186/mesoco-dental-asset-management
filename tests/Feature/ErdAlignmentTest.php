@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Asset;
+use App\Models\Employee;
 use App\Models\InventoryCheck;
 use App\Models\InventoryCheckItem;
 use App\Models\MaintenanceDetail;
@@ -146,22 +147,26 @@ class ErdAlignmentTest extends TestCase
         ]);
     }
 
-    public function test_asset_handover_can_be_recorded_by_department_name(): void
+    public function test_asset_responsibility_can_be_recorded_by_employee(): void
     {
         $technician = User::factory()->technician()->create(['must_change_password' => false]);
         $asset = Asset::factory()->create(['status' => Asset::STATUS_ACTIVE]);
+        $employee = Employee::factory()->create([
+            'full_name' => 'Responsible Employee',
+            'position' => 'IT Support',
+        ]);
 
         $response = $this->actingAs($technician)->postJson("/api/assets/{$asset->id}/assign", [
-            'department_name' => 'IT Support',
+            'employee_id' => $employee->id,
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('assignment.department_name', 'IT Support');
+            ->assertJsonPath('assignment.employee_id', $employee->id);
 
         $this->assertDatabaseHas('asset_assignments', [
             'asset_id' => $asset->id,
-            'department_name' => 'IT Support',
-            'employee_id' => null,
+            'department_name' => null,
+            'employee_id' => $employee->id,
         ]);
     }
 

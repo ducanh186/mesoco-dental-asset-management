@@ -114,7 +114,7 @@ export default {
         employees: 'Hồ sơ nhân viên',
         assets: 'Danh mục tài sản',
         equipmentCatalog: 'Danh mục tài sản',
-        myEquipment: 'Thiết bị phòng ban',
+        myEquipment: 'Thiết bị tôi phụ trách',
         equipment: 'Thiết bị',
         shifts: 'Ca làm',
         checkin: 'Ghi nhận ca',
@@ -274,7 +274,7 @@ export default {
         noScheduled: 'Không có lịch',
         
         // Employee cards
-        myEquipmentCount: 'Thiết bị phòng ban',
+        myEquipmentCount: 'Thiết bị tôi phụ trách',
         myActiveRequests: 'Phiếu đang xử lý',
         alerts: 'Cảnh báo',
         lockedCount: '{count} đang khóa',
@@ -302,7 +302,7 @@ export default {
         addEquipment: 'Thêm thiết bị',
         newRequest: 'Tạo phiếu',
         viewReports: 'Xem báo cáo',
-        myEquipment: 'Thiết bị của tôi',
+        myEquipment: 'Thiết bị tôi phụ trách',
         myRequests: 'Phiếu của tôi',
         reviewRequests: 'Duyệt phiếu cấp phát',
         maintenance: 'Bảo trì & Sửa chữa',
@@ -327,7 +327,7 @@ export default {
         noEquipmentHint: 'Bắt đầu bằng cách thêm thiết bị đầu tiên.',
         equipmentName: 'Tên thiết bị',
         code: 'Mã',
-        assignedTo: 'Người sử dụng',
+        assignedTo: 'Người phụ trách',
         lastMaintenance: 'Bảo trì lần cuối',
         lockStatus: 'Trạng thái khóa',
         locked: 'Đang khóa',
@@ -347,7 +347,7 @@ export default {
     // ========================================================================
     assets: {
         title: 'Thiết bị',
-        subtitle: 'Quản lý dữ liệu và bàn giao thiết bị IT theo phòng ban',
+        subtitle: 'Quản lý thiết bị IT theo vị trí và nhân viên chịu trách nhiệm',
         allAssets: 'Tất cả thiết bị',
         createAsset: 'Tạo thiết bị mới',
         editAsset: 'Chỉnh sửa thiết bị',
@@ -391,9 +391,9 @@ export default {
         assignTo: 'Giao cho',
         assignAsset: 'Giao thiết bị',
         unassignAsset: 'Thu hồi thiết bị',
-        currentAssignee: 'Đơn vị đang nhận bàn giao',
+        currentAssignee: 'Nhân viên chịu trách nhiệm',
         assignedTo: 'Đang giao cho',
-        handoverDepartment: 'Phòng ban nhận bàn giao',
+        handoverDepartment: 'Nhân viên chịu trách nhiệm',
         assignedSince: 'Được giao từ',
         assignmentHistory: 'Lịch sử phân công',
         noAssignment: 'Chưa được giao',
@@ -965,12 +965,12 @@ export default {
     // ========================================================================
     disposal: {
         title: 'Thu hủy thiết bị',
-        subtitle: 'Quản lý thiết bị đủ điều kiện thu hủy (khấu hao ≥ 70%)',
-        eligibleForDisposal: 'Đủ điều kiện thu hủy',
+        subtitle: 'Quản lý danh sách đề xuất thu hủy khi khấu hao > 75%',
+        eligibleForDisposal: 'Đề xuất thu hủy',
         highDepreciation: 'Khấu hao ≥ 90%',
         alreadyRetired: 'Đã thu hủy',
         remainingValue: 'Giá trị còn lại',
-        eligibleTab: 'Đủ điều kiện',
+        eligibleTab: 'Đề xuất thu hủy',
         retiredTab: 'Đã thu hủy',
         assetCode: 'Mã thiết bị',
         assetName: 'Tên thiết bị',
@@ -986,7 +986,7 @@ export default {
         retireConfirmTitle: 'Xác nhận thu hủy',
         retireConfirmMessage: 'Bạn có chắc muốn thu hủy thiết bị {name} ({code})?',
         confirmRetire: 'Xác nhận thu hủy',
-        noEligible: 'Không có thiết bị nào đủ điều kiện thu hủy.',
+        noEligible: 'Không có thiết bị nào trong danh sách đề xuất thu hủy.',
         noRetired: 'Chưa có thiết bị nào được thu hủy.',
     },
 
@@ -1067,7 +1067,7 @@ export default {
         popupBlocked: 'Vui lòng cho phép cửa sổ bật lên để in nhãn',
         unnamedAsset: 'Thiết bị chưa đặt tên',
         scanInstruction: 'Dùng nhãn này để đối chiếu thiết bị khi kiểm kê',
-        handoverNote: 'Tài sản IT bàn giao theo phòng ban',
+        handoverNote: 'Tài sản IT gắn với nhân viên chịu trách nhiệm',
     },
 
     // ========================================================================
@@ -1075,17 +1075,18 @@ export default {
     // ========================================================================
     locationsPage: {
         title: 'Vị trí',
-        subtitle: 'Quản lý các vị trí vật lý của thiết bị',
+        subtitle: 'Quản lý mã vị trí, tên vị trí và mô tả nơi đặt tài sản',
         addLocation: 'Thêm vị trí',
         editLocation: 'Sửa vị trí',
-        searchPlaceholder: 'Tìm theo tên vị trí...',
+        searchPlaceholder: 'Tìm theo mã hoặc tên vị trí...',
         showInactive: 'Hiển thị vị trí ngừng hoạt động',
         noLocations: 'Không tìm thấy vị trí nào',
+        locationCode: 'Mã vị trí',
         locationName: 'Tên vị trí',
         locationNamePlaceholder: 'Ví dụ: Phòng server hoặc Văn phòng tầng 1',
         descriptionPlaceholder: 'Mô tả thêm (không bắt buộc)...',
-        address: 'Địa chỉ',
-        addressPlaceholder: 'Địa chỉ (không bắt buộc)...',
+        address: 'Địa chỉ legacy',
+        addressPlaceholder: 'Không dùng trong UI active',
     },
 
     // ========================================================================

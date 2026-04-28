@@ -36,7 +36,7 @@ class AssetAssignmentFactory extends Factory
     public function returned(): static
     {
         return $this->state(fn (array $attributes) => [
-            'returned_at' => now(),
+            'unassigned_at' => now(),
         ]);
     }
 }

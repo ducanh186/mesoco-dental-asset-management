@@ -10,12 +10,13 @@ Manager có thể:
 
 - Xem dashboard tổng quan tài sản, bảo trì, kiểm kê và đơn mua hàng.
 - Tạo, sửa, xóa tài sản IT.
-- Bàn giao tài sản cho phòng ban.
+- Quản lý vị trí đặt tài sản.
+- Gắn hoặc thu hồi nhân viên chịu trách nhiệm cho tài sản.
 - Duyệt hoặc từ chối request của nhân viên.
 - Xem báo cáo và export dữ liệu.
 - Quản lý user và role.
 - Theo dõi purchase order của tất cả nhà cung cấp.
-- Thực hiện hoặc phê duyệt disposal cho tài sản không còn dùng.
+- Thực hiện disposal cho tài sản không còn dùng.
 
 ## Technician
 
@@ -24,7 +25,7 @@ Technician là người vận hành kỹ thuật hằng ngày.
 Technician có thể:
 
 - Quản lý danh mục asset.
-- Cập nhật trạng thái, vị trí, phòng ban bàn giao.
+- Cập nhật trạng thái, vị trí và nhân viên chịu trách nhiệm.
 - Tạo và xử lý maintenance event.
 - Thực hiện inventory check.
 - Theo dõi valuation, depreciation và warranty.
@@ -35,17 +36,17 @@ Technician không duyệt request và không xem báo cáo cấp quản lý nế
 
 ## Employee
 
-Employee là nhân viên công ty sử dụng thiết bị thuộc phòng ban.
+Employee là nhân viên công ty chịu trách nhiệm sử dụng hoặc theo dõi một số thiết bị.
 
 Employee có thể:
 
-- Xem dashboard thiết bị đã bàn giao cho phòng ban.
-- Tạo request báo sự cố thiết bị.
+- Xem dashboard các thiết bị mình phụ trách.
+- Tạo request báo sự cố cho thiết bị mình phụ trách.
 - Tạo request xin vật tư/linh kiện IT.
 - Xem trạng thái request của mình.
 - Cập nhật hồ sơ cá nhân.
 
-Employee không tự tạo luồng mượn/trả thiết bị. Nếu thiết bị cần chuyển phòng ban, technician hoặc manager cập nhật handover.
+Employee không tự chuyển người phụ trách cho tài sản. Nếu cần chuyển trách nhiệm, technician hoặc manager cập nhật assignment.
 
 ## Supplier
 
@@ -61,10 +62,12 @@ Supplier không thấy asset catalog nội bộ, request nội bộ, maintenance
 
 ## Flow Sử Dụng Thực Tế
 
-1. Manager hoặc technician tạo asset mới khi công ty mua laptop.
-2. Technician bàn giao laptop cho phòng ban Engineering.
-3. Employee trong Engineering thấy thiết bị phòng ban và gửi request nếu laptop lỗi.
-4. Manager duyệt request và gán technician xử lý.
-5. Technician tạo maintenance event, cập nhật kết quả và chi phí.
-6. Inventory module ghi nhận giá trị còn lại và tình trạng thiết bị.
-7. Khi thiết bị hết vòng đời, manager/technician đưa vào disposal.
+1. Manager hoặc technician tạo vị trí `LOC-001 - Kho IT`.
+2. Manager hoặc technician tạo asset mới khi công ty mua laptop.
+3. Technician đặt laptop vào vị trí phù hợp và gắn nhân viên chịu trách nhiệm.
+4. Employee thấy laptop trong danh sách thiết bị mình phụ trách và gửi request nếu laptop lỗi.
+5. Manager duyệt request và gán technician xử lý.
+6. Technician tạo maintenance event, cập nhật kết quả và chi phí.
+7. Inventory module ghi nhận giá trị còn lại và tình trạng thiết bị.
+8. Khi depreciation `> 75%`, hệ thống đưa laptop vào danh sách đề xuất thu hủy.
+9. Khi asset bị thu hủy, vị trí và người phụ trách active được clear.

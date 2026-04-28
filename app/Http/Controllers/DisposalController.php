@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  * Controller for asset disposal management (Thu hủy).
  *
  * BFD Module: Quản lý thu hủy
- * - Lists assets eligible for disposal (depreciation >= 70%)
+ * - Lists assets proposed for disposal (depreciation > 75%)
  * - Allows retiring assets (changing status to 'retired')
  * - Summary statistics for disposal management
  */
@@ -37,7 +37,7 @@ class DisposalController extends Controller
 
         foreach ($allAssets as $asset) {
             $percentage = $asset->getDepreciationPercentage();
-            if ($percentage !== null && $percentage >= 70) {
+            if ($percentage !== null && $percentage > Asset::DISPOSAL_RECOMMENDATION_THRESHOLD) {
                 $eligibleCount++;
                 $totalDepreciatedValue += $asset->getCurrentBookValue() ?? 0;
                 if ($percentage >= 90) {
@@ -111,9 +111,15 @@ class DisposalController extends Controller
 
             $asset->update([
                 'status' => Asset::STATUS_RETIRED,
+                'location_id' => null,
+                'location' => null,
                 'off_service_reason' => $validated['reason'],
                 'off_service_from' => $disposedAt,
                 'off_service_set_by' => $user?->id,
+            ]);
+
+            $asset->currentAssignment()->update([
+                'unassigned_at' => $disposedAt,
             ]);
 
             return Disposal::create([
@@ -146,6 +152,8 @@ class DisposalController extends Controller
                 'asset_code' => $asset->asset_code,
                 'name' => $asset->name,
                 'status' => $asset->status,
+                'location' => null,
+                'responsible_employee' => null,
                 'disposal' => [
                     'id' => $disposal->id,
                     'code' => $disposal->code,
@@ -158,11 +166,12 @@ class DisposalController extends Controller
     }
 
     /**
-     * Get eligible assets (depreciation >= 70%, not retired).
+     * Get assets proposed for disposal (depreciation > 75%, not retired).
      */
     private function eligibleAssets(Request $request, int $perPage): JsonResponse
     {
-        $query = Asset::whereNotNull('purchase_cost')
+        $query = Asset::with('locationDefinition')
+            ->whereNotNull('purchase_cost')
             ->whereNotNull('useful_life_months')
             ->where('useful_life_months', '>', 0)
             ->where('status', '!=', Asset::STATUS_RETIRED);
@@ -194,7 +203,8 @@ class DisposalController extends Controller
                 'name' => $asset->name,
                 'category' => $asset->category,
                 'status' => $asset->status,
-                'location' => $asset->location,
+                'location' => $this->transformLocation($asset),
+                'location_name' => $this->locationLabel($asset),
                 'purchase_cost' => $valuation['purchase_cost'],
                 'purchase_date' => $valuation['purchase_date'],
                 'current_book_value' => $valuation['current_book_value'],
@@ -233,7 +243,7 @@ class DisposalController extends Controller
      */
     private function retiredAssets(Request $request, int $perPage): JsonResponse
     {
-        $query = Asset::with('latestDisposal')->where('status', Asset::STATUS_RETIRED);
+        $query = Asset::with(['latestDisposal', 'locationDefinition'])->where('status', Asset::STATUS_RETIRED);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -257,6 +267,8 @@ class DisposalController extends Controller
                 'name' => $asset->name,
                 'category' => $asset->category,
                 'status' => $asset->status,
+                'location' => $this->transformLocation($asset),
+                'location_name' => $this->locationLabel($asset),
                 'off_service_reason' => $asset->off_service_reason,
                 'off_service_from' => $asset->off_service_from?->toDateString(),
                 'disposal_method' => $asset->latestDisposal?->method,
@@ -278,5 +290,32 @@ class DisposalController extends Controller
                 'total' => $paginated->total(),
             ],
         ]);
+    }
+
+    private function transformLocation(Asset $asset): ?array
+    {
+        $location = $asset->locationDefinition;
+
+        if (!$location) {
+            return null;
+        }
+
+        return [
+            'id' => $location->id,
+            'code' => $location->code,
+            'name' => $location->name,
+            'description' => $location->description,
+        ];
+    }
+
+    private function locationLabel(Asset $asset): ?string
+    {
+        $location = $asset->locationDefinition;
+
+        if ($location) {
+            return trim("{$location->code} - {$location->name}", ' -');
+        }
+
+        return $asset->location;
     }
 }

@@ -7,7 +7,7 @@ import { hasOperationalAccess } from '../../utils/roles';
  * RecentEquipmentTable - Role-based equipment table
  * 
  * - Quản lý/Kỹ thuật viên: Shows global assets with full actions
- * - Employee: Shows department equipment with limited actions
+ * - Employee: Shows responsible equipment with limited actions
  * 
  * @param {Object} props
  * @param {string} props.role - User role

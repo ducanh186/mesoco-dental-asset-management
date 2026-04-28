@@ -1,15 +1,16 @@
 # Tài Liệu Dự Án IT Asset Management
 
-Thư mục này mô tả hệ thống theo hướng báo cáo/luận văn: bài toán nhỏ, đúng nghiệp vụ và dễ giải thích. Dự án không còn lấy domain chuyên môn cũ làm trọng tâm; scope hiện tại là quản lý thiết bị IT theo phòng ban trong công ty công nghệ.
+Thư mục này mô tả hệ thống theo hướng báo cáo/luận văn: bài toán nhỏ, đúng nghiệp vụ và dễ giải thích cho người không chuyên kỹ thuật. Scope hiện tại là quản lý tài sản IT theo **vị trí** và **nhân viên chịu trách nhiệm**.
 
 ## Bài Toán
 
-Công ty cần biết mỗi thiết bị IT đang ở đâu, thuộc phòng ban nào, mua từ ngày nào, còn bảo hành không, đã bảo trì gần nhất khi nào, còn bao nhiêu giá trị sổ sách và khi nào cần thanh lý. Người dùng chính là manager, technician, employee và supplier.
+Công ty cần biết mỗi tài sản IT đang ở vị trí nào, ai đang chịu trách nhiệm, mua từ ngày nào, còn bảo hành không, đã bảo trì gần nhất khi nào, còn bao nhiêu giá trị sổ sách và khi nào nên đề xuất thu hủy. Người dùng chính là `manager`, `technician`, `employee` và `supplier`.
 
 ## Mục Lục
 
 | Tài liệu | Nội dung |
 | --- | --- |
+| [BFD.md](BFD.md) | Business Flow Diagram đơn giản cho báo cáo |
 | [STACK.md](STACK.md) | Công nghệ, cấu trúc repo, lệnh chạy và flow runtime |
 | [RBAC_MATRIX.md](RBAC_MATRIX.md) | Ma trận quyền theo role |
 | [ROLE_FEATURES.md](ROLE_FEATURES.md) | Tính năng nhìn từ từng người dùng |
@@ -21,15 +22,14 @@ Công ty cần biết mỗi thiết bị IT đang ở đâu, thuộc phòng ban 
 ## Module Chính
 
 - `Asset Catalog`: danh mục tài sản IT và thông tin vòng đời.
-- `Department Handover`: bàn giao tài sản cho phòng ban, không dùng flow mượn/trả cá nhân.
+- `Location Catalog`: mã vị trí, tên vị trí và mô tả nơi đặt tài sản.
+- `Responsible Employee`: gắn tài sản với một nhân viên chịu trách nhiệm.
 - `Maintenance`: bảo trì một hoặc nhiều thiết bị, có chi tiết xử lý và chi phí.
 - `Inventory & Valuation`: kiểm kê, khấu hao, giá trị còn lại và bảo hành.
-- `Purchase Orders`: nhà cung cấp, đơn mua hàng và trạng thái giao.
 - `Requests`: báo sự cố thiết bị và xin vật tư/linh kiện IT.
-- `Disposal`: khóa sử dụng, thu hồi khỏi vận hành, thanh lý.
+- `Disposal`: thu hồi khỏi vận hành; khi thu hủy thì asset mất vị trí và mất người phụ trách active.
+- `Purchase Orders`: nhà cung cấp, đơn mua hàng và trạng thái giao.
 
 ## Legacy Compatibility
 
-Một số endpoint cũ vẫn tồn tại để trả `410 Gone`. Đây là quyết định kỹ thuật nhằm báo rõ rằng chức năng đã bị loại khỏi scope, thay vì để client cũ nhận HTML của SPA hoặc lỗi `404` không rõ nguyên nhân.
-
-Các migration và bảng lịch sử vẫn giữ lại. Dự án chỉ gỡ code active, UI active, seed data và docs active khỏi domain cũ.
+Một số endpoint/cột cũ vẫn tồn tại để giảm rủi ro migration và trả lỗi rõ ràng cho client cũ. UI, docs active và business logic mới không dùng đơn vị tổ chức nội bộ làm nguồn nghiệp vụ chính.

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\InventoryCheck;
 use App\Models\InventoryCheckItem;
+use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -77,6 +78,7 @@ class InventoryController extends Controller
         ]);
 
         $assetQuery = Asset::query()
+            ->with('locationDefinition')
             ->where('status', '!=', Asset::STATUS_RETIRED)
             ->orderBy('asset_code');
 
@@ -85,10 +87,10 @@ class InventoryController extends Controller
         }
 
         if (!empty($validated['location'])) {
-            $assetQuery->where('location', $validated['location']);
+            $assetQuery->byLocation($validated['location']);
         }
 
-        $assets = $assetQuery->get(['id', 'status', 'location']);
+        $assets = $assetQuery->get();
 
         $inventoryCheck = DB::transaction(function () use ($validated, $assets, $request) {
             $check = InventoryCheck::create([
@@ -104,7 +106,7 @@ class InventoryController extends Controller
                 $check->items()->create([
                     'asset_id' => $asset->id,
                     'expected_status' => $asset->status,
-                    'expected_location' => $asset->location,
+                    'expected_location' => $this->locationLabel($asset),
                     'result' => InventoryCheckItem::RESULT_PENDING,
                 ]);
             }
@@ -307,7 +309,7 @@ class InventoryController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $warrantyThresholdDays = config('inventory.warranty_expiry_threshold_days', 30);
 
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'locationDefinition'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -346,7 +348,8 @@ class InventoryController extends Controller
                 'name' => $asset->name,
                 'type' => $asset->type,
                 'category' => $asset->category,
-                'location' => $asset->location,
+                'location' => $this->transformLocation($asset),
+                'location_name' => $this->locationLabel($asset),
                 'status' => $asset->status,
                 'notes' => $asset->notes,
                 'purchase_date' => $asset->purchase_date?->toDateString(),
@@ -358,9 +361,9 @@ class InventoryController extends Controller
                 'current_book_value' => $asset->getCurrentBookValue(),
                 'assigned_to' => $asset->currentAssignment ? [
                     'id' => $asset->currentAssignment->id,
-                    'name' => $asset->currentAssignment->department_name ?: $asset->currentAssignment->employee?->full_name,
-                    'type' => $asset->currentAssignment->department_name ? 'department' : 'employee',
-                    'department_name' => $asset->currentAssignment->department_name,
+                    'name' => $asset->currentAssignment->employee?->full_name,
+                    'type' => 'employee',
+                    'employee_id' => $asset->currentAssignment->employee_id,
                     'assigned_at' => $asset->currentAssignment->assigned_at?->toISOString(),
                 ] : null,
                 'created_at' => $asset->created_at?->toISOString(),
@@ -368,11 +371,15 @@ class InventoryController extends Controller
         });
 
         // Get distinct locations for filter dropdown
-        $locations = Asset::query()
-            ->whereNotNull('location')
-            ->distinct()
-            ->pluck('location')
-            ->sort()
+        $locations = Location::active()
+            ->orderBy('name')
+            ->get(['id', 'code', 'name'])
+            ->map(fn (Location $location) => [
+                'value' => $location->code,
+                'label' => "{$location->code} - {$location->name}",
+                'code' => $location->code,
+                'name' => $location->name,
+            ])
             ->values();
 
         return response()->json([
@@ -406,7 +413,7 @@ class InventoryController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
 
         $query = Asset::withValuation()
-            ->with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
+            ->with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'locationDefinition'])
             ->search($request->input('search'))
             ->byCategory($request->input('category'));
 
@@ -437,7 +444,7 @@ class InventoryController extends Controller
                 'type' => $asset->type,
                 'category' => $asset->category,
                 'status' => $asset->status,
-                'assigned_to' => $asset->currentAssignment?->department_name ?: $asset->currentAssignment?->employee?->full_name,
+                'assigned_to' => $asset->currentAssignment?->employee?->full_name,
                 'valuation' => $valuation,
             ];
         });
@@ -463,7 +470,7 @@ class InventoryController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'locationDefinition'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -527,9 +534,9 @@ class InventoryController extends Controller
                     $asset->name ?? '',
                     $asset->type ?? '',
                     $asset->category ?? '',
-                    $asset->location ?? '',
+                    $this->locationLabel($asset) ?? '',
                     $asset->status ?? '',
-                    $asset->currentAssignment?->department_name ?: ($asset->currentAssignment?->employee?->full_name ?? ''),
+                    $asset->currentAssignment?->employee?->full_name ?? '',
                     $asset->purchase_date?->toDateString() ?? '',
                     $asset->purchase_cost ? number_format((float) $asset->purchase_cost, 2, '.', '') : '',
                     $asset->warranty_expiry?->toDateString() ?? '',
@@ -542,5 +549,32 @@ class InventoryController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function transformLocation(Asset $asset): ?array
+    {
+        $location = $asset->locationDefinition;
+
+        if (!$location) {
+            return null;
+        }
+
+        return [
+            'id' => $location->id,
+            'code' => $location->code,
+            'name' => $location->name,
+            'description' => $location->description,
+        ];
+    }
+
+    private function locationLabel(Asset $asset): ?string
+    {
+        $location = $asset->locationDefinition;
+
+        if ($location) {
+            return trim("{$location->code} - {$location->name}", ' -');
+        }
+
+        return $asset->location;
     }
 }

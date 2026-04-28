@@ -142,7 +142,7 @@ class StoreRequestRequest extends FormRequest
                         'Vui lòng chọn tài sản cần báo cáo.'
                     );
                 } else {
-                    // Check ownership using preloaded assets map
+                    // Employee can report only assets they are currently responsible for.
                     $asset = $assetsMap[$assetId] ?? null;
                     
                     if (!$asset) {
@@ -150,10 +150,10 @@ class StoreRequestRequest extends FormRequest
                             "items.{$index}.asset_id",
                             'Tài sản được chọn không tồn tại.'
                         );
-                    } elseif (!$employeeId || !$asset->isAssignedToEmployeeDepartment($user->employee)) {
+                    } elseif (!$employeeId || !$asset->isAssignedToResponsibleEmployee($user->employee)) {
                         $validator->errors()->add(
                             "items.{$index}.asset_id",
-                            'Bạn chỉ có thể báo cáo sự cố cho tài sản đã bàn giao cho phòng ban của mình.'
+                            'Bạn chỉ có thể báo cáo sự cố cho tài sản mình đang chịu trách nhiệm.'
                         );
                     }
                 }

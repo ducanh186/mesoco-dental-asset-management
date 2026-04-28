@@ -13,7 +13,7 @@ import {
     useToast 
 } from '../components/ui';
 import { useI18n } from '../i18n';
-import { requestsApi, assetsApi, departmentAssetsApi, handleApiError } from '../services/api';
+import { requestsApi, assetsApi, responsibleAssetsApi, handleApiError } from '../services/api';
 import { hasOperationalAccess } from '../utils/roles';
 
 // ============================================================================
@@ -127,7 +127,7 @@ const RequestsPage = ({ user }) => {
                         label: a.asset_code ? `${a.asset_code} - ${a.name}` : `${a.name} (ID: ${a.id})`,
                     })));
                 } else {
-                    response = await departmentAssetsApi.dropdown();
+                    response = await responsibleAssetsApi.dropdown();
                     setAssetOptions(response.data || []);
                 }
             } else {

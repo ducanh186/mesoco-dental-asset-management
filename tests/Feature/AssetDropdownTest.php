@@ -17,7 +17,7 @@ class AssetDropdownTest extends TestCase
     private Employee $employee;
     private User $manager;
     private Asset $employeeAssignedAsset;
-    private Asset $departmentAssignedAsset;
+    private Asset $otherEmployeeAssignedAsset;
     private Asset $inactiveAsset;
 
     protected function setUp(): void
@@ -32,7 +32,10 @@ class AssetDropdownTest extends TestCase
         $this->employee = Employee::factory()->create([
             'employee_code' => 'EMP001',
             'full_name' => 'IT Support Staff',
-            'department' => 'IT Support',
+        ]);
+        $otherEmployee = Employee::factory()->create([
+            'employee_code' => 'EMP002',
+            'full_name' => 'Other Staff',
         ]);
         $this->employeeUser = User::factory()->create([
             'employee_id' => $this->employee->id,
@@ -47,7 +50,7 @@ class AssetDropdownTest extends TestCase
             'category' => 'Laptop',
         ]);
 
-        $this->departmentAssignedAsset = Asset::factory()->create([
+        $this->otherEmployeeAssignedAsset = Asset::factory()->create([
             'asset_code' => 'IT-MON-1001',
             'name' => 'Shared Monitor',
             'status' => Asset::STATUS_ACTIVE,
@@ -64,15 +67,15 @@ class AssetDropdownTest extends TestCase
         AssetAssignment::create([
             'asset_id' => $this->employeeAssignedAsset->id,
             'employee_id' => $this->employee->id,
-            'department_name' => 'IT Support',
+            'department_name' => null,
             'assigned_by' => $this->manager->id,
             'assigned_at' => now(),
         ]);
 
         AssetAssignment::create([
-            'asset_id' => $this->departmentAssignedAsset->id,
-            'employee_id' => null,
-            'department_name' => 'IT Support',
+            'asset_id' => $this->otherEmployeeAssignedAsset->id,
+            'employee_id' => $otherEmployee->id,
+            'department_name' => null,
             'assigned_by' => $this->manager->id,
             'assigned_at' => now(),
         ]);
@@ -80,40 +83,34 @@ class AssetDropdownTest extends TestCase
         AssetAssignment::create([
             'asset_id' => $this->inactiveAsset->id,
             'employee_id' => $this->employee->id,
-            'department_name' => 'IT Support',
+            'department_name' => null,
             'assigned_by' => $this->manager->id,
             'assigned_at' => now(),
         ]);
     }
 
-    public function test_employee_can_see_employee_and_department_assets_in_dropdown(): void
+    public function test_employee_can_see_only_assets_they_are_responsible_for_in_dropdown(): void
     {
         $response = $this->actingAs($this->employeeUser)
             ->getJson('/api/department-assets/dropdown');
 
         $response->assertOk()
-            ->assertJsonCount(2, 'data')
+            ->assertJsonCount(1, 'data')
             ->assertJsonFragment([
                 'value' => $this->employeeAssignedAsset->id,
                 'label' => 'IT-LAP-1001 - Employee Laptop',
                 'asset_code' => 'IT-LAP-1001',
                 'name' => 'Employee Laptop',
-                'department_name' => 'IT Support',
-            ])
-            ->assertJsonFragment([
-                'value' => $this->departmentAssignedAsset->id,
-                'label' => 'IT-MON-1001 - Shared Monitor',
-                'asset_code' => 'IT-MON-1001',
-                'name' => 'Shared Monitor',
-                'department_name' => 'IT Support',
             ]);
 
         $response->assertJsonMissing([
             'value' => $this->inactiveAsset->id,
+        ])->assertJsonMissing([
+            'value' => $this->otherEmployeeAssignedAsset->id,
         ]);
     }
 
-    public function test_department_dropdown_excludes_users_without_employee_profile(): void
+    public function test_responsible_assets_dropdown_excludes_users_without_employee_profile(): void
     {
         $userWithoutEmployee = User::factory()->create([
             'role' => 'employee',
@@ -147,7 +144,7 @@ class AssetDropdownTest extends TestCase
         AssetAssignment::create([
             'asset_id' => $assetWithoutCode->id,
             'employee_id' => $this->employee->id,
-            'department_name' => 'IT Support',
+            'department_name' => null,
             'assigned_by' => $this->manager->id,
             'assigned_at' => now(),
         ]);

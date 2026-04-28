@@ -20,7 +20,7 @@ class AssetController extends Controller
      * 
      * SECURITY: This endpoint is protected by route middleware (role:manager,technician).
      * DO NOT add auto-filtering logic here - that's a security footgun.
-     * Use department-assets/dropdown for employee-facing department assets.
+     * Use my-assigned-assets/dropdown for employee-facing responsible assets.
      * 
      * GET /api/assets (Manager/Technician only via route middleware)
      * Query params: search, type, status, per_page, include_checkin_status
@@ -30,7 +30,7 @@ class AssetController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $includeCheckinStatus = $request->boolean('include_checkin_status', false);
 
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'));
@@ -90,28 +90,26 @@ class AssetController extends Controller
     }
 
     /**
-     * Get assets handed over to the user's department in dropdown format.
+     * Get assets assigned to the current employee in dropdown format.
      *
-     * GET /api/department-assets/dropdown
+     * GET /api/my-assigned-assets/dropdown
      *
-     * @return JsonResponse { data: [{ value, label, asset_code, name, type, department_name }] }
+     * @return JsonResponse { data: [{ value, label, asset_code, name, type, responsible_employee }] }
      */
     public function myAssignedAssetsDropdown(Request $request): JsonResponse
     {
         $user = $request->user();
         $employee = $user->employee;
-        $departmentName = trim((string) ($employee?->department ?? ''));
 
-        if (!$employee || $departmentName === '') {
+        if (!$employee) {
             return response()->json([
                 'data' => [],
             ]);
         }
 
-        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser'])
-            ->whereHas('currentAssignment', function ($query) use ($employee, $departmentName) {
-                $query->where('employee_id', $employee->id)
-                    ->orWhere('department_name', $departmentName);
+        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'locationDefinition'])
+            ->whereHas('currentAssignment', function ($query) use ($employee) {
+                $query->where('employee_id', $employee->id);
             })
             ->where('status', Asset::STATUS_ACTIVE)
             ->orderBy('asset_code')
@@ -130,8 +128,10 @@ class AssetController extends Controller
                 'name' => $asset->name,
                 'type' => $asset->type,
                 'category' => $asset->category,
-                'department_name' => $asset->currentAssignment?->department_name,
-                'assignedTo' => $asset->currentAssignment?->department_name ?: $asset->currentAssignment?->employee?->full_name,
+                'location' => $this->transformLocation($asset),
+                'location_name' => $this->locationLabel($asset),
+                'responsible_employee' => $this->transformEmployee($asset->currentAssignment?->employee),
+                'assignedTo' => $asset->currentAssignment?->employee?->full_name,
                 'status' => $asset->status,
                 'is_locked' => $asset->isLocked(),
             ];
@@ -159,7 +159,7 @@ class AssetController extends Controller
 
         $asset = Asset::create($validatedData);
 
-        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier']);
+        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition']);
 
         return response()->json([
             'message' => 'Asset created successfully.',
@@ -178,9 +178,9 @@ class AssetController extends Controller
 
         if (!$user->hasOperationalAccess()) {
             $employeeId = $user->employee?->id;
-            if (!$employeeId || !$asset->isAssignedToEmployeeDepartment($user->employee)) {
+            if (!$employeeId || !$asset->isAssignedToResponsibleEmployee($user->employee)) {
                 return response()->json([
-                    'message' => 'Forbidden. You can only view assets handed over to your department.',
+                    'message' => 'Forbidden. You can only view assets you are responsible for.',
                 ], 403);
             }
         }
@@ -189,6 +189,7 @@ class AssetController extends Controller
             'currentAssignment.employee',
             'currentAssignment.assignedByUser',
             'supplier',
+            'locationDefinition',
             'assignments' => fn($q) => $q->with(['employee', 'assignedByUser'])->orderByDesc('assigned_at')->limit(10),
         ]);
 
@@ -207,7 +208,7 @@ class AssetController extends Controller
     {
         $asset->update($request->validated());
 
-        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier']);
+        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition']);
 
         return response()->json([
             'message' => 'Asset updated successfully.',
@@ -240,8 +241,7 @@ class AssetController extends Controller
     }
 
     /**
-     * Hand over asset to a department.
-     * Legacy employee-based payloads are still accepted for backward compatibility.
+     * Assign a responsible employee to an asset.
      *
      * POST /api/assets/{asset}/assign
      */
@@ -290,17 +290,13 @@ class AssetController extends Controller
             }
 
             $employeeId = $request->integer('employee_id') ?: null;
-            $employee = $employeeId ? Employee::query()->find($employeeId) : null;
-            $departmentName = trim((string) $request->input('department_name', ''));
-            if ($departmentName === '' && $employee?->department) {
-                $departmentName = $employee->department;
-            }
+            $employee = Employee::query()->find($employeeId);
 
             // Create assignment
             $assignment = AssetAssignment::create([
                 'asset_id' => $lockedAsset->id,
                 'employee_id' => $employee?->id,
-                'department_name' => $departmentName !== '' ? $departmentName : null,
+                'department_name' => null,
                 'assigned_by' => $request->user()->id,
                 'assigned_at' => now(),
             ]);
@@ -308,7 +304,7 @@ class AssetController extends Controller
             $assignment->load(['employee', 'assignedByUser']);
 
             return response()->json([
-                'message' => 'Asset handed over successfully.',
+                'message' => 'Responsible employee assigned successfully.',
                 'assignment' => $assignment,
             ]);
         });
@@ -366,7 +362,7 @@ class AssetController extends Controller
      */
     public function available(Request $request): JsonResponse
     {
-        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier'])
+        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
             ->where('status', Asset::STATUS_ACTIVE)
             ->unassigned()
             ->orderBy('asset_code')
@@ -397,10 +393,8 @@ class AssetController extends Controller
     {
         $currentAssignment = $asset->currentAssignment;
         $assignee = $currentAssignment?->employee;
-        $assignmentTargetName = $currentAssignment?->department_name ?: $assignee?->full_name;
-        $assignmentTargetType = $currentAssignment?->department_name
-            ? 'department'
-            : ($assignee ? 'employee' : null);
+        $assignmentTargetName = $assignee?->full_name;
+        $assignmentTargetType = $assignee ? 'employee' : null;
 
         $data = [
             'id' => $asset->id,
@@ -418,29 +412,27 @@ class AssetController extends Controller
                 'phone' => $asset->supplier->phone,
                 'email' => $asset->supplier->email,
             ] : null,
-            'location' => $asset->location,
+            'location' => $this->transformLocation($asset),
+            'location_name' => $this->locationLabel($asset),
             'status' => $asset->status,
             'notes' => $asset->notes,
+            'valuation' => $asset->getValuationData(),
             'instructions' => [
                 'type' => $asset->instructions_url ? 'url' : null,
                 'url' => $asset->instructions_url,
                 'available' => $asset->instructions_url !== null,
             ],
             'is_assigned' => $currentAssignment !== null,
+            'responsible_employee' => $this->transformEmployee($assignee),
             'current_assignment' => $currentAssignment ? [
                 'id' => $currentAssignment->id,
                 'assigned_at' => $currentAssignment->assigned_at,
-                'department_name' => $currentAssignment->department_name,
+                'department_name' => null,
                 'assignment_target' => [
                     'type' => $assignmentTargetType,
                     'name' => $assignmentTargetName,
                 ],
-                'assignee' => $assignee ? [
-                    'id' => $assignee->id,
-                    'employee_code' => $assignee->employee_code,
-                    'full_name' => $assignee->full_name,
-                    'position' => $assignee->position,
-                ] : null,
+                'assignee' => $this->transformEmployee($assignee),
                 'assigned_by' => $currentAssignment->assignedByUser ? [
                     'id' => $currentAssignment->assignedByUser->id,
                     'name' => $currentAssignment->assignedByUser->name,
@@ -457,16 +449,12 @@ class AssetController extends Controller
                 'assigned_at' => $a->assigned_at,
                 'unassigned_at' => $a->unassigned_at,
                 'is_active' => $a->unassigned_at === null,
-                'department_name' => $a->department_name,
+                'department_name' => null,
                 'assignment_target' => [
-                    'type' => $a->department_name ? 'department' : ($a->employee ? 'employee' : null),
-                    'name' => $a->department_name ?: $a->employee?->full_name,
+                    'type' => $a->employee ? 'employee' : null,
+                    'name' => $a->employee?->full_name,
                 ],
-                'employee' => $a->employee ? [
-                    'id' => $a->employee->id,
-                    'employee_code' => $a->employee->employee_code,
-                    'full_name' => $a->employee->full_name,
-                ] : null,
+                'employee' => $this->transformEmployee($a->employee),
                 'assigned_by' => $a->assignedByUser ? [
                     'id' => $a->assignedByUser->id,
                     'name' => $a->assignedByUser->name,
@@ -502,6 +490,47 @@ class AssetController extends Controller
         }
 
         return $data;
+    }
+
+    private function transformLocation(Asset $asset): ?array
+    {
+        $location = $asset->locationDefinition;
+
+        if (!$location) {
+            return null;
+        }
+
+        return [
+            'id' => $location->id,
+            'code' => $location->code,
+            'name' => $location->name,
+            'description' => $location->description,
+        ];
+    }
+
+    private function locationLabel(Asset $asset): ?string
+    {
+        $location = $asset->locationDefinition;
+
+        if ($location) {
+            return trim("{$location->code} - {$location->name}", ' -');
+        }
+
+        return $asset->location;
+    }
+
+    private function transformEmployee(?Employee $employee): ?array
+    {
+        if (!$employee) {
+            return null;
+        }
+
+        return [
+            'id' => $employee->id,
+            'employee_code' => $employee->employee_code,
+            'full_name' => $employee->full_name,
+            'position' => $employee->position,
+        ];
     }
 
     /**

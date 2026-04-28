@@ -8,6 +8,7 @@ use App\Models\AssetCheckin;
 use App\Models\Employee;
 use App\Models\InventoryCheck;
 use App\Models\InventoryCheckItem;
+use App\Models\Location;
 use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -159,6 +160,33 @@ class InventoryApiTest extends TestCase
         foreach ($assets as $asset) {
             $this->assertEquals('Server', $asset['category']);
         }
+    }
+
+    public function test_inventory_assets_filters_by_canonical_location_code(): void
+    {
+        $location = Location::factory()->create([
+            'code' => 'LOC-INV',
+            'name' => 'Kho IT',
+            'description' => 'Kho thiết bị IT',
+        ]);
+        Asset::factory()->create([
+            'asset_code' => 'IT-LAP-INV',
+            'name' => 'Inventory Laptop',
+            'location_id' => $location->id,
+            'location' => 'Legacy Text',
+        ]);
+        Asset::factory()->create([
+            'asset_code' => 'IT-OTHER-INV',
+            'name' => 'Other Asset',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson('/api/inventory/assets?location=LOC-INV')
+            ->assertOk()
+            ->assertJsonCount(1, 'assets')
+            ->assertJsonPath('assets.0.asset_code', 'IT-LAP-INV')
+            ->assertJsonPath('assets.0.location.code', 'LOC-INV')
+            ->assertJsonPath('assets.0.location.name', 'Kho IT');
     }
 
     public function test_inventory_assets_search_works(): void

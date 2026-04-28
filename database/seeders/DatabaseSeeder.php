@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\Employee;
+use App\Models\Location;
 use App\Models\MaintenanceEvent;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -20,8 +21,9 @@ class DatabaseSeeder extends Seeder
      *
      * This seeder is intentionally compact and idempotent:
      * - creates a few employees and user accounts
+     * - creates canonical asset locations
      * - creates representative IT assets
-     * - creates handover assignments to both employees and departments
+     * - creates responsible employee assignments
      * - creates a few maintenance events for reporting flows
      */
     public function run(): void
@@ -29,7 +31,8 @@ class DatabaseSeeder extends Seeder
         $this->call(ShiftSeeder::class);
 
         $people = $this->seedEmployeesAndUsers();
-        $assets = $this->seedAssets();
+        $locations = $this->seedLocations();
+        $assets = $this->seedAssets($locations);
         $this->seedAssignments($people, $assets);
         $this->seedMaintenanceEvents($people, $assets);
     }
@@ -46,7 +49,7 @@ class DatabaseSeeder extends Seeder
                 'employee_code' => 'E1001',
                 'full_name' => 'Nguyen Van An',
                 'position' => 'IT Operations Manager',
-                'department' => 'IT Operations',
+                'department' => null,
                 'email' => 'manager@mesoco.vn',
                 'role' => User::ROLE_MANAGER,
             ],
@@ -54,32 +57,32 @@ class DatabaseSeeder extends Seeder
                 'employee_code' => 'E1002',
                 'full_name' => 'Tran Thi Binh',
                 'position' => 'IT Support Technician',
-                'department' => 'IT Support',
+                'department' => null,
                 'email' => 'technician@mesoco.vn',
                 'role' => User::ROLE_TECHNICIAN,
             ],
-            'finance' => [
+            'employee' => [
                 'employee_code' => 'E1003',
                 'full_name' => 'Le Minh Cuong',
-                'position' => 'Finance Analyst',
-                'department' => 'Finance',
-                'email' => 'finance@mesoco.vn',
+                'position' => 'Office Staff',
+                'department' => null,
+                'email' => 'employee@mesoco.vn',
                 'role' => User::ROLE_EMPLOYEE,
             ],
-            'sales' => [
+            'frontdesk' => [
                 'employee_code' => 'E1004',
                 'full_name' => 'Pham Thi Dung',
-                'position' => 'Sales Executive',
-                'department' => 'Sales',
-                'email' => 'sales@mesoco.vn',
+                'position' => 'Front Desk Staff',
+                'department' => null,
+                'email' => 'frontdesk@mesoco.vn',
                 'role' => User::ROLE_EMPLOYEE,
             ],
-            'ops' => [
+            'warehouse' => [
                 'employee_code' => 'E1005',
                 'full_name' => 'Hoang Van Em',
-                'position' => 'Operations Staff',
-                'department' => 'Operations',
-                'email' => 'ops@mesoco.vn',
+                'position' => 'Warehouse Staff',
+                'department' => null,
+                'email' => 'warehouse@mesoco.vn',
                 'role' => User::ROLE_EMPLOYEE,
             ],
         ];
@@ -122,11 +125,53 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
+     * Create canonical locations for asset placement.
+     *
+     * @return array<string, Location>
+     */
+    private function seedLocations(): array
+    {
+        $rows = [
+            'it_storage' => [
+                'code' => 'LOC-001',
+                'name' => 'Kho IT',
+                'description' => 'Nơi lưu thiết bị IT chưa cấp phát hoặc đang chờ xử lý.',
+            ],
+            'support_room' => [
+                'code' => 'LOC-002',
+                'name' => 'Phòng kỹ thuật',
+                'description' => 'Khu vực kỹ thuật viên kiểm tra và sửa thiết bị.',
+            ],
+            'office_area' => [
+                'code' => 'LOC-003',
+                'name' => 'Khu làm việc nhân viên',
+                'description' => 'Khu vực nhân viên sử dụng thiết bị hằng ngày.',
+            ],
+            'server_room' => [
+                'code' => 'LOC-004',
+                'name' => 'Phòng server',
+                'description' => 'Khu vực đặt thiết bị mạng và server.',
+            ],
+        ];
+
+        $locations = [];
+
+        foreach ($rows as $key => $row) {
+            $locations[$key] = Location::updateOrCreate(
+                ['code' => $row['code']],
+                $row + ['is_active' => true]
+            );
+        }
+
+        return $locations;
+    }
+
+    /**
      * Create representative IT assets.
      *
      * @return array<string, Asset>
      */
-    private function seedAssets(): array
+    private function seedAssets(array $locations): array
     {
         $rows = [
             'laptop' => [
@@ -134,7 +179,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Dell Latitude 5440',
                 'type' => Asset::TYPE_EQUIPMENT,
                 'category' => 'Laptop',
-                'location' => 'IT Support Room',
+                'location_key' => 'support_room',
                 'purchase_date' => '2025-01-10',
                 'purchase_cost' => 28000000,
                 'useful_life_months' => 48,
@@ -146,7 +191,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'HP EliteDesk 800 G9',
                 'type' => Asset::TYPE_EQUIPMENT,
                 'category' => 'Desktop',
-                'location' => 'Finance Office',
+                'location_key' => 'office_area',
                 'purchase_date' => '2024-10-18',
                 'purchase_cost' => 22000000,
                 'useful_life_months' => 60,
@@ -158,7 +203,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'LG 27-inch Monitor',
                 'type' => Asset::TYPE_EQUIPMENT,
                 'category' => 'Monitor',
-                'location' => 'Sales Office',
+                'location_key' => 'office_area',
                 'purchase_date' => '2024-08-21',
                 'purchase_cost' => 6500000,
                 'useful_life_months' => 36,
@@ -170,7 +215,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Cisco Catalyst Switch',
                 'type' => Asset::TYPE_MACHINE,
                 'category' => 'Network',
-                'location' => 'Server Room',
+                'location_key' => 'server_room',
                 'purchase_date' => '2024-05-05',
                 'purchase_cost' => 45000000,
                 'useful_life_months' => 72,
@@ -182,7 +227,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Dell PowerEdge R450',
                 'type' => Asset::TYPE_MACHINE,
                 'category' => 'Server',
-                'location' => 'Server Room',
+                'location_key' => 'server_room',
                 'purchase_date' => '2024-03-12',
                 'purchase_cost' => 98000000,
                 'useful_life_months' => 84,
@@ -194,7 +239,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'HP LaserJet Pro M404dn',
                 'type' => Asset::TYPE_EQUIPMENT,
                 'category' => 'Printer',
-                'location' => 'Operations Office',
+                'location_key' => 'it_storage',
                 'purchase_date' => '2024-12-02',
                 'purchase_cost' => 8900000,
                 'useful_life_months' => 48,
@@ -206,12 +251,17 @@ class DatabaseSeeder extends Seeder
         $assets = [];
 
         foreach ($rows as $key => $row) {
+            $location = $locations[$row['location_key']] ?? null;
+            unset($row['location_key']);
+
             $assets[$key] = Asset::updateOrCreate(
                 ['asset_code' => $row['asset_code']],
                 $row + [
+                    'location_id' => $location?->id,
+                    'location' => $location?->name,
                     'depreciation_method' => Asset::DEPRECIATION_TIME,
                     'warranty_expiry' => now()->addYears(2)->toDateString(),
-                    'notes' => 'Seeded IT asset for company handover workflows.',
+                    'notes' => 'Seeded IT asset for location and responsible employee workflows.',
                 ]
             );
         }
@@ -220,7 +270,7 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * Create active handover assignments.
+     * Create active responsible employee assignments.
      *
      * @param array<string, Employee> $people
      * @param array<string, Asset> $assets
@@ -228,12 +278,12 @@ class DatabaseSeeder extends Seeder
     private function seedAssignments(array $people, array $assets): void
     {
         $assignments = [
-            ['asset' => 'laptop', 'employee' => 'technician', 'department' => 'IT Support'],
-            ['asset' => 'desktop', 'employee' => 'finance', 'department' => 'Finance'],
-            ['asset' => 'monitor', 'employee' => null, 'department' => 'Sales'],
-            ['asset' => 'network', 'employee' => 'manager', 'department' => 'IT Operations'],
-            ['asset' => 'server', 'employee' => null, 'department' => 'IT Operations'],
-            ['asset' => 'printer', 'employee' => 'ops', 'department' => 'Operations'],
+            ['asset' => 'laptop', 'employee' => 'technician'],
+            ['asset' => 'desktop', 'employee' => 'employee'],
+            ['asset' => 'monitor', 'employee' => 'frontdesk'],
+            ['asset' => 'network', 'employee' => 'manager'],
+            ['asset' => 'server', 'employee' => 'technician'],
+            ['asset' => 'printer', 'employee' => 'warehouse'],
         ];
 
         foreach ($assignments as $row) {
@@ -244,8 +294,8 @@ class DatabaseSeeder extends Seeder
 
             AssetAssignment::create([
                 'asset_id' => $asset->id,
-                'employee_id' => $row['employee'] ? ($people[$row['employee']]?->id) : null,
-                'department_name' => $row['department'],
+                'employee_id' => $people[$row['employee']]?->id,
+                'department_name' => null,
                 'assigned_by' => $people['manager']->user?->id,
                 'assigned_at' => now()->subDays(7),
             ]);

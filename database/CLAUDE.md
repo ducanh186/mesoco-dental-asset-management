@@ -7,7 +7,8 @@ Migration Laravel là nguồn sự thật. Không rewrite migration lịch sử 
 Seeder active phải tạo dữ liệu IT:
 
 - Laptop, desktop, monitor, server, network, printer, peripheral.
-- Phòng ban như IT Operations, IT Support, Finance, Sales, Operations, Engineering.
+- Vị trí như Kho IT, Phòng kỹ thuật, Khu làm việc nhân viên, Phòng server.
+- Nhân viên có `position`; không dùng phòng ban cho scope active.
 - Supplier thiết bị IT.
 - Maintenance theo phần mềm, phần cứng, kiểm tra định kỳ, sửa chữa.
 - Inventory valuation với purchase cost, useful life, salvage value và warranty.

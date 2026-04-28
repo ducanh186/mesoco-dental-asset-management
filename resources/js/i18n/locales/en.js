@@ -110,7 +110,7 @@ export default {
         employees: 'Employee Profiles',
         assets: 'Asset Catalog',
         equipmentCatalog: 'Asset Catalog',
-        myEquipment: 'Department Equipment',
+        myEquipment: 'My Responsible Assets',
         equipment: 'Equipment',
         shifts: 'Shifts',
         checkin: 'Shift Check-in',
@@ -270,7 +270,7 @@ export default {
         noScheduled: 'No scheduled tasks',
         
         // Employee cards
-        myEquipmentCount: 'Department Equipment',
+        myEquipmentCount: 'My Responsible Assets',
         myActiveRequests: 'My Active Requests',
         alerts: 'Alerts',
         lockedCount: '{count} locked',
@@ -298,7 +298,7 @@ export default {
         addEquipment: 'Add Equipment',
         newRequest: 'New Request',
         viewReports: 'View Reports',
-        myEquipment: 'My Equipment',
+        myEquipment: 'My Responsible Assets',
         myRequests: 'My Requests',
         reviewRequests: 'Review Requests',
         maintenance: 'Maintenance & Repair',
@@ -323,7 +323,7 @@ export default {
         noEquipmentHint: 'Start by adding your first piece of equipment.',
         equipmentName: 'Equipment Name',
         code: 'Code',
-        assignedTo: 'Assigned To',
+        assignedTo: 'Responsible Employee',
         lastMaintenance: 'Last Maintenance',
         lockStatus: 'Lock Status',
         locked: 'Locked',
@@ -343,7 +343,7 @@ export default {
     // ========================================================================
     assets: {
         title: 'Assets',
-        subtitle: 'Manage IT asset records and department handovers',
+        subtitle: 'Manage IT assets by location and responsible employee',
         allAssets: 'All Equipment',
         createAsset: 'Create New Equipment',
         editAsset: 'Edit Equipment',
@@ -387,9 +387,9 @@ export default {
         assignTo: 'Assign to',
         assignAsset: 'Assign Equipment',
         unassignAsset: 'Unassign Equipment',
-        currentAssignee: 'Current Handover Unit',
+        currentAssignee: 'Responsible Employee',
         assignedTo: 'Assigned To',
-        handoverDepartment: 'Handover Department',
+        handoverDepartment: 'Responsible Employee',
         assignedSince: 'Assigned since',
         assignmentHistory: 'Assignment History',
         noAssignment: 'Currently unassigned',
@@ -951,12 +951,12 @@ export default {
     // ========================================================================
     disposal: {
         title: 'Equipment Disposal',
-        subtitle: 'Manage equipment eligible for disposal (depreciation >= 70%)',
-        eligibleForDisposal: 'Eligible for Disposal',
+        subtitle: 'Manage disposal proposals when depreciation is > 75%',
+        eligibleForDisposal: 'Disposal Proposals',
         highDepreciation: 'Depreciation >= 90%',
         alreadyRetired: 'Already Disposed',
         remainingValue: 'Remaining Value',
-        eligibleTab: 'Eligible',
+        eligibleTab: 'Disposal Proposals',
         retiredTab: 'Disposed',
         assetCode: 'Asset Code',
         assetName: 'Asset Name',
@@ -972,7 +972,7 @@ export default {
         retireConfirmTitle: 'Confirm Disposal',
         retireConfirmMessage: 'Are you sure you want to dispose {name} ({code})?',
         confirmRetire: 'Confirm Disposal',
-        noEligible: 'No assets eligible for disposal.',
+        noEligible: 'No assets in disposal proposals.',
         noRetired: 'No disposed assets yet.',
     },
 
@@ -1053,7 +1053,7 @@ export default {
         popupBlocked: 'Please allow popups to print the label',
         unnamedAsset: 'Unnamed Asset',
         scanInstruction: 'Use this label for inventory reconciliation',
-        handoverNote: 'IT asset handed over by department',
+        handoverNote: 'IT asset assigned to a responsible employee',
     },
 
     // ========================================================================
@@ -1061,17 +1061,18 @@ export default {
     // ========================================================================
     locationsPage: {
         title: 'Locations',
-        subtitle: 'Manage physical locations for assets',
+        subtitle: 'Manage location code, name, and description for assets',
         addLocation: 'Add Location',
         editLocation: 'Edit Location',
-        searchPlaceholder: 'Search by location name...',
+        searchPlaceholder: 'Search by location code or name...',
         showInactive: 'Show inactive locations',
         noLocations: 'No locations found',
+        locationCode: 'Location Code',
         locationName: 'Location Name',
         locationNamePlaceholder: 'e.g., Server Room or Office Floor 1',
         descriptionPlaceholder: 'Optional description...',
-        address: 'Address',
-        addressPlaceholder: 'Optional address...',
+        address: 'Legacy Address',
+        addressPlaceholder: 'Not used in active UI',
     },
 
     // ========================================================================
