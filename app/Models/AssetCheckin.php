@@ -135,7 +135,7 @@ class AssetCheckin extends Model
             'employee' => $this->relationLoaded('employee') ? [
                 'id' => $this->employee->id,
                 'employee_code' => $this->employee->employee_code,
-                'full_name' => $this->employee->full_name,
+                'full_name' => $this->employee->employee?->full_name ?? $this->employee->name,
             ] : null,
             'shift_id' => $this->shift_id,
             'shift' => $this->relationLoaded('shift') ? $this->shift->toApiArray() : null,

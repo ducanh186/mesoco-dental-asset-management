@@ -20,7 +20,7 @@ import { disposalApi, handleApiError } from '../services/api';
  * DisposalPage - Asset disposal management (Thu hủy)
  * BFD Module 4: Quản lý thu hủy
  *
- * Shows assets with depreciation >= 70% eligible for disposal,
+ * Shows assets with depreciation > 75% proposed for disposal,
  * and already retired/disposed assets.
  */
 const DisposalPage = ({ user }) => {
@@ -106,7 +106,7 @@ const DisposalPage = ({ user }) => {
     // Depreciation badge color
     const getDepreciationBadge = (percentage) => {
         if (percentage >= 90) return 'danger';
-        if (percentage >= 70) return 'warning';
+        if (percentage > 75) return 'warning';
         return 'info';
     };
 

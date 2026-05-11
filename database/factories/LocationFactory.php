@@ -28,6 +28,7 @@ class LocationFactory extends Factory
         $floors = ['Tầng 1', 'Tầng 2', 'Tầng 3', 'Tầng 4', 'Tầng hầm'];
 
         return [
+            'code' => 'LOC-' . fake()->unique()->numerify('####'),
             'name' => fake()->randomElement($locationTypes) . ' ' . fake()->randomElement($floors) . ' - ' . fake()->unique()->numberBetween(1, 99999),
             'description' => fake()->optional()->sentence(),
             'address' => fake()->optional()->address(),

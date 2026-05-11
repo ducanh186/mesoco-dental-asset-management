@@ -13,7 +13,7 @@ import {
     ConfirmModal,
     useToast 
 } from '../components/ui';
-import { feedbackApi, departmentAssetsApi, handleApiError } from '../services/api';
+import { feedbackApi, responsibleAssetsApi, handleApiError } from '../services/api';
 
 /**
  * FeedbackPage - Phase 8
@@ -89,7 +89,7 @@ const FeedbackPage = ({ user }) => {
 
     const fetchAssets = useCallback(async () => {
         try {
-            const response = await departmentAssetsApi.dropdown();
+            const response = await responsibleAssetsApi.dropdown();
             setAssets(response.data || []);
         } catch (error) {
             console.error('Failed to fetch assets:', error);
@@ -444,7 +444,7 @@ const FeedbackPage = ({ user }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-text mb-1">Thiết bị liên quan (không bắt buộc)</label>
+                        <label className="block text-sm font-medium text-text mb-1">Thiết bị tôi phụ trách (không bắt buộc)</label>
                         <Select
                             options={[
                                 { value: '', label: 'Không chọn' },

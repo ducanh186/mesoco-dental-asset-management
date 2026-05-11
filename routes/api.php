@@ -26,7 +26,7 @@ $legacyContractModuleResponse = static function () {
 
 $removedQrModuleResponse = static function () {
     return response()->json([
-        'message' => 'QR scanning and personal borrow/return flows have been removed. Assets are now managed by department handover.',
+        'message' => 'QR scanning and personal borrow/return flows have been removed. Assets are now managed by location and responsible employee.',
     ], 410);
 };
 
@@ -41,7 +41,7 @@ $removedQrModuleResponse = static function () {
 | ├─────────────┼────────────────────────────────────────────────────────────────────┤
 | │ manager     │ Báo cáo, cấu hình, kiểm kê và điều phối hệ thống                   │
 | │ technician  │ Danh mục, cấp phát, bảo trì, thu hủy và vận hành thiết bị          │
-| │ employee    │ Báo sự cố thiết bị và yêu cầu vật tư IT theo phòng ban             │
+| │ employee    │ Báo sự cố thiết bị và yêu cầu vật tư IT với tài sản phụ trách       │
 | │ supplier    │ Theo dõi và cập nhật trạng thái đơn hàng của chính nhà cung cấp     │
 | └─────────────┴────────────────────────────────────────────────────────────────────┘
 |
@@ -84,7 +84,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::post('/qr/resolve', $removedQrModuleResponse);
 
         /**
-         * Department assets - internal users can pick assets handed over to their department.
+         * Responsible assets - internal users can pick assets assigned to them.
          */
         Route::get('/my-assets', $removedQrModuleResponse);
         Route::get('/my-assigned-assets/dropdown', [AssetController::class, 'myAssignedAssetsDropdown']);

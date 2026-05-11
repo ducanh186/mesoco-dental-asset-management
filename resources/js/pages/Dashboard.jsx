@@ -6,12 +6,90 @@ import { StatCard, QuickActionGrid, RecentEquipmentTable } from '../components/d
 import { Badge, Card, Table } from '../components/ui';
 import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, hasOperationalAccess, normalizeRole } from '../utils/roles';
 
+const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+}).format(Number(value || 0));
+
+const DepartmentDistribution = ({ title, subtitle, data }) => {
+    const maxCount = Math.max(...data.map((item) => item.count), 1);
+
+    return (
+        <Card className="p-5">
+            <div className="mb-5">
+                <h3 className="text-lg font-semibold text-text">{title}</h3>
+                <p className="text-sm text-text-muted mt-1">{subtitle}</p>
+            </div>
+
+            {data.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                    Chưa có dữ liệu phân bổ tài sản.
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {data.map((item) => (
+                        <div key={item.label}>
+                            <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                                <span className="font-medium text-text">{item.label}</span>
+                                <span className="text-text-muted">{item.count}</span>
+                            </div>
+                            <div className="h-2.5 overflow-hidden rounded-full bg-surface-muted">
+                                <div
+                                    className="h-full rounded-full bg-primary"
+                                    style={{ width: `${Math.max((item.count / maxCount) * 100, 8)}%` }}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </Card>
+    );
+};
+
+const AssetTrend = ({ title, subtitle, data }) => {
+    const maxCount = Math.max(...data.map((item) => item.count), 1);
+
+    return (
+        <Card className="p-5">
+            <div className="mb-5">
+                <h3 className="text-lg font-semibold text-text">{title}</h3>
+                <p className="text-sm text-text-muted mt-1">{subtitle}</p>
+            </div>
+
+            {data.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                    Chưa có dữ liệu biến động theo tháng.
+                </div>
+            ) : (
+                <div className="flex h-56 items-end gap-3">
+                    {data.map((item) => (
+                        <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-3">
+                            <div className="flex h-40 w-full items-end rounded-2xl bg-surface-muted/80 px-1 pb-1">
+                                <div
+                                    className="w-full rounded-xl bg-gradient-to-t from-primary to-info"
+                                    style={{ height: `${Math.max((item.count / maxCount) * 100, item.count > 0 ? 12 : 0)}%` }}
+                                />
+                            </div>
+                            <div className="text-center">
+                                <div className="text-sm font-semibold text-text">{item.count}</div>
+                                <div className="text-xs text-text-muted">{item.label}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </Card>
+    );
+};
+
 /**
  * Dashboard Page - Role-based conditional rendering
  * 
  * - Manager: reporting overview
  * - Technician: operational overview for catalog, purchase orders, maintenance, disposal, and inventory
- * - Employee: department handover metrics
+ * - Employee: responsible asset metrics
  */
 const Dashboard = ({ user }) => {
     const { t } = useI18n();
@@ -23,12 +101,13 @@ const Dashboard = ({ user }) => {
     
     // Operational stats
     const [inventorySummary, setInventorySummary] = useState(null);
-    const [inventoryChecks, setInventoryChecks] = useState([]);
+    const [inventoryValuation, setInventoryValuation] = useState(null);
     const [maintenanceEvents, setMaintenanceEvents] = useState([]);
     const [globalAssets, setGlobalAssets] = useState([]);
+    const [reviewQueueTotal, setReviewQueueTotal] = useState(0);
     
-    // Department handover stats
-    const [departmentAssets, setDepartmentAssets] = useState([]);
+    // Responsible asset stats
+    const [responsibleAssets, setResponsibleAssets] = useState([]);
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [purchaseOrderSummary, setPurchaseOrderSummary] = useState({
         total: 0,
@@ -50,28 +129,31 @@ const Dashboard = ({ user }) => {
         
         try {
             if (isManager) {
-                const [inventoryRes, inventoryChecksRes, maintenanceRes, assetsRes] = await Promise.all([
+                const [inventoryRes, maintenanceRes, assetsRes, reviewQueueRes] = await Promise.all([
                     axios.get('/api/inventory/summary').catch(() => ({ data: null })),
-                    axios.get('/api/inventory/checks', { params: { status: 'in_progress', per_page: 5 } }).catch(() => ({ data: { data: [] } })),
                     axios.get('/api/maintenance-events').catch(() => ({ data: { maintenance_events: [] } })),
-                    axios.get('/api/assets', { params: { per_page: 5 } }).catch(() => ({ data: { assets: [] } }))
+                    axios.get('/api/assets', { params: { per_page: 100 } }).catch(() => ({ data: { assets: [] } })),
+                    axios.get('/api/review-requests', { params: { status: 'SUBMITTED', per_page: 1 } }).catch(() => ({ data: { pagination: { total: 0 } } })),
                 ]);
                 
-                setInventorySummary(inventoryRes.data);
-                setInventoryChecks(inventoryChecksRes.data?.data || []);
+                setInventorySummary(inventoryRes.data?.summary || null);
+                setInventoryValuation(inventoryRes.data?.valuation || null);
                 setMaintenanceEvents(maintenanceRes.data?.maintenance_events || maintenanceRes.data?.data || []);
-                setGlobalAssets(inventoryRes.data?.assets || assetsRes.data?.assets || assetsRes.data?.data || []);
+                setGlobalAssets(assetsRes.data?.assets || assetsRes.data?.data || []);
+                setReviewQueueTotal(reviewQueueRes.data?.pagination?.total || 0);
                 
             } else if (isTechnician) {
                 const [inventoryRes, maintenanceRes, assetsRes] = await Promise.all([
                     axios.get('/api/inventory/summary').catch(() => ({ data: null })),
                     axios.get('/api/maintenance-events').catch(() => ({ data: { maintenance_events: [] } })),
-                    axios.get('/api/assets', { params: { per_page: 5 } }).catch(() => ({ data: { assets: [] } }))
+                    axios.get('/api/assets', { params: { per_page: 100 } }).catch(() => ({ data: { assets: [] } }))
                 ]);
                 
-                setInventorySummary(inventoryRes.data);
+                setInventorySummary(inventoryRes.data?.summary || null);
+                setInventoryValuation(inventoryRes.data?.valuation || null);
                 setMaintenanceEvents(maintenanceRes.data?.maintenance_events || maintenanceRes.data?.data || []);
                 setGlobalAssets(assetsRes.data?.assets || assetsRes.data?.data || []);
+                setReviewQueueTotal(0);
                 
             } else if (isSupplier) {
                 const ordersRes = await axios.get('/api/purchase-orders', {
@@ -90,10 +172,20 @@ const Dashboard = ({ user }) => {
                     shipping: 0,
                     delivered: 0,
                 });
+                setInventorySummary(null);
+                setInventoryValuation(null);
+                setGlobalAssets([]);
+                setMaintenanceEvents([]);
+                setReviewQueueTotal(0);
             } else {
-                const departmentAssetsRes = await axios.get('/api/department-assets/dropdown').catch(() => ({ data: { data: [] } }));
-                
-                setDepartmentAssets(departmentAssetsRes.data?.data || []);
+                const responsibleAssetsRes = await axios.get('/api/my-assigned-assets/dropdown').catch(() => ({ data: { data: [] } }));
+
+                setResponsibleAssets(responsibleAssetsRes.data?.data || []);
+                setInventorySummary(null);
+                setInventoryValuation(null);
+                setGlobalAssets([]);
+                setMaintenanceEvents([]);
+                setReviewQueueTotal(0);
             }
         } catch (err) {
             console.error('Dashboard fetch error:', err);
@@ -150,60 +242,70 @@ const Dashboard = ({ user }) => {
     // Calculate stats for cards based on role
     const getStats = () => {
         if (isManager) {
-            const totalEquipment = inventorySummary?.total_assets || inventorySummary?.total || 0;
-            const inventoryCheckCount = inventoryChecks.length;
-            const maintenanceDue = maintenanceEvents.filter(
-                m => m.status === 'scheduled' || m.status === 'overdue'
-            ).length;
-            const overdueCount = maintenanceEvents.filter(m => m.status === 'overdue').length;
+            const totalEquipment = inventorySummary?.total_assets || 0;
+            const interruptedCount = (inventorySummary?.by_status?.maintenance || 0) + (inventorySummary?.by_status?.off_service || 0);
+            const maintenanceDue = maintenanceEvents.filter((event) => event.status === 'scheduled' || event.status === 'overdue').length;
+            const totalInventoryValue = inventoryValuation?.total_current_book_value || 0;
 
             return [
                 {
                     title: t('dashboard.totalEquipment'),
                     value: totalEquipment,
-                    subtitle: inventorySummary?.active_count 
-                        ? t('dashboard.activeCount', { count: inventorySummary.active_count })
-                        : null,
+                    subtitle: t('dashboard.activeCount', { count: inventorySummary?.by_status?.active || 0 }),
                     color: 'primary',
                     trend: 'neutral',
                     icon: equipmentIcon
                 },
                 {
-                    title: t('nav.inventory'),
-                    value: inventoryCheckCount,
-                    subtitle: inventoryCheckCount > 0
-                        ? t('dashboard.upcomingTasks')
-                        : t('dashboard.allClear'),
-                    color: inventoryCheckCount > 0 ? 'warning' : 'success',
-                    trend: inventoryCheckCount > 0 ? 'neutral' : 'up',
+                    title: 'Giá trị tồn kho',
+                    value: formatCurrency(totalInventoryValue),
+                    subtitle: `${inventoryValuation?.assets_with_valuation || 0} tài sản đã định giá`,
+                    color: 'info',
+                    trend: 'neutral',
                     icon: requestsIcon
                 },
                 {
-                    title: t('dashboard.maintenanceDue'),
-                    value: maintenanceDue,
-                    subtitle: overdueCount > 0 
-                        ? t('dashboard.overdue', { count: overdueCount })
-                        : t('dashboard.onSchedule'),
-                    color: overdueCount > 0 ? 'danger' : 'success',
-                    trend: overdueCount > 0 ? 'down' : 'up',
+                    title: 'Thiết bị gián đoạn',
+                    value: interruptedCount,
+                    subtitle: maintenanceDue > 0 ? `${maintenanceDue} mục đang chờ xử lý` : t('dashboard.onSchedule'),
+                    color: interruptedCount > 0 ? 'warning' : 'success',
+                    trend: interruptedCount > 0 ? 'neutral' : 'up',
                     icon: maintenanceIcon
+                },
+                {
+                    title: 'Yêu cầu chờ duyệt',
+                    value: reviewQueueTotal,
+                    subtitle: reviewQueueTotal > 0 ? 'Cần xử lý trong hàng đợi' : t('dashboard.allClear'),
+                    color: reviewQueueTotal > 0 ? 'danger' : 'success',
+                    trend: reviewQueueTotal > 0 ? 'down' : 'up',
+                    icon: alertIcon,
                 }
             ];
         }
 
         if (isTechnician) {
-            const totalEquipment = inventorySummary?.total_assets || inventorySummary?.total || globalAssets.length;
+            const totalEquipment = inventorySummary?.total_assets || globalAssets.length;
+            const totalInventoryValue = inventoryValuation?.total_current_book_value || 0;
             const inProgressCount = maintenanceEvents.filter(m => m.status === 'in_progress').length;
             const scheduledCount = maintenanceEvents.filter(m => m.status === 'scheduled').length;
+            const highDepreciationCount = globalAssets.filter((asset) => Number(asset.valuation?.depreciation_percentage || 0) >= 75).length;
 
             return [
                 {
                     title: t('dashboard.totalEquipment'),
                     value: totalEquipment,
-                    subtitle: scheduledCount > 0 ? t('dashboard.scheduled', { count: scheduledCount }) : null,
+                    subtitle: t('dashboard.activeCount', { count: inventorySummary?.by_status?.active || 0 }),
                     color: 'primary',
                     trend: 'neutral',
                     icon: equipmentIcon
+                },
+                {
+                    title: 'Giá trị tồn kho',
+                    value: formatCurrency(totalInventoryValue),
+                    subtitle: `${inventoryValuation?.assets_with_valuation || 0} tài sản đã định giá`,
+                    color: 'info',
+                    trend: 'neutral',
+                    icon: requestsIcon
                 },
                 {
                     title: t('dashboard.maintenanceInProgress'),
@@ -214,12 +316,12 @@ const Dashboard = ({ user }) => {
                     icon: maintenanceIcon
                 },
                 {
-                    title: t('dashboard.scheduledMaintenance'),
-                    value: scheduledCount,
-                    subtitle: scheduledCount > 0 ? t('dashboard.upcomingTasks') : t('dashboard.noScheduled'),
-                    color: scheduledCount > 0 ? 'info' : 'success',
-                    trend: 'neutral',
-                    icon: calendarIcon
+                    title: 'Khấu hao cao',
+                    value: highDepreciationCount,
+                    subtitle: scheduledCount > 0 ? t('dashboard.scheduled', { count: scheduledCount }) : t('dashboard.noScheduled'),
+                    color: highDepreciationCount > 0 ? 'danger' : 'success',
+                    trend: highDepreciationCount > 0 ? 'down' : 'neutral',
+                    icon: calendarIcon,
                 }
             ];
         }
@@ -257,8 +359,8 @@ const Dashboard = ({ user }) => {
             ];
         }
 
-        const myEquipmentCount = departmentAssets.length;
-        const lockedCount = departmentAssets.filter(a => a.is_locked || a.status === 'off_service').length;
+        const myEquipmentCount = responsibleAssets.length;
+        const lockedCount = responsibleAssets.filter(a => a.is_locked || a.status === 'off_service').length;
 
         return [
             {
@@ -286,16 +388,15 @@ const Dashboard = ({ user }) => {
 
     // Table handlers
     const handleView = (item) => {
-        navigate(`/assets/${item.id}`);
+        navigate(`/assets?q=${encodeURIComponent(item.asset_code || item.code || item.name || '')}`);
     };
 
     const handleEdit = (item) => {
-        navigate(`/assets/${item.id}/edit`);
+        navigate(`/assets?q=${encodeURIComponent(item.asset_code || item.code || item.name || '')}`);
     };
 
     const handleDelete = (item) => {
-        // TODO: Implement delete confirmation modal
-        console.log('Delete:', item);
+        navigate(`/assets?q=${encodeURIComponent(item.asset_code || item.code || item.name || '')}`);
     };
 
     // Get table data based on role
@@ -303,10 +404,60 @@ const Dashboard = ({ user }) => {
         if (isOperationalRole) {
             return globalAssets.slice(0, 5);
         }
-        return departmentAssets.slice(0, 5);
+        return responsibleAssets.slice(0, 5);
     };
 
     const stats = getStats();
+    const departmentDistribution = Object.entries(globalAssets.reduce((accumulator, asset) => {
+        const department = asset.responsible_employee?.department || 'Chưa bàn giao';
+        accumulator[department] = (accumulator[department] || 0) + 1;
+        return accumulator;
+    }, {}))
+        .map(([label, count]) => ({ label, count }))
+        .sort((left, right) => right.count - left.count)
+        .slice(0, 6);
+
+    const monthFormatter = new Intl.DateTimeFormat('vi-VN', { month: 'short' });
+    const monthAnchors = Array.from({ length: 6 }, (_, index) => {
+        const month = new Date();
+        month.setDate(1);
+        month.setMonth(month.getMonth() - (5 - index));
+        return {
+            key: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`,
+            label: monthFormatter.format(month),
+            count: 0,
+        };
+    });
+
+    const monthlyTrend = monthAnchors.map((bucket) => {
+        const count = globalAssets.filter((asset) => {
+            if (!asset.created_at) {
+                return false;
+            }
+
+            const createdAt = new Date(asset.created_at);
+            const bucketKey = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}`;
+            return bucketKey === bucket.key;
+        }).length;
+
+        return {
+            label: bucket.label,
+            count,
+        };
+    });
+
+    const depreciationAlerts = globalAssets
+        .map((asset) => ({
+            id: asset.id,
+            name: asset.name,
+            assetCode: asset.asset_code,
+            department: asset.responsible_employee?.department || 'Chưa bàn giao',
+            percentage: Number(asset.valuation?.depreciation_percentage || 0),
+            currentBookValue: Number(asset.valuation?.current_book_value || 0),
+        }))
+        .filter((asset) => asset.percentage >= 65)
+        .sort((left, right) => right.percentage - left.percentage)
+        .slice(0, 6);
 
     return (
         <div className="dashboard-page p-6">
@@ -341,7 +492,7 @@ const Dashboard = ({ user }) => {
             )}
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
                 {stats.map((stat, index) => (
                     <StatCard
                         key={index}
@@ -355,6 +506,61 @@ const Dashboard = ({ user }) => {
                     />
                 ))}
             </div>
+
+            {isOperationalRole && (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                    <DepartmentDistribution
+                        title="Tình trạng tài sản theo bộ phận"
+                        subtitle="Theo nhân viên đang được giao hoặc bộ phận quản lý"
+                        data={departmentDistribution}
+                    />
+                    <AssetTrend
+                        title="Xu hướng biến động tài sản"
+                        subtitle="Số tài sản mới được ghi nhận trong 6 tháng gần đây"
+                        data={monthlyTrend}
+                    />
+                </div>
+            )}
+
+            {isOperationalRole && (
+                <Card className="p-5 mb-6">
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                        <div>
+                            <h3 className="text-lg font-semibold text-text">Cảnh báo khấu hao</h3>
+                            <p className="text-sm text-text-muted mt-1">Danh sách thiết bị đang tiến sát hoặc vượt ngưỡng đề xuất thu hủy 75%.</p>
+                        </div>
+                        <Badge variant={depreciationAlerts.length > 0 ? 'warning' : 'success'} size="sm">
+                            {depreciationAlerts.length > 0 ? `${depreciationAlerts.length} cần theo dõi` : 'Ổn định'}
+                        </Badge>
+                    </div>
+
+                    {depreciationAlerts.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                            Chưa có thiết bị nào gần ngưỡng 75%.
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {depreciationAlerts.map((asset) => (
+                                <div key={asset.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <div className="font-semibold text-text">{asset.name}</div>
+                                        <div className="mt-1 text-sm text-text-muted">{asset.assetCode} · {asset.department}</div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <div className="text-sm font-semibold text-text">{asset.percentage.toFixed(1)}%</div>
+                                            <div className="text-xs text-text-muted">Giá trị còn lại {formatCurrency(asset.currentBookValue)}</div>
+                                        </div>
+                                        <Badge variant={asset.percentage >= 75 ? 'danger' : 'warning'} size="sm">
+                                            {asset.percentage >= 75 ? 'Đề xuất thu hủy' : 'Gần ngưỡng'}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </Card>
+            )}
 
             {/* Quick Actions */}
             <QuickActionGrid role={role} />

@@ -98,6 +98,12 @@ const PurchaseOrdersPage = ({ user }) => {
     const [formData, setFormData] = useState(createEmptyForm);
     const [formErrors, setFormErrors] = useState({});
 
+    const orderGrandTotal = formData.items.reduce((total, item) => (
+        total + (Number(item.qty || 0) * Number(item.unit_price || 0))
+    ), 0);
+
+    const selectedSupplier = suppliers.find((supplier) => String(supplier.id) === formData.supplier_id);
+
     const supplierOptions = useMemo(() => (
         suppliers.map((supplier) => ({
             value: String(supplier.id),
@@ -499,164 +505,217 @@ const PurchaseOrdersPage = ({ user }) => {
                 title={editingOrderId ? 'Chỉnh sửa đơn hàng' : 'Tạo đơn hàng mới'}
             >
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Select
-                            label="Nhà cung cấp"
-                            value={formData.supplier_id}
-                            onChange={(event) => handleInputChange({
-                                target: { name: 'supplier_id', value: event.target.value },
-                            })}
-                            options={supplierOptions}
-                            error={formErrors.supplier_id?.[0]}
-                            required
-                        />
-                        <Input
-                            label="Phương thức thanh toán"
-                            name="payment_method"
-                            value={formData.payment_method}
-                            onChange={handleInputChange}
-                            placeholder="Ví dụ: Chuyển khoản"
-                            error={formErrors.payment_method?.[0]}
-                        />
-                        <Input
-                            label="Ngày đặt hàng"
-                            type="date"
-                            name="order_date"
-                            value={formData.order_date}
-                            onChange={handleInputChange}
-                            error={formErrors.order_date?.[0]}
-                            required
-                        />
-                        <Input
-                            label="Ngày giao dự kiến"
-                            type="date"
-                            name="expected_delivery_date"
-                            value={formData.expected_delivery_date}
-                            onChange={handleInputChange}
-                            error={formErrors.expected_delivery_date?.[0]}
-                        />
-                        <Select
-                            label="Trạng thái"
-                            value={formData.status}
-                            onChange={(event) => handleInputChange({
-                                target: { name: 'status', value: event.target.value },
-                            })}
-                            options={statusSelectOptions}
-                            error={formErrors.status?.[0]}
-                            required
-                        />
-                    </div>
-
-                    <Textarea
-                        label="Ghi chú đơn hàng"
-                        name="note"
-                        value={formData.note}
-                        onChange={handleInputChange}
-                        rows={3}
-                        error={formErrors.note?.[0]}
-                    />
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-text">Chi tiết sản phẩm</h3>
-                            <Button type="button" variant="outline" onClick={handleAddItem}>
-                                Thêm sản phẩm
-                            </Button>
-                        </div>
-
-                        {formData.items.map((item, index) => (
-                            <Card key={`item-${index}`} className="p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input
-                                        label="Tên sản phẩm"
-                                        value={item.item_name}
-                                        onChange={(event) => handleItemChange(index, 'item_name', event.target.value)}
-                                        error={formErrors[`items.${index}.item_name`]?.[0]}
-                                        required
-                                    />
-                                    <Input
-                                        label="Đơn vị"
-                                        value={item.unit}
-                                        onChange={(event) => handleItemChange(index, 'unit', event.target.value)}
-                                        error={formErrors[`items.${index}.unit`]?.[0]}
-                                        placeholder="cái / bộ / hộp"
-                                    />
-                                    <Input
-                                        label="Số lượng"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={item.qty}
-                                        onChange={(event) => handleItemChange(index, 'qty', event.target.value)}
-                                        error={formErrors[`items.${index}.qty`]?.[0]}
-                                        required
-                                    />
-                                    <Input
-                                        label="Đơn giá"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={item.unit_price}
-                                        onChange={(event) => handleItemChange(index, 'unit_price', event.target.value)}
-                                        error={formErrors[`items.${index}.unit_price`]?.[0]}
-                                        required
-                                    />
+                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_360px]">
+                        <div className="space-y-6">
+                            <Card className="p-5">
+                                <div className="mb-4">
+                                    <h3 className="text-lg font-semibold text-text">Khối 1 · Thông tin nhà cung cấp</h3>
+                                    <p className="mt-1 text-sm text-text-muted">Chọn đối tác, ngày đặt và lịch giao dự kiến cho đơn hàng.</p>
                                 </div>
 
-                                <div className="mt-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-                                    <Textarea
-                                        label="Ghi chú sản phẩm"
-                                        value={item.note}
-                                        onChange={(event) => handleItemChange(index, 'note', event.target.value)}
-                                        rows={2}
-                                        error={formErrors[`items.${index}.note`]?.[0]}
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <Select
+                                        label="Nhà cung cấp"
+                                        value={formData.supplier_id}
+                                        onChange={(event) => handleInputChange({
+                                            target: { name: 'supplier_id', value: event.target.value },
+                                        })}
+                                        options={supplierOptions}
+                                        error={formErrors.supplier_id?.[0]}
+                                        required
                                     />
-                                    <div className="space-y-3">
-                                        <div className="rounded-lg bg-surface-muted px-4 py-3 text-right">
-                                            <div className="text-xs text-text-muted">Thành tiền</div>
-                                            <div className="text-lg font-semibold text-text">
-                                                {formatCurrency(Number(item.qty || 0) * Number(item.unit_price || 0))}
+                                    <Input
+                                        label="Ngày đặt hàng"
+                                        type="date"
+                                        name="order_date"
+                                        value={formData.order_date}
+                                        onChange={handleInputChange}
+                                        error={formErrors.order_date?.[0]}
+                                        required
+                                    />
+                                    <Input
+                                        label="Ngày giao dự kiến"
+                                        type="date"
+                                        name="expected_delivery_date"
+                                        value={formData.expected_delivery_date}
+                                        onChange={handleInputChange}
+                                        error={formErrors.expected_delivery_date?.[0]}
+                                    />
+                                    <Input
+                                        label="Người liên hệ"
+                                        value={selectedSupplier?.contact_person || ''}
+                                        disabled
+                                        placeholder="Tự động theo nhà cung cấp"
+                                    />
+                                </div>
+                            </Card>
+
+                            <Card className="p-5">
+                                <div className="mb-4 flex items-center justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-text">Khối 2 · Danh sách sản phẩm</h3>
+                                        <p className="mt-1 text-sm text-text-muted">Nhập từng dòng sản phẩm theo dạng bảng nhỏ: tên, số lượng, đơn giá và thành tiền.</p>
+                                    </div>
+                                    <Button type="button" variant="outline" onClick={handleAddItem}>
+                                        Thêm sản phẩm
+                                    </Button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {formData.items.map((item, index) => (
+                                        <Card key={`item-${index}`} className="border border-border p-4 shadow-none">
+                                            <div className="mb-3 flex items-center justify-between gap-3">
+                                                <div className="text-sm font-semibold text-text">Dòng sản phẩm #{index + 1}</div>
+                                                <div className="text-sm font-semibold text-primary">
+                                                    {formatCurrency(Number(item.qty || 0) * Number(item.unit_price || 0))}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.6fr_0.8fr_0.7fr_0.9fr]">
+                                                <Input
+                                                    label="Tên sản phẩm"
+                                                    value={item.item_name}
+                                                    onChange={(event) => handleItemChange(index, 'item_name', event.target.value)}
+                                                    error={formErrors[`items.${index}.item_name`]?.[0]}
+                                                    required
+                                                />
+                                                <Input
+                                                    label="Đơn vị"
+                                                    value={item.unit}
+                                                    onChange={(event) => handleItemChange(index, 'unit', event.target.value)}
+                                                    error={formErrors[`items.${index}.unit`]?.[0]}
+                                                    placeholder="cái / bộ / hộp"
+                                                />
+                                                <Input
+                                                    label="Số lượng"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={item.qty}
+                                                    onChange={(event) => handleItemChange(index, 'qty', event.target.value)}
+                                                    error={formErrors[`items.${index}.qty`]?.[0]}
+                                                    required
+                                                />
+                                                <Input
+                                                    label="Đơn giá"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={item.unit_price}
+                                                    onChange={(event) => handleItemChange(index, 'unit_price', event.target.value)}
+                                                    error={formErrors[`items.${index}.unit_price`]?.[0]}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-start">
+                                                <Textarea
+                                                    label="Ghi chú sản phẩm"
+                                                    value={item.note}
+                                                    onChange={(event) => handleItemChange(index, 'note', event.target.value)}
+                                                    rows={2}
+                                                    error={formErrors[`items.${index}.note`]?.[0]}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="text-red-600 hover:text-red-700"
+                                                    onClick={() => handleRemoveItem(index)}
+                                                    disabled={formData.items.length === 1}
+                                                >
+                                                    Gỡ sản phẩm
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </Card>
+                        </div>
+
+                        <div className="space-y-6">
+                            <Card className="p-5">
+                                <div className="mb-4">
+                                    <h3 className="text-lg font-semibold text-text">Khối 3 · Thanh toán & giao hàng</h3>
+                                    <p className="mt-1 text-sm text-text-muted">Theo dõi phương thức thanh toán và trạng thái vận chuyển của đơn hàng.</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <Input
+                                        label="Phương thức thanh toán"
+                                        name="payment_method"
+                                        value={formData.payment_method}
+                                        onChange={handleInputChange}
+                                        placeholder="Ví dụ: Chuyển khoản"
+                                        error={formErrors.payment_method?.[0]}
+                                    />
+                                    <Select
+                                        label="Trạng thái giao hàng"
+                                        value={formData.status}
+                                        onChange={(event) => handleInputChange({
+                                            target: { name: 'status', value: event.target.value },
+                                        })}
+                                        options={statusSelectOptions}
+                                        error={formErrors.status?.[0]}
+                                        required
+                                    />
+                                    <Textarea
+                                        label="Ghi chú đơn hàng"
+                                        name="note"
+                                        value={formData.note}
+                                        onChange={handleInputChange}
+                                        rows={4}
+                                        error={formErrors.note?.[0]}
+                                    />
+                                </div>
+                            </Card>
+
+                            <Card className="p-5">
+                                <div className="mb-4">
+                                    <h3 className="text-lg font-semibold text-text">Tổng hợp đơn hàng</h3>
+                                    <p className="mt-1 text-sm text-text-muted">Kiểm tra nhanh tổng giá trị và thông tin nhà cung cấp trước khi lưu.</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="rounded-xl bg-surface-muted px-4 py-3">
+                                        <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">Nhà cung cấp</div>
+                                        <div className="mt-1 font-medium text-text">{selectedSupplier?.name || 'Chưa chọn nhà cung cấp'}</div>
+                                        <div className="text-sm text-text-muted">{selectedSupplier?.code || selectedSupplier?.email || 'Thông tin sẽ hiện sau khi chọn'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="rounded-xl border border-border px-4 py-3">
+                                            <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">Số dòng</div>
+                                            <div className="mt-1 text-2xl font-semibold text-text">{formData.items.length}</div>
+                                        </div>
+                                        <div className="rounded-xl border border-border px-4 py-3">
+                                            <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">Tổng SL</div>
+                                            <div className="mt-1 text-2xl font-semibold text-text">
+                                                {formData.items.reduce((total, item) => total + Number(item.qty || 0), 0)}
                                             </div>
                                         </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            className="text-red-600 hover:text-red-700"
-                                            onClick={() => handleRemoveItem(index)}
-                                            disabled={formData.items.length === 1}
-                                        >
-                                            Gỡ sản phẩm
-                                        </Button>
+                                    </div>
+                                    <div className="rounded-2xl bg-primary/10 px-4 py-4">
+                                        <div className="text-xs font-semibold uppercase tracking-wide text-primary">Tổng cộng</div>
+                                        <div className="mt-2 text-3xl font-semibold text-text">{formatCurrency(orderGrandTotal)}</div>
                                     </div>
                                 </div>
                             </Card>
-                        ))}
+                        </div>
                     </div>
 
-                    <div className="flex justify-between items-center border-t border-border pt-4">
-                        <div className="text-text">
-                            <span className="text-sm text-text-muted">Tổng cộng</span>
-                            <div className="text-2xl font-semibold">
-                                {formatCurrency(formData.items.reduce((total, item) => (
-                                    total + (Number(item.qty || 0) * Number(item.unit_price || 0))
-                                ), 0))}
-                            </div>
-                        </div>
-                        <div className="flex gap-3">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    setIsModalOpen(false);
-                                    resetForm();
-                                }}
-                            >
-                                Hủy
-                            </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Đang lưu...' : (editingOrderId ? 'Cập nhật đơn hàng' : 'Tạo đơn hàng')}
-                            </Button>
-                        </div>
+                    <div className="flex justify-end gap-3 border-t border-border pt-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setIsModalOpen(false);
+                                resetForm();
+                            }}
+                        >
+                            Hủy
+                        </Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? 'Đang lưu...' : (editingOrderId ? 'Cập nhật đơn hàng' : 'Tạo đơn hàng')}
+                        </Button>
                     </div>
                 </form>
             </Modal>

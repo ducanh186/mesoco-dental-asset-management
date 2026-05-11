@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import { useI18n } from '../i18n';
 import { normalizeRole } from '../utils/roles';
@@ -9,8 +9,21 @@ import { normalizeRole } from '../utils/roles';
  */
 const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar }) => {
     const { t } = useI18n();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        if (!location.pathname.startsWith('/assets')) {
+            setSearchQuery('');
+            return;
+        }
+
+        const currentQuery = new URLSearchParams(location.search).get('q') || '';
+        setSearchQuery(currentQuery);
+    }, [location.pathname, location.search]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -39,6 +52,22 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
         if (onLogout) {
             await onLogout();
         }
+    };
+
+    const handleSearchSubmit = (event) => {
+        event.preventDefault();
+
+        const trimmedQuery = searchQuery.trim();
+        const nextSearch = new URLSearchParams();
+
+        if (trimmedQuery) {
+            nextSearch.set('q', trimmedQuery);
+        }
+
+        navigate({
+            pathname: '/assets',
+            search: nextSearch.toString() ? `?${nextSearch.toString()}` : '',
+        });
     };
 
     const getRoleLabel = () => {
@@ -74,19 +103,22 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
 
                 {/* Desktop Sidebar Toggle */}
                 <button 
-                    className="topbar-menu-btn desktop-only text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
+                    className="topbar-menu-btn topbar-sidebar-toggle desktop-only text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
                     onClick={onToggleSidebar}
                     aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
+                    aria-pressed={sidebarCollapsed}
+                    title={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="3" y1="6" x2="21" y2="6" />
                         <line x1="3" y1="12" x2="21" y2="12" />
                         <line x1="3" y1="18" x2="21" y2="18" />
                     </svg>
+                    <span>{sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}</span>
                 </button>
 
                 {/* Search (optional placeholder) */}
-                <div className="topbar-search desktop-only">
+                <form className="topbar-search desktop-only" onSubmit={handleSearchSubmit}>
                     <svg className="search-icon text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -95,8 +127,11 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                         type="text" 
                         placeholder={t('topbar.searchPlaceholder')}
                         className="search-input bg-surface-muted border-border text-text placeholder:text-text-light focus:border-primary focus:ring-primary"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        aria-label={t('topbar.searchPlaceholder')}
                     />
-                </div>
+                </form>
             </div>
 
             <div className="topbar-right">

@@ -6,6 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property int $id
+ * @property string $employee_code
+ * @property string $full_name
+ * @property string|null $position
+ * @property string|null $department
+ * @property string|null $phone
+ * @property string|null $email
+ * @property string|null $address
+ * @property string|null $status
+ */
 class Employee extends Model
 {
     use HasFactory;

@@ -51,7 +51,7 @@ class AssetAssignment extends Model
 
     public function getAssignmentTargetLabel(): ?string
     {
-        return $this->department_name ?: $this->employee?->full_name;
+        return $this->employee?->full_name ?: $this->department_name;
     }
 
     /**
@@ -95,7 +95,7 @@ class AssetAssignment extends Model
     }
 
     /**
-     * Scope to get assignments for a specific department.
+     * Legacy scope for historical department-only assignment rows.
      */
     public function scopeForDepartment($query, string $departmentName)
     {

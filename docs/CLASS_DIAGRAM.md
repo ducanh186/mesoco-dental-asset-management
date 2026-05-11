@@ -16,7 +16,6 @@ classDiagram
         +id
         +employee_code
         +full_name
-        +department
         +position
         +status
     }
@@ -29,6 +28,14 @@ classDiagram
         +status
     }
 
+    class Location {
+        +id
+        +code
+        +name
+        +description
+        +is_active
+    }
+
     class Asset {
         +id
         +asset_code
@@ -36,7 +43,7 @@ classDiagram
         +type
         +category
         +status
-        +department_name
+        +location_id
         +purchase_date
         +purchase_cost
         +useful_life_months
@@ -53,9 +60,8 @@ classDiagram
         +id
         +asset_id
         +employee_id
-        +department_name
         +assigned_at
-        +returned_at
+        +unassigned_at
     }
 
     class MaintenanceEvent {
@@ -127,6 +133,7 @@ classDiagram
     class RequestItem {
         +id
         +request_id
+        +asset_id
         +item_name
         +quantity
         +unit
@@ -145,8 +152,9 @@ classDiagram
     User "1" --> "0..1" Supplier : supplier account
     Category "1" --> "0..*" Asset : classifies
     Supplier "1" --> "0..*" Asset : supplies
-    Asset "1" --> "0..*" AssetAssignment : handover history
-    Employee "1" --> "0..*" AssetAssignment : receives when assigned
+    Location "1" --> "0..*" Asset : placed at
+    Asset "1" --> "0..*" AssetAssignment : responsibility history
+    Employee "1" --> "0..*" AssetAssignment : responsible person
     Asset "1" --> "0..*" MaintenanceEvent : maintenance schedule
     MaintenanceEvent "1" --> "0..*" MaintenanceDetail : details
     User "1" --> "0..*" MaintenanceDetail : technician
@@ -156,15 +164,16 @@ classDiagram
     PurchaseOrder "1" --> "1..*" PurchaseOrderItem : order lines
     Employee "1" --> "0..*" AssetRequest : creates
     Asset "0..1" --> "0..*" AssetRequest : incident target
-    AssetRequest "1" --> "0..*" RequestItem : consumables
+    AssetRequest "1" --> "0..*" RequestItem : request lines
     Asset "1" --> "0..*" Disposal : retired records
 ```
 
 ## Cách Đọc Nhanh
 
 - `Asset` là trung tâm hệ thống.
-- `AssetAssignment` thể hiện bàn giao theo phòng ban hoặc nhân viên đại diện.
+- `Location` trả lời câu hỏi: tài sản đang ở đâu.
+- `AssetAssignment` trả lời câu hỏi: nhân viên nào đang chịu trách nhiệm.
 - `MaintenanceEvent` là phiếu bảo trì; `MaintenanceDetail` là dòng chi tiết xử lý.
 - `InventoryCheck` và `InventoryCheckItem` phục vụ kiểm kê.
 - `PurchaseOrder` và `Supplier` phục vụ mua sắm thiết bị/vật tư.
-- `AssetRequest` chỉ còn báo sự cố và xin vật tư IT.
+- `Disposal` ghi nhận tài sản bị thu hủy; sau bước này asset không còn location active và không còn responsible employee active.

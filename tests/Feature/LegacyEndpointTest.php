@@ -11,21 +11,23 @@ class LegacyEndpointTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_employee_contract_endpoints_return_gone(): void
+    public function test_employee_contract_endpoints_return_removed_scope_response(): void
     {
         $manager = User::factory()->manager()->create(['must_change_password' => false]);
         $employee = Employee::factory()->create();
 
         $this->actingAs($manager)
             ->getJson("/api/employees/{$employee->id}/contracts")
-            ->assertStatus(410);
+            ->assertStatus(410)
+            ->assertJsonPath('message', 'Employee contract module has been removed from the main product scope.');
 
         $this->actingAs($manager)
             ->getJson('/api/contracts/1')
-            ->assertStatus(410);
+            ->assertStatus(410)
+            ->assertJsonPath('message', 'Employee contract module has been removed from the main product scope.');
     }
 
-    public function test_removed_qr_and_personal_asset_endpoints_return_gone(): void
+    public function test_qr_and_personal_asset_endpoints_return_removed_scope_response(): void
     {
         $employee = User::factory()->employee()->create(['must_change_password' => false]);
 

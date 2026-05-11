@@ -128,16 +128,11 @@ export const assetsApi = {
     },
 
     /**
-     * Hand over asset to department.
-     * Backward compatible with legacy employee payloads.
+     * Assign a responsible employee.
      * POST /api/assets/{id}/assign
      */
     assign: async (id, payload) => {
-        const body = typeof payload === 'string'
-            ? { department_name: payload }
-            : payload;
-
-        const response = await axios.post(`/api/assets/${id}/assign`, body);
+        const response = await axios.post(`/api/assets/${id}/assign`, payload);
         return response.data;
     },
 
@@ -153,18 +148,21 @@ export const assetsApi = {
 };
 
 // ============================================================================
-// Department Assets API
+// Responsible Assets API
 // ============================================================================
-export const departmentAssetsApi = {
+export const responsibleAssetsApi = {
     /**
-     * Get assets handed over to the current user's department.
-     * GET /api/department-assets/dropdown
+     * Get assets assigned to the current employee.
+     * GET /api/my-assigned-assets/dropdown
      */
     dropdown: async () => {
-        const response = await axios.get('/api/department-assets/dropdown');
+        const response = await axios.get('/api/my-assigned-assets/dropdown');
         return response.data;
     },
 };
+
+// Backward-compatible alias for older pages/routes.
+export const departmentAssetsApi = responsibleAssetsApi;
 
 // ============================================================================
 // Employees API (for assignment dropdown)
@@ -780,6 +778,7 @@ export const disposalApi = {
 
 export default {
     assets: assetsApi,
+    responsibleAssets: responsibleAssetsApi,
     departmentAssets: departmentAssetsApi,
     employees: employeesApi,
     requests: requestsApi,

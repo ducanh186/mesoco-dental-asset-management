@@ -8,7 +8,7 @@ import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, getUserRole, hasOperation
  */
 const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const location = useLocation();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const [expandedMenus, setExpandedMenus] = useState({});
 
     const role = getUserRole(user);
@@ -17,7 +17,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const isSupplier = role === ROLE_SUPPLIER;
     const isOperationalRole = hasOperationalAccess(user);
 
-    const navItems = isSupplier ? [
+    const baseNavItems = isSupplier ? [
         {
             id: 'dashboard',
             path: '/dashboard',
@@ -81,6 +81,65 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             icon: 'reports'
         }] : []),
     ];
+
+    const sectionLabel = (vi, en) => (locale === 'vi' ? vi : en);
+
+    const navSections = isSupplier
+        ? [
+            {
+                id: 'supplier-overview',
+                    label: sectionLabel('Theo dõi giao hàng', 'Delivery Workspace'),
+                items: baseNavItems,
+            },
+        ]
+        : isManager
+            ? [
+                {
+                    id: 'manager-overview',
+                        label: sectionLabel('Tổng quan', 'Overview'),
+                    items: baseNavItems.filter((item) => ['dashboard'].includes(item.id)),
+                },
+                {
+                    id: 'manager-inventory',
+                        label: sectionLabel('Kho & danh mục', 'Inventory & Catalog'),
+                    items: baseNavItems.filter((item) => ['catalog-records'].includes(item.id)),
+                },
+                {
+                    id: 'manager-operations',
+                        label: sectionLabel('Phê duyệt & vận hành', 'Approvals & Operations'),
+                    items: baseNavItems.filter((item) => ['requests', 'review-requests', 'maintenance', 'disposal'].includes(item.id)),
+                },
+                {
+                    id: 'manager-insights',
+                        label: sectionLabel('Mua sắm & báo cáo', 'Procurement & Reports'),
+                    items: baseNavItems.filter((item) => ['reports'].includes(item.id)),
+                },
+            ]
+            : isOperationalRole
+                ? [
+                    {
+                        id: 'tech-overview',
+                            label: sectionLabel('Tổng quan', 'Overview'),
+                        items: baseNavItems.filter((item) => ['dashboard', 'requests'].includes(item.id)),
+                    },
+                    {
+                        id: 'tech-assets',
+                            label: sectionLabel('Tra cứu tài sản', 'Asset Lookup'),
+                        items: baseNavItems.filter((item) => ['catalog-records'].includes(item.id)),
+                    },
+                    {
+                        id: 'tech-operations',
+                            label: sectionLabel('Bảo trì & thanh lý', 'Maintenance & Disposal'),
+                        items: baseNavItems.filter((item) => ['maintenance', 'disposal'].includes(item.id)),
+                    },
+                ]
+                : [
+                    {
+                        id: 'staff-workspace',
+                        label: sectionLabel('Không gian của tôi', 'My Workspace'),
+                        items: baseNavItems,
+                    },
+                ];
 
     const isActive = (path) => {
         if (path === '/dashboard') {
@@ -317,7 +376,24 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
 
             {/* Navigation */}
             <nav className="sidebar-nav">
-                {navItems.map(renderNavItem)}
+                {navSections.map((section) => {
+                    if (!section.items.length) {
+                        return null;
+                    }
+
+                    return (
+                        <div key={section.id} className="px-3 py-2">
+                            {!collapsed && (
+                                <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-light">
+                                    {section.label}
+                                </div>
+                            )}
+                            <div className="space-y-1">
+                                {section.items.map(renderNavItem)}
+                            </div>
+                        </div>
+                    );
+                })}
             </nav>
 
             {/* Sidebar Footer */}
@@ -326,6 +402,8 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     className="collapse-btn text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
                     onClick={onToggle}
                     aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
+                    aria-pressed={collapsed}
+                    title={collapsed ? t('nav.expand') : t('nav.collapse')}
                 >
                     <svg 
                         className={`collapse-icon ${collapsed ? 'collapsed' : ''}`}
@@ -336,7 +414,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     >
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
-                    {!collapsed && <span>{t('nav.collapse')}</span>}
+                    {!collapsed && <span>{collapsed ? t('nav.expand') : t('nav.collapse')}</span>}
                 </button>
             </div>
         </aside>

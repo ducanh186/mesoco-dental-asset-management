@@ -30,7 +30,7 @@ fi
 # -----------------------------------------------------------------------------
 # Install Node dependencies (if node_modules missing or empty)
 # -----------------------------------------------------------------------------
-if [ ! -f "node_modules/.package-lock.json" ]; then
+if [ ! -f "node_modules/.package-lock.json" ] || [ "package-lock.json" -nt "node_modules/.package-lock.json" ]; then
     echo "[2/3] Installing Node dependencies (npm install)..."
     npm install
 else
@@ -73,7 +73,12 @@ echo ""
 echo "Then open: http://localhost:8000"
 echo "=============================================="
 
+# Run the service command when docker-compose provides one, for example Vite.
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
+
 # -----------------------------------------------------------------------------
 # Start Laravel development server
 # -----------------------------------------------------------------------------
-exec php artisan serve --host=0.0.0.0 --port=8000
+exec php -S 0.0.0.0:8000 -t public public/index.php

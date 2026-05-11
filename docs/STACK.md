@@ -10,14 +10,14 @@
 | Auth | Laravel Sanctum | Đăng nhập và bảo vệ API bằng session/token |
 | Frontend | React 19, Vite 7 | SPA UI, route, form, dashboard |
 | HTTP client | Axios | Gọi API từ React |
-| Database | SQLite local/test | Lưu asset, department, maintenance, inventory, purchase order |
+| Database | SQLite local/test | Lưu asset, location, responsible employee history, maintenance, inventory, purchase order |
 | Test | PHPUnit, npm scripts | Regression backend, build frontend, check i18n |
 
 ## Cấu Trúc Repo
 
 | Path | Ý nghĩa |
 | --- | --- |
-| `app/Models` | Model nghiệp vụ: Asset, MaintenanceEvent, InventoryCheck, PurchaseOrder |
+| `app/Models` | Model nghiệp vụ: Asset, Location, AssetAssignment, MaintenanceEvent, InventoryCheck, PurchaseOrder |
 | `app/Http/Controllers` | API controller cho từng module |
 | `app/Http/Requests` | Validation request đầu vào |
 | `routes/api.php` | Khai báo API và legacy endpoint `410 Gone` |
@@ -43,6 +43,17 @@ flowchart LR
     M --> D["SQLite Database"]
     C --> J["JSON response"]
     J --> P
+```
+
+## Business Flow Ngắn
+
+```mermaid
+flowchart LR
+    A["Asset Catalog"] --> B["Location"]
+    A --> C["Responsible Employee"]
+    C --> D["Maintenance / Request"]
+    A --> E["Depreciation Proposal"]
+    E --> F["Disposal"]
 ```
 
 ## Lệnh Phát Triển

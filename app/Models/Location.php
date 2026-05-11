@@ -15,6 +15,7 @@ class Location extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'code',
         'name',
         'description',
         'address',
@@ -43,6 +44,6 @@ class Location extends Model
      */
     public function assets()
     {
-        return $this->hasMany(Asset::class, 'location', 'name');
+        return $this->hasMany(Asset::class, 'location_id');
     }
 }

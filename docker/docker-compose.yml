@@ -24,11 +24,18 @@ services:
       - vendor_data:/var/www/html/vendor
       - node_modules_data:/var/www/html/node_modules
     environment:
+      - APP_URL=http://localhost:8000
+      - ASSET_URL=http://localhost:8000
+      - DB_CONNECTION=mysql
       - DB_HOST=db
       - DB_PORT=3306
       - DB_DATABASE=mesoco_dental
       - DB_USERNAME=mesoco
       - DB_PASSWORD=secret
+      - SESSION_DOMAIN=(null)
+      - SESSION_SECURE_COOKIE=false
+      - SESSION_SAME_SITE=lax
+      - SANCTUM_STATEFUL_DOMAINS=localhost,localhost:8000,127.0.0.1,127.0.0.1:8000,localhost:5173,127.0.0.1:5173
     depends_on:
       db:
         condition: service_healthy

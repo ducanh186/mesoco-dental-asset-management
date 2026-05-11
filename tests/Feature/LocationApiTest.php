@@ -135,6 +135,7 @@ class LocationApiTest extends TestCase
         $user = $this->createUserWithRole('admin');
 
         $data = [
+            'code' => 'LOC-NEW',
             'name' => 'Phòng khám mới',
             'description' => 'Mô tả phòng khám',
             'address' => '123 Đường ABC',
@@ -144,9 +145,11 @@ class LocationApiTest extends TestCase
         $response = $this->actingAs($user)->postJson('/api/locations', $data);
         $response->assertStatus(201)
             ->assertJsonPath('message', 'Location created successfully.')
+            ->assertJsonPath('data.code', 'LOC-NEW')
             ->assertJsonPath('data.name', 'Phòng khám mới');
 
-        $this->assertDatabaseHas('locations', ['name' => 'Phòng khám mới']);
+        $this->assertDatabaseHas('locations', ['code' => 'LOC-NEW', 'name' => 'Phòng khám mới']);
+        $this->assertArrayNotHasKey('address', $response->json('data'));
     }
 
     public function test_cannot_create_location_with_duplicate_name(): void
@@ -172,8 +175,9 @@ class LocationApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('data.name', 'Test Location')
             ->assertJsonStructure([
-                'data' => ['id', 'name', 'description', 'address', 'is_active', 'assets_count'],
+                'data' => ['id', 'code', 'name', 'description', 'is_active', 'assets_count'],
             ]);
+        $this->assertArrayNotHasKey('address', $response->json('data'));
     }
 
     public function test_can_update_location(): void
@@ -255,7 +259,7 @@ class LocationApiTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['id', 'name'],
+                    '*' => ['id', 'code', 'name', 'description', 'is_active'],
                 ],
             ]);
     }

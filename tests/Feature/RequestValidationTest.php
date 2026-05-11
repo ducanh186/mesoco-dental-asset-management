@@ -11,7 +11,7 @@ class RequestValidationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_review_request_route_returns_removed_scope_response(): void
+    public function test_review_request_route_returns_supported_request_types(): void
     {
         $manager = User::factory()->manager()->create(['must_change_password' => false]);
 

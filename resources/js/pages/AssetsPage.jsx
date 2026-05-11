@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Button,
     Card,
@@ -12,19 +13,31 @@ import {
     TablePagination,
     useToast,
 } from '../components/ui';
-import { assetsApi, handleApiError, suppliersApi } from '../services/api';
+import { assetsApi, employeesApi, handleApiError, locationsApi, suppliersApi } from '../services/api';
+
+const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+}).format(Number(value || 0));
 
 const AssetsPage = () => {
     const toast = useToast();
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const querySearch = searchParams.get('q') || '';
 
     const [assets, setAssets] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
+    const [employees, setEmployees] = useState([]);
+    const [locations, setLocations] = useState([]);
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [loading, setLoading] = useState(true);
 
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(querySearch);
     const [typeFilter, setTypeFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [locationFilter, setLocationFilter] = useState('');
     const [assignmentFilter, setAssignmentFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -43,12 +56,18 @@ const AssetsPage = () => {
         asset_code: '',
         name: '',
         type: 'equipment',
+        category: '',
+        location_id: '',
         status: 'active',
         supplier_id: '',
+        purchase_date: '',
+        purchase_cost: '',
+        useful_life_months: '',
+        warranty_expiry: '',
         notes: '',
     });
 
-    const [departmentName, setDepartmentName] = useState('');
+    const [responsibleEmployeeId, setResponsibleEmployeeId] = useState('');
 
     const assetTypes = [
         { value: '', label: 'Tất cả loại' },
@@ -64,21 +83,32 @@ const AssetsPage = () => {
         { value: 'active', label: 'Đang hoạt động' },
         { value: 'off_service', label: 'Ngưng sử dụng' },
         { value: 'maintenance', label: 'Đang bảo trì' },
-        { value: 'retired', label: 'Đã thu hồi' },
+        { value: 'retired', label: 'Đã thu hủy' },
     ];
 
     const assignmentOptions = [
-        { value: '', label: 'Tất cả bàn giao' },
-        { value: 'assigned', label: 'Đã bàn giao' },
-        { value: 'unassigned', label: 'Chưa bàn giao' },
+        { value: '', label: 'Tất cả phụ trách' },
+        { value: 'assigned', label: 'Có người phụ trách' },
+        { value: 'unassigned', label: 'Chưa có người phụ trách' },
     ];
 
     useEffect(() => {
         fetchAssets();
-    }, [currentPage, searchQuery, typeFilter, statusFilter, assignmentFilter]);
+    }, [currentPage, searchQuery, typeFilter, statusFilter, locationFilter, assignmentFilter]);
+
+    useEffect(() => {
+        if (querySearch === searchQuery) {
+            return;
+        }
+
+        setSearchQuery(querySearch);
+        setCurrentPage(1);
+    }, [querySearch, searchQuery]);
 
     useEffect(() => {
         fetchSuppliers();
+        fetchEmployees();
+        fetchLocations();
     }, []);
 
     const fetchAssets = async () => {
@@ -89,6 +119,7 @@ const AssetsPage = () => {
                 search: searchQuery || undefined,
                 type: typeFilter || undefined,
                 status: statusFilter || undefined,
+                location: locationFilter || undefined,
             });
 
             let nextAssets = response.assets || [];
@@ -108,6 +139,22 @@ const AssetsPage = () => {
         }
     };
 
+    const handleSearchChange = (value) => {
+        setSearchQuery(value);
+        setCurrentPage(1);
+        setSearchParams((currentParams) => {
+            const nextParams = new URLSearchParams(currentParams);
+
+            if (value.trim()) {
+                nextParams.set('q', value.trim());
+            } else {
+                nextParams.delete('q');
+            }
+
+            return nextParams;
+        });
+    };
+
     const fetchSuppliers = async () => {
         try {
             const response = await suppliersApi.dropdown();
@@ -117,8 +164,67 @@ const AssetsPage = () => {
         }
     };
 
+    const fetchEmployees = async () => {
+        try {
+            const response = await employeesApi.list({ per_page: 100, status: 'active' });
+            setEmployees(response.employees || []);
+        } catch (error) {
+            console.error('Failed to fetch employees', error);
+        }
+    };
+
+    const fetchLocations = async () => {
+        try {
+            const response = await locationsApi.dropdown();
+            setLocations(response.data || []);
+        } catch (error) {
+            console.error('Failed to fetch locations', error);
+        }
+    };
+
     const getAssetTypeLabel = (type) => assetTypes.find((option) => option.value === type)?.label || 'Khác';
-    const getAssignmentTarget = (asset) => asset.current_assignment?.assignment_target?.name || 'Chưa bàn giao';
+    const getResponsibleEmployee = (asset) => asset.responsible_employee?.full_name || asset.current_assignment?.assignment_target?.name || 'Chưa có';
+    const getDepartmentLabel = (asset) => asset.responsible_employee?.department || 'Chưa bàn giao';
+    const getLocationLabel = (asset) => {
+        if (asset.location?.code && asset.location?.name) {
+            return `${asset.location.code} - ${asset.location.name}`;
+        }
+        return asset.location_name || 'Chưa chọn';
+    };
+
+    const locationOptions = [
+        { value: '', label: 'Tất cả vị trí' },
+        ...locations.map((location) => ({
+            value: location.code,
+            label: `${location.code} - ${location.name}`,
+        })),
+    ];
+
+    const filteredSummary = {
+        total: assets.length,
+        assigned: assets.filter((asset) => asset.is_assigned).length,
+        available: assets.filter((asset) => !asset.is_assigned && asset.status === 'active').length,
+        attention: assets.filter((asset) => ['maintenance', 'off_service', 'retired'].includes(asset.status)).length,
+    };
+
+    const activeFilterTags = [
+        searchQuery ? `Tìm kiếm: ${searchQuery}` : null,
+        typeFilter ? `Loại: ${getAssetTypeLabel(typeFilter)}` : null,
+        statusFilter ? `Trạng thái: ${assetStatuses.find((option) => option.value === statusFilter)?.label}` : null,
+        locationFilter ? `Vị trí: ${locationOptions.find((option) => option.value === locationFilter)?.label}` : null,
+        assignmentFilter ? `Phụ trách: ${assignmentOptions.find((option) => option.value === assignmentFilter)?.label}` : null,
+    ].filter(Boolean);
+
+    const normalizeAssetPayload = (form) => ({
+        ...form,
+        category: form.category || null,
+        location_id: form.location_id ? Number(form.location_id) : null,
+        supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
+        purchase_date: form.purchase_date || null,
+        purchase_cost: form.purchase_cost === '' ? null : Number(form.purchase_cost),
+        useful_life_months: form.useful_life_months === '' ? null : Number(form.useful_life_months),
+        warranty_expiry: form.warranty_expiry || null,
+    });
 
     const handleViewAsset = async (asset) => {
         try {
@@ -136,15 +242,21 @@ const AssetsPage = () => {
         setCreateErrors({});
 
         try {
-            const response = await assetsApi.create(createForm);
+            const response = await assetsApi.create(normalizeAssetPayload(createForm));
             toast.success('Đã tạo tài sản.');
             setCreateModalOpen(false);
             setCreateForm({
                 asset_code: '',
                 name: '',
                 type: 'equipment',
+                category: '',
+                location_id: '',
                 status: 'active',
                 supplier_id: '',
+                purchase_date: '',
+                purchase_cost: '',
+                useful_life_months: '',
+                warranty_expiry: '',
                 notes: '',
             });
             fetchAssets();
@@ -160,23 +272,45 @@ const AssetsPage = () => {
         }
     };
 
-    const openHandoverModal = () => {
-        setDepartmentName(selectedAsset?.current_assignment?.department_name || '');
+    const openHandoverModal = (asset = selectedAsset) => {
+        const targetAsset = asset || selectedAsset;
+
+        if (!targetAsset) {
+            return;
+        }
+
+        setSelectedAsset(targetAsset);
+        setResponsibleEmployeeId(targetAsset.responsible_employee?.id ? String(targetAsset.responsible_employee.id) : '');
         setHandoverModalOpen(true);
     };
 
+    const resetFilters = () => {
+        setSearchQuery('');
+        setTypeFilter('');
+        setStatusFilter('');
+        setLocationFilter('');
+        setAssignmentFilter('');
+        setCurrentPage(1);
+        setSearchParams(new URLSearchParams());
+    };
+
+    const openMaintenanceWorkspace = (asset) => {
+        toast.info(`Mở workspace bảo trì để tạo phiếu cho ${asset.name}.`);
+        navigate('/maintenance');
+    };
+
     const handleHandoverAsset = async () => {
-        if (!selectedAsset || !departmentName.trim()) {
-            toast.error('Vui lòng nhập phòng ban nhận bàn giao.');
+        if (!selectedAsset || !responsibleEmployeeId) {
+            toast.error('Vui lòng chọn nhân viên chịu trách nhiệm.');
             return;
         }
 
         setHandoverLoading(true);
         try {
-            await assetsApi.assign(selectedAsset.id, { department_name: departmentName.trim() });
-            toast.success('Đã bàn giao tài sản cho phòng ban.');
+            await assetsApi.assign(selectedAsset.id, { employee_id: Number(responsibleEmployeeId) });
+            toast.success('Đã gán nhân viên chịu trách nhiệm.');
             setHandoverModalOpen(false);
-            setDepartmentName('');
+            setResponsibleEmployeeId('');
 
             const updated = await assetsApi.get(selectedAsset.id);
             setSelectedAsset(updated.asset);
@@ -195,7 +329,7 @@ const AssetsPage = () => {
 
         try {
             await assetsApi.unassign(selectedAsset.id);
-            toast.success('Đã kết thúc bàn giao.');
+            toast.success('Đã bỏ nhân viên chịu trách nhiệm.');
             setConfirmUnassignOpen(false);
             const updated = await assetsApi.get(selectedAsset.id);
             setSelectedAsset(updated.asset);
@@ -227,7 +361,7 @@ const AssetsPage = () => {
             key: 'asset_code',
             label: 'Mã tài sản',
             width: '140px',
-            render: (value) => <span className="font-mono text-sm text-text-muted">{value}</span>,
+            render: (value) => <span className="font-mono text-sm font-semibold text-text">{value}</span>,
         },
         {
             key: 'name',
@@ -235,45 +369,84 @@ const AssetsPage = () => {
             render: (value, row) => (
                 <div>
                     <div className="font-medium text-text">{value}</div>
-                    <div className="text-xs text-text-muted capitalize">{getAssetTypeLabel(row.type)}</div>
+                    <div className="text-xs text-text-muted">{row.category || 'Chưa gắn danh mục'} · {getDepartmentLabel(row)}</div>
                 </div>
             ),
         },
         {
-            key: 'status',
-            label: 'Trạng thái',
-            width: '130px',
-            render: (value) => <StatusBadge status={value} />,
+            key: 'type',
+            label: 'Loại',
+            width: '120px',
+            render: (value) => <span className="text-sm text-text-muted">{getAssetTypeLabel(value)}</span>,
         },
         {
             key: 'current_assignment',
-            label: 'Phòng ban nhận bàn giao',
+            label: 'Nhân viên chịu trách nhiệm',
             render: (_, row) => (
                 <div>
-                    <div className="font-medium text-text">{getAssignmentTarget(row)}</div>
+                    <div className="font-medium text-text">{getResponsibleEmployee(row)}</div>
                     <div className="text-xs text-text-muted">
                         {row.current_assignment?.assigned_at
                             ? `Từ ${new Date(row.current_assignment.assigned_at).toLocaleDateString('vi-VN')}`
-                            : 'Chưa có bản ghi bàn giao'}
+                            : 'Chưa có người phụ trách'}
                     </div>
                 </div>
             ),
         },
         {
+            key: 'location',
+            label: 'Vị trí',
+            render: (_, row) => <span className="text-sm text-text-muted">{getLocationLabel(row)}</span>,
+        },
+        {
+            key: 'status',
+            label: 'Trạng thái',
+            width: '140px',
+            render: (value) => <StatusBadge status={value} />,
+        },
+        {
             key: 'actions',
             label: '',
-            width: '60px',
+            width: '176px',
             align: 'right',
             render: (_, row) => (
-                <button
-                    className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary transition-colors"
-                    onClick={() => handleViewAsset(row)}
-                    title="Xem chi tiết"
-                >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                </button>
+                <div className="flex justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                    <button
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-muted hover:border-primary hover:text-primary"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            handleViewAsset(row);
+                        }}
+                        title="Xem chi tiết"
+                    >
+                        Chi tiết
+                    </button>
+                    <button
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-muted hover:border-primary hover:text-primary"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            if (row.is_assigned) {
+                                setSelectedAsset(row);
+                                setConfirmUnassignOpen(true);
+                                return;
+                            }
+                            openHandoverModal(row);
+                        }}
+                        title={row.is_assigned ? 'Bỏ người phụ trách' : 'Gán người phụ trách'}
+                    >
+                        {row.is_assigned ? 'Thu hồi' : 'Bàn giao'}
+                    </button>
+                    <button
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-muted hover:border-primary hover:text-primary"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            openMaintenanceWorkspace(row);
+                        }}
+                        title="Mở workspace bảo trì"
+                    >
+                        Bảo trì
+                    </button>
+                </div>
             ),
         },
     ];
@@ -283,24 +456,41 @@ const AssetsPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-text">Danh mục tài sản</h2>
-                    <p className="text-sm text-text-muted">Theo scope mới, tài sản được bàn giao theo phòng ban thay vì gắn cho từng nhân viên.</p>
+                    <p className="text-sm text-text-muted">Tra cứu nhanh tài sản theo vị trí, người giữ và trạng thái vận hành.</p>
                 </div>
                 <Button onClick={() => setCreateModalOpen(true)}>
                     + Tạo tài sản
                 </Button>
             </div>
 
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Tài sản phù hợp</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.total}</div>
+                </Card>
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Đang bàn giao</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.assigned}</div>
+                </Card>
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Sẵn sàng điều phối</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.available}</div>
+                </Card>
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Cần chú ý</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.attention}</div>
+                </Card>
+            </div>
+
             <Card>
                 <CardBody className="py-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-2">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+                        <div className="xl:col-span-2">
                             <Input
-                                placeholder="Tìm theo mã hoặc tên tài sản"
+                                placeholder="Tìm theo mã tài sản, danh mục, vị trí hoặc người đang giữ"
                                 value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setCurrentPage(1);
-                                }}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                helper="Global search cho mã tài sản, tên máy, phòng ban và người phụ trách"
                             />
                         </div>
                         <Select
@@ -320,6 +510,14 @@ const AssetsPage = () => {
                             }}
                         />
                         <Select
+                            options={locationOptions}
+                            value={locationFilter}
+                            onChange={(e) => {
+                                setLocationFilter(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        />
+                        <Select
                             options={assignmentOptions}
                             value={assignmentFilter}
                             onChange={(e) => {
@@ -327,7 +525,20 @@ const AssetsPage = () => {
                                 setCurrentPage(1);
                             }}
                         />
+                        <Button variant="outline" onClick={resetFilters}>
+                            Xóa bộ lọc
+                        </Button>
                     </div>
+
+                    {activeFilterTags.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {activeFilterTags.map((tag) => (
+                                <span key={tag} className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-text-muted">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </CardBody>
             </Card>
 
@@ -377,6 +588,25 @@ const AssetsPage = () => {
                         value={createForm.type}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, type: e.target.value }))}
                     />
+                    <Input
+                        label="Danh mục"
+                        value={createForm.category}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, category: e.target.value }))}
+                        placeholder="VD: Laptop, Printer, Network"
+                        error={createErrors.category?.[0]}
+                    />
+                    <Select
+                        label="Vị trí"
+                        options={[
+                            { value: '', label: 'Chọn vị trí' },
+                            ...locations.map((location) => ({
+                                value: location.id,
+                                label: `${location.code} - ${location.name}`,
+                            })),
+                        ]}
+                        value={createForm.location_id}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, location_id: e.target.value }))}
+                    />
                     <Select
                         label="Trạng thái"
                         options={assetStatuses.filter((option) => option.value)}
@@ -394,6 +624,36 @@ const AssetsPage = () => {
                         ]}
                         value={createForm.supplier_id}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, supplier_id: e.target.value }))}
+                    />
+                    <Input
+                        label="Ngày mua"
+                        type="date"
+                        value={createForm.purchase_date}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, purchase_date: e.target.value }))}
+                        error={createErrors.purchase_date?.[0]}
+                    />
+                    <Input
+                        label="Giá mua"
+                        type="number"
+                        min="0"
+                        value={createForm.purchase_cost}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, purchase_cost: e.target.value }))}
+                        error={createErrors.purchase_cost?.[0]}
+                    />
+                    <Input
+                        label="Thời gian sử dụng dự kiến (tháng)"
+                        type="number"
+                        min="1"
+                        value={createForm.useful_life_months}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, useful_life_months: e.target.value }))}
+                        error={createErrors.useful_life_months?.[0]}
+                    />
+                    <Input
+                        label="Ngày hết bảo hành"
+                        type="date"
+                        value={createForm.warranty_expiry}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, warranty_expiry: e.target.value }))}
+                        error={createErrors.warranty_expiry?.[0]}
                     />
                     <Input
                         label="Ghi chú"
@@ -415,7 +675,7 @@ const AssetsPage = () => {
             <Modal
                 isOpen={handoverModalOpen}
                 onClose={() => setHandoverModalOpen(false)}
-                title="Bàn giao cho phòng ban"
+                title="Gán nhân viên chịu trách nhiệm"
                 size="sm"
             >
                 <div className="space-y-4">
@@ -423,11 +683,17 @@ const AssetsPage = () => {
                         <div className="font-medium text-text">{selectedAsset?.name}</div>
                         <div className="text-xs text-text-muted font-mono">{selectedAsset?.asset_code}</div>
                     </div>
-                    <Input
-                        label="Phòng ban nhận bàn giao *"
-                        value={departmentName}
-                        onChange={(e) => setDepartmentName(e.target.value)}
-                        placeholder="VD: Engineering, IT Operations, Finance"
+                    <Select
+                        label="Nhân viên chịu trách nhiệm *"
+                        options={[
+                            { value: '', label: 'Chọn nhân viên' },
+                            ...employees.map((employee) => ({
+                                value: employee.id,
+                                label: `${employee.employee_code} - ${employee.full_name}${employee.position ? ` (${employee.position})` : ''}`,
+                            })),
+                        ]}
+                        value={responsibleEmployeeId}
+                        onChange={(e) => setResponsibleEmployeeId(e.target.value)}
                     />
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
@@ -435,7 +701,7 @@ const AssetsPage = () => {
                         Hủy
                     </Button>
                     <Button onClick={handleHandoverAsset} disabled={handoverLoading}>
-                        {handoverLoading ? 'Đang lưu...' : 'Xác nhận bàn giao'}
+                        {handoverLoading ? 'Đang lưu...' : 'Xác nhận'}
                     </Button>
                 </div>
             </Modal>
@@ -452,6 +718,9 @@ const AssetsPage = () => {
                                 <div>
                                     <h2 className="text-lg font-bold text-text">{selectedAsset.name}</h2>
                                     <p className="text-sm text-text-muted font-mono">{selectedAsset.asset_code}</p>
+                                    <div className="mt-3 inline-flex">
+                                        <StatusBadge status={selectedAsset.status} />
+                                    </div>
                                 </div>
                                 <button
                                     className="p-2 rounded-lg hover:bg-surface-hover text-text-muted"
@@ -469,12 +738,16 @@ const AssetsPage = () => {
                             <Card>
                                 <CardBody className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-text-muted uppercase">Trạng thái</span>
-                                        <StatusBadge status={selectedAsset.status} />
-                                    </div>
-                                    <div className="flex justify-between items-center">
                                         <span className="text-xs font-semibold text-text-muted uppercase">Loại</span>
                                         <span className="text-sm font-medium">{getAssetTypeLabel(selectedAsset.type)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Danh mục</span>
+                                        <span className="text-sm font-medium text-right">{selectedAsset.category || 'Chưa gắn danh mục'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Vị trí</span>
+                                        <span className="text-sm font-medium text-right">{getLocationLabel(selectedAsset)}</span>
                                     </div>
                                     <div className="flex justify-between items-start gap-4">
                                         <span className="text-xs font-semibold text-text-muted uppercase">Nhà cung cấp</span>
@@ -496,32 +769,64 @@ const AssetsPage = () => {
                                 <CardBody className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <div className="text-xs font-semibold text-text-muted uppercase">Bàn giao hiện tại</div>
-                                            <div className="font-medium text-text">{getAssignmentTarget(selectedAsset)}</div>
+                                            <div className="text-xs font-semibold text-text-muted uppercase">Nhân viên chịu trách nhiệm</div>
+                                            <div className="font-medium text-text">{getResponsibleEmployee(selectedAsset)}</div>
                                             <div className="text-xs text-text-muted">
                                                 {selectedAsset.current_assignment?.assigned_at
                                                     ? `Từ ${new Date(selectedAsset.current_assignment.assigned_at).toLocaleDateString('vi-VN')}`
-                                                    : 'Chưa có bản ghi bàn giao'}
+                                                    : 'Chưa có người phụ trách'}
                                             </div>
+                                            <div className="text-xs text-text-muted mt-1">{getDepartmentLabel(selectedAsset)}</div>
                                         </div>
                                     </div>
 
-                                    {selectedAsset.current_assignment ? (
-                                        <Button variant="danger" fullWidth onClick={() => setConfirmUnassignOpen(true)}>
-                                            Kết thúc bàn giao
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {selectedAsset.current_assignment ? (
+                                            <Button variant="danger" fullWidth onClick={() => setConfirmUnassignOpen(true)}>
+                                                Bỏ người phụ trách
+                                            </Button>
+                                        ) : (
+                                            <Button fullWidth onClick={() => openHandoverModal(selectedAsset)}>
+                                                Gán người phụ trách
+                                            </Button>
+                                        )}
+                                        <Button variant="outline" fullWidth onClick={() => openMaintenanceWorkspace(selectedAsset)}>
+                                            Mở workspace bảo trì
                                         </Button>
-                                    ) : (
-                                        <Button fullWidth onClick={openHandoverModal}>
-                                            Bàn giao cho phòng ban
-                                        </Button>
-                                    )}
+                                    </div>
+                                </CardBody>
+                            </Card>
+
+                            <Card>
+                                <CardBody className="space-y-3">
+                                    <div className="font-semibold text-text">Giá trị & vòng đời</div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Giá mua</span>
+                                        <span className="text-sm font-medium">{selectedAsset.purchase_cost ? formatCurrency(selectedAsset.purchase_cost) : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Giá trị còn lại</span>
+                                        <span className="text-sm font-medium">{selectedAsset.valuation?.current_book_value ? formatCurrency(selectedAsset.valuation.current_book_value) : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Khấu hao</span>
+                                        <span className="text-sm font-medium">{selectedAsset.valuation?.depreciation_percentage ? `${selectedAsset.valuation.depreciation_percentage.toFixed(1)}%` : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Ngày mua</span>
+                                        <span className="text-sm font-medium">{selectedAsset.purchase_date ? new Date(selectedAsset.purchase_date).toLocaleDateString('vi-VN') : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Hết bảo hành</span>
+                                        <span className="text-sm font-medium">{selectedAsset.warranty_expiry ? new Date(selectedAsset.warranty_expiry).toLocaleDateString('vi-VN') : 'Chưa có'}</span>
+                                    </div>
                                 </CardBody>
                             </Card>
 
                             {selectedAsset.assignment_history?.length > 0 && (
                                 <Card>
                                     <CardBody className="space-y-3">
-                                        <div className="font-semibold text-text">Lịch sử bàn giao</div>
+                                        <div className="font-semibold text-text">Lịch sử người phụ trách</div>
                                         <div className="divide-y divide-border">
                                             {selectedAsset.assignment_history.slice(0, 5).map((history) => (
                                                 <div key={history.id} className="py-3">
@@ -554,9 +859,9 @@ const AssetsPage = () => {
                 isOpen={confirmUnassignOpen}
                 onClose={() => setConfirmUnassignOpen(false)}
                 onConfirm={handleUnassignAsset}
-                title="Kết thúc bàn giao"
-                message={`Bạn có chắc muốn kết thúc bàn giao ${selectedAsset?.name || ''}?`}
-                confirmText="Kết thúc"
+                title="Bỏ người phụ trách"
+                message={`Bạn có chắc muốn bỏ người phụ trách của ${selectedAsset?.name || ''}?`}
+                confirmText="Xác nhận"
                 variant="warning"
             />
 

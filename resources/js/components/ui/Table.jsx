@@ -95,7 +95,7 @@ const Table = ({
                         data.map((row, rowIndex) => (
                             <tr
                                 key={row.id || rowIndex}
-                                className="ui-table-row"
+                                className="ui-table-row group"
                                 onClick={onRowClick ? () => onRowClick(row, rowIndex) : undefined}
                                 tabIndex={onRowClick ? 0 : undefined}
                                 onKeyDown={onRowClick ? (e) => {

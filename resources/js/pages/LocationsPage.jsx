@@ -1,7 +1,7 @@
 /**
  * Locations Management Page (Phase 6)
  * 
- * Admin/HR can manage physical locations for asset tracking.
+ * Manager/technician can manage physical locations for asset tracking.
  * Features: List, Create, Edit, Delete/Deactivate locations.
  */
 import React, { useState, useEffect, useCallback } from 'react';
@@ -40,9 +40,9 @@ const LocationsPage = () => {
     
     // Form state
     const [formData, setFormData] = useState({
+        code: '',
         name: '',
         description: '',
-        address: '',
         is_active: true,
     });
     const [formErrors, setFormErrors] = useState({});
@@ -83,9 +83,9 @@ const LocationsPage = () => {
     const handleCreate = () => {
         setEditingLocation(null);
         setFormData({
+            code: '',
             name: '',
             description: '',
-            address: '',
             is_active: true,
         });
         setFormErrors({});
@@ -96,9 +96,9 @@ const LocationsPage = () => {
     const handleEdit = (location) => {
         setEditingLocation(location);
         setFormData({
+            code: location.code || '',
             name: location.name,
             description: location.description || '',
-            address: location.address || '',
             is_active: location.is_active,
         });
         setFormErrors({});
@@ -167,6 +167,11 @@ const LocationsPage = () => {
     // Table columns
     const columns = [
         {
+            key: 'code',
+            label: 'Mã vị trí',
+            render: (value) => <span className="font-mono text-sm text-text-muted">{value || '—'}</span>,
+        },
+        {
             key: 'name',
             label: 'Tên vị trí',
             render: (value, row) => (
@@ -183,13 +188,6 @@ const LocationsPage = () => {
         {
             key: 'description',
             label: 'Mô tả',
-            render: (value) => (
-                <span className="text-text-muted">{value || '—'}</span>
-            ),
-        },
-        {
-            key: 'address',
-            label: 'Địa chỉ',
             render: (value) => (
                 <span className="text-text-muted">{value || '—'}</span>
             ),
@@ -234,7 +232,7 @@ const LocationsPage = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-text">Vị trí</h1>
-                    <p className="text-text-muted mt-1">Quản lý vị trí sử dụng và lưu trữ thiết bị</p>
+                    <p className="text-text-muted mt-1">Quản lý mã vị trí, tên vị trí và mô tả nơi đặt tài sản</p>
                 </div>
                 <Button onClick={handleCreate}>
                     <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,7 +247,7 @@ const LocationsPage = () => {
                 <div className="flex gap-4 items-center flex-wrap">
                     <div className="flex-1 min-w-[200px]">
                         <Input
-                            placeholder="Tìm theo tên vị trí..."
+                            placeholder="Tìm theo mã hoặc tên vị trí..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -295,13 +293,26 @@ const LocationsPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">
+                            Mã vị trí <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                            name="code"
+                            value={formData.code}
+                            onChange={handleInputChange}
+                            placeholder="VD: LOC-001"
+                            error={formErrors.code?.[0]}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-text mb-1">
                             Tên vị trí <span className="text-red-500">*</span>
                         </label>
                         <Input
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
-                            placeholder="VD: Phòng khám Tầng 1"
+                            placeholder="VD: Kho IT tầng 1"
                             error={formErrors.name?.[0]}
                         />
                     </div>
@@ -321,19 +332,6 @@ const LocationsPage = () => {
                         {formErrors.description && (
                             <p className="text-red-500 text-sm mt-1">{formErrors.description[0]}</p>
                         )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-text mb-1">
-                            Địa chỉ
-                        </label>
-                        <Input
-                            name="address"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            placeholder="Địa chỉ (không bắt buộc)"
-                            error={formErrors.address?.[0]}
-                        />
                     </div>
 
                     {editingLocation && (

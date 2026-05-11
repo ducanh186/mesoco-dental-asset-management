@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
+use App\Models\Asset;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -24,15 +25,19 @@ class LocationController extends Controller
             $query->active();
         }
 
-        // Search by name
+        // Search by canonical location code or name.
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where(function ($searchQuery) use ($request) {
+                $term = '%' . $request->search . '%';
+                $searchQuery->where('code', 'like', $term)
+                    ->orWhere('name', 'like', $term);
+            });
         }
 
         // Sorting
         $sortBy = $request->get('sort_by', 'name');
         $sortDir = $request->get('sort_dir', 'asc');
-        $allowedSorts = ['name', 'created_at', 'is_active'];
+        $allowedSorts = ['code', 'name', 'created_at', 'is_active'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDir === 'desc' ? 'desc' : 'asc');
         }
@@ -40,6 +45,7 @@ class LocationController extends Controller
         // Pagination (default 25 per page)
         $perPage = min($request->integer('per_page', 25), 100);
         $locations = $query->paginate($perPage);
+        $locations->getCollection()->transform(fn(Location $location) => $this->transformLocation($location));
 
         return response()->json($locations);
     }
@@ -52,6 +58,7 @@ class LocationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'unique:locations,code'],
             'name' => ['required', 'string', 'max:255', 'unique:locations,name'],
             'description' => ['nullable', 'string', 'max:1000'],
             'address' => ['nullable', 'string', 'max:500'],
@@ -62,7 +69,7 @@ class LocationController extends Controller
 
         return response()->json([
             'message' => 'Location created successfully.',
-            'data' => $location,
+            'data' => $this->transformLocation($location),
         ], 201);
     }
 
@@ -77,7 +84,7 @@ class LocationController extends Controller
         $location->loadCount('assets');
 
         return response()->json([
-            'data' => $location,
+            'data' => $this->transformLocation($location),
         ]);
     }
 
@@ -96,6 +103,13 @@ class LocationController extends Controller
                 'max:255',
                 Rule::unique('locations', 'name')->ignore($location->id),
             ],
+            'code' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('locations', 'code')->ignore($location->id),
+            ],
             'description' => ['nullable', 'string', 'max:1000'],
             'address' => ['nullable', 'string', 'max:500'],
             'is_active' => ['sometimes', 'boolean'],
@@ -105,7 +119,7 @@ class LocationController extends Controller
 
         return response()->json([
             'message' => 'Location updated successfully.',
-            'data' => $location->fresh(),
+            'data' => $this->transformLocation($location->fresh()),
         ]);
     }
 
@@ -119,8 +133,12 @@ class LocationController extends Controller
      */
     public function destroy(Location $location): JsonResponse
     {
-        // Check if location has any assets
-        $assetCount = $location->assets()->count();
+        // Check canonical location_id and legacy text location for compatibility.
+        $assetCount = $location->assets()->count()
+            + Asset::query()
+                ->whereNull('location_id')
+                ->where('location', $location->name)
+                ->count();
 
         if ($assetCount > 0) {
             // Soft-delete: just mark as inactive
@@ -128,7 +146,7 @@ class LocationController extends Controller
 
             return response()->json([
                 'message' => "Location deactivated. {$assetCount} asset(s) are still assigned to this location.",
-                'data' => $location->fresh(),
+                'data' => $this->transformLocation($location->fresh()),
             ]);
         }
 
@@ -149,11 +167,30 @@ class LocationController extends Controller
     {
         $locations = Location::active()
             ->orderBy('name')
-            ->select(['id', 'name'])
+            ->select(['id', 'code', 'name', 'description', 'is_active'])
             ->get();
 
         return response()->json([
-            'data' => $locations,
+            'data' => $locations->map(fn(Location $location) => $this->transformLocation($location))->values(),
         ]);
+    }
+
+    private function transformLocation(Location $location): array
+    {
+        $data = [
+            'id' => $location->id,
+            'code' => $location->code,
+            'name' => $location->name,
+            'description' => $location->description,
+            'is_active' => (bool) $location->is_active,
+            'created_at' => $location->created_at,
+            'updated_at' => $location->updated_at,
+        ];
+
+        if (array_key_exists('assets_count', $location->getAttributes())) {
+            $data['assets_count'] = $location->assets_count;
+        }
+
+        return $data;
     }
 }

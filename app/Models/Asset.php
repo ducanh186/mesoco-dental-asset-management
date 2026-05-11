@@ -44,8 +44,10 @@ class Asset extends Model
     public const DEPRECIATION_USAGE = 'USAGE';
     public const DEPRECIATION_METHODS = ['TIME', 'USAGE'];
 
+    public const DISPOSAL_RECOMMENDATION_THRESHOLD = 75;
+
     /**
-     * Common IT asset categories for company departments.
+     * Common IT asset categories.
      */
     public const CATEGORIES = [
         'Laptop',
@@ -69,6 +71,7 @@ class Asset extends Model
         'type',
         'category',
         'category_id',
+        'location_id',
         'supplier_id',
         'location',
         'status',
@@ -138,9 +141,7 @@ class Asset extends Model
      * SINGLE SOURCE OF TRUTH for lock status.
      * Use this method everywhere instead of checking status directly.
      * 
-     * Locked assets cannot be:
-     * - Assigned to a department
-     * - Checked in/out
+     * Locked assets cannot be assigned to a responsible employee.
      */
     public function isLocked(): bool
     {
@@ -184,6 +185,11 @@ class Asset extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function locationDefinition(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id');
     }
 
     /**
@@ -244,6 +250,7 @@ class Asset extends Model
     {
         return $this->hasOne(AssetAssignment::class)
             ->whereNull('unassigned_at')
+            ->whereNotNull('employee_id')
             ->latest('assigned_at');
     }
 
@@ -306,16 +313,30 @@ class Asset extends Model
     }
 
     /**
-     * Scope to search by asset_code or name.
+     * Scope to search by asset code, asset details, location, or current assignee.
      */
     public function scopeSearch($query, ?string $search)
     {
-        if ($search) {
+        $search = trim((string) $search);
+
+        if ($search !== '') {
             return $query->where(function ($q) use ($search) {
                 $q->where('asset_code', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%");
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhereHas('locationDefinition', function ($locationQuery) use ($search) {
+                      $locationQuery->where('code', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('currentAssignment.employee', function ($employeeQuery) use ($search) {
+                      $employeeQuery->where('employee_code', 'like', "%{$search}%")
+                          ->orWhere('full_name', 'like', "%{$search}%")
+                          ->orWhere('department', 'like', "%{$search}%");
+                  });
             });
         }
+
         return $query;
     }
 
@@ -348,7 +369,7 @@ class Asset extends Model
     }
 
     /**
-     * Scope to get assets available for a new department handover.
+     * Scope to get assets available for assigning a responsible employee.
      * Business rule: active status + not currently assigned.
      */
     public function scopeAvailableForHandover($query)
@@ -358,7 +379,7 @@ class Asset extends Model
     }
 
     /**
-     * Check if asset is available for a new department handover.
+     * Check if asset is available for assigning a responsible employee.
      */
     public function isAvailableForHandover(): bool
     {
@@ -366,27 +387,24 @@ class Asset extends Model
     }
 
     /**
-     * Check if asset is visible to an employee through direct legacy assignment
-     * or through the employee's department handover.
+     * Check if asset is visible to an employee through direct responsibility.
      */
     public function isAssignedToEmployee(int $employeeId): bool
     {
         return $this->currentAssignment && $this->currentAssignment->employee_id === $employeeId;
     }
 
+    public function isAssignedToResponsibleEmployee(Employee $employee): bool
+    {
+        return $this->isAssignedToEmployee($employee->id);
+    }
+
+    /**
+     * Legacy method name kept for older call sites/tests.
+     */
     public function isAssignedToEmployeeDepartment(Employee $employee): bool
     {
-        if (!$this->currentAssignment) {
-            return false;
-        }
-
-        if ($this->currentAssignment->employee_id === $employee->id) {
-            return true;
-        }
-
-        return $employee->department
-            && $this->currentAssignment->department_name
-            && strcasecmp($employee->department, $this->currentAssignment->department_name) === 0;
+        return $this->isAssignedToResponsibleEmployee($employee);
     }
 
     // =========================================================================
@@ -500,12 +518,12 @@ class Asset extends Model
     }
 
     /**
-     * Check if asset is eligible for disposal (depreciation >= 70%).
+     * Check if asset should be proposed for disposal (depreciation > 75%).
      */
     public function isEligibleForDisposal(?Carbon $asOfDate = null): bool
     {
         $percentage = $this->getDepreciationPercentage($asOfDate);
-        return $percentage !== null && $percentage >= 70;
+        return $percentage !== null && $percentage > self::DISPOSAL_RECOMMENDATION_THRESHOLD;
     }
 
     /**
@@ -583,7 +601,13 @@ class Asset extends Model
     public function scopeByLocation($query, ?string $location)
     {
         if ($location) {
-            return $query->where('location', $location);
+            return $query->where(function ($q) use ($location) {
+                $q->where('location', $location)
+                    ->orWhereHas('locationDefinition', function ($locationQuery) use ($location) {
+                        $locationQuery->where('code', $location)
+                            ->orWhere('name', $location);
+                    });
+            });
         }
         return $query;
     }

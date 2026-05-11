@@ -3,11 +3,20 @@ import { Button } from './ui';
 import { useI18n } from '../i18n';
 
 /**
- * PrintableAssetLabel - printable department handover label for IT assets.
+ * PrintableAssetLabel - printable responsible asset label for IT assets.
  */
 const PrintableAssetLabel = ({ asset, onClose }) => {
     const { t } = useI18n();
     const printRef = useRef(null);
+    const locationLabel = typeof asset.location === 'object' && asset.location
+        ? [asset.location.code, asset.location.name].filter(Boolean).join(' - ')
+        : (asset.location_name || asset.location);
+    const responsibleLabel = asset.responsible_employee?.full_name
+        || asset.assignedTo
+        || asset.assigned_to?.name
+        || asset.current_assignment?.employee?.full_name
+        || asset.current_assignment?.employee?.name
+        || asset.department_name;
 
     const handlePrint = () => {
         const printContent = printRef.current;
@@ -124,16 +133,16 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
                                 <span>{asset.category}</span>
                             </div>
                         )}
-                        {asset.location && (
+                        {locationLabel && (
                             <div className="detail-row flex justify-between mb-1">
                                 <span className="detail-label text-text-muted">{t('assets.location')}:</span>
-                                <span>{asset.location}</span>
+                                <span>{locationLabel}</span>
                             </div>
                         )}
-                        {(asset.assignedTo || asset.department_name || asset.assigned_to?.name) && (
+                        {responsibleLabel && (
                             <div className="detail-row flex justify-between mb-1">
                                 <span className="detail-label text-text-muted">{t('assets.handoverDepartment')}:</span>
-                                <span>{asset.assignedTo || asset.department_name || asset.assigned_to?.name}</span>
+                                <span>{responsibleLabel}</span>
                             </div>
                         )}
                     </div>
