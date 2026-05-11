@@ -1,11 +1,11 @@
 # Mesoco IT Asset Management
 
-Hệ thống quản lý trang thiết bị IT cho công ty công nghệ. Phạm vi hiện tại tập trung vào tài sản máy tính theo phòng ban: danh mục tài sản, bàn giao phòng ban, bảo trì, kiểm kê, khấu hao, thanh lý, đơn mua hàng và phiếu báo sự cố hoặc xin vật tư IT.
+Hệ thống quản lý trang thiết bị IT cho công ty công nghệ. Phạm vi hiện tại tập trung vào tài sản theo vị trí đặt và nhân viên chịu trách nhiệm: tra cứu danh mục tài sản, bàn giao trực tiếp, bảo trì, kiểm kê, khấu hao, thanh lý, đơn mua hàng và phiếu báo sự cố hoặc xin vật tư IT.
 
 ## Phạm Vi Nghiệp Vụ
 
 - `Asset Catalog`: quản lý laptop, desktop, monitor, network device, server, printer, peripheral, mobile device, office IT và nhóm khác.
-- `Department Handover`: thiết bị thuộc phòng ban nào, ngày bàn giao, trạng thái sử dụng và lịch sử thay đổi.
+- `Responsible Handover`: thiết bị đang ở vị trí nào, ai đang chịu trách nhiệm và lịch sử bàn giao active.
 - `Maintenance`: quản lý lịch kiểm tra, sửa chữa, nâng cấp phần cứng, cập nhật phần mềm, vệ sinh và thay thế linh kiện.
 - `Inventory & Valuation`: kiểm kê định kỳ, giá mua, khấu hao, giá trị còn lại, bảo hành và tình trạng sử dụng.
 - `Purchase Orders`: quản lý đơn mua thiết bị, nhà cung cấp và trạng thái giao hàng.
@@ -13,6 +13,13 @@ Hệ thống quản lý trang thiết bị IT cho công ty công nghệ. Phạm 
 - `Disposal`: khóa sử dụng, thanh lý hoặc loại bỏ tài sản không còn dùng.
 
 Các flow cũ như quét mã cá nhân, mượn/trả thiết bị và hợp đồng nhân viên đã bị gỡ khỏi UI active. API legacy vẫn trả JSON với HTTP `410 Gone` để client cũ không rơi vào lỗi mơ hồ.
+
+## Điểm Nổi Bật Hiện Tại
+
+- `Asset workspace`: tìm kiếm theo mã tài sản, danh mục, vị trí, nhân viên đang giữ; lọc theo trạng thái, vị trí và assignment; thao tác nhanh xem chi tiết, bàn giao/thu hồi và mở workspace bảo trì.
+- `Operational dashboard`: manager và technician có dashboard với giá trị tồn kho, thiết bị gián đoạn, hàng đợi duyệt, phân bổ theo bộ phận, xu hướng tài sản theo tháng và cảnh báo khấu hao.
+- `Purchase order workspace`: form đơn hàng tách khối nhà cung cấp, danh sách sản phẩm và tổng hợp thanh toán để thao tác nhanh hơn.
+- `Legacy compatibility`: endpoint cũ ngoài scope vẫn phản hồi `410 Gone` kèm message JSON rõ ràng.
 
 ## Stack
 
@@ -39,6 +46,22 @@ php artisan serve
 npm run dev
 ```
 
+Đăng nhập UI bằng `employee_code + password`. Email vẫn dùng cho profile và forgot-password.
+
+## Chạy Với Docker
+
+Từ thư mục gốc repo:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml exec app php artisan migrate --seed
+```
+
+- `app` tự cài dependency, tạo `.env` nếu thiếu và chạy PHP built-in server tại `http://localhost:8000`.
+- `vite` chạy HMR tại `http://localhost:5173`.
+- `db` dùng MySQL 8.0 và publish cổng `3307` cho máy local.
+- Trên Windows có thể dùng các helper script `scripts\docker-setup.bat`, `scripts\docker-start.bat`, `scripts\docker-stop.bat`.
+
 Chạy kiểm tra:
 
 ```bash
@@ -49,14 +72,17 @@ php artisan test
 
 ## Tài Khoản Demo
 
-Sau khi chạy `php artisan migrate --seed`, dùng các tài khoản mẫu:
+Sau khi chạy `php artisan migrate --seed`, dùng các tài khoản mẫu sau để đăng nhập bằng `employee_code`:
 
-| Role | Email | Password | Mục đích |
-| --- | --- | --- | --- |
-| manager | manager@mesoco.vn | password | Quản lý báo cáo, user, duyệt phiếu |
-| technician | technician@mesoco.vn | password | Vận hành asset, maintenance, inventory |
-| employee | employee@mesoco.vn | password | Xem thiết bị phòng ban và gửi request |
-| supplier | supplier@mesoco.vn | password | Theo dõi purchase order của nhà cung cấp |
+| Role | Employee code | Email | Password | Mục đích |
+| --- | --- | --- | --- | --- |
+| manager | E1001 | `manager@mesoco.vn` | password | Quản lý báo cáo, user, duyệt phiếu |
+| technician | E1002 | `technician@mesoco.vn` | password | Vận hành asset, maintenance, inventory |
+| employee | E1003 | `employee@mesoco.vn` | password | Xem thiết bị được giao và gửi request |
+| employee | E1004 | `frontdesk@mesoco.vn` | password | Nhân viên quầy lễ tân để test assignment |
+| employee | E1005 | `warehouse@mesoco.vn` | password | Nhân viên kho để test assignment |
+
+`Supplier` không được seed mặc định trong `DatabaseSeeder`; nếu cần test luồng supplier, tạo user supplier riêng trong hệ thống hoặc bằng factory/seeder bổ sung.
 
 ## Tài Liệu
 

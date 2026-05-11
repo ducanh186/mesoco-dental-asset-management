@@ -6,14 +6,14 @@
 
 | Module | manager | technician | employee | supplier |
 | --- | --- | --- | --- | --- |
-| Dashboard | Xem toàn hệ thống | Xem vận hành | Xem thiết bị phụ trách | Xem đơn hàng |
-| Asset Catalog | CRUD | CRUD | Xem thiết bị mình phụ trách | Không |
+| Dashboard | Xem toàn hệ thống, review queue, valuation, cảnh báo | Xem vận hành, maintenance, valuation, cảnh báo | Xem thiết bị phụ trách | Xem đơn hàng |
+| Asset Catalog | CRUD, search, assign/unassign, mở maintenance | CRUD, search, assign/unassign, mở maintenance | Xem thiết bị mình phụ trách | Không |
 | Location Catalog | CRUD | CRUD | Không | Không |
 | Responsible Employee | Gắn/thu hồi | Gắn/thu hồi | Xem | Không |
 | Maintenance | CRUD, điều phối | CRUD, xử lý | Xem liên quan | Không |
 | Inventory | Xem, tạo, hoàn tất | Xem, tạo, hoàn tất | Không | Không |
 | Valuation/Depreciation | Xem báo cáo | Xem vận hành | Không | Không |
-| Purchase Orders | CRUD, xem tất cả | CRUD, xem tất cả | Không | Xem/cập nhật đơn của mình |
+| Purchase Orders | CRUD, xem tất cả, tổng hợp theo supplier | CRUD, xem tất cả, tổng hợp theo supplier | Không | Xem/cập nhật đơn của mình |
 | Requests | Tạo/xem | Tạo/xem | Tạo/xem của mình | Không |
 | Review Requests | Duyệt/từ chối | Không | Không | Không |
 | Disposal | Xử lý | Xử lý | Không | Không |
@@ -29,7 +29,7 @@
 
 ## Legacy Endpoint
 
-Các API cũ ngoài scope active vẫn trả HTTP `410 Gone`. Mục tiêu là báo rõ chức năng đã dừng, không để client cũ hiểu nhầm rằng endpoint mất ngẫu nhiên.
+Các API cũ ngoài scope active vẫn trả HTTP `410 Gone` cùng JSON message mô tả chức năng đã bị loại khỏi scope active. Mục tiêu là báo rõ chức năng đã dừng, không để client cũ hiểu nhầm rằng endpoint mất ngẫu nhiên.
 
 | Endpoint legacy | Hành vi |
 | --- | --- |
@@ -43,4 +43,4 @@ Các API cũ ngoài scope active vẫn trả HTTP `410 Gone`. Mục tiêu là b�
 
 ## Nguyên Tắc
 
-Employee chỉ nhìn thấy asset đang gắn với `employee_id` của chính mình trong active assignment. Technician và manager chịu trách nhiệm vận hành, kiểm kê, bảo trì và disposal.
+Employee chỉ nhìn thấy asset đang gắn với `employee_id` của chính mình trong active assignment. Login active dùng `employee_code + password`. Technician và manager chịu trách nhiệm vận hành, kiểm kê, bảo trì và disposal.
