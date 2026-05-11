@@ -61,9 +61,9 @@ const AuthProvider = ({ children }) => {
           }
      };
 
-     const login = async (employee_code, password) => {
+     const login = async (username, password) => {
           await axios.get('/sanctum/csrf-cookie');
-          await axios.post('/login', { employee_code, password });
+          await axios.post('/login', { username, password });
           await fetchUser();
      };
 
@@ -648,7 +648,7 @@ const ForgotPasswordPage = () => {
 };
 
 const LoginPage = () => {
-     const [employeeCode, setEmployeeCode] = useState('');
+     const [username, setUsername] = useState('');
      const [password, setPassword] = useState('');
      const [showPassword, setShowPassword] = useState(false);
      const [remember, setRemember] = useState(false);
@@ -659,15 +659,15 @@ const LoginPage = () => {
      const { t } = useI18n();
      const navigate = useNavigate();
      const location = useLocation();
-     const employeeCodeRef = React.useRef(null);
+     const usernameRef = React.useRef(null);
      const passwordRef = React.useRef(null);
 
      const from = location.state?.from?.pathname || '/dashboard';
 
      const validateFields = () => {
           const errors = {};
-          if (!employeeCode.trim()) {
-               errors.employeeCode = t('auth.employeeIdRequired');
+          if (!username.trim()) {
+               errors.username = t('auth.usernameRequired');
           }
           if (!password) {
                errors.password = t('auth.passwordRequired');
@@ -675,8 +675,8 @@ const LoginPage = () => {
           setFieldErrors(errors);
           
           // Focus first invalid field
-          if (errors.employeeCode) {
-               employeeCodeRef.current?.focus();
+          if (errors.username) {
+               usernameRef.current?.focus();
           } else if (errors.password) {
                passwordRef.current?.focus();
           }
@@ -696,7 +696,7 @@ const LoginPage = () => {
           setIsLoading(true);
 
           try {
-               await login(employeeCode, password, remember);
+               await login(username, password, remember);
                navigate(from, { replace: true });
           } catch (err) {
                // Generic error message - do not leak user existence
@@ -736,22 +736,22 @@ const LoginPage = () => {
                          )}
 
                          <div className="form-group">
-                              <label htmlFor="employee_code">{t('auth.employeeId')}</label>
+                              <label htmlFor="username">{t('auth.username')}</label>
                               <input
-                                   ref={employeeCodeRef}
-                                   id="employee_code"
+                                   ref={usernameRef}
+                                   id="username"
                                    type="text"
-                                   className={`form-input ${fieldErrors.employeeCode ? 'form-input-error' : ''}`}
-                                   value={employeeCode}
-                                   onChange={e => handleFieldChange('employeeCode', e.target.value, setEmployeeCode)}
-                                   placeholder={t('auth.enterEmployeeId')}
+                                   className={`form-input ${fieldErrors.username ? 'form-input-error' : ''}`}
+                                   value={username}
+                                   onChange={e => handleFieldChange('username', e.target.value, setUsername)}
+                                   placeholder={t('auth.enterUsername')}
                                    autoFocus
                                    disabled={isLoading}
-                                   aria-invalid={!!fieldErrors.employeeCode}
-                                   aria-describedby={fieldErrors.employeeCode ? 'employee_code_error' : undefined}
+                                   aria-invalid={!!fieldErrors.username}
+                                   aria-describedby={fieldErrors.username ? 'username_error' : undefined}
                               />
-                              {fieldErrors.employeeCode && (
-                                   <p id="employee_code_error" className="form-error-text">{fieldErrors.employeeCode}</p>
+                              {fieldErrors.username && (
+                                   <p id="username_error" className="form-error-text">{fieldErrors.username}</p>
                               )}
                          </div>
 

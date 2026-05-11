@@ -150,7 +150,7 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                             {getUserInitials()}
                         </div>
                         <div className="user-info desktop-only">
-                            <span className="user-name text-text">{user?.name || t('common.user')}</span>
+                            <span className="user-name text-text">{user?.full_name || user?.name || t('common.user')}</span>
                             <span className="user-role text-text-muted">{getRoleLabel()}</span>
                         </div>
                         <svg 
@@ -171,9 +171,9 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                                     {getUserInitials()}
                                 </div>
                                 <div className="dropdown-user-info">
-                                    <span className="user-name text-text">{user?.name || t('common.user')}</span>
+                                    <span className="user-name text-text">{user?.full_name || user?.name || t('common.user')}</span>
                                     <span className="user-email text-text-muted">{user?.email || '—'}</span>
-                                    <span className="user-code text-text-light">{user?.employee_code}</span>
+                                    <span className="user-code text-text-light">{user?.username || user?.employee_code || '—'}</span>
                                 </div>
                             </div>
                             <div className="dropdown-divider" />

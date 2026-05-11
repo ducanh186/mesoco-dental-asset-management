@@ -18,9 +18,13 @@
 | `employees` | Hồ sơ nhân viên nội bộ; dùng `position` để thể hiện chức vụ |
 | `suppliers` | Nhà cung cấp thiết bị/vật tư |
 | `locations` | Mã vị trí, tên vị trí, mô tả nơi đặt tài sản |
-| `assets` | Tài sản IT, trạng thái, vị trí, chi phí, khấu hao, bảo hành |
+| `assets` | Tài sản IT, trạng thái, vị trí, serial/model/QR, chi phí, khấu hao, bảo hành |
+| `asset_qr_identities` | Lịch sử phát hành QR identity cho asset portal |
 | `categories` | Danh mục category cho asset |
-| `asset_assignments` | Lịch sử nhân viên chịu trách nhiệm |
+| `assignments` | Header bàn giao tài sản theo user/staff |
+| `assignment_details` | Asset lines nằm trong từng lần bàn giao |
+| `returns` | Giao dịch thu hồi cho một lần bàn giao |
+| `asset_assignments` | Mirror compatibility cho flow cũ theo employee |
 | `maintenance_events` | Phiếu bảo trì cấp sự kiện |
 | `maintenance_details` | Chi tiết xử lý bảo trì |
 | `repair_logs` | Nhật ký sửa chữa |
@@ -43,14 +47,34 @@ Nguồn chính của vị trí là bảng `locations`:
 
 `assets.location_id` trỏ tới `locations.id`. Các cột `assets.location` và `locations.address` được giữ để tương thích dữ liệu cũ, không dùng làm nguồn chính trong UI active.
 
+## Asset Master Fields
+
+Asset active đang được align dần sang ERD mới nhưng vẫn giữ compatibility field cũ:
+
+- `assets.serial_number`: serial của thiết bị; dữ liệu cũ được backfill từ `asset_code`.
+- `assets.model`: model thương mại/kỹ thuật của thiết bị.
+- `assets.configuration`: cấu hình chi tiết để hiển thị trên workspace và portal.
+- `assets.qr_code`: alias mới của payload QR; vẫn sync với `assets.qr_value` cũ.
+- `assets.purchase_price`: alias mới, sync với `assets.purchase_cost`.
+- `assets.current_depreciation_rate`: alias mới, sync với `assets.depreciation_rate`.
+
+API active hiện trả song song cả field compatibility và field ERD mới để frontend cũ và frontend mới cùng đọc được.
+
 ## Responsible Employee
 
-Nguồn chính của người chịu trách nhiệm là `asset_assignments.employee_id` với `unassigned_at = null`.
+Nguồn active đang chuyển sang workflow mới:
 
-- Tài sản active có thể chưa có nhân viên chịu trách nhiệm.
-- Khi assign thì bắt buộc chọn `employee_id`.
-- Các row `department_name` cũ chỉ là dữ liệu lịch sử/compatibility.
-- Khi thu hủy asset, active assignment được kết thúc bằng `unassigned_at = disposed_at`.
+- `assignments.staff_id`: user nhận tài sản.
+- `assignment_details.asset_id`: asset thuộc lần bàn giao nào.
+- `returns.assignment_id`: đánh dấu lần bàn giao đã được thu hồi.
+
+Trong giai đoạn chuyển tiếp:
+
+- API `POST /api/assets/{asset}/assign` ưu tiên `staff_id`, nhưng vẫn nhận `employee_id` để tương thích UI cũ.
+- Nếu chỉ có `employee_id`, backend sẽ resolve hoặc auto-provision `users.employee_id` tương ứng để tạo `staff_id` theo ERD mới.
+- `asset_assignments` vẫn được ghi song song làm compatibility mirror cho các call-site cũ.
+- Các row `department_name` cũ chỉ còn là dữ liệu lịch sử/compatibility.
+- Khi thu hồi hoặc thu hủy asset, active assignment được đóng ở cả `returns` và `asset_assignments.unassigned_at`.
 
 ## Depreciation Và Disposal
 
@@ -62,6 +86,27 @@ Khi retire/dispose asset:
 - `assets.location_id = null`
 - `assets.location = null`
 - active responsible assignment được đóng lại
+
+## QR Asset Portal
+
+QR asset portal dùng hai lớp dữ liệu:
+
+- `asset_qr_identities.qr_uid`: identity bền vững cho từng lần regenerate QR.
+- `assets.qr_code` / `assets.qr_value`: payload QR gần nhất để workspace đọc nhanh.
+
+API/route active:
+
+- `POST /api/qr/resolve`: resolve payload `MESOCO|ASSET|v1|<uuid>` sang asset hiện tại.
+- `POST /api/assets/{asset}/regenerate-qr`: tạo QR identity mới nhưng vẫn giữ lịch sử QR cũ.
+- `GET /asset-portal/{qrUid}`: read-only portal view cho tài sản được resolve từ QR.
+
+QR portal response dùng cùng một QR payload nhưng cắt dữ liệu theo role:
+
+- `employee`/public: nhóm basic gồm asset name, model/configuration, status, warranty status, current responsible user, category/location.
+- `technician`: basic + technical gồm repair logs, last maintenance date, last issue/action, depreciation rate, remaining value, device status.
+- `manager`: basic + technical + supplier/purchase gồm purchase price, purchase date và supplier contact.
+
+Phần này tương ứng với view báo cáo `View_AssetPortal_Full`; trong app Laravel, dữ liệu được compose ở controller để vẫn áp dụng RBAC theo user đang đăng nhập.
 
 ## Request Types
 

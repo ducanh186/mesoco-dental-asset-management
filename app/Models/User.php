@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -56,7 +57,9 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'username',
         'name',
+        'full_name',
         'email',
         'password',
         'employee_code',
@@ -100,6 +103,14 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::saving(function (self $user) {
+            $user->full_name = trim((string) ($user->full_name ?: $user->name ?: ''));
+            $user->name = trim((string) ($user->name ?: $user->full_name ?: ''));
+            $user->username = trim((string) ($user->username ?: $user->employee_code ?: Str::before((string) $user->email, '@')));
+
+            if (($user->getAttributes()['employee_code'] ?? null) === null && $user->username !== '') {
+                $user->employee_code = $user->username;
+            }
+
             $rawRole = $user->getAttributes()['role'] ?? null;
 
             $normalizedRole = $rawRole
@@ -252,13 +263,15 @@ class User extends Authenticatable
     }
 
     /**
-     * Scope to search users by employee_code or name.
+     * Scope to search users by username, full name, or compatibility fields.
      */
     public function scopeSearch($query, ?string $search)
     {
         if ($search) {
             return $query->where(function ($q) use ($search) {
-                $q->where('employee_code', 'like', "%{$search}%")
+                $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('full_name', 'like', "%{$search}%")
+                  ->orWhere('employee_code', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%");
             });
         }

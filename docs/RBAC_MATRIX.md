@@ -19,6 +19,7 @@
 | Disposal | Xử lý | Xử lý | Không | Không |
 | Reports | Xem/export | Không | Không | Không |
 | User/Profile | Quản lý user | Xem user vận hành | Hồ sơ cá nhân | Hồ sơ supplier |
+| QR Resolve Portal | Regenerate, resolve, xem full basic + technical + supplier/purchase | Resolve, xem basic + technical | Resolve, xem basic | Không |
 
 ## Role Canonical
 
@@ -33,14 +34,21 @@ Các API cũ ngoài scope active vẫn trả HTTP `410 Gone` cùng JSON message 
 
 | Endpoint legacy | Hành vi |
 | --- | --- |
-| `/api/qr/resolve` | `410 Gone` |
 | `/api/my-assets` | `410 Gone` |
 | `/api/my-asset-history*` | `410 Gone` |
 | `/api/assets/available-for-loan` | `410 Gone` |
-| `/api/assets/{asset}/regenerate-qr` | `410 Gone` |
 | `/api/employees/{employee}/contracts` | `410 Gone` |
 | `/api/contracts/{contract}*` | `410 Gone` |
 
+## QR Active Endpoints
+
+| Endpoint active | Quyền |
+| --- | --- |
+| `/api/qr/resolve` | `manager`, `technician`, `employee` |
+| `/api/assets/{asset}/regenerate-qr` | `manager`, `technician` |
+| `/asset-portal/{qrUid}` | Read-only portal view; public/basic nếu chưa đăng nhập, role-aware nếu có session |
+
 ## Nguyên Tắc
 
-Employee chỉ nhìn thấy asset đang gắn với `employee_id` của chính mình trong active assignment. Login active dùng `employee_code + password`. Technician và manager chịu trách nhiệm vận hành, kiểm kê, bảo trì và disposal.
+Employee chỉ nhìn thấy asset đang gắn với `employee_id` của chính mình trong active assignment. Login active dùng `username + password` và vẫn tạm chấp nhận payload `employee_code` cũ ở lớp compatibility.
+Technician và manager chịu trách nhiệm vận hành, kiểm kê, bảo trì, disposal và QR lifecycle.

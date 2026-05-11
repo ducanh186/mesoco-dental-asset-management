@@ -29,6 +29,9 @@ Route::prefix('forgot-password')->group(function () {
         ->middleware('throttle:forgot-password-reset');
 });
 
+Route::get('/asset-portal/{qrUid}', [\App\Http\Controllers\AssetController::class, 'portal'])
+    ->name('asset-portal.show');
+
 /*
 |--------------------------------------------------------------------------
 | Login Page Route (Named for middleware redirects)

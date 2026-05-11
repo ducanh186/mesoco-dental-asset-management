@@ -79,9 +79,9 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
 
     Route::middleware('role:manager,technician,employee')->group(function () use ($removedQrModuleResponse) {
         /**
-         * Removed QR/personal asset routes retained as JSON contracts for old clients.
+         * QR asset resolution remains available for internal users.
          */
-        Route::post('/qr/resolve', $removedQrModuleResponse);
+        Route::post('/qr/resolve', [AssetController::class, 'resolveQr']);
 
         /**
          * Responsible assets - internal users can pick assets assigned to them.
@@ -183,7 +183,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
         Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
         Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
-        Route::post('/assets/{asset}/regenerate-qr', $removedQrModuleResponse);
+        Route::post('/assets/{asset}/regenerate-qr', [AssetController::class, 'regenerateQr']);
 
         Route::get('/inventory/summary', [InventoryController::class, 'summary']);
         Route::get('/inventory/assets', [InventoryController::class, 'assets']);

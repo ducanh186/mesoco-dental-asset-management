@@ -54,20 +54,25 @@ const AssetsPage = () => {
 
     const [createForm, setCreateForm] = useState({
         asset_code: '',
+        serial_number: '',
         name: '',
+        model: '',
+        qr_code: '',
+        configuration: '',
         type: 'equipment',
         category: '',
         location_id: '',
         status: 'active',
         supplier_id: '',
         purchase_date: '',
-        purchase_cost: '',
+        purchase_price: '',
+        current_depreciation_rate: '',
         useful_life_months: '',
         warranty_expiry: '',
         notes: '',
     });
 
-    const [responsibleEmployeeId, setResponsibleEmployeeId] = useState('');
+    const [handoverTarget, setHandoverTarget] = useState('');
 
     const assetTypes = [
         { value: '', label: 'Tất cả loại' },
@@ -192,6 +197,33 @@ const AssetsPage = () => {
         return asset.location_name || 'Chưa chọn';
     };
 
+    const buildHandoverValue = (employee) => {
+        if (employee?.user?.id) {
+            return `staff:${employee.user.id}`;
+        }
+
+        if (employee?.id) {
+            return `employee:${employee.id}`;
+        }
+
+        return '';
+    };
+
+    const parseHandoverValue = (value) => {
+        if (!value) {
+            return null;
+        }
+
+        const [targetType, rawId] = value.split(':');
+        const id = Number(rawId);
+
+        if (!targetType || !Number.isFinite(id)) {
+            return null;
+        }
+
+        return { targetType, id };
+    };
+
     const locationOptions = [
         { value: '', label: 'Tất cả vị trí' },
         ...locations.map((location) => ({
@@ -221,7 +253,8 @@ const AssetsPage = () => {
         location_id: form.location_id ? Number(form.location_id) : null,
         supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
         purchase_date: form.purchase_date || null,
-        purchase_cost: form.purchase_cost === '' ? null : Number(form.purchase_cost),
+        purchase_price: form.purchase_price === '' ? null : Number(form.purchase_price),
+        current_depreciation_rate: form.current_depreciation_rate === '' ? null : Number(form.current_depreciation_rate),
         useful_life_months: form.useful_life_months === '' ? null : Number(form.useful_life_months),
         warranty_expiry: form.warranty_expiry || null,
     });
@@ -247,14 +280,19 @@ const AssetsPage = () => {
             setCreateModalOpen(false);
             setCreateForm({
                 asset_code: '',
+                serial_number: '',
                 name: '',
+                model: '',
+                qr_code: '',
+                configuration: '',
                 type: 'equipment',
                 category: '',
                 location_id: '',
                 status: 'active',
                 supplier_id: '',
                 purchase_date: '',
-                purchase_cost: '',
+                purchase_price: '',
+                current_depreciation_rate: '',
                 useful_life_months: '',
                 warranty_expiry: '',
                 notes: '',
@@ -280,7 +318,7 @@ const AssetsPage = () => {
         }
 
         setSelectedAsset(targetAsset);
-        setResponsibleEmployeeId(targetAsset.responsible_employee?.id ? String(targetAsset.responsible_employee.id) : '');
+        setHandoverTarget(buildHandoverValue(targetAsset.responsible_employee));
         setHandoverModalOpen(true);
     };
 
@@ -300,17 +338,24 @@ const AssetsPage = () => {
     };
 
     const handleHandoverAsset = async () => {
-        if (!selectedAsset || !responsibleEmployeeId) {
-            toast.error('Vui lòng chọn nhân viên chịu trách nhiệm.');
+        const handoverSelection = parseHandoverValue(handoverTarget);
+
+        if (!selectedAsset || !handoverSelection) {
+            toast.error('Vui lòng chọn người nhận tài sản.');
             return;
         }
 
         setHandoverLoading(true);
         try {
-            await assetsApi.assign(selectedAsset.id, { employee_id: Number(responsibleEmployeeId) });
-            toast.success('Đã gán nhân viên chịu trách nhiệm.');
+            await assetsApi.assign(
+                selectedAsset.id,
+                handoverSelection.targetType === 'staff'
+                    ? { staff_id: handoverSelection.id }
+                    : { employee_id: handoverSelection.id },
+            );
+            toast.success('Đã gán người phụ trách.');
             setHandoverModalOpen(false);
-            setResponsibleEmployeeId('');
+            setHandoverTarget('');
 
             const updated = await assetsApi.get(selectedAsset.id);
             setSelectedAsset(updated.asset);
@@ -487,10 +532,10 @@ const AssetsPage = () => {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
                         <div className="xl:col-span-2">
                             <Input
-                                placeholder="Tìm theo mã tài sản, danh mục, vị trí hoặc người đang giữ"
+                                placeholder="Tìm theo mã, serial, QR, model, vị trí hoặc người đang giữ"
                                 value={searchQuery}
                                 onChange={(e) => handleSearchChange(e.target.value)}
-                                helper="Global search cho mã tài sản, tên máy, phòng ban và người phụ trách"
+                                helper="Global search cho mã tài sản, serial, QR, model, vị trí và người phụ trách"
                             />
                         </div>
                         <Select
@@ -576,12 +621,42 @@ const AssetsPage = () => {
                         error={createErrors.asset_code?.[0]}
                     />
                     <Input
+                        label="Serial number"
+                        value={createForm.serial_number}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, serial_number: e.target.value }))}
+                        error={createErrors.serial_number?.[0]}
+                    />
+                    <Input
                         label="Tên tài sản *"
                         value={createForm.name}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
                         error={createErrors.name?.[0]}
                         required
                     />
+                    <Input
+                        label="Model"
+                        value={createForm.model}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, model: e.target.value }))}
+                        error={createErrors.model?.[0]}
+                    />
+                    <Input
+                        label="QR code"
+                        value={createForm.qr_code}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, qr_code: e.target.value }))}
+                        error={createErrors.qr_code?.[0]}
+                    />
+                    <div>
+                        <label className="mb-1.5 block text-sm font-medium text-text">Configuration</label>
+                        <textarea
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-text outline-none transition-colors focus:border-primary min-h-[88px]"
+                            value={createForm.configuration}
+                            onChange={(e) => setCreateForm((prev) => ({ ...prev, configuration: e.target.value }))}
+                            placeholder="VD: Intel Core Ultra 7 / 32GB RAM / 1TB SSD"
+                        />
+                        {createErrors.configuration?.[0] && (
+                            <p className="mt-1 text-xs text-error">{createErrors.configuration[0]}</p>
+                        )}
+                    </div>
                     <Select
                         label="Loại tài sản *"
                         options={assetTypes.filter((option) => option.value)}
@@ -633,12 +708,21 @@ const AssetsPage = () => {
                         error={createErrors.purchase_date?.[0]}
                     />
                     <Input
-                        label="Giá mua"
+                        label="Purchase price"
                         type="number"
                         min="0"
-                        value={createForm.purchase_cost}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, purchase_cost: e.target.value }))}
-                        error={createErrors.purchase_cost?.[0]}
+                        value={createForm.purchase_price}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, purchase_price: e.target.value }))}
+                        error={createErrors.purchase_price?.[0] || createErrors.purchase_cost?.[0]}
+                    />
+                    <Input
+                        label="Current depreciation rate"
+                        type="number"
+                        min="0"
+                        step="0.0001"
+                        value={createForm.current_depreciation_rate}
+                        onChange={(e) => setCreateForm((prev) => ({ ...prev, current_depreciation_rate: e.target.value }))}
+                        error={createErrors.current_depreciation_rate?.[0]}
                     />
                     <Input
                         label="Thời gian sử dụng dự kiến (tháng)"
@@ -684,16 +768,16 @@ const AssetsPage = () => {
                         <div className="text-xs text-text-muted font-mono">{selectedAsset?.asset_code}</div>
                     </div>
                     <Select
-                        label="Nhân viên chịu trách nhiệm *"
+                        label="Người nhận tài sản *"
                         options={[
-                            { value: '', label: 'Chọn nhân viên' },
+                            { value: '', label: 'Chọn người nhận' },
                             ...employees.map((employee) => ({
-                                value: employee.id,
-                                label: `${employee.employee_code} - ${employee.full_name}${employee.position ? ` (${employee.position})` : ''}`,
+                                value: buildHandoverValue(employee),
+                                label: `${employee.employee_code} - ${employee.full_name}${employee.user?.username ? ` · ${employee.user.username}` : ''}${employee.position ? ` (${employee.position})` : ''}`,
                             })),
                         ]}
-                        value={responsibleEmployeeId}
-                        onChange={(e) => setResponsibleEmployeeId(e.target.value)}
+                        value={handoverTarget}
+                        onChange={(e) => setHandoverTarget(e.target.value)}
                     />
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
@@ -742,6 +826,18 @@ const AssetsPage = () => {
                                         <span className="text-sm font-medium">{getAssetTypeLabel(selectedAsset.type)}</span>
                                     </div>
                                     <div className="flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Serial</span>
+                                        <span className="text-sm font-medium text-right">{selectedAsset.serial_number || 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Model</span>
+                                        <span className="text-sm font-medium text-right">{selectedAsset.model || 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">QR code</span>
+                                        <span className="text-sm font-medium text-right break-all">{selectedAsset.qr_code || 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
                                         <span className="text-xs font-semibold text-text-muted uppercase">Danh mục</span>
                                         <span className="text-sm font-medium text-right">{selectedAsset.category || 'Chưa gắn danh mục'}</span>
                                     </div>
@@ -760,6 +856,12 @@ const AssetsPage = () => {
                                         <div className="pt-3 border-t border-border">
                                             <div className="text-xs font-semibold text-text-muted uppercase mb-1">Ghi chú</div>
                                             <div className="text-sm text-text">{selectedAsset.notes}</div>
+                                        </div>
+                                    )}
+                                    {selectedAsset.configuration && (
+                                        <div className="pt-3 border-t border-border">
+                                            <div className="text-xs font-semibold text-text-muted uppercase mb-1">Configuration</div>
+                                            <div className="text-sm text-text whitespace-pre-wrap">{selectedAsset.configuration}</div>
                                         </div>
                                     )}
                                 </CardBody>
@@ -801,8 +903,12 @@ const AssetsPage = () => {
                                 <CardBody className="space-y-3">
                                     <div className="font-semibold text-text">Giá trị & vòng đời</div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-text-muted uppercase">Giá mua</span>
-                                        <span className="text-sm font-medium">{selectedAsset.purchase_cost ? formatCurrency(selectedAsset.purchase_cost) : 'Chưa có'}</span>
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Purchase price</span>
+                                        <span className="text-sm font-medium">{selectedAsset.purchase_price ? formatCurrency(selectedAsset.purchase_price) : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Depreciation rate</span>
+                                        <span className="text-sm font-medium">{selectedAsset.current_depreciation_rate !== null && selectedAsset.current_depreciation_rate !== undefined ? selectedAsset.current_depreciation_rate : 'Chưa có'}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs font-semibold text-text-muted uppercase">Giá trị còn lại</span>

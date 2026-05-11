@@ -6,6 +6,15 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class AssignAssetRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (!$this->filled('staff_id') && $this->filled('user_id')) {
+            $this->merge([
+                'staff_id' => $this->input('user_id'),
+            ]);
+        }
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -20,7 +29,8 @@ class AssignAssetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => ['required', 'integer', 'exists:employees,id'],
+            'staff_id' => ['nullable', 'integer', 'exists:users,id', 'required_without:employee_id'],
+            'employee_id' => ['nullable', 'integer', 'exists:employees,id', 'required_without:staff_id'],
             'department_name' => ['nullable', 'string', 'max:150'],
         ];
     }
@@ -31,6 +41,8 @@ class AssignAssetRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'staff_id.required_without' => 'Vui lòng chọn người nhận tài sản.',
+            'staff_id.exists' => 'Người nhận tài sản không tồn tại.',
             'employee_id.required' => 'Vui lòng chọn nhân viên chịu trách nhiệm.',
             'employee_id.exists' => 'Nhân viên được chọn không tồn tại.',
         ];

@@ -19,4 +19,4 @@ Seeder active phải tạo dữ liệu IT:
 
 ## Legacy
 
-Bảng legacy có thể còn trong migration/schema vì lý do compatibility. Không dùng chúng cho UI hoặc API active mới.
+Bảng legacy có thể còn trong migration/schema vì lý do compatibility. Với workflow bàn giao mới, `assignments`, `assignment_details`, `returns` là hướng active; `asset_assignments` chỉ giữ để sync compatibility trong giai đoạn chuyển tiếp.

@@ -42,6 +42,7 @@ const ProfilePage = ({ user }) => {
     const [formData, setFormData] = useState({
         name: '',
         supplier_code: '',
+        username: '',
         contact_person: '',
         full_name: '',
         employee_code: '',
@@ -74,10 +75,12 @@ const ProfilePage = ({ user }) => {
         try {
             const response = await axios.get('/api/profile');
             const profile = response.data.profile;
+            const profileUser = response.data.user || {};
             setProfileType(profile.profile_type || 'employee');
             setFormData({
                 name: profile.name || '',
                 supplier_code: profile.supplier_code || '',
+                username: profile.username || profileUser.username || '',
                 contact_person: profile.contact_person || '',
                 full_name: profile.full_name || '',
                 employee_code: profile.employee_code || '',
@@ -160,6 +163,7 @@ const ProfilePage = ({ user }) => {
                     ...prev,
                     name: profile.name || prev.name,
                     supplier_code: profile.supplier_code || prev.supplier_code,
+                    username: profile.username || prev.username,
                     contact_person: profile.contact_person || '',
                     full_name: profile.full_name || '',
                     position: profile.position || '',
@@ -203,8 +207,8 @@ const ProfilePage = ({ user }) => {
 
     const getUserInitials = () => {
         const name = profileType === 'supplier'
-            ? (formData.name || user?.name)
-            : (formData.full_name || user?.name);
+            ? (formData.name || user?.full_name || user?.name)
+            : (formData.full_name || user?.full_name || user?.name);
         if (!name) return 'U';
         const names = name.split(' ');
         if (names.length >= 2) {
@@ -240,12 +244,15 @@ const ProfilePage = ({ user }) => {
                             <div className="flex-1 min-w-0">
                                 <h2 className="text-xl font-semibold text-text truncate">
                                     {profileType === 'supplier'
-                                        ? (formData.name || user?.name || t('profile.unnamed'))
-                                        : (formData.full_name || user?.name || t('profile.unnamed'))
+                                        ? (formData.name || user?.full_name || user?.name || t('profile.unnamed'))
+                                        : (formData.full_name || user?.full_name || user?.name || t('profile.unnamed'))
                                     }
                                 </h2>
                                 <p className="text-text-muted">
-                                    {profileType === 'supplier' ? formData.supplier_code : formData.employee_code}
+                                    {profileType === 'supplier'
+                                        ? (formData.username || formData.supplier_code)
+                                        : (formData.username || formData.employee_code)
+                                    }
                                 </p>
                                 <Badge variant="primary" size="sm" className="mt-2">
                                     {getRoleLabel()}
@@ -271,7 +278,14 @@ const ProfilePage = ({ user }) => {
                             />
 
                             <Input
-                                label={profileType === 'supplier' ? t('profile.supplierCode') : t('profile.employeeId')}
+                                label="Username"
+                                value={formData.username}
+                                disabled
+                                helper={t('profile.disabledFieldHint')}
+                            />
+
+                            <Input
+                                label={profileType === 'supplier' ? t('profile.supplierCode') : 'Mã nhân viên (legacy)'}
                                 value={profileType === 'supplier' ? formData.supplier_code : formData.employee_code}
                                 disabled
                                 helper={t('profile.disabledFieldHint')}

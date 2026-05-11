@@ -32,7 +32,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Employee::query();
+        $query = Employee::query()->with('user:id,employee_id,username,full_name,status');
 
         // Search by employee_code or name
         if ($search = $request->query('search')) {
@@ -90,7 +90,7 @@ class EmployeeController extends Controller
     public function show(Employee $employee): JsonResponse
     {
         return response()->json([
-            'employee' => $employee->load('user:id,employee_id,role,status'),
+            'employee' => $employee->load('user:id,employee_id,username,full_name,role,status'),
         ]);
     }
 

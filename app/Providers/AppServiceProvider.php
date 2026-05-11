@@ -64,10 +64,10 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiting(): void
     {
-        // POST /login: 5/min per IP + employee_code keying
+        // POST /login: 5/min per IP + username keying
         RateLimiter::for('login', function (HttpRequest $request) {
-            $employeeCode = $request->input('employee_code', '');
-            $key = $request->ip() . '|' . $employeeCode;
+            $username = $request->input('username', $request->input('employee_code', ''));
+            $key = $request->ip() . '|' . $username;
             
             return Limit::perMinute(5)->by($key);
         });
