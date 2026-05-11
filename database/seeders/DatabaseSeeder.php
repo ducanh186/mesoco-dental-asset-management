@@ -106,8 +106,9 @@ class DatabaseSeeder extends Seeder
             );
 
             User::updateOrCreate(
-                ['employee_id' => $employee->id],
+                ['employee_code' => $employee->employee_code],
                 [
+                    'employee_id' => $employee->id,
                     'employee_code' => $employee->employee_code,
                     'name' => $employee->full_name,
                     'email' => $employee->email,

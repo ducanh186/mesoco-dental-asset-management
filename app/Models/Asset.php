@@ -313,16 +313,30 @@ class Asset extends Model
     }
 
     /**
-     * Scope to search by asset_code or name.
+     * Scope to search by asset code, asset details, location, or current assignee.
      */
     public function scopeSearch($query, ?string $search)
     {
-        if ($search) {
+        $search = trim((string) $search);
+
+        if ($search !== '') {
             return $query->where(function ($q) use ($search) {
                 $q->where('asset_code', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%");
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhereHas('locationDefinition', function ($locationQuery) use ($search) {
+                      $locationQuery->where('code', 'like', "%{$search}%")
+                          ->orWhere('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('currentAssignment.employee', function ($employeeQuery) use ($search) {
+                      $employeeQuery->where('employee_code', 'like', "%{$search}%")
+                          ->orWhere('full_name', 'like', "%{$search}%")
+                          ->orWhere('department', 'like', "%{$search}%");
+                  });
             });
         }
+
         return $query;
     }
 

@@ -33,7 +33,8 @@ class AssetController extends Controller
         $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
-            ->byStatus($request->input('status'));
+            ->byStatus($request->input('status'))
+            ->byLocation($request->input('location'));
 
         // Filter by assignment status if provided
         if ($request->has('assigned')) {
@@ -416,6 +417,9 @@ class AssetController extends Controller
             'location_name' => $this->locationLabel($asset),
             'status' => $asset->status,
             'notes' => $asset->notes,
+            'purchase_date' => optional($asset->purchase_date)->format('Y-m-d'),
+            'purchase_cost' => $asset->purchase_cost ? (float) $asset->purchase_cost : null,
+            'warranty_expiry' => optional($asset->warranty_expiry)->format('Y-m-d'),
             'valuation' => $asset->getValuationData(),
             'instructions' => [
                 'type' => $asset->instructions_url ? 'url' : null,
@@ -530,6 +534,7 @@ class AssetController extends Controller
             'employee_code' => $employee->employee_code,
             'full_name' => $employee->full_name,
             'position' => $employee->position,
+            'department' => $employee->department,
         ];
     }
 

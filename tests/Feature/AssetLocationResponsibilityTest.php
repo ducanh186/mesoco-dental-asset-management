@@ -99,6 +99,137 @@ class AssetLocationResponsibilityTest extends TestCase
             ->assertJsonValidationErrors(['employee_id']);
     }
 
+    public function test_available_assets_route_returns_only_active_unassigned_assets(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        $employee = Employee::factory()->create();
+        $available = Asset::factory()->create([
+            'asset_code' => 'IT-AVL-001',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+        $assigned = Asset::factory()->create([
+            'asset_code' => 'IT-AVL-002',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+        $maintenance = Asset::factory()->create([
+            'asset_code' => 'IT-AVL-003',
+            'status' => Asset::STATUS_MAINTENANCE,
+        ]);
+        $retired = Asset::factory()->create([
+            'asset_code' => 'IT-AVL-004',
+            'status' => Asset::STATUS_RETIRED,
+        ]);
+
+        AssetAssignment::factory()->create([
+            'asset_id' => $assigned->id,
+            'employee_id' => $employee->id,
+            'assigned_by' => $manager->id,
+            'unassigned_at' => null,
+        ]);
+
+        $response = $this->actingAs($manager)
+            ->getJson('/api/assets/available')
+            ->assertOk();
+
+        $ids = collect($response->json('assets'))->pluck('id');
+
+        $this->assertTrue($ids->contains($available->id));
+        $this->assertFalse($ids->contains($assigned->id));
+        $this->assertFalse($ids->contains($maintenance->id));
+        $this->assertFalse($ids->contains($retired->id));
+    }
+
+    public function test_manager_can_assign_and_unassign_asset_directly(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        $employee = Employee::factory()->create([
+            'employee_code' => 'EMP-HAND-001',
+            'full_name' => 'Nhan Vien Nhan Tai San',
+        ]);
+        $asset = Asset::factory()->create([
+            'asset_code' => 'IT-HAND-001',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($manager)
+            ->postJson("/api/assets/{$asset->id}/assign", [
+                'employee_id' => $employee->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('assignment.employee_id', $employee->id)
+            ->assertJsonPath('assignment.assigned_by', $manager->id);
+
+        $this->assertDatabaseHas('asset_assignments', [
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'assigned_by' => $manager->id,
+            'unassigned_at' => null,
+        ]);
+
+        $this->actingAs($manager)
+            ->getJson("/api/assets/{$asset->id}")
+            ->assertOk()
+            ->assertJsonPath('asset.current_assignment.assignee.id', $employee->id)
+            ->assertJsonPath('asset.responsible_employee.id', $employee->id)
+            ->assertJsonPath('asset.assignment_history.0.employee.id', $employee->id);
+
+        $this->actingAs($manager)
+            ->postJson("/api/assets/{$asset->id}/unassign")
+            ->assertOk()
+            ->assertJsonPath('previous_assignment.employee_id', $employee->id);
+
+        $this->assertDatabaseMissing('asset_assignments', [
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'unassigned_at' => null,
+        ]);
+    }
+
+    public function test_assigning_already_assigned_asset_returns_validation_error(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        $employee = Employee::factory()->create();
+        $otherEmployee = Employee::factory()->create();
+        $asset = Asset::factory()->create(['status' => Asset::STATUS_ACTIVE]);
+
+        AssetAssignment::factory()->create([
+            'asset_id' => $asset->id,
+            'employee_id' => $employee->id,
+            'assigned_by' => $manager->id,
+            'unassigned_at' => null,
+        ]);
+
+        $this->actingAs($manager)
+            ->postJson("/api/assets/{$asset->id}/assign", [
+                'employee_id' => $otherEmployee->id,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'ALREADY_ASSIGNED')
+            ->assertJsonPath('current_assignment.employee_id', $employee->id);
+    }
+
+    public function test_locked_or_retired_assets_cannot_be_assigned(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        $employee = Employee::factory()->create();
+        $maintenance = Asset::factory()->create(['status' => Asset::STATUS_MAINTENANCE]);
+        $retired = Asset::factory()->create(['status' => Asset::STATUS_RETIRED]);
+
+        $this->actingAs($manager)
+            ->postJson("/api/assets/{$maintenance->id}/assign", [
+                'employee_id' => $employee->id,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'ASSET_LOCKED');
+
+        $this->actingAs($manager)
+            ->postJson("/api/assets/{$retired->id}/assign", [
+                'employee_id' => $employee->id,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'ASSET_NOT_ACTIVE');
+    }
+
     public function test_employee_dropdown_returns_only_assets_the_employee_is_responsible_for(): void
     {
         $manager = User::factory()->manager()->create(['must_change_password' => false]);

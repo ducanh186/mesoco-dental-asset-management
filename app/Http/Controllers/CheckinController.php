@@ -97,7 +97,7 @@ class CheckinController extends Controller
                 // Create the check-in
                 return AssetCheckin::create([
                     'asset_id' => $asset->id,
-                    'employee_id' => $user->employee_id,
+                    'employee_id' => $user->id,
                     'shift_id' => $shiftId,
                     'shift_date' => $shiftDate,
                     'checked_in_at' => now(),
@@ -164,7 +164,7 @@ class CheckinController extends Controller
 
         $user = $request->user();
         $query = AssetCheckin::with(['asset', 'shift'])
-            ->where('employee_id', $user->employee_id)
+            ->where('employee_id', $user->id)
             ->orderBy('shift_date', 'desc')
             ->orderBy('checked_in_at', 'desc');
 

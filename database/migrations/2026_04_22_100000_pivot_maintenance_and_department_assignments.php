@@ -11,9 +11,19 @@ return new class extends Migration
     {
         Schema::table('asset_assignments', function (Blueprint $table) {
             $table->foreignId('employee_id')->nullable()->change();
-            $table->string('department_name', 150)->nullable()->after('employee_id');
-            $table->index(['department_name', 'unassigned_at'], 'asset_assignments_department_active_idx');
         });
+
+        if (!Schema::hasColumn('asset_assignments', 'department_name')) {
+            Schema::table('asset_assignments', function (Blueprint $table) {
+                $table->string('department_name', 150)->nullable()->after('employee_id');
+            });
+        }
+
+        if (!$this->indexExists('asset_assignments', 'asset_assignments_department_active_idx')) {
+            Schema::table('asset_assignments', function (Blueprint $table) {
+                $table->index(['department_name', 'unassigned_at'], 'asset_assignments_department_active_idx');
+            });
+        }
 
         foreach (
             DB::table('asset_assignments')
@@ -31,17 +41,13 @@ return new class extends Migration
                 ->update(['department_name' => $assignment->department]);
         }
 
-        Schema::table('maintenance_details', function (Blueprint $table) {
-            $table->unsignedInteger('qty')->default(1)->after('asset_id');
-        });
+        if (!Schema::hasColumn('maintenance_details', 'qty')) {
+            Schema::table('maintenance_details', function (Blueprint $table) {
+                $table->unsignedInteger('qty')->default(1)->after('asset_id');
+            });
+        }
 
-        Schema::table('maintenance_details', function (Blueprint $table) {
-            $table->dropUnique('maintenance_details_maintenance_event_id_unique');
-            $table->unique(
-                ['maintenance_event_id', 'asset_id'],
-                'maintenance_details_event_asset_unique'
-            );
-        });
+        $this->replaceMaintenanceDetailUniqueIndex();
     }
 
     public function down(): void
@@ -66,20 +72,158 @@ return new class extends Migration
             }
         }
 
+        $droppedMaintenanceEventForeign = $this->dropMaintenanceEventForeignIfNeeded();
+
         Schema::table('maintenance_details', function (Blueprint $table) {
-            $table->dropUnique('maintenance_details_event_asset_unique');
-            $table->dropColumn('qty');
-            $table->unique('maintenance_event_id');
+            if ($this->indexExists('maintenance_details', 'maintenance_details_event_asset_unique')) {
+                $table->dropUnique('maintenance_details_event_asset_unique');
+            }
+
+            if (Schema::hasColumn('maintenance_details', 'qty')) {
+                $table->dropColumn('qty');
+            }
         });
+
+        if (!$this->indexExists('maintenance_details', 'maintenance_details_maintenance_event_id_unique')) {
+            Schema::table('maintenance_details', function (Blueprint $table) {
+                $table->unique('maintenance_event_id');
+            });
+        }
+
+        if ($droppedMaintenanceEventForeign) {
+            $this->restoreMaintenanceEventForeignIfMissing();
+        }
 
         DB::table('asset_assignments')
             ->whereNull('employee_id')
             ->delete();
 
         Schema::table('asset_assignments', function (Blueprint $table) {
-            $table->dropIndex('asset_assignments_department_active_idx');
-            $table->dropColumn('department_name');
+            if ($this->indexExists('asset_assignments', 'asset_assignments_department_active_idx')) {
+                $table->dropIndex('asset_assignments_department_active_idx');
+            }
+
+            if (Schema::hasColumn('asset_assignments', 'department_name')) {
+                $table->dropColumn('department_name');
+            }
+
             $table->foreignId('employee_id')->nullable(false)->change();
         });
+    }
+
+    private function replaceMaintenanceDetailUniqueIndex(): void
+    {
+        $droppedMaintenanceEventForeign = false;
+
+        if ($this->indexExists('maintenance_details', 'maintenance_details_maintenance_event_id_unique')) {
+            $droppedMaintenanceEventForeign = $this->dropMaintenanceEventForeignIfNeeded();
+
+            Schema::table('maintenance_details', function (Blueprint $table) {
+                $table->dropUnique('maintenance_details_maintenance_event_id_unique');
+            });
+        }
+
+        if (!$this->indexExists('maintenance_details', 'maintenance_details_event_asset_unique')) {
+            Schema::table('maintenance_details', function (Blueprint $table) {
+                $table->unique(
+                    ['maintenance_event_id', 'asset_id'],
+                    'maintenance_details_event_asset_unique'
+                );
+            });
+        }
+
+        if ($droppedMaintenanceEventForeign) {
+            $this->restoreMaintenanceEventForeignIfMissing();
+        }
+    }
+
+    private function dropMaintenanceEventForeignIfNeeded(): bool
+    {
+        if (
+            DB::getDriverName() !== 'mysql'
+            || !$this->foreignKeyExists(
+                'maintenance_details',
+                'maintenance_details_maintenance_event_id_foreign'
+            )
+        ) {
+            return false;
+        }
+
+        Schema::table('maintenance_details', function (Blueprint $table) {
+            $table->dropForeign('maintenance_details_maintenance_event_id_foreign');
+        });
+
+        return true;
+    }
+
+    private function restoreMaintenanceEventForeignIfMissing(): void
+    {
+        if (
+            DB::getDriverName() !== 'mysql'
+            || $this->foreignKeyExists(
+                'maintenance_details',
+                'maintenance_details_maintenance_event_id_foreign'
+            )
+        ) {
+            return;
+        }
+
+        Schema::table('maintenance_details', function (Blueprint $table) {
+            $table
+                ->foreign('maintenance_event_id', 'maintenance_details_maintenance_event_id_foreign')
+                ->references('id')
+                ->on('maintenance_events')
+                ->cascadeOnDelete();
+        });
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        if (method_exists(Schema::getFacadeRoot(), 'getIndexes')) {
+            try {
+                foreach (Schema::getIndexes($table) as $existingIndex) {
+                    if (($existingIndex['name'] ?? null) === $index) {
+                        return true;
+                    }
+                }
+
+                return false;
+            } catch (\Throwable) {
+                // Fall through to driver-specific checks below.
+            }
+        }
+
+        if (DB::getDriverName() === 'mysql') {
+            return DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = ?", [$index]) !== [];
+        }
+
+        if (DB::getDriverName() === 'sqlite') {
+            foreach (DB::select("PRAGMA index_list('{$table}')") as $existingIndex) {
+                if (($existingIndex->name ?? null) === $index) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function foreignKeyExists(string $table, string $constraint): bool
+    {
+        if (DB::getDriverName() !== 'mysql') {
+            return false;
+        }
+
+        return DB::select(
+            <<<'SQL'
+                SELECT CONSTRAINT_NAME
+                FROM information_schema.REFERENTIAL_CONSTRAINTS
+                WHERE CONSTRAINT_SCHEMA = DATABASE()
+                    AND TABLE_NAME = ?
+                    AND CONSTRAINT_NAME = ?
+                LIMIT 1
+            SQL,
+            [$table, $constraint]
+        ) !== [];
     }
 };

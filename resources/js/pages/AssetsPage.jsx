@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Button,
     Card,
@@ -14,8 +15,17 @@ import {
 } from '../components/ui';
 import { assetsApi, employeesApi, handleApiError, locationsApi, suppliersApi } from '../services/api';
 
+const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+}).format(Number(value || 0));
+
 const AssetsPage = () => {
     const toast = useToast();
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const querySearch = searchParams.get('q') || '';
 
     const [assets, setAssets] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
@@ -24,9 +34,10 @@ const AssetsPage = () => {
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [loading, setLoading] = useState(true);
 
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(querySearch);
     const [typeFilter, setTypeFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [locationFilter, setLocationFilter] = useState('');
     const [assignmentFilter, setAssignmentFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -83,7 +94,16 @@ const AssetsPage = () => {
 
     useEffect(() => {
         fetchAssets();
-    }, [currentPage, searchQuery, typeFilter, statusFilter, assignmentFilter]);
+    }, [currentPage, searchQuery, typeFilter, statusFilter, locationFilter, assignmentFilter]);
+
+    useEffect(() => {
+        if (querySearch === searchQuery) {
+            return;
+        }
+
+        setSearchQuery(querySearch);
+        setCurrentPage(1);
+    }, [querySearch, searchQuery]);
 
     useEffect(() => {
         fetchSuppliers();
@@ -99,6 +119,7 @@ const AssetsPage = () => {
                 search: searchQuery || undefined,
                 type: typeFilter || undefined,
                 status: statusFilter || undefined,
+                location: locationFilter || undefined,
             });
 
             let nextAssets = response.assets || [];
@@ -116,6 +137,22 @@ const AssetsPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSearchChange = (value) => {
+        setSearchQuery(value);
+        setCurrentPage(1);
+        setSearchParams((currentParams) => {
+            const nextParams = new URLSearchParams(currentParams);
+
+            if (value.trim()) {
+                nextParams.set('q', value.trim());
+            } else {
+                nextParams.delete('q');
+            }
+
+            return nextParams;
+        });
     };
 
     const fetchSuppliers = async () => {
@@ -147,12 +184,36 @@ const AssetsPage = () => {
 
     const getAssetTypeLabel = (type) => assetTypes.find((option) => option.value === type)?.label || 'Khác';
     const getResponsibleEmployee = (asset) => asset.responsible_employee?.full_name || asset.current_assignment?.assignment_target?.name || 'Chưa có';
+    const getDepartmentLabel = (asset) => asset.responsible_employee?.department || 'Chưa bàn giao';
     const getLocationLabel = (asset) => {
         if (asset.location?.code && asset.location?.name) {
             return `${asset.location.code} - ${asset.location.name}`;
         }
         return asset.location_name || 'Chưa chọn';
     };
+
+    const locationOptions = [
+        { value: '', label: 'Tất cả vị trí' },
+        ...locations.map((location) => ({
+            value: location.code,
+            label: `${location.code} - ${location.name}`,
+        })),
+    ];
+
+    const filteredSummary = {
+        total: assets.length,
+        assigned: assets.filter((asset) => asset.is_assigned).length,
+        available: assets.filter((asset) => !asset.is_assigned && asset.status === 'active').length,
+        attention: assets.filter((asset) => ['maintenance', 'off_service', 'retired'].includes(asset.status)).length,
+    };
+
+    const activeFilterTags = [
+        searchQuery ? `Tìm kiếm: ${searchQuery}` : null,
+        typeFilter ? `Loại: ${getAssetTypeLabel(typeFilter)}` : null,
+        statusFilter ? `Trạng thái: ${assetStatuses.find((option) => option.value === statusFilter)?.label}` : null,
+        locationFilter ? `Vị trí: ${locationOptions.find((option) => option.value === locationFilter)?.label}` : null,
+        assignmentFilter ? `Phụ trách: ${assignmentOptions.find((option) => option.value === assignmentFilter)?.label}` : null,
+    ].filter(Boolean);
 
     const normalizeAssetPayload = (form) => ({
         ...form,
@@ -211,9 +272,31 @@ const AssetsPage = () => {
         }
     };
 
-    const openHandoverModal = () => {
-        setResponsibleEmployeeId(selectedAsset?.responsible_employee?.id ? String(selectedAsset.responsible_employee.id) : '');
+    const openHandoverModal = (asset = selectedAsset) => {
+        const targetAsset = asset || selectedAsset;
+
+        if (!targetAsset) {
+            return;
+        }
+
+        setSelectedAsset(targetAsset);
+        setResponsibleEmployeeId(targetAsset.responsible_employee?.id ? String(targetAsset.responsible_employee.id) : '');
         setHandoverModalOpen(true);
+    };
+
+    const resetFilters = () => {
+        setSearchQuery('');
+        setTypeFilter('');
+        setStatusFilter('');
+        setLocationFilter('');
+        setAssignmentFilter('');
+        setCurrentPage(1);
+        setSearchParams(new URLSearchParams());
+    };
+
+    const openMaintenanceWorkspace = (asset) => {
+        toast.info(`Mở workspace bảo trì để tạo phiếu cho ${asset.name}.`);
+        navigate('/maintenance');
     };
 
     const handleHandoverAsset = async () => {
@@ -278,7 +361,7 @@ const AssetsPage = () => {
             key: 'asset_code',
             label: 'Mã tài sản',
             width: '140px',
-            render: (value) => <span className="font-mono text-sm text-text-muted">{value}</span>,
+            render: (value) => <span className="font-mono text-sm font-semibold text-text">{value}</span>,
         },
         {
             key: 'name',
@@ -286,15 +369,15 @@ const AssetsPage = () => {
             render: (value, row) => (
                 <div>
                     <div className="font-medium text-text">{value}</div>
-                    <div className="text-xs text-text-muted capitalize">{getAssetTypeLabel(row.type)}</div>
+                    <div className="text-xs text-text-muted">{row.category || 'Chưa gắn danh mục'} · {getDepartmentLabel(row)}</div>
                 </div>
             ),
         },
         {
-            key: 'status',
-            label: 'Trạng thái',
-            width: '130px',
-            render: (value) => <StatusBadge status={value} />,
+            key: 'type',
+            label: 'Loại',
+            width: '120px',
+            render: (value) => <span className="text-sm text-text-muted">{getAssetTypeLabel(value)}</span>,
         },
         {
             key: 'current_assignment',
@@ -316,20 +399,54 @@ const AssetsPage = () => {
             render: (_, row) => <span className="text-sm text-text-muted">{getLocationLabel(row)}</span>,
         },
         {
+            key: 'status',
+            label: 'Trạng thái',
+            width: '140px',
+            render: (value) => <StatusBadge status={value} />,
+        },
+        {
             key: 'actions',
             label: '',
-            width: '60px',
+            width: '176px',
             align: 'right',
             render: (_, row) => (
-                <button
-                    className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary transition-colors"
-                    onClick={() => handleViewAsset(row)}
-                    title="Xem chi tiết"
-                >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                </button>
+                <div className="flex justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                    <button
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-muted hover:border-primary hover:text-primary"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            handleViewAsset(row);
+                        }}
+                        title="Xem chi tiết"
+                    >
+                        Chi tiết
+                    </button>
+                    <button
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-muted hover:border-primary hover:text-primary"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            if (row.is_assigned) {
+                                setSelectedAsset(row);
+                                setConfirmUnassignOpen(true);
+                                return;
+                            }
+                            openHandoverModal(row);
+                        }}
+                        title={row.is_assigned ? 'Bỏ người phụ trách' : 'Gán người phụ trách'}
+                    >
+                        {row.is_assigned ? 'Thu hồi' : 'Bàn giao'}
+                    </button>
+                    <button
+                        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-muted hover:border-primary hover:text-primary"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            openMaintenanceWorkspace(row);
+                        }}
+                        title="Mở workspace bảo trì"
+                    >
+                        Bảo trì
+                    </button>
+                </div>
             ),
         },
     ];
@@ -339,24 +456,41 @@ const AssetsPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-text">Danh mục tài sản</h2>
-                    <p className="text-sm text-text-muted">Quản lý tài sản theo vị trí và nhân viên chịu trách nhiệm.</p>
+                    <p className="text-sm text-text-muted">Tra cứu nhanh tài sản theo vị trí, người giữ và trạng thái vận hành.</p>
                 </div>
                 <Button onClick={() => setCreateModalOpen(true)}>
                     + Tạo tài sản
                 </Button>
             </div>
 
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Tài sản phù hợp</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.total}</div>
+                </Card>
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Đang bàn giao</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.assigned}</div>
+                </Card>
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Sẵn sàng điều phối</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.available}</div>
+                </Card>
+                <Card className="p-4">
+                    <div className="text-sm text-text-muted">Cần chú ý</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.attention}</div>
+                </Card>
+            </div>
+
             <Card>
                 <CardBody className="py-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-2">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+                        <div className="xl:col-span-2">
                             <Input
-                                placeholder="Tìm theo mã hoặc tên tài sản"
+                                placeholder="Tìm theo mã tài sản, danh mục, vị trí hoặc người đang giữ"
                                 value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setCurrentPage(1);
-                                }}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                helper="Global search cho mã tài sản, tên máy, phòng ban và người phụ trách"
                             />
                         </div>
                         <Select
@@ -376,6 +510,14 @@ const AssetsPage = () => {
                             }}
                         />
                         <Select
+                            options={locationOptions}
+                            value={locationFilter}
+                            onChange={(e) => {
+                                setLocationFilter(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        />
+                        <Select
                             options={assignmentOptions}
                             value={assignmentFilter}
                             onChange={(e) => {
@@ -383,7 +525,20 @@ const AssetsPage = () => {
                                 setCurrentPage(1);
                             }}
                         />
+                        <Button variant="outline" onClick={resetFilters}>
+                            Xóa bộ lọc
+                        </Button>
                     </div>
+
+                    {activeFilterTags.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {activeFilterTags.map((tag) => (
+                                <span key={tag} className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-text-muted">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </CardBody>
             </Card>
 
@@ -563,6 +718,9 @@ const AssetsPage = () => {
                                 <div>
                                     <h2 className="text-lg font-bold text-text">{selectedAsset.name}</h2>
                                     <p className="text-sm text-text-muted font-mono">{selectedAsset.asset_code}</p>
+                                    <div className="mt-3 inline-flex">
+                                        <StatusBadge status={selectedAsset.status} />
+                                    </div>
                                 </div>
                                 <button
                                     className="p-2 rounded-lg hover:bg-surface-hover text-text-muted"
@@ -580,12 +738,12 @@ const AssetsPage = () => {
                             <Card>
                                 <CardBody className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-text-muted uppercase">Trạng thái</span>
-                                        <StatusBadge status={selectedAsset.status} />
-                                    </div>
-                                    <div className="flex justify-between items-center">
                                         <span className="text-xs font-semibold text-text-muted uppercase">Loại</span>
                                         <span className="text-sm font-medium">{getAssetTypeLabel(selectedAsset.type)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Danh mục</span>
+                                        <span className="text-sm font-medium text-right">{selectedAsset.category || 'Chưa gắn danh mục'}</span>
                                     </div>
                                     <div className="flex justify-between items-start gap-4">
                                         <span className="text-xs font-semibold text-text-muted uppercase">Vị trí</span>
@@ -618,18 +776,50 @@ const AssetsPage = () => {
                                                     ? `Từ ${new Date(selectedAsset.current_assignment.assigned_at).toLocaleDateString('vi-VN')}`
                                                     : 'Chưa có người phụ trách'}
                                             </div>
+                                            <div className="text-xs text-text-muted mt-1">{getDepartmentLabel(selectedAsset)}</div>
                                         </div>
                                     </div>
 
-                                    {selectedAsset.current_assignment ? (
-                                        <Button variant="danger" fullWidth onClick={() => setConfirmUnassignOpen(true)}>
-                                            Bỏ người phụ trách
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {selectedAsset.current_assignment ? (
+                                            <Button variant="danger" fullWidth onClick={() => setConfirmUnassignOpen(true)}>
+                                                Bỏ người phụ trách
+                                            </Button>
+                                        ) : (
+                                            <Button fullWidth onClick={() => openHandoverModal(selectedAsset)}>
+                                                Gán người phụ trách
+                                            </Button>
+                                        )}
+                                        <Button variant="outline" fullWidth onClick={() => openMaintenanceWorkspace(selectedAsset)}>
+                                            Mở workspace bảo trì
                                         </Button>
-                                    ) : (
-                                        <Button fullWidth onClick={openHandoverModal}>
-                                            Gán người phụ trách
-                                        </Button>
-                                    )}
+                                    </div>
+                                </CardBody>
+                            </Card>
+
+                            <Card>
+                                <CardBody className="space-y-3">
+                                    <div className="font-semibold text-text">Giá trị & vòng đời</div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Giá mua</span>
+                                        <span className="text-sm font-medium">{selectedAsset.purchase_cost ? formatCurrency(selectedAsset.purchase_cost) : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Giá trị còn lại</span>
+                                        <span className="text-sm font-medium">{selectedAsset.valuation?.current_book_value ? formatCurrency(selectedAsset.valuation.current_book_value) : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Khấu hao</span>
+                                        <span className="text-sm font-medium">{selectedAsset.valuation?.depreciation_percentage ? `${selectedAsset.valuation.depreciation_percentage.toFixed(1)}%` : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Ngày mua</span>
+                                        <span className="text-sm font-medium">{selectedAsset.purchase_date ? new Date(selectedAsset.purchase_date).toLocaleDateString('vi-VN') : 'Chưa có'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-semibold text-text-muted uppercase">Hết bảo hành</span>
+                                        <span className="text-sm font-medium">{selectedAsset.warranty_expiry ? new Date(selectedAsset.warranty_expiry).toLocaleDateString('vi-VN') : 'Chưa có'}</span>
+                                    </div>
                                 </CardBody>
                             </Card>
 

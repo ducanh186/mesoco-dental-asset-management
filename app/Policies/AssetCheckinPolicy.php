@@ -33,7 +33,7 @@ class AssetCheckinPolicy
         }
 
         // Users can view their own check-ins
-        return $checkin->employee_id === $user->employee_id;
+        return $checkin->employee_id === $user->id;
     }
 
     /**
@@ -86,7 +86,7 @@ class AssetCheckinPolicy
         }
 
         // Only the person who checked in can check out
-        if ($checkin->employee_id !== $user->employee_id) {
+        if ($checkin->employee_id !== $user->id) {
             return Response::deny('You can only check out assets you checked in.', 'NOT_OWNER');
         }
 

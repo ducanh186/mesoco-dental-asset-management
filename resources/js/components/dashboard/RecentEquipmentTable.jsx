@@ -147,7 +147,7 @@ const RecentEquipmentTable = ({
                             </svg>
                         </button>
 
-                        {isOperationalRole && (
+                        {isOperationalRole && onEdit && (
                             <>
                                 <button 
                                     onClick={() => onEdit?.(item)}
@@ -159,16 +159,18 @@ const RecentEquipmentTable = ({
                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                     </svg>
                                 </button>
-                                <button 
-                                    onClick={() => onDelete?.(item)}
-                                    className="action-btn p-2 text-text-muted hover:text-error hover:bg-error/10 rounded-md transition-colors"
-                                    title={t('common.delete')}
-                                >
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polyline points="3 6 5 6 21 6" />
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                </button>
+                                {onDelete && (
+                                    <button 
+                                        onClick={() => onDelete?.(item)}
+                                        className="action-btn p-2 text-text-muted hover:text-error hover:bg-error/10 rounded-md transition-colors"
+                                        title={t('common.delete')}
+                                    >
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
+                                    </button>
+                                )}
                             </>
                         )}
 
