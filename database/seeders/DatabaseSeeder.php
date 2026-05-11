@@ -110,7 +110,9 @@ class DatabaseSeeder extends Seeder
                 [
                     'employee_id' => $employee->id,
                     'employee_code' => $employee->employee_code,
+                    'username' => $employee->employee_code,
                     'name' => $employee->full_name,
+                    'full_name' => $employee->full_name,
                     'email' => $employee->email,
                     'role' => $row['role'],
                     'password' => Hash::make('password'),

@@ -3,15 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignAssetRequest;
+use App\Models\Assignment;
+use App\Models\AssignmentDetail;
 use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetCheckin;
+use App\Models\AssetQrIdentity;
+use App\Models\AssetReturn;
 use App\Models\Employee;
+use App\Models\PurchaseOrderItem;
 use App\Models\Shift;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AssetController extends Controller
 {
@@ -30,7 +40,7 @@ class AssetController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $includeCheckinStatus = $request->boolean('include_checkin_status', false);
 
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
+        $query = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -108,7 +118,7 @@ class AssetController extends Controller
             ]);
         }
 
-        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'locationDefinition'])
+        $assets = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'locationDefinition'])
             ->whereHas('currentAssignment', function ($query) use ($employee) {
                 $query->where('employee_id', $employee->id);
             })
@@ -117,7 +127,7 @@ class AssetController extends Controller
             ->get();
 
         // Transform to dropdown format with null-safe label
-        $dropdownAssets = $assets->map(function($asset) {
+        $dropdownAssets = $assets->map(function (Asset $asset) {
             $label = $asset->asset_code 
                 ? $asset->asset_code . ' - ' . $asset->name 
                 : $asset->name . ' (ID: ' . $asset->id . ')';
@@ -160,7 +170,7 @@ class AssetController extends Controller
 
         $asset = Asset::create($validatedData);
 
-        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition']);
+        $asset->load(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition']);
 
         return response()->json([
             'message' => 'Asset created successfully.',
@@ -187,11 +197,11 @@ class AssetController extends Controller
         }
 
         $asset->load([
-            'currentAssignment.employee',
+            'currentAssignment.employee.user',
             'currentAssignment.assignedByUser',
             'supplier',
             'locationDefinition',
-            'assignments' => fn($q) => $q->with(['employee', 'assignedByUser'])->orderByDesc('assigned_at')->limit(10),
+            'assignments' => fn($q) => $q->with(['employee.user', 'assignedByUser'])->orderByDesc('assigned_at')->limit(10),
         ]);
 
         return response()->json([
@@ -209,7 +219,7 @@ class AssetController extends Controller
     {
         $asset->update($request->validated());
 
-        $asset->load(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition']);
+        $asset->load(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition']);
 
         return response()->json([
             'message' => 'Asset updated successfully.',
@@ -248,7 +258,7 @@ class AssetController extends Controller
      */
     public function assign(AssignAssetRequest $request, Asset $asset): JsonResponse
     {
-        return \DB::transaction(function () use ($request, $asset) {
+        return DB::transaction(function () use ($request, $asset) {
             // Lock the asset row for update to prevent race conditions
             $lockedAsset = Asset::where('id', $asset->id)->lockForUpdate()->first();
 
@@ -290,10 +300,30 @@ class AssetController extends Controller
                 ], 422);
             }
 
-            $employeeId = $request->integer('employee_id') ?: null;
-            $employee = Employee::query()->find($employeeId);
+            $staffUser = $this->resolveAssignmentUser($request);
 
-            // Create assignment
+            if (!$staffUser) {
+                return response()->json([
+                    'message' => 'Selected assignment user could not be resolved.',
+                    'error' => 'STAFF_NOT_FOUND',
+                ], 422);
+            }
+
+            $employee = $staffUser->employee;
+
+            $assignmentRecord = Assignment::create([
+                'staff_id' => $staffUser->id,
+                'admin_id' => $request->user()->id,
+                'assign_date' => now(),
+                'note' => $request->input('department_name'),
+                'approved_by' => $request->user()->id,
+            ]);
+
+            $assignmentDetail = AssignmentDetail::create([
+                'assignment_id' => $assignmentRecord->id,
+                'asset_id' => $lockedAsset->id,
+            ]);
+
             $assignment = AssetAssignment::create([
                 'asset_id' => $lockedAsset->id,
                 'employee_id' => $employee?->id,
@@ -306,7 +336,22 @@ class AssetController extends Controller
 
             return response()->json([
                 'message' => 'Responsible employee assigned successfully.',
-                'assignment' => $assignment,
+                'assignment' => [
+                    'id' => $assignmentRecord->id,
+                    'detail_id' => $assignmentDetail->id,
+                    'staff_id' => $staffUser->id,
+                    'employee_id' => $employee?->id,
+                    'admin_id' => $request->user()->id,
+                    'assigned_by' => $request->user()->id,
+                    'approved_by' => $request->user()->id,
+                    'assign_date' => $assignmentRecord->assign_date,
+                    'staff' => [
+                        'id' => $staffUser->id,
+                        'username' => $staffUser->username,
+                        'full_name' => $staffUser->full_name,
+                    ],
+                    'legacy_assignment_id' => $assignment->id,
+                ],
             ]);
         });
     }
@@ -320,7 +365,7 @@ class AssetController extends Controller
      */
     public function unassign(Request $request, Asset $asset): JsonResponse
     {
-        return \DB::transaction(function () use ($asset) {
+        return DB::transaction(function () use ($request, $asset) {
             // Find and lock the active assignment
             $currentAssignment = AssetAssignment::where('asset_id', $asset->id)
                 ->whereNull('unassigned_at')
@@ -338,7 +383,28 @@ class AssetController extends Controller
             $currentAssignment->load('employee');
             $employee = $currentAssignment->employee;
 
-            // Mark assignment as ended
+            $activeAssignment = Assignment::query()
+                ->whereHas('details', function ($query) use ($asset) {
+                    $query->where('asset_id', $asset->id);
+                })
+                ->whereDoesntHave('returnRecord')
+                ->with('staff')
+                ->lockForUpdate()
+                ->latest('assign_date')
+                ->first();
+
+            $returnRecord = null;
+            if ($activeAssignment) {
+                $returnRecord = AssetReturn::create([
+                    'assignment_id' => $activeAssignment->id,
+                    'staff_id' => $activeAssignment->staff_id,
+                    'admin_id' => $request->user()?->id,
+                    'return_date' => now(),
+                    'reason' => 'Returned from asset workspace.',
+                    'approved_by' => $request->user()?->id,
+                ]);
+            }
+
             $currentAssignment->update([
                 'unassigned_at' => now(),
             ]);
@@ -346,6 +412,9 @@ class AssetController extends Controller
             return response()->json([
                 'message' => 'Asset handover cleared successfully.',
                 'previous_assignment' => [
+                    'assignment_id' => $activeAssignment?->id,
+                    'return_id' => $returnRecord?->id,
+                    'staff_id' => $activeAssignment?->staff_id,
                     'department_name' => $currentAssignment->department_name,
                     'employee_id' => $employee?->id,
                     'employee_code' => $employee?->employee_code,
@@ -363,15 +432,276 @@ class AssetController extends Controller
      */
     public function available(Request $request): JsonResponse
     {
-        $assets = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
+        $assets = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
             ->where('status', Asset::STATUS_ACTIVE)
             ->unassigned()
             ->orderBy('asset_code')
             ->get();
 
         return response()->json([
-            'assets' => $assets->map(fn($asset) => $this->transformAsset($asset)),
+            'assets' => $assets->map(fn (Asset $asset) => $this->transformAsset($asset)),
         ]);
+    }
+
+    public function regenerateQr(Request $request, Asset $asset): JsonResponse
+    {
+        return DB::transaction(function () use ($asset) {
+            $qrIdentity = AssetQrIdentity::create([
+                'qr_uid' => (string) Str::uuid(),
+                'asset_id' => $asset->id,
+                'payload_version' => 'v1',
+                'printed_at' => now(),
+            ]);
+
+            $payload = $this->buildQrPayload($qrIdentity);
+
+            $asset->forceFill([
+                'qr_value' => $payload,
+                'qr_code' => $payload,
+            ])->save();
+
+            $asset->load([
+                'currentAssignment.employee.user',
+                'currentAssignment.assignedByUser',
+                'supplier',
+                'locationDefinition',
+                'latestQrIdentity',
+            ]);
+
+            return response()->json([
+                'message' => 'QR code regenerated successfully.',
+                'asset' => $this->transformAsset($asset),
+            ]);
+        });
+    }
+
+    public function resolveQr(Request $request): JsonResponse
+    {
+        $payload = trim((string) $request->input('payload', ''));
+        $parsedPayload = $this->parseQrPayload($payload);
+
+        if (!$parsedPayload) {
+            return response()->json([
+                'message' => 'QR payload format is invalid.',
+                'error' => 'INVALID_QR_FORMAT',
+            ], 422);
+        }
+
+        $qrIdentity = $this->findQrIdentity($parsedPayload['qr_uid']);
+
+        if (!$qrIdentity) {
+            return response()->json([
+                'message' => 'QR identity was not found.',
+                'error' => 'QR_NOT_FOUND',
+            ], 404);
+        }
+
+        $asset = $qrIdentity->asset;
+
+        if (!$asset || $asset->trashed()) {
+            return response()->json([
+                'message' => 'The resolved asset is no longer available.',
+                'error' => 'ASSET_DELETED',
+            ], 404);
+        }
+
+        $asset->load($this->assetPortalRelations());
+
+        return response()->json([
+            'message' => 'QR resolved successfully.',
+            'asset' => $this->transformAssetPortal($asset, $request->user()),
+            'portal_url' => route('asset-portal.show', ['qrUid' => $qrIdentity->qr_uid]),
+        ]);
+    }
+
+    public function portal(Request $request, string $qrUid): View
+    {
+        $qrIdentity = $this->findQrIdentity($qrUid);
+
+        abort_if(!$qrIdentity || !$qrIdentity->asset || $qrIdentity->asset->trashed(), 404);
+
+        $asset = $qrIdentity->asset->load($this->assetPortalRelations());
+
+        return view('asset-portal', [
+            'asset' => $this->transformAssetPortal($asset, $request->user()),
+            'portalUrl' => route('asset-portal.show', ['qrUid' => $qrIdentity->qr_uid]),
+            'resolvedAt' => now()->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    private function assetPortalRelations(): array
+    {
+        return [
+            'currentAssignment.employee.user',
+            'currentAssignment.assignedByUser',
+            'categoryDefinition',
+            'supplier',
+            'locationDefinition',
+            'latestQrIdentity',
+            'maintenanceDetails.maintenanceEvent',
+            'maintenanceDetails.technician',
+            'repairLogs.maintenanceEvent',
+            'repairLogs.technician',
+        ];
+    }
+
+    private function transformAssetPortal(Asset $asset, ?User $viewer): array
+    {
+        $role = $viewer?->canonicalRole() ?? 'public';
+        $canSeeTechnical = in_array($role, [User::ROLE_TECHNICIAN, User::ROLE_MANAGER], true);
+        $canSeeSupplier = $role === User::ROLE_MANAGER;
+        $sections = ['basic'];
+
+        if ($canSeeTechnical) {
+            $sections[] = 'technical';
+        }
+
+        if ($canSeeSupplier) {
+            $sections[] = 'supplier';
+        }
+
+        $data = [
+            'id' => $asset->id,
+            'asset_code' => $asset->asset_code,
+            'serial_number' => $asset->serial_number,
+            'qr_code' => $asset->qr_code ?: $asset->qr_value,
+            'name' => $asset->name,
+            'model' => $asset->model,
+            'configuration' => $asset->configuration,
+            'status' => $asset->status,
+            'asset_status' => $asset->lifecycle_status,
+            'lifecycle_status' => $asset->lifecycle_status,
+            'category' => $asset->category,
+            'category_name' => $asset->categoryDefinition?->name ?? $asset->category,
+            'location_name' => $this->locationLabel($asset),
+            'location' => $this->transformLocation($asset),
+            'responsible_employee' => $this->transformEmployee($asset->currentAssignment?->employee),
+            'current_user' => $asset->currentAssignment?->employee?->full_name,
+            'warranty_expiry' => optional($asset->warranty_expiry)->format('Y-m-d'),
+            'warranty_status' => $this->transformWarrantyStatus($asset),
+            'qr' => $this->transformQr($asset),
+            'visibility' => [
+                'role' => $role,
+                'sections' => $sections,
+            ],
+        ];
+
+        if ($canSeeTechnical) {
+            $data['technical'] = $this->transformAssetPortalTechnical($asset);
+        }
+
+        if ($canSeeSupplier) {
+            $purchaseOrigin = $this->latestPurchaseOrigin($asset);
+            $supplier = $purchaseOrigin?->purchaseOrder?->supplier ?? $asset->supplier;
+            $purchasePrice = $this->assetPurchasePrice($asset);
+
+            $data['purchase_price'] = $purchasePrice;
+            $data['purchase_date'] = $purchaseOrigin?->purchaseOrder?->order_date
+                ? $purchaseOrigin->purchaseOrder->order_date->format('Y-m-d')
+                : optional($asset->purchase_date)->format('Y-m-d');
+            $data['supplier'] = $supplier ? [
+                'id' => $supplier->id,
+                'code' => $supplier->code,
+                'name' => $supplier->name,
+                'contact_person' => $supplier->contact_person,
+                'phone' => $supplier->phone,
+                'email' => $supplier->email,
+                'address' => $supplier->address,
+            ] : null;
+        }
+
+        return $data;
+    }
+
+    private function transformWarrantyStatus(Asset $asset): array
+    {
+        if (!$asset->warranty_expiry) {
+            return [
+                'status' => 'unknown',
+                'label' => 'No warranty expiry recorded',
+                'expires_at' => null,
+            ];
+        }
+
+        $expiry = $asset->warranty_expiry->copy()->endOfDay();
+        $active = $expiry->greaterThanOrEqualTo(now());
+
+        return [
+            'status' => $active ? 'active' : 'expired',
+            'label' => $active ? 'Warranty active' : 'Warranty expired',
+            'expires_at' => $asset->warranty_expiry->format('Y-m-d'),
+        ];
+    }
+
+    private function transformAssetPortalTechnical(Asset $asset): array
+    {
+        $lastMaintenance = $asset->maintenanceDetails
+            ->sortByDesc(fn ($detail) => $detail->completed_at ?? $detail->logged_at ?? $detail->created_at)
+            ->first();
+        $lastMaintenanceDate = $lastMaintenance
+            ? ($lastMaintenance->completed_at
+                ?? $lastMaintenance->maintenanceEvent?->completed_at
+                ?? $lastMaintenance->logged_at)
+            : null;
+        $purchasePrice = $this->assetPurchasePrice($asset);
+        $depreciationRate = $this->assetDepreciationRate($asset);
+
+        return [
+            'device_status' => $asset->lifecycle_status,
+            'last_maintenance_date' => $lastMaintenanceDate?->format('Y-m-d H:i:s'),
+            'last_issue_note' => $lastMaintenance?->issue_description,
+            'last_action_taken' => $lastMaintenance?->action_taken,
+            'current_depreciation_rate' => $depreciationRate,
+            'remaining_value' => $purchasePrice !== null && $depreciationRate !== null
+                ? round(max(0, $purchasePrice * (1 - ($depreciationRate / 100))), 2)
+                : null,
+            'repair_logs' => $asset->repairLogs
+                ->sortByDesc(fn ($log) => $log->completed_at ?? $log->logged_at ?? $log->created_at)
+                ->take(10)
+                ->values()
+                ->map(fn ($log) => [
+                    'id' => $log->id,
+                    'status' => $log->status,
+                    'issue_description' => $log->issue_description,
+                    'action_taken' => $log->action_taken,
+                    'cost' => $log->cost !== null ? (float) $log->cost : null,
+                    'started_at' => $log->started_at?->toIso8601String(),
+                    'completed_at' => $log->completed_at?->toIso8601String(),
+                    'logged_at' => $log->logged_at?->toIso8601String(),
+                    'technician' => $log->technician ? [
+                        'id' => $log->technician->id,
+                        'username' => $log->technician->username,
+                        'full_name' => $log->technician->full_name,
+                    ] : null,
+                ]),
+        ];
+    }
+
+    private function assetPurchasePrice(Asset $asset): ?float
+    {
+        $value = $asset->purchase_price ?? $asset->purchase_cost;
+
+        return $value !== null ? (float) $value : null;
+    }
+
+    private function assetDepreciationRate(Asset $asset): ?float
+    {
+        $value = $asset->current_depreciation_rate ?? $asset->depreciation_rate;
+
+        return $value !== null ? (float) $value : null;
+    }
+
+    private function latestPurchaseOrigin(Asset $asset): ?PurchaseOrderItem
+    {
+        return PurchaseOrderItem::query()
+            ->with('purchaseOrder.supplier')
+            ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
+            ->where('asset_id', $asset->id)
+            ->whereHas('purchaseOrder')
+            ->orderByDesc('purchase_orders.order_date')
+            ->orderByDesc('purchase_order_items.id')
+            ->select('purchase_order_items.*')
+            ->first();
     }
 
     /**
@@ -400,7 +730,10 @@ class AssetController extends Controller
         $data = [
             'id' => $asset->id,
             'asset_code' => $asset->asset_code,
+            'serial_number' => $asset->serial_number,
             'name' => $asset->name,
+            'model' => $asset->model,
+            'configuration' => $asset->configuration,
             'type' => $asset->type,
             'category' => $asset->category,
             'category_id' => $asset->category_id,
@@ -416,10 +749,17 @@ class AssetController extends Controller
             'location' => $this->transformLocation($asset),
             'location_name' => $this->locationLabel($asset),
             'status' => $asset->status,
+            'lifecycle_status' => $asset->lifecycle_status,
+            'qr_code' => $asset->qr_code ?: $asset->qr_value,
             'notes' => $asset->notes,
             'purchase_date' => optional($asset->purchase_date)->format('Y-m-d'),
             'purchase_cost' => $asset->purchase_cost ? (float) $asset->purchase_cost : null,
+            'purchase_price' => $asset->purchase_price ? (float) $asset->purchase_price : ($asset->purchase_cost ? (float) $asset->purchase_cost : null),
             'warranty_expiry' => optional($asset->warranty_expiry)->format('Y-m-d'),
+            'current_depreciation_rate' => $asset->current_depreciation_rate !== null
+                ? (float) $asset->current_depreciation_rate
+                : ($asset->depreciation_rate !== null ? (float) $asset->depreciation_rate : null),
+            'qr' => $this->transformQr($asset),
             'valuation' => $asset->getValuationData(),
             'instructions' => [
                 'type' => $asset->instructions_url ? 'url' : null,
@@ -529,13 +869,132 @@ class AssetController extends Controller
             return null;
         }
 
+        $linkedUser = $employee->user;
+
         return [
             'id' => $employee->id,
             'employee_code' => $employee->employee_code,
             'full_name' => $employee->full_name,
             'position' => $employee->position,
             'department' => $employee->department,
+            'user' => $linkedUser ? [
+                'id' => $linkedUser->id,
+                'username' => $linkedUser->username,
+                'full_name' => $linkedUser->full_name,
+                'status' => $linkedUser->status,
+            ] : null,
         ];
+    }
+
+    private function transformQr(Asset $asset): ?array
+    {
+        $latestQrIdentity = $asset->relationLoaded('latestQrIdentity') ? $asset->latestQrIdentity : null;
+        $payload = $latestQrIdentity ? $this->buildQrPayload($latestQrIdentity) : ($asset->qr_code ?: $asset->qr_value);
+
+        if (!$payload) {
+            return null;
+        }
+
+        return [
+            'uid' => $latestQrIdentity?->qr_uid,
+            'payload' => $payload,
+            'portal_url' => $latestQrIdentity ? route('asset-portal.show', ['qrUid' => $latestQrIdentity->qr_uid]) : null,
+            'printed_at' => $latestQrIdentity?->printed_at?->toIso8601String(),
+        ];
+    }
+
+    private function parseQrPayload(string $payload): ?array
+    {
+        $parts = explode('|', $payload);
+
+        if (count($parts) !== 4) {
+            return null;
+        }
+
+        [$namespace, $resourceType, $version, $qrUid] = $parts;
+
+        if ($namespace !== 'MESOCO' || $resourceType !== 'ASSET' || $version === '' || !Str::isUuid($qrUid)) {
+            return null;
+        }
+
+        return [
+            'payload_version' => $version,
+            'qr_uid' => $qrUid,
+        ];
+    }
+
+    private function findQrIdentity(string $qrUid): ?AssetQrIdentity
+    {
+        return AssetQrIdentity::query()
+            ->with(['asset' => fn ($query) => $query->withTrashed()])
+            ->where('qr_uid', $qrUid)
+            ->latest('id')
+            ->first();
+    }
+
+    private function buildQrPayload(AssetQrIdentity $qrIdentity): string
+    {
+        return implode('|', ['MESOCO', 'ASSET', $qrIdentity->payload_version, $qrIdentity->qr_uid]);
+    }
+
+    private function resolveAssignmentUser(AssignAssetRequest $request): ?User
+    {
+        if ($request->filled('staff_id')) {
+            return User::query()->find($request->integer('staff_id'));
+        }
+
+        if (!$request->filled('employee_id')) {
+            return null;
+        }
+
+        $employee = Employee::query()->find($request->integer('employee_id'));
+
+        if (!$employee) {
+            return null;
+        }
+
+        $existingUser = User::query()
+            ->where('employee_id', $employee->id)
+            ->first();
+
+        if ($existingUser) {
+            return $existingUser;
+        }
+
+        $username = $this->generateAssignmentUsername($employee);
+        $email = $employee->email ?: "employee-{$employee->id}@mesoco.local";
+
+        if (User::query()->where('email', $email)->exists()) {
+            $email = "employee-{$employee->id}-" . Str::lower(Str::random(6)) . '@mesoco.local';
+        }
+
+        return User::query()->create([
+            'employee_id' => $employee->id,
+            'employee_code' => $employee->employee_code,
+            'username' => $username,
+            'name' => $employee->full_name,
+            'full_name' => $employee->full_name,
+            'email' => $email,
+            'password' => Hash::make(Str::random(40)),
+            'role' => User::ROLE_EMPLOYEE,
+            'status' => 'active',
+            'must_change_password' => true,
+        ]);
+    }
+
+    private function generateAssignmentUsername(Employee $employee): string
+    {
+        $base = trim((string) ($employee->employee_code ?: Str::slug($employee->full_name ?: 'employee', '_')));
+        $base = $base !== '' ? Str::lower($base) : 'employee_' . $employee->id;
+        $username = $base;
+        $suffix = 1;
+
+        while (User::query()->where('username', $username)->exists()) {
+            $suffix++;
+            $username = $base . '_' . $suffix;
+        }
+
+        return $username;
     }
 
     /**

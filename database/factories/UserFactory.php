@@ -30,9 +30,14 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $employeeCode = 'EMP' . str_pad((string) static::$employeeCodeCounter++, 3, '0', STR_PAD_LEFT);
+        $fullName = fake()->name();
+
         return [
-            'employee_code' => 'EMP' . str_pad((string) static::$employeeCodeCounter++, 3, '0', STR_PAD_LEFT),
-            'name' => fake()->name(),
+            'employee_code' => $employeeCode,
+            'username' => $employeeCode,
+            'name' => $fullName,
+            'full_name' => $fullName,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
@@ -110,7 +115,9 @@ class UserFactory extends Factory
                 'supplier_id' => $supplierModel->id,
                 'employee_id' => null,
                 'employee_code' => $supplierModel->code ?? ('NCC-' . str_pad((string) $supplierModel->id, 3, '0', STR_PAD_LEFT)),
+                'username' => $supplierModel->code ?? ('NCC-' . str_pad((string) $supplierModel->id, 3, '0', STR_PAD_LEFT)),
                 'name' => $supplierModel->name,
+                'full_name' => $supplierModel->name,
                 'email' => $supplierModel->email ?? "supplier-{$supplierModel->id}@mesoco.local",
                 'role' => User::ROLE_SUPPLIER,
             ];

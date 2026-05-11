@@ -32,6 +32,7 @@ class ProfileController extends Controller
                 'profile' => [
                     'profile_type' => 'supplier',
                     'supplier_code' => $supplier->code,
+                    'username' => $user->username,
                     'name' => $supplier->name,
                     'contact_person' => $supplier->contact_person,
                     'email' => $supplier->email,
@@ -41,6 +42,8 @@ class ProfileController extends Controller
                 ],
                 'user' => [
                     'id' => $user->id,
+                    'username' => $user->username,
+                    'full_name' => $user->full_name,
                     'role' => $user->role,
                     'must_change_password' => $user->must_change_password,
                 ],
@@ -56,6 +59,7 @@ class ProfileController extends Controller
         return response()->json([
             'profile' => [
                 'profile_type' => 'employee',
+                'username' => $user->username,
                 'employee_code' => $employee->employee_code,
                 'full_name' => $employee->full_name,
                 'email' => $employee->email,
@@ -67,6 +71,8 @@ class ProfileController extends Controller
             ],
             'user' => [
                 'id' => $user->id,
+                'username' => $user->username,
+                'full_name' => $user->full_name,
                 'role' => $user->role,
                 'must_change_password' => $user->must_change_password,
             ],
@@ -97,13 +103,17 @@ class ProfileController extends Controller
 
             $supplier->update($data);
             $supplier->refresh();
-            $user->forceFill(['name' => $supplier->name])->save();
+            $user->forceFill([
+                'name' => $supplier->name,
+                'full_name' => $supplier->name,
+            ])->save();
 
             return response()->json([
                 'message' => 'Profile updated successfully.',
                 'profile' => [
                     'profile_type' => 'supplier',
                     'supplier_code' => $supplier->code,
+                    'username' => $user->fresh()->username,
                     'name' => $supplier->name,
                     'contact_person' => $supplier->contact_person,
                     'email' => $supplier->email,
@@ -131,12 +141,16 @@ class ProfileController extends Controller
 
         $employee->update($data);
         $employee->refresh();
-        $user->forceFill(['name' => $employee->full_name])->save();
+        $user->forceFill([
+            'name' => $employee->full_name,
+            'full_name' => $employee->full_name,
+        ])->save();
 
         return response()->json([
             'message' => 'Profile updated successfully.',
             'profile' => [
                 'profile_type' => 'employee',
+                'username' => $user->fresh()->username,
                 'employee_code' => $employee->employee_code,
                 'full_name' => $employee->full_name,
                 'email' => $employee->email,

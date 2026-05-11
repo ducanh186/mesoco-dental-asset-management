@@ -367,14 +367,15 @@ class AssetCheckinTest extends TestCase
     // QR and legacy my-assets routes
     // ========================================
 
-    public function test_qr_resolve_route_returns_gone(): void
+    public function test_qr_resolve_route_rejects_invalid_payload(): void
     {
         $response = $this->actingAs($this->employeeUser)
             ->postJson('/api/qr/resolve', [
                 'payload' => 'MESOCO|ASSET|v1|legacy',
             ]);
 
-        $response->assertStatus(410);
+        $response->assertStatus(422)
+            ->assertJsonPath('error', 'INVALID_QR_FORMAT');
     }
 
     public function test_my_assets_route_returns_gone(): void

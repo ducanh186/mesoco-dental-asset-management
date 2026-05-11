@@ -20,7 +20,9 @@ class AuthTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create([
+            'username' => 'EMP001',
             'employee_code' => 'EMP001',
+            'full_name' => 'Test User',
             'email' => 'test@mesoco.vn',
             'password' => 'Password123!',
             'status' => 'active',
@@ -37,7 +39,7 @@ class AuthTest extends TestCase
     public function test_user_can_login_with_valid_credentials(): void
     {
         $response = $this->postJson('/login', [
-            'employee_code' => 'EMP001',
+            'username' => 'EMP001',
             'password' => 'Password123!',
         ]);
 
@@ -47,30 +49,30 @@ class AuthTest extends TestCase
             ])
             ->assertJsonStructure([
                 'message',
-                'user' => ['id', 'employee_code', 'name', 'email', 'role', 'status'],
+                'user' => ['id', 'username', 'full_name', 'email', 'role', 'status'],
             ]);
     }
 
     public function test_user_cannot_login_with_invalid_credentials(): void
     {
         $response = $this->postJson('/login', [
-            'employee_code' => 'EMP001',
+            'username' => 'EMP001',
             'password' => 'wrong-password',
         ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['employee_code']);
+            ->assertJsonValidationErrors(['username']);
     }
 
-    public function test_user_cannot_login_with_nonexistent_employee_code(): void
+    public function test_user_cannot_login_with_nonexistent_username(): void
     {
         $response = $this->postJson('/login', [
-            'employee_code' => 'NONEXISTENT',
+            'username' => 'NONEXISTENT',
             'password' => 'Password123!',
         ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['employee_code']);
+            ->assertJsonValidationErrors(['username']);
     }
 
     public function test_deactivated_user_cannot_login(): void
@@ -78,23 +80,23 @@ class AuthTest extends TestCase
         $this->user->update(['status' => 'inactive']);
 
         $response = $this->postJson('/login', [
-            'employee_code' => 'EMP001',
+            'username' => 'EMP001',
             'password' => 'Password123!',
         ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['employee_code'])
+            ->assertJsonValidationErrors(['username'])
             ->assertJsonFragment([
-                'employee_code' => ['Your account has been deactivated.'],
+                'username' => ['Your account has been deactivated.'],
             ]);
     }
 
-    public function test_login_requires_employee_code_and_password(): void
+    public function test_login_requires_username_and_password(): void
     {
         $response = $this->postJson('/login', []);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['employee_code', 'password']);
+            ->assertJsonValidationErrors(['username', 'password']);
     }
 
     public function test_login_rejects_old_login_field_payload(): void
@@ -106,7 +108,18 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['employee_code']);
+            ->assertJsonValidationErrors(['username']);
+    }
+
+    public function test_login_accepts_employee_code_alias_during_transition(): void
+    {
+        $response = $this->postJson('/login', [
+            'employee_code' => 'EMP001',
+            'password' => 'Password123!',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('user.username', 'EMP001');
     }
 
     /*
@@ -122,7 +135,7 @@ class AuthTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                'user' => ['id', 'employee_code', 'name', 'email', 'role', 'status'],
+                'user' => ['id', 'username', 'full_name', 'email', 'role', 'status'],
             ]);
     }
 

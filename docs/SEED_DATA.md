@@ -16,12 +16,17 @@ php artisan db:seed --class=DatabaseSeeder
 
 ## Tài Khoản Mẫu
 
-| Role | Email | Password | Mục đích |
-| --- | --- | --- | --- |
-| manager | manager@mesoco.vn | password | Quản lý toàn hệ thống |
-| technician | technician@mesoco.vn | password | Vận hành IT asset |
-| employee | employee@mesoco.vn | password | Gửi request và xem thiết bị mình phụ trách |
-| supplier | supplier@mesoco.vn | password | Theo dõi purchase order |
+Đăng nhập seed account bằng `employee_code + password`. Email được dùng cho profile và forgot-password.
+
+| Role | Employee code | Email | Password | Mục đích |
+| --- | --- | --- | --- | --- |
+| manager | E1001 | `manager@mesoco.vn` | password | Quản lý toàn hệ thống |
+| technician | E1002 | `technician@mesoco.vn` | password | Vận hành IT asset |
+| employee | E1003 | `employee@mesoco.vn` | password | Gửi request và xem thiết bị mình phụ trách |
+| employee | E1004 | `frontdesk@mesoco.vn` | password | Nhân viên lễ tân để test assignment |
+| employee | E1005 | `warehouse@mesoco.vn` | password | Nhân viên kho để test assignment |
+
+`Supplier` không được tạo trong `DatabaseSeeder`. Nếu cần test luồng supplier, tạo thêm supplier và user supplier trong seed riêng hoặc qua UI quản trị.
 
 ## Vị Trí Mẫu
 
@@ -45,7 +50,7 @@ php artisan db:seed --class=DatabaseSeeder
 
 ## Nhân Viên Chịu Trách Nhiệm
 
-Seeder tạo active assignment bằng `employee_id`. `department_name` để null trong dữ liệu active mới.
+Seeder tạo active assignment bằng `employee_id`. `department_name` để `null` trong dữ liệu active mới và chỉ giữ vai trò compatibility.
 
 ## Maintenance Demo
 

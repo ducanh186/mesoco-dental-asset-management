@@ -6,6 +6,15 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (!$this->filled('username') && $this->filled('employee_code')) {
+            $this->merge([
+                'username' => $this->input('employee_code'),
+            ]);
+        }
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,7 +31,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_code' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ];
     }
@@ -35,7 +44,7 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee_code.required' => 'The employee code field is required.',
+            'username.required' => 'The username field is required.',
             'password.required' => 'The password field is required.',
         ];
     }

@@ -172,6 +172,8 @@ export default {
         welcomeBack: 'Chào mừng trở lại',
         signInToContinue: 'Đăng nhập để tiếp tục',
         // Login page
+        username: 'Tên đăng nhập',
+        enterUsername: 'Nhập tên đăng nhập',
         employeeId: 'Mã nhân viên',
         enterEmployeeId: 'Nhập mã nhân viên',
         enterPassword: 'Nhập mật khẩu',
@@ -201,6 +203,7 @@ export default {
         failedToResetPassword: 'Đặt lại mật khẩu thất bại. Vui lòng thử lại.',
         failedToResendCode: 'Gửi lại mã thất bại. Vui lòng thử lại.',
         // New validation messages
+        usernameRequired: 'Vui lòng nhập tên đăng nhập.',
         employeeIdRequired: 'Vui lòng nhập mã nhân viên.',
         passwordRequired: 'Vui lòng nhập mật khẩu.',
         emailRequired: 'Vui lòng nhập địa chỉ email.',
@@ -210,7 +213,7 @@ export default {
         confirmPasswordRequired: 'Vui lòng xác nhận mật khẩu.',
         passwordMismatch: 'Mật khẩu không khớp.',
         // Generic error messages (security)
-        invalidCredentialsGeneric: 'Mã nhân viên hoặc mật khẩu không đúng.',
+        invalidCredentialsGeneric: 'Tên đăng nhập hoặc mật khẩu không đúng.',
         codeSentGeneric: 'Nếu email đã đăng ký, chúng tôi đã gửi mã xác thực. Vui lòng kiểm tra hộp thư.',
         passwordResetSuccess: 'Đặt lại mật khẩu thành công. Đang chuyển về trang đăng nhập...',
         // Password visibility

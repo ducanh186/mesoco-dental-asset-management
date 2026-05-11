@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Asset;
+use App\Models\Assignment;
 use App\Models\Employee;
 use App\Models\InventoryCheck;
 use App\Models\InventoryCheckItem;
@@ -160,13 +161,31 @@ class ErdAlignmentTest extends TestCase
             'employee_id' => $employee->id,
         ]);
 
+        $staffUserId = User::query()->where('employee_id', $employee->id)->value('id');
+        $assignmentId = Assignment::query()->where('staff_id', $staffUserId)->value('id');
+
         $response->assertOk()
-            ->assertJsonPath('assignment.employee_id', $employee->id);
+            ->assertJsonPath('assignment.employee_id', $employee->id)
+            ->assertJsonPath('assignment.staff_id', $staffUserId);
+
+        $this->assertNotNull($staffUserId);
 
         $this->assertDatabaseHas('asset_assignments', [
             'asset_id' => $asset->id,
             'department_name' => null,
             'employee_id' => $employee->id,
+        ]);
+
+        $this->assertDatabaseHas('assignments', [
+            'id' => $assignmentId,
+            'staff_id' => $staffUserId,
+            'admin_id' => $technician->id,
+            'approved_by' => $technician->id,
+        ]);
+
+        $this->assertDatabaseHas('assignment_details', [
+            'assignment_id' => $assignmentId,
+            'asset_id' => $asset->id,
         ]);
     }
 

@@ -27,13 +27,14 @@ class LegacyEndpointTest extends TestCase
             ->assertJsonPath('message', 'Employee contract module has been removed from the main product scope.');
     }
 
-    public function test_qr_and_personal_asset_endpoints_return_removed_scope_response(): void
+    public function test_qr_resolve_rejects_invalid_payload_while_personal_asset_endpoints_remain_removed(): void
     {
         $employee = User::factory()->employee()->create(['must_change_password' => false]);
 
         $this->actingAs($employee)
             ->postJson('/api/qr/resolve', ['payload' => 'legacy'])
-            ->assertStatus(410);
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'INVALID_QR_FORMAT');
 
         $this->actingAs($employee)
             ->getJson('/api/my-assets')

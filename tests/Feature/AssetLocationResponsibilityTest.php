@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Asset;
+use App\Models\Assignment;
 use App\Models\AssetAssignment;
 use App\Models\Employee;
 use App\Models\Location;
@@ -56,6 +57,14 @@ class AssetLocationResponsibilityTest extends TestCase
             'full_name' => 'Nguyen Van A',
             'position' => 'IT Support',
         ]);
+        $staffUser = User::factory()->employee()->create([
+            'employee_id' => $employee->id,
+            'employee_code' => $employee->employee_code,
+            'username' => 'nguyen.van.a',
+            'name' => $employee->full_name,
+            'full_name' => $employee->full_name,
+            'must_change_password' => false,
+        ]);
         $asset = Asset::factory()->create([
             'asset_code' => 'IT-LAP-001',
             'name' => 'Dell Latitude',
@@ -83,7 +92,34 @@ class AssetLocationResponsibilityTest extends TestCase
             ->assertJsonPath('asset.responsible_employee.id', $employee->id)
             ->assertJsonPath('asset.responsible_employee.employee_code', 'EMP001')
             ->assertJsonPath('asset.responsible_employee.full_name', 'Nguyen Van A')
+            ->assertJsonPath('asset.responsible_employee.user.id', $staffUser->id)
+            ->assertJsonPath('asset.responsible_employee.user.username', 'nguyen.van.a')
             ->assertJsonPath('asset.responsible_employee.position', 'IT Support');
+    }
+
+    public function test_employee_index_includes_linked_user_metadata_for_handover_dropdown(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        $employee = Employee::factory()->create([
+            'employee_code' => 'EMP-HANDOVER-001',
+            'full_name' => 'Nhan Vien Handover',
+            'status' => 'active',
+        ]);
+        $staffUser = User::factory()->employee()->create([
+            'employee_id' => $employee->id,
+            'employee_code' => $employee->employee_code,
+            'username' => 'handover.staff',
+            'name' => $employee->full_name,
+            'full_name' => $employee->full_name,
+            'must_change_password' => false,
+        ]);
+
+        $this->actingAs($manager)
+            ->getJson('/api/employees?per_page=100&status=active')
+            ->assertOk()
+            ->assertJsonPath('employees.0.id', $employee->id)
+            ->assertJsonPath('employees.0.user.id', $staffUser->id)
+            ->assertJsonPath('employees.0.user.username', 'handover.staff');
     }
 
     public function test_assign_asset_requires_employee_not_department_only(): void
@@ -151,13 +187,31 @@ class AssetLocationResponsibilityTest extends TestCase
             'status' => Asset::STATUS_ACTIVE,
         ]);
 
-        $this->actingAs($manager)
+        $response = $this->actingAs($manager)
             ->postJson("/api/assets/{$asset->id}/assign", [
                 'employee_id' => $employee->id,
             ])
             ->assertOk()
             ->assertJsonPath('assignment.employee_id', $employee->id)
             ->assertJsonPath('assignment.assigned_by', $manager->id);
+
+        $staffUserId = User::where('employee_id', $employee->id)->value('id');
+
+        $this->assertNotNull($staffUserId);
+        $response->assertJsonPath('assignment.staff_id', $staffUserId);
+
+        $this->assertDatabaseHas('assignments', [
+            'staff_id' => $staffUserId,
+            'admin_id' => $manager->id,
+            'approved_by' => $manager->id,
+        ]);
+
+        $assignmentId = Assignment::where('staff_id', $staffUserId)->value('id');
+
+        $this->assertDatabaseHas('assignment_details', [
+            'assignment_id' => $assignmentId,
+            'asset_id' => $asset->id,
+        ]);
 
         $this->assertDatabaseHas('asset_assignments', [
             'asset_id' => $asset->id,
@@ -176,7 +230,15 @@ class AssetLocationResponsibilityTest extends TestCase
         $this->actingAs($manager)
             ->postJson("/api/assets/{$asset->id}/unassign")
             ->assertOk()
+            ->assertJsonPath('previous_assignment.staff_id', $staffUserId)
             ->assertJsonPath('previous_assignment.employee_id', $employee->id);
+
+        $this->assertDatabaseHas('returns', [
+            'assignment_id' => $assignmentId,
+            'staff_id' => $staffUserId,
+            'admin_id' => $manager->id,
+            'approved_by' => $manager->id,
+        ]);
 
         $this->assertDatabaseMissing('asset_assignments', [
             'asset_id' => $asset->id,

@@ -168,6 +168,8 @@ export default {
         welcomeBack: 'Welcome back',
         signInToContinue: 'Sign in to continue',
         // Login page
+        username: 'Username',
+        enterUsername: 'Enter your username',
         employeeId: 'Employee ID',
         enterEmployeeId: 'Enter your employee ID',
         enterPassword: 'Enter your password',
@@ -197,6 +199,7 @@ export default {
         failedToResetPassword: 'Failed to reset password. Please try again.',
         failedToResendCode: 'Failed to resend code. Please try again.',
         // New validation messages
+        usernameRequired: 'Username is required.',
         employeeIdRequired: 'Employee ID is required.',
         passwordRequired: 'Password is required.',
         emailRequired: 'Email address is required.',
@@ -206,7 +209,7 @@ export default {
         confirmPasswordRequired: 'Please confirm your password.',
         passwordMismatch: 'Passwords do not match.',
         // Generic error messages (security)
-        invalidCredentialsGeneric: 'Invalid employee ID or password.',
+        invalidCredentialsGeneric: 'Invalid username or password.',
         codeSentGeneric: 'If the email is registered, we\'ve sent a verification code to your inbox. Please check your email.',
         passwordResetSuccess: 'Password reset successful. Redirecting to login...',
         // Password visibility

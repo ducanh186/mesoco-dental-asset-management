@@ -37,6 +37,18 @@ class Asset extends Model
     public const STATUS_MAINTENANCE = 'maintenance';
     public const STATUS_RETIRED = 'retired';
 
+    public const ERD_STATUS_AVAILABLE = 'Available';
+    public const ERD_STATUS_ASSIGNED = 'Assigned';
+    public const ERD_STATUS_REPAIRING = 'Repairing';
+    public const ERD_STATUS_DISPOSED = 'Disposed';
+
+    public const ERD_STATUSES = [
+        self::ERD_STATUS_AVAILABLE,
+        self::ERD_STATUS_ASSIGNED,
+        self::ERD_STATUS_REPAIRING,
+        self::ERD_STATUS_DISPOSED,
+    ];
+
     /**
      * Depreciation methods
      */
@@ -67,7 +79,10 @@ class Asset extends Model
      */
     protected $fillable = [
         'asset_code',
+        'serial_number',
         'name',
+        'model',
+        'configuration',
         'type',
         'category',
         'category_id',
@@ -79,12 +94,16 @@ class Asset extends Model
         'instructions_url',
         'purchase_date',
         'purchase_cost',
+        'purchase_price',
         'useful_life_months',
         'salvage_value',
         'depreciation_method',
         'depreciation_rate',
+        'current_depreciation_rate',
         'warranty_expiry',
         'warranty_period_months',
+        'qr_value',
+        'qr_code',
         // Off-service metadata (Phase 7)
         'off_service_reason',
         'off_service_from',
@@ -101,9 +120,11 @@ class Asset extends Model
             'purchase_date' => 'date',
             'warranty_expiry' => 'date',
             'purchase_cost' => 'decimal:2',
+            'purchase_price' => 'decimal:2',
             'salvage_value' => 'decimal:2',
             'warranty_period_months' => 'integer',
             'depreciation_rate' => 'decimal:4',
+            'current_depreciation_rate' => 'decimal:4',
             'off_service_from' => 'datetime',
             'off_service_until' => 'datetime',
         ];
@@ -112,6 +133,36 @@ class Asset extends Model
     protected static function booted(): void
     {
         static::saving(function (self $asset) {
+            $asset->status = self::normalizeStatusInput($asset->status) ?? self::STATUS_ACTIVE;
+
+            if (($asset->getAttributes()['serial_number'] ?? null) === null && $asset->asset_code) {
+                $asset->serial_number = $asset->asset_code;
+            }
+
+            if (($asset->getAttributes()['qr_code'] ?? null) === null && ($asset->getAttributes()['qr_value'] ?? null) !== null) {
+                $asset->qr_code = $asset->qr_value;
+            }
+
+            if (($asset->getAttributes()['qr_value'] ?? null) === null && ($asset->getAttributes()['qr_code'] ?? null) !== null) {
+                $asset->qr_value = $asset->qr_code;
+            }
+
+            if (($asset->getAttributes()['purchase_price'] ?? null) === null && $asset->purchase_cost !== null) {
+                $asset->purchase_price = $asset->purchase_cost;
+            }
+
+            if (($asset->getAttributes()['purchase_cost'] ?? null) === null && $asset->purchase_price !== null) {
+                $asset->purchase_cost = $asset->purchase_price;
+            }
+
+            if (($asset->getAttributes()['current_depreciation_rate'] ?? null) === null && $asset->depreciation_rate !== null) {
+                $asset->current_depreciation_rate = $asset->depreciation_rate;
+            }
+
+            if (($asset->getAttributes()['depreciation_rate'] ?? null) === null && $asset->current_depreciation_rate !== null) {
+                $asset->depreciation_rate = $asset->current_depreciation_rate;
+            }
+
             if ($asset->category) {
                 $asset->category_id = Category::query()->firstOrCreate(
                     ['code' => Str::slug($asset->category, '_')],
@@ -167,6 +218,45 @@ class Asset extends Model
             self::STATUS_OFF_SERVICE => 'Asset is off service',
             default => null,
         };
+    }
+
+    public static function normalizeStatusInput(?string $status): ?string
+    {
+        if ($status === null) {
+            return null;
+        }
+
+        $normalized = Str::lower(trim($status));
+
+        return match ($normalized) {
+            self::STATUS_ACTIVE,
+            self::STATUS_OFF_SERVICE,
+            self::STATUS_MAINTENANCE,
+            self::STATUS_RETIRED => $normalized,
+            'available', 'assigned' => self::STATUS_ACTIVE,
+            'repairing' => self::STATUS_MAINTENANCE,
+            'disposed' => self::STATUS_RETIRED,
+            default => $status,
+        };
+    }
+
+    public function getLifecycleStatusAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_MAINTENANCE => self::ERD_STATUS_REPAIRING,
+            self::STATUS_RETIRED, self::STATUS_OFF_SERVICE => self::ERD_STATUS_DISPOSED,
+            self::STATUS_ACTIVE => $this->hasActiveAssignmentRelation() ? self::ERD_STATUS_ASSIGNED : self::ERD_STATUS_AVAILABLE,
+            default => (string) $this->status,
+        };
+    }
+
+    private function hasActiveAssignmentRelation(): bool
+    {
+        if ($this->relationLoaded('currentAssignment')) {
+            return $this->getRelation('currentAssignment') !== null;
+        }
+
+        return $this->currentAssignment()->exists();
     }
 
     /**
@@ -241,6 +331,16 @@ class Asset extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(AssetAssignment::class);
+    }
+
+    public function qrIdentities(): HasMany
+    {
+        return $this->hasMany(AssetQrIdentity::class);
+    }
+
+    public function latestQrIdentity(): HasOne
+    {
+        return $this->hasOne(AssetQrIdentity::class)->latestOfMany();
     }
 
     /**
@@ -322,8 +422,11 @@ class Asset extends Model
         if ($search !== '') {
             return $query->where(function ($q) use ($search) {
                 $q->where('asset_code', 'like', "%{$search}%")
+                                    ->orWhere('serial_number', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%")
+                                    ->orWhere('model', 'like', "%{$search}%")
                   ->orWhere('category', 'like', "%{$search}%")
+                                    ->orWhere('qr_code', 'like', "%{$search}%")
                   ->orWhere('location', 'like', "%{$search}%")
                   ->orWhereHas('locationDefinition', function ($locationQuery) use ($search) {
                       $locationQuery->where('code', 'like', "%{$search}%")
@@ -560,14 +663,21 @@ class Asset extends Model
      */
     public function getValuationData(?Carbon $asOfDate = null): array
     {
+        $purchaseDate = $this->purchase_date
+            ? Carbon::parse((string) $this->purchase_date)->toDateString()
+            : null;
+        $warrantyExpiry = $this->warranty_expiry
+            ? Carbon::parse((string) $this->warranty_expiry)->toDateString()
+            : null;
+
         return [
-            'purchase_date' => $this->purchase_date?->toDateString(),
+            'purchase_date' => $purchaseDate,
             'purchase_cost' => $this->purchase_cost ? (float) $this->purchase_cost : null,
             'useful_life_months' => $this->useful_life_months,
             'salvage_value' => (float) ($this->salvage_value ?? 0),
             'depreciation_method' => $this->depreciation_method ?? self::DEPRECIATION_TIME,
             'depreciation_rate' => $this->depreciation_rate ? (float) $this->depreciation_rate : null,
-            'warranty_expiry' => $this->warranty_expiry?->toDateString(),
+            'warranty_expiry' => $warrantyExpiry,
             'warranty_period_months' => $this->warranty_period_months,
             'months_in_service' => $this->getMonthsInService($asOfDate),
             'monthly_depreciation' => $this->getMonthlyDepreciation(),

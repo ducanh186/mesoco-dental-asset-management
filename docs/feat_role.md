@@ -8,6 +8,8 @@ Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên ch�
 - [x] Asset lưu ngày mua, giá mua, thời hạn sử dụng, giá trị thu hồi và bảo hành.
 - [x] Asset có trạng thái active, maintenance, off service, retired.
 - [x] API asset trả structured `location` và `responsible_employee`.
+- [x] Asset workspace hỗ trợ tìm theo mã tài sản, danh mục, vị trí và người đang giữ.
+- [x] Asset workspace có filter riêng cho vị trí, trạng thái và assignment.
 
 ## Location
 
@@ -21,6 +23,9 @@ Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên ch�
 - [x] `POST /api/assets/{id}/assign` nhận `{ employee_id: number }`.
 - [x] Gửi `department_name` mà không có `employee_id` bị reject `422`.
 - [x] Asset hiển thị nhân viên chịu trách nhiệm hiện tại.
+- [x] Manager có thể assign và unassign trực tiếp từ asset workspace.
+- [x] Chỉ asset `active` và chưa có active assignment mới xuất hiện trong danh sách available.
+- [x] Asset đang `maintenance` hoặc `retired` bị chặn assign.
 - [x] Dashboard employee đọc dữ liệu từ `/api/my-assigned-assets/dropdown`.
 - [x] `/api/department-assets/dropdown` vẫn là alias compatibility.
 
@@ -43,6 +48,7 @@ Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên ch�
 - [x] Tính giá trị còn lại theo purchase cost, useful life và salvage value.
 - [x] Theo dõi warranty expiring soon.
 - [x] Location filter dùng canonical location code/name.
+- [x] Dashboard manager và technician hiển thị valuation summary, phân bổ tài sản và depreciation alert.
 
 ## Depreciation Và Disposal
 
@@ -55,6 +61,7 @@ Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên ch�
 ## Purchase Orders Và Supplier
 
 - [x] Manager/technician tạo đơn mua hàng.
+- [x] Form purchase order gom khối nhà cung cấp, danh sách dòng hàng và tổng tiền.
 - [x] Supplier chỉ xem đơn thuộc supplier của mình.
 - [x] Supplier cập nhật trạng thái preparing, shipping, delivered.
 
@@ -64,6 +71,7 @@ Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên ch�
 - [x] Endpoint cũ về personal asset/history trả `410 Gone`.
 - [x] Endpoint cũ về available-for-loan trả `410 Gone`.
 - [x] Endpoint cũ về employee contract trả `410 Gone`.
+- [x] Endpoint removed scope trả JSON message rõ ràng thay vì lỗi mơ hồ.
 - [x] Không drop migration lịch sử trong cleanup này.
 
 ## Test Và Build

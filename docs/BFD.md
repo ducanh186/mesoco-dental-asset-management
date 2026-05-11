@@ -6,28 +6,33 @@
 
 ```mermaid
 flowchart LR
-    A["Asset Catalog<br/>Danh mục tài sản"] --> B["Location<br/>Vị trí"]
-    A --> C["Responsible Employee<br/>Nhân viên chịu trách nhiệm"]
-    C --> D["Maintenance / Request<br/>Bảo trì hoặc phiếu yêu cầu"]
-    A --> E["Depreciation Proposal<br/>Đề xuất thu hủy khi khấu hao > 75%"]
-    E --> F["Disposal<br/>Thu hủy tài sản"]
-    F --> G["Clear Location + Responsible Employee<br/>Xóa vị trí và người phụ trách active"]
+    A["Dashboard<br/>Tổng quan vận hành"] --> B["Asset Workspace<br/>Tra cứu theo mã, danh mục, vị trí, người giữ"]
+    B --> C["Location<br/>Vị trí"]
+    B --> D["Responsible Employee<br/>Nhân viên chịu trách nhiệm"]
+    D --> E["Maintenance / Request<br/>Bảo trì hoặc phiếu yêu cầu"]
+    B --> F["Valuation + Warranty<br/>Giá trị còn lại và bảo hành"]
+    F --> G["Depreciation Alert<br/>Cảnh báo > 65%, đề xuất > 75%"]
+    A --> H["Purchase Order Workspace<br/>Nhà cung cấp và tổng tiền"]
+    G --> I["Disposal<br/>Thu hủy tài sản"]
+    I --> J["Clear Location + Responsible Employee<br/>Xóa vị trí và người phụ trách active"]
 ```
 
 ## Cách Kể Cho Khách
 
-1. Công ty tạo tài sản trong `Asset Catalog`.
-2. Mỗi tài sản được đặt tại một `Location`.
-3. Nếu tài sản có người theo dõi, hệ thống gắn một `Responsible Employee`.
-4. Nhân viên phụ trách có thể gửi request khi tài sản gặp sự cố.
-5. Technician xử lý maintenance và cập nhật kết quả.
-6. Hệ thống tính depreciation để đưa ra danh sách đề xuất thu hủy khi vượt `75%`.
-7. Khi thu hủy thật, tài sản chuyển sang `retired`, không còn vị trí active và không còn người phụ trách active.
+1. Manager hoặc technician mở `Dashboard` để nhìn tổng giá trị tồn kho, thiết bị gián đoạn và cảnh báo khấu hao.
+2. Từ thanh tìm kiếm hoặc dashboard, người vận hành mở `Asset Workspace` để tra cứu đúng tài sản.
+3. Mỗi tài sản được gắn với một `Location` và có thể có một `Responsible Employee` đang active.
+4. Từ màn hình asset, người vận hành có thể bàn giao, thu hồi hoặc mở `Maintenance Workspace`.
+5. Nhân viên phụ trách gửi request khi tài sản gặp sự cố hoặc cần vật tư.
+6. Hệ thống tính valuation, warranty và depreciation để đưa ra danh sách cần theo dõi hoặc đề xuất thu hủy khi vượt `75%`.
+7. Nếu cần mua thêm thiết bị, manager hoặc technician tạo `Purchase Order` theo nhà cung cấp.
+8. Khi thu hủy thật, tài sản chuyển sang `retired`, không còn vị trí active và không còn người phụ trách active.
 
 ## Vì Sao Dễ Trình Bày
 
-- Chỉ có một trung tâm là `Asset`.
+- Chỉ có một trung tâm là `Asset` và một workspace tra cứu để thao tác nhanh.
 - `Location` trả lời "tài sản ở đâu".
 - `Responsible Employee` trả lời "ai chịu trách nhiệm".
-- `Depreciation Proposal` chỉ là danh sách gợi ý, không tự xóa tài sản.
+- `Dashboard` gom valuation, hàng đợi và cảnh báo để ra quyết định.
+- `Depreciation Alert` chỉ là danh sách gợi ý, không tự xóa tài sản.
 - `Disposal` là bước chốt vòng đời tài sản.

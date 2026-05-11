@@ -20,18 +20,18 @@ class AuthController extends Controller
 
     /**
      * POST /login
-     * Login with employee_code + password.
+     * Login with username + password.
      */
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = [
-            'employee_code' => $request->employee_code,
+            'username' => $request->username,
             'password' => $request->password,
         ];
 
         if (!Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'employee_code' => ['The provided credentials are incorrect.'],
+                'username' => ['The provided credentials are incorrect.'],
             ]);
         }
 
@@ -40,7 +40,7 @@ class AuthController extends Controller
         if ($user->status !== 'active') {
             Auth::logout();
             throw ValidationException::withMessages([
-                'employee_code' => ['Your account has been deactivated.'],
+                'username' => ['Your account has been deactivated.'],
             ]);
         }
 
