@@ -288,7 +288,7 @@ const Dashboard = ({ user }) => {
             const totalInventoryValue = inventoryValuation?.total_current_book_value || 0;
             const inProgressCount = maintenanceEvents.filter(m => m.status === 'in_progress').length;
             const scheduledCount = maintenanceEvents.filter(m => m.status === 'scheduled').length;
-            const highDepreciationCount = globalAssets.filter((asset) => Number(asset.valuation?.depreciation_percentage || 0) >= 75).length;
+            const highDepreciationCount = globalAssets.filter((asset) => Number(asset.valuation?.depreciation_percentage || 0) > 75).length;
 
             return [
                 {
@@ -527,7 +527,7 @@ const Dashboard = ({ user }) => {
                     <div className="mb-4 flex items-start justify-between gap-4">
                         <div>
                             <h3 className="text-lg font-semibold text-text">Cảnh báo khấu hao</h3>
-                            <p className="text-sm text-text-muted mt-1">Danh sách thiết bị đang tiến sát hoặc vượt ngưỡng đề xuất thu hủy 75%.</p>
+                            <p className="text-sm text-text-muted mt-1">Danh sách thiết bị đang tiến sát ngưỡng hoặc đã vượt mốc đề xuất thu hủy 75%.</p>
                         </div>
                         <Badge variant={depreciationAlerts.length > 0 ? 'warning' : 'success'} size="sm">
                             {depreciationAlerts.length > 0 ? `${depreciationAlerts.length} cần theo dõi` : 'Ổn định'}
@@ -551,8 +551,8 @@ const Dashboard = ({ user }) => {
                                             <div className="text-sm font-semibold text-text">{asset.percentage.toFixed(1)}%</div>
                                             <div className="text-xs text-text-muted">Giá trị còn lại {formatCurrency(asset.currentBookValue)}</div>
                                         </div>
-                                        <Badge variant={asset.percentage >= 75 ? 'danger' : 'warning'} size="sm">
-                                            {asset.percentage >= 75 ? 'Đề xuất thu hủy' : 'Gần ngưỡng'}
+                                        <Badge variant={asset.percentage > 75 ? 'danger' : 'warning'} size="sm">
+                                            {asset.percentage > 75 ? 'Đề xuất thu hủy' : 'Theo dõi'}
                                         </Badge>
                                     </div>
                                 </div>

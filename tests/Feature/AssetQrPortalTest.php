@@ -79,6 +79,61 @@ class AssetQrPortalTest extends TestCase
             ->assertJsonPath('portal_url', route('asset-portal.show', ['qrUid' => $qrIdentity->qr_uid]));
     }
 
+    public function test_internal_user_can_resolve_qr_portal_url_to_asset_data(): void
+    {
+        $employee = User::factory()->employee()->create(['must_change_password' => false]);
+        $asset = Asset::factory()->create([
+            'name' => 'Resolve Portal URL Workstation',
+            'serial_number' => 'SN-QR-URL-0001',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+        $qrIdentity = AssetQrIdentity::create([
+            'qr_uid' => '12121212-1212-4212-8212-121212121212',
+            'asset_id' => $asset->id,
+            'payload_version' => 'v1',
+            'printed_at' => now(),
+        ]);
+
+        $portalUrl = route('asset-portal.show', ['qrUid' => $qrIdentity->qr_uid]);
+
+        $this->actingAs($employee)
+            ->postJson('/api/qr/resolve', ['payload' => $portalUrl])
+            ->assertOk()
+            ->assertJsonPath('asset.id', $asset->id)
+            ->assertJsonPath('asset.name', 'Resolve Portal URL Workstation')
+            ->assertJsonPath('asset.serial_number', 'SN-QR-URL-0001')
+            ->assertJsonPath('asset.qr.uid', $qrIdentity->qr_uid)
+            ->assertJsonPath('portal_url', $portalUrl);
+    }
+
+    public function test_asset_list_and_detail_include_qr_portal_url(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        $asset = Asset::factory()->create([
+            'name' => 'List QR Portal Asset',
+            'asset_code' => 'IT-QR-LIST-001',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+        $qrIdentity = AssetQrIdentity::create([
+            'qr_uid' => '55555555-5555-4555-8555-555555555555',
+            'asset_id' => $asset->id,
+            'payload_version' => 'v1',
+        ]);
+        $portalUrl = route('asset-portal.show', ['qrUid' => $qrIdentity->qr_uid]);
+
+        $this->actingAs($manager)
+            ->getJson('/api/assets?search=IT-QR-LIST-001')
+            ->assertOk()
+            ->assertJsonPath('assets.0.qr.payload', 'MESOCO|ASSET|v1|' . $qrIdentity->qr_uid)
+            ->assertJsonPath('assets.0.qr.portal_url', $portalUrl);
+
+        $this->actingAs($manager)
+            ->getJson("/api/assets/{$asset->id}")
+            ->assertOk()
+            ->assertJsonPath('asset.qr.payload', 'MESOCO|ASSET|v1|' . $qrIdentity->qr_uid)
+            ->assertJsonPath('asset.qr.portal_url', $portalUrl);
+    }
+
     public function test_qr_resolve_filters_asset_portal_data_by_user_role(): void
     {
         $employee = User::factory()->employee()->create(['must_change_password' => false]);
@@ -96,6 +151,7 @@ class AssetQrPortalTest extends TestCase
             ->json('asset');
 
         $this->assertSame('Nguyen Van Chu So Huu', $employeeAsset['responsible_employee']['full_name']);
+        $this->assertSame(['view_basic', 'report_issue'], $employeeAsset['available_actions']);
         $this->assertArrayNotHasKey('technical', $employeeAsset);
         $this->assertArrayNotHasKey('supplier', $employeeAsset);
         $this->assertArrayNotHasKey('purchase_price', $employeeAsset);
@@ -109,6 +165,7 @@ class AssetQrPortalTest extends TestCase
 
         $this->assertEquals(25.0, $technicianAsset['technical']['current_depreciation_rate']);
         $this->assertEquals(9000000.0, $technicianAsset['technical']['remaining_value']);
+        $this->assertSame(['view_basic', 'view_technical', 'open_maintenance', 'inventory_check'], $technicianAsset['available_actions']);
         $this->assertArrayHasKey('repair_logs', $technicianAsset['technical']);
         $this->assertArrayNotHasKey('supplier', $technicianAsset);
         $this->assertArrayNotHasKey('purchase_price', $technicianAsset);
@@ -124,6 +181,49 @@ class AssetQrPortalTest extends TestCase
 
         $this->assertSame($asset->id, $managerAsset['id']);
         $this->assertEquals(12000000.0, $managerAsset['purchase_price']);
+        $this->assertSame([
+            'view_basic',
+            'view_technical',
+            'view_supplier',
+            'regenerate_qr',
+            'review_disposal',
+        ], $managerAsset['available_actions']);
+    }
+
+    public function test_technician_qr_repair_logs_fall_back_to_maintenance_details(): void
+    {
+        $technician = User::factory()->technician()->create(['must_change_password' => false]);
+        $asset = Asset::factory()->create([
+            'name' => 'Maintenance Detail Asset',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+        $maintenanceEvent = MaintenanceEvent::factory()->completed()->create([
+            'asset_id' => $asset->id,
+            'completed_at' => '2026-05-08 10:00:00',
+        ]);
+        MaintenanceDetail::create([
+            'maintenance_event_id' => $maintenanceEvent->id,
+            'asset_id' => $asset->id,
+            'technician_user_id' => $technician->id,
+            'status' => 'completed',
+            'issue_description' => 'Fan noise',
+            'action_taken' => 'Cleaned fan',
+            'completed_at' => '2026-05-08 10:00:00',
+            'logged_at' => '2026-05-08 10:05:00',
+        ]);
+        $qrIdentity = AssetQrIdentity::create([
+            'qr_uid' => '44444444-4444-4444-8444-444444444444',
+            'asset_id' => $asset->id,
+            'payload_version' => 'v1',
+        ]);
+
+        $assetPayload = $this->actingAs($technician)
+            ->postJson('/api/qr/resolve', ['payload' => 'MESOCO|ASSET|v1|' . $qrIdentity->qr_uid])
+            ->assertOk()
+            ->json('asset');
+
+        $this->assertSame('Fan noise', $assetPayload['technical']['repair_logs'][0]['issue_description']);
+        $this->assertSame('Cleaned fan', $assetPayload['technical']['repair_logs'][0]['action_taken']);
     }
 
     public function test_asset_portal_view_renders_resolved_asset_details(): void

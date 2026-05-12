@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
 
 /**
- * Breadcrumbs - OrangeHRM-inspired breadcrumb navigation
+ * Breadcrumbs - Mesoco breadcrumb navigation
  * 
  * @param {Array} items - Array of breadcrumb items: { label: string, path?: string }
  *                        Last item should not have a path (current page)

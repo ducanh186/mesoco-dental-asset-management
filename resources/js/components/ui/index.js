@@ -1,5 +1,5 @@
 // UI Components - Barrel Export
-// OrangeHRM-inspired component library
+// Mesoco component library
 
 export { default as Button, ButtonGroup } from './Button';
 export { default as Input, Textarea } from './Input';

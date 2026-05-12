@@ -4,20 +4,21 @@
    Tailwind v4 Theme Configuration - Semantic Design Tokens
    ============================================================================ */
 @theme {
-    /* Primary Colors - Orange accent (OrangeHRM-inspired) */
-    --color-primary: #ff7b1c;
-    --color-primary-hover: #e56a10;
-    --color-primary-light: #ff9a4d;
-    --color-primary-muted: oklch(75% 0.15 45);
+    /* Primary Colors - Mesoco blue with a small orange accent */
+    --color-primary: #1f67a7;
+    --color-primary-hover: #154d84;
+    --color-primary-light: #4f9bd7;
+    --color-primary-muted: #d9ecfb;
+    --color-accent: #f5822a;
     
     /* Surface Colors */
     --color-surface: #ffffff;
-    --color-surface-hover: #f8f7fc;
-    --color-surface-muted: #f1f0f6;
-    --color-surface-invert: #1e293b;
+    --color-surface-hover: #f2f8fd;
+    --color-surface-muted: #eaf4ff;
+    --color-surface-invert: #0f2742;
     
     /* Background Colors */
-    --color-background: #f6f5fb;
+    --color-background: #f7fbff;
     --color-background-alt: #fafafa;
     
     /* Text Colors */
@@ -29,7 +30,7 @@
     /* Border Colors */
     --color-border: #e5e7eb;
     --color-border-hover: #d1d5db;
-    --color-border-focus: #ff7b1c;
+    --color-border-focus: #1f67a7;
     
     /* Status Colors */
     --color-success: #2ecc71;
@@ -80,11 +81,13 @@
    CSS Variables - Legacy Support & Additional Tokens
    ============================================================================ */
 :root {
-    /* Primary Colors - Orange accent like OrangeHRM */
-    --color-primary: #ff7b1c;
-    --color-primary-dark: #e56a10;
-    --color-primary-light: #ff9a4d;
-    --color-primary-rgb: 255, 123, 28;
+    /* Primary Colors - Mesoco blue */
+    --color-primary: #1f67a7;
+    --color-primary-dark: #154d84;
+    --color-primary-light: #4f9bd7;
+    --color-primary-rgb: 31, 103, 167;
+    --color-accent: #f5822a;
+    --color-accent-rgb: 245, 130, 42;
     
     /* Secondary & Neutral */
     --color-secondary: #64748b;
@@ -93,11 +96,12 @@
     --color-error: #e74c3c;
     --color-info: #3498db;
     
-    /* Background Colors - Light gray interface like OrangeHRM */
-    --color-bg: #f6f5fb;
-    --color-bg-dark: #1a202c;
+    /* Background Colors - Mesoco blue/white interface */
+    --color-bg: #f7fbff;
+    --color-bg-dark: #0f2742;
     --color-surface: #ffffff;
-    --color-surface-hover: #f1f0f6;
+    --color-surface-hover: #f2f8fd;
+    --color-surface-muted: #eaf4ff;
     
     /* Text Colors */
     --color-text: #2c3e50;
@@ -114,7 +118,7 @@
     --topbar-height: 64px;
     --container-padding: 25px;
     
-    /* Shadows - Subtle like OrangeHRM */
+    /* Shadows - subtle enterprise UI */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
@@ -126,7 +130,7 @@
     --transition: 200ms ease;
     --transition-slow: 300ms ease;
     
-    /* Border Radius - Rounded like OrangeHRM */
+    /* Border Radius */
     --radius-sm: 0.375rem;
     --radius: 0.5rem;
     --radius-lg: 1.2rem;
@@ -180,14 +184,14 @@ body {
 }
 
 /* ============================================================================
-   Auth Layout (Login Page) - OrangeHRM-Inspired
+   Auth Layout (Login Page) - Mesoco
    ============================================================================ */
 .auth-layout {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #ff7b1c 0%, #ff9a4d 50%, #ffb980 100%);
+    background: linear-gradient(135deg, #f7fbff 0%, #eaf4ff 52%, #ffffff 100%);
     padding: 1rem;
 }
 
@@ -255,7 +259,7 @@ body {
 }
 
 /* ============================================================================
-   Admin Layout - OrangeHRM-Inspired
+   Admin Layout - Mesoco
    ============================================================================ */
 .admin-layout {
     display: flex;
@@ -274,7 +278,7 @@ body {
 }
 
 /* ============================================================================
-   Sidebar - OrangeHRM-Inspired
+   Sidebar - Mesoco
    ============================================================================ */
 .sidebar {
     width: var(--sidebar-width);
@@ -313,11 +317,22 @@ body {
     overflow: hidden;
 }
 
-.logo-icon {
+.logo-mark {
     width: 36px;
     height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    color: var(--color-primary);
+    border-radius: var(--radius);
+    background: #ffffff;
+    padding: 0.25rem;
+}
+
+.logo-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .logo-text {
@@ -515,7 +530,7 @@ body {
 }
 
 /* ============================================================================
-   Topbar - OrangeHRM-Inspired
+   Topbar - Mesoco
    ============================================================================ */
 .topbar {
     height: var(--topbar-height);
@@ -1213,7 +1228,7 @@ body {
     font-size: 0.8125rem;
     color: var(--color-text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0;
 }
 
 .data-table td {
@@ -1289,7 +1304,7 @@ body {
 }
 
 /* ============================================================================
-   Cards - OrangeHRM-Inspired
+   Cards - Mesoco
    ============================================================================ */
 .card {
     background: var(--color-surface);
@@ -1712,7 +1727,7 @@ body {
 }
 
 /* ============================================================================
-   Badges - OrangeHRM-Inspired
+   Badges - Mesoco
    ============================================================================ */
 .badge {
     display: inline-block;
@@ -1925,7 +1940,7 @@ hr {
 }
 
 /* ============================================================================
-   UI COMPONENTS LIBRARY - OrangeHRM-Inspired
+   UI COMPONENTS LIBRARY - Mesoco
    ============================================================================ */
 
 /* ============================================================================
@@ -2499,7 +2514,7 @@ hr {
     color: var(--color-text-muted);
     font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0;
     border-bottom: 1px solid var(--color-border);
     white-space: nowrap;
 }
@@ -2861,26 +2876,31 @@ hr {
     padding: 1rem;
     background-color: var(--color-surface);
     border-radius: 0.5rem;
-    box-shadow: var(--shadow-dropdown);
-    border-left: 4px solid;
+    box-shadow: 0 16px 40px rgb(15 39 66 / 0.18);
+    border: 1px solid var(--color-border);
+    border-left: 5px solid;
     pointer-events: auto;
     animation: slideInRight 0.3s ease-out;
 }
 
 .ui-toast-success {
     border-left-color: var(--color-success);
+    background: linear-gradient(90deg, rgba(46, 204, 113, 0.12), #ffffff 34%);
 }
 
 .ui-toast-error {
     border-left-color: var(--color-error);
+    background: linear-gradient(90deg, rgba(231, 76, 60, 0.12), #ffffff 34%);
 }
 
 .ui-toast-warning {
     border-left-color: var(--color-warning);
+    background: linear-gradient(90deg, rgba(241, 196, 15, 0.18), #ffffff 34%);
 }
 
 .ui-toast-info {
     border-left-color: var(--color-info);
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.12), #ffffff 34%);
 }
 
 .ui-toast-icon {
@@ -3025,7 +3045,7 @@ hr {
     font-weight: 600;
     color: var(--color-text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
     margin: 0 0 1rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px dashed var(--color-border);

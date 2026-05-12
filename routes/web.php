@@ -32,6 +32,18 @@ Route::prefix('forgot-password')->group(function () {
 Route::get('/asset-portal/{qrUid}', [\App\Http\Controllers\AssetController::class, 'portal'])
     ->name('asset-portal.show');
 
+Route::get('/images/{path}', function (string $path) {
+    $basePath = realpath(public_path('images'));
+    $filePath = realpath(public_path("images/{$path}"));
+
+    abort_if(
+        !$basePath || !$filePath || !str_starts_with($filePath, $basePath . DIRECTORY_SEPARATOR),
+        404
+    );
+
+    return response()->file($filePath);
+})->where('path', '.*');
+
 /*
 |--------------------------------------------------------------------------
 | Login Page Route (Named for middleware redirects)

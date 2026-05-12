@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Button Component - OrangeHRM-inspired
+ * Button Component - Mesoco UI
  * 
  * @param {string} variant - 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline'
  * @param {string} size - 'sm' | 'md' | 'lg'

@@ -2,7 +2,7 @@ import React, { forwardRef, useId } from 'react';
 import { useI18n } from '../../i18n';
 
 /**
- * Select Component - OrangeHRM-inspired
+ * Select Component - Mesoco UI
  * 
  * @param {string} label - Label text
  * @param {string} helper - Helper text below select

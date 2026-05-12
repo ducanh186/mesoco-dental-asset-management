@@ -2,7 +2,7 @@ import React from 'react';
 import { useI18n } from '../../i18n';
 
 /**
- * Badge Component - OrangeHRM-inspired status pill
+ * Badge Component - Mesoco UI status pill
  * 
  * @param {string} variant - 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info'
  * @param {string} size - 'sm' | 'md' | 'lg'

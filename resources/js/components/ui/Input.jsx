@@ -1,7 +1,7 @@
 import React, { forwardRef, useId } from 'react';
 
 /**
- * Input Component - OrangeHRM-inspired
+ * Input Component - Mesoco UI
  * 
  * @param {string} label - Label text
  * @param {string} helper - Helper text below input

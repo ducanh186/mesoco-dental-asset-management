@@ -4,7 +4,7 @@ import Topbar from './Topbar';
 import Breadcrumbs from './Breadcrumbs';
 
 /**
- * AdminLayout - OrangeHRM-inspired admin layout
+ * AdminLayout - Mesoco admin layout
  * Features: Collapsible sidebar, responsive topbar, breadcrumbs, main content area
  */
 const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {

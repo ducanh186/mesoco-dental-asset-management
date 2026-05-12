@@ -2,7 +2,7 @@ import React from 'react';
 import { useI18n } from '../../i18n';
 
 /**
- * StatCard - OrangeHRM-inspired summary card with accent color
+ * StatCard - Mesoco summary card with accent color
  * 
  * @param {Object} props
  * @param {string} props.title - Card title (i18n key or text)

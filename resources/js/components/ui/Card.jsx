@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Card Component - OrangeHRM-inspired container
+ * Card Component - Mesoco UI container
  * 
  * @param {string} variant - 'default' | 'outlined' | 'elevated'
  * @param {boolean} noPadding - Removes default padding

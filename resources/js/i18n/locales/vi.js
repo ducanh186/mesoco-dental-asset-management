@@ -109,6 +109,7 @@ export default {
     nav: {
         dashboard: 'Tổng quan',
         profile: 'Hồ sơ',
+        qrScan: 'Quét QR tài sản',
         catalogRecords: 'Quản lý danh mục & hồ sơ',
         allocationManagement: 'Quản lý cấp phát',
         employees: 'Hồ sơ nhân viên',
@@ -245,7 +246,7 @@ export default {
         employee: 'Nhân viên', // DB value 'employee' displays as 'Nhân viên'
         technician: 'Kỹ thuật viên',
         manager: 'Quản lý',
-        owner: 'Chủ phòng khám',
+        owner: 'Quản lý hệ thống',
         hr: 'Kỹ thuật viên',
         supplier: 'Nhà cung cấp',
     },
@@ -1071,6 +1072,10 @@ export default {
         unnamedAsset: 'Thiết bị chưa đặt tên',
         scanInstruction: 'Dùng nhãn này để đối chiếu thiết bị khi kiểm kê',
         handoverNote: 'Tài sản IT gắn với nhân viên chịu trách nhiệm',
+        qrPortalHint: 'Quét mã để mở portal tài sản trên điện thoại hoặc trình duyệt',
+        qrLoading: 'Đang tạo QR...',
+        qrUnavailable: 'Tạo lại QR để in nhãn',
+        internalPayload: 'Payload nội bộ',
     },
 
     // ========================================================================
