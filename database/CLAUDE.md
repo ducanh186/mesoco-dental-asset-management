@@ -4,12 +4,12 @@ Migration Laravel là nguồn sự thật. Không rewrite migration lịch sử 
 
 ## Seed Data
 
-Seeder active phải tạo dữ liệu IT:
+Seeder active phải tạo dữ liệu tài sản thiết bị Mesoco:
 
 - Laptop, desktop, monitor, server, network, printer, peripheral.
-- Vị trí như Kho IT, Phòng kỹ thuật, Khu làm việc nhân viên, Phòng server.
+- Vị trí như Kho thiết bị, Phòng kỹ thuật, Khu làm việc nhân viên, Phòng server.
 - Nhân viên có `position`; không dùng phòng ban cho scope active.
-- Supplier thiết bị IT.
+- Supplier thiết bị.
 - Maintenance theo phần mềm, phần cứng, kiểm tra định kỳ, sửa chữa.
 - Inventory valuation với purchase cost, useful life, salvage value và warranty.
 

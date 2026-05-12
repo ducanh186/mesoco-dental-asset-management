@@ -205,7 +205,7 @@ const ReportPage = ({ user }) => {
                                 <p className="text-sm font-medium text-text mb-2">Theo loại yêu cầu:</p>
                                 <div className="flex flex-wrap gap-2">
                                     <Badge variant="info">Sự cố: {requests?.by_type?.justification || 0}</Badge>
-                                    <Badge variant="default">Vật tư IT: {requests?.by_type?.consumable_request || 0}</Badge>
+                                    <Badge variant="default">Vật tư: {requests?.by_type?.consumable_request || 0}</Badge>
                                 </div>
                             </div>
                         </div>

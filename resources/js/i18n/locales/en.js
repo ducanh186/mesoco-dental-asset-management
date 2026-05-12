@@ -1,6 +1,6 @@
 /**
  * English Translations
- * Mesoco IT Asset Management
+ * Mesoco Asset Management
  */
 export default {
     // ========================================================================
@@ -106,16 +106,23 @@ export default {
         dashboard: 'Dashboard',
         profile: 'Profile',
         qrScan: 'Asset QR Scan',
+        bfdCatalog: 'Catalog & Profiles',
+        bfdOrders: 'Order Management',
+        bfdOperations: 'Operations Management',
+        bfdMaintenance: 'Maintenance Management',
+        bfdInventoryDisposal: 'Inventory & Disposal',
+        bfdReports: 'Reports & Statistics',
         catalogRecords: 'Catalog & Records',
         allocationManagement: 'Allocation Management',
         employees: 'Employee Profiles',
         assets: 'Asset Catalog',
+        handoverRecovery: 'Handover / Recovery',
         equipmentCatalog: 'Asset Catalog',
         myEquipment: 'My Responsible Assets',
         equipment: 'Equipment',
         shifts: 'Shifts',
         checkin: 'Shift Check-in',
-        requests: 'IT Incident & Supply Forms',
+        requests: 'Request Forms',
         reviewRequests: 'Review Requests',
         inventory: 'Periodic Inventory',
         inventoryValuation: 'Inventory & Valuation',
@@ -254,7 +261,7 @@ export default {
         title: 'Dashboard',
         welcome: 'Welcome back, {name}!',
         welcomeSubtitle: "Here's what's happening with your equipment today.",
-        welcomeSubtitleAdmin: 'Overview of the IT asset management system.',
+        welcomeSubtitleAdmin: 'Overview of the Mesoco asset management system.',
         welcomeSubtitleUser: 'View your assigned equipment and manage requests.',
         welcomeSubtitleTechnician: 'Track maintenance schedules and manage equipment.',
         welcomeSubtitleSupplier: 'Track purchase orders and update delivery progress for your supplier account.',
@@ -347,7 +354,7 @@ export default {
     // ========================================================================
     assets: {
         title: 'Assets',
-        subtitle: 'Manage IT assets by location and responsible employee',
+        subtitle: 'Manage assets by location and responsible employee',
         allAssets: 'All Equipment',
         createAsset: 'Create New Equipment',
         editAsset: 'Edit Equipment',
@@ -607,7 +614,7 @@ export default {
     // ========================================================================
     requests: {
         title: 'Requests',
-        subtitle: 'Manage IT equipment incident reports and IT consumable requests',
+        subtitle: 'Manage handover, recovery, and equipment incident requests',
         myRequests: 'My Requests',
         allRequests: 'All Requests',
         totalRequests: 'Total Requests',
@@ -1057,7 +1064,7 @@ export default {
         popupBlocked: 'Please allow popups to print the label',
         unnamedAsset: 'Unnamed Asset',
         scanInstruction: 'Use this label for inventory reconciliation',
-        handoverNote: 'IT asset assigned to a responsible employee',
+        handoverNote: 'Asset assigned to a responsible employee',
         qrPortalHint: 'Scan to open the asset portal on mobile or in a browser',
         qrLoading: 'Generating QR...',
         qrUnavailable: 'Regenerate QR to print the label',
@@ -1124,7 +1131,7 @@ export default {
     // ========================================================================
     placeholderPages: {
         equipmentTitle: 'Equipment Management',
-        equipmentDescription: 'Manage company IT equipment.',
+        equipmentDescription: 'Manage company equipment.',
         usersTitle: 'User Management',
         usersDescription: 'Manage users and access permissions.',
         settingsTitle: 'System Settings',

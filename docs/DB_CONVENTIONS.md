@@ -7,7 +7,7 @@
 - Không rewrite migration lịch sử trong cleanup hiện tại.
 - Không drop bảng/cột legacy nếu chưa có plan migration phá vỡ tương thích.
 - Model và API active dùng scope: `Asset -> Location`, `Asset -> Responsible Employee`, `Asset -> Depreciation -> Disposal Proposal`.
-- Seed data active tạo tài sản IT, vị trí, nhân viên chịu trách nhiệm, maintenance, inventory và purchase order.
+- Seed data active tạo tài sản thiết bị, vị trí, nhân viên chịu trách nhiệm, maintenance, inventory và purchase order.
 - Legacy endpoint trả lỗi rõ ràng thay vì rơi vào HTML của SPA.
 
 ## Bảng Chính
@@ -18,7 +18,7 @@
 | `employees` | Hồ sơ nhân viên nội bộ; dùng `position` để thể hiện chức vụ |
 | `suppliers` | Nhà cung cấp thiết bị/vật tư |
 | `locations` | Mã vị trí, tên vị trí, mô tả nơi đặt tài sản |
-| `assets` | Tài sản IT, trạng thái, vị trí, serial/model/QR, chi phí, khấu hao, bảo hành |
+| `assets` | Tài sản thiết bị, trạng thái, vị trí, serial/model/QR, chi phí, khấu hao, bảo hành |
 | `asset_qr_identities` | Lịch sử phát hành QR identity cho asset portal |
 | `categories` | Danh mục category cho asset |
 | `assignments` | Header bàn giao tài sản theo user/staff |
@@ -32,7 +32,7 @@
 | `inventory_check_items` | Từng dòng thiết bị trong đợt kiểm kê |
 | `purchase_orders` | Đơn mua hàng |
 | `purchase_order_items` | Dòng thiết bị/vật tư trong đơn mua |
-| `requests` | Phiếu báo sự cố hoặc xin vật tư IT |
+| `requests` | Phiếu báo sự cố hoặc xin vật tư/linh kiện |
 | `request_items` | Dòng asset/vật tư trong request |
 | `request_events` | Lịch sử trạng thái request |
 | `disposals`, `disposal_details` | Thanh lý hoặc loại bỏ tài sản |
@@ -42,7 +42,7 @@
 Nguồn chính của vị trí là bảng `locations`:
 
 - `code`: mã vị trí, unique, ví dụ `LOC-001`.
-- `name`: tên vị trí, ví dụ `Kho IT`.
+- `name`: tên vị trí, ví dụ `Kho thiết bị`.
 - `description`: mô tả ngắn.
 
 `assets.location_id` trỏ tới `locations.id`. Các cột `assets.location` và `locations.address` được giữ để tương thích dữ liệu cũ, không dùng làm nguồn chính trong UI active.
@@ -118,8 +118,8 @@ Phần này tương ứng với view báo cáo `View_AssetPortal_Full`; trong ap
 
 Request active chỉ gồm:
 
-- `JUSTIFICATION`: báo sự cố thiết bị IT.
-- `CONSUMABLE_REQUEST`: xin vật tư hoặc linh kiện IT.
+- `JUSTIFICATION`: báo sự cố thiết bị.
+- `CONSUMABLE_REQUEST`: xin vật tư hoặc linh kiện.
 
 ## Regenerate Schema
 

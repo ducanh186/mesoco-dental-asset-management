@@ -1,15 +1,15 @@
-# Mesoco IT Asset Management
+# Mesoco Asset Management
 
-Hệ thống quản lý trang thiết bị IT cho công ty công nghệ. Phạm vi hiện tại tập trung vào tài sản theo vị trí đặt và nhân viên chịu trách nhiệm: tra cứu danh mục tài sản, bàn giao trực tiếp, bảo trì, kiểm kê, khấu hao, thanh lý, đơn mua hàng và phiếu báo sự cố hoặc xin vật tư IT.
+Hệ thống quản lý tài sản thiết bị tại Mesoco. Phạm vi hiện tại tập trung vào tài sản theo vị trí đặt và nhân viên chịu trách nhiệm: tra cứu danh mục tài sản, bàn giao trực tiếp, bảo trì, kiểm kê, khấu hao, thu hủy, đơn mua hàng và phiếu yêu cầu xử lý thiết bị.
 
 ## Phạm Vi Nghiệp Vụ
 
-- `Asset Catalog`: quản lý laptop, desktop, monitor, network device, server, printer, peripheral, mobile device, office IT và nhóm khác.
+- `Asset Catalog`: quản lý laptop, desktop, monitor, network device, server, printer, peripheral, mobile device, thiết bị văn phòng và nhóm khác.
 - `Responsible Handover`: thiết bị đang ở vị trí nào, ai đang chịu trách nhiệm và lịch sử bàn giao active.
 - `Maintenance`: quản lý lịch kiểm tra, sửa chữa, nâng cấp phần cứng, cập nhật phần mềm, vệ sinh và thay thế linh kiện.
 - `Inventory & Valuation`: kiểm kê định kỳ, giá mua, khấu hao, giá trị còn lại, bảo hành và tình trạng sử dụng.
 - `Purchase Orders`: quản lý đơn mua thiết bị, nhà cung cấp và trạng thái giao hàng.
-- `Requests`: nhân viên báo sự cố thiết bị hoặc xin vật tư/linh kiện IT.
+- `Requests`: nhân viên gửi phiếu yêu cầu bàn giao, thu hồi hoặc xử lý sự cố thiết bị.
 - `Disposal`: khóa sử dụng, thanh lý hoặc loại bỏ tài sản không còn dùng.
 
 Các flow cũ như quét mã cá nhân, mượn/trả thiết bị và hợp đồng nhân viên đã bị gỡ khỏi UI active. API legacy vẫn trả JSON với HTTP `410 Gone` để client cũ không rơi vào lỗi mơ hồ.
@@ -73,30 +73,51 @@ php artisan test
 
 ## Tính Năng QR Tài Sản
 
-Mỗi thiết bị có `AssetID` do hệ thống tự tăng và một QR active duy nhất. QR vật lý nên được in từ asset detail hoặc inventory label. Nội dung QR ưu tiên là link portal:
+Mỗi thiết bị có `AssetID` do hệ thống tự tăng và một QR active duy nhất. Trên web PC, quản lý hoặc kỹ thuật viên mở chi tiết tài sản để hiển thị QR, sau đó nhân viên dùng điện thoại đã đăng nhập hệ thống để quét QR và xem đúng phần thông tin theo quyền.
+
+QR không lưu trực tiếp giá tiền, cấu hình hay nhật ký sửa chữa. QR chỉ chứa đường dẫn portal của thiết bị:
 
 ```text
 http://<host>/asset-portal/<qr_uid>
 ```
 
-Luồng sử dụng:
+### Luồng Demo Trên PC Và Điện Thoại
 
-1. Manager hoặc technician tạo lại QR trong màn chi tiết tài sản nếu tài sản chưa có QR.
-2. In nhãn QR và dán lên thiết bị.
-3. Người dùng mở điện thoại, đăng nhập vào hệ thống Mesoco, rồi quét QR.
-4. Nếu điện thoại chưa đăng nhập, hệ thống chuyển tới màn login và quay lại đúng portal tài sản sau khi đăng nhập.
-5. Portal tự hiển thị dữ liệu theo role:
-   - `employee`: thông tin cơ bản, cấu hình, trạng thái, bảo hành, người đang sở hữu.
-   - `technician`: phần employee + nhật ký sửa chữa/bảo trì, lần bảo trì cuối, mức khấu hao, giá trị còn lại.
-   - `manager`: toàn bộ phần technician + giá mua, ngày mua và nhà cung cấp.
+1. Đăng nhập PC bằng tài khoản `manager` hoặc `technician`.
+2. Vào `Quản lý danh mục & hồ sơ` -> `Danh mục tài sản`.
+3. Mở chi tiết một thiết bị.
+4. Nếu chưa có QR, bấm `Tạo lại QR`.
+5. Kiểm tra card QR trong asset detail: có mã QR để quét, payload nội bộ, link portal, nút in/tải nhãn.
+6. Dùng điện thoại cùng mạng LAN, đăng nhập hệ thống Mesoco.
+7. Quét QR đang hiển thị trên màn hình PC hoặc QR đã in trên nhãn thiết bị.
+8. Portal mở đúng thiết bị và tự ẩn/hiện dữ liệu theo role.
 
-Khi test bằng điện thoại thật, không dùng `localhost` trong QR vì `localhost` trên điện thoại là chính điện thoại đó. Hãy dùng IP LAN của máy chạy app, ví dụ:
+### Dữ Liệu Hiển Thị Theo Role
+
+| Role | Khi quét QR sẽ thấy |
+| --- | --- |
+| `employee` | Tên thiết bị, mã tài sản, serial, model, cấu hình, trạng thái, bảo hành, vị trí, người đang chịu trách nhiệm |
+| `technician` | Toàn bộ phần employee + nhật ký sửa chữa/bảo trì, lần bảo trì cuối, mức khấu hao, giá trị còn lại |
+| `manager` | Toàn bộ phần technician + giá mua, ngày mua, nhà cung cấp và thông tin liên hệ |
+
+### Test Bằng Điện Thoại Thật
+
+Không dùng `localhost` trong QR khi test bằng điện thoại, vì `localhost` trên điện thoại là chính điện thoại đó. Hãy dùng IP LAN của máy chạy app, ví dụ:
 
 ```text
 http://192.168.1.20:8000/asset-portal/<qr_uid>
 ```
 
-Màn `/qr-scan` vẫn hỗ trợ scanner nội bộ: có thể paste portal URL hoặc payload legacy `MESOCO|ASSET|v1|<qr_uid>` để kiểm thử nhanh trên PC.
+### Test Nhanh Trên PC
+
+Màn `/qr-scan` hỗ trợ scanner nội bộ và fallback nhập tay. Có thể paste một trong hai định dạng:
+
+```text
+http://<host>/asset-portal/<qr_uid>
+MESOCO|ASSET|v1|<qr_uid>
+```
+
+Đây là cách ổn định để test bằng browser automation hoặc scanner USB mà không cần camera.
 
 ## Tài Khoản Demo
 

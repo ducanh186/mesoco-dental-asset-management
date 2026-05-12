@@ -1,8 +1,8 @@
-# IT Asset Location + Responsible Employee Implementation Plan
+# Mesoco Asset Location + Responsible Employee Implementation Plan
 
 > **Status:** Implemented in branch `codex/location-responsible-employee`.
 
-**Goal:** Align the Mesoco IT asset management app with the final business scope:
+**Goal:** Align the Mesoco asset management app with the final business scope:
 
 ```text
 Asset -> Location

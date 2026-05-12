@@ -241,7 +241,7 @@ const DisposalPage = ({ user }) => {
                                 <option value="Peripheral">Peripheral</option>
                                 <option value="Printer">Printer</option>
                                 <option value="Mobile Device">Mobile Device</option>
-                                <option value="Office IT">Office IT</option>
+                                <option value="Kho thiết bị">Kho thiết bị</option>
                                 <option value="Other">Other</option>
                             </Select>
                         </div>

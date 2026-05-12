@@ -1,10 +1,10 @@
 # Checklist Nghiệm Thu Theo Scope Mới
 
-Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên chịu trách nhiệm. Hệ thống không thêm đơn vị tổ chức nội bộ vào nghiệp vụ active.
+Scope mới: quản lý trang thiết bị Mesoco theo vị trí và nhân viên chịu trách nhiệm. Hệ thống không thêm đơn vị tổ chức nội bộ vào nghiệp vụ active.
 
-## Danh Mục Thiết Bị IT
+## Danh Mục Thiết Bị
 
-- [x] Asset có category IT như Laptop, Desktop, Monitor, Network, Server, Peripheral, Printer.
+- [x] Asset có category như Laptop, Desktop, Monitor, Network, Server, Peripheral, Printer.
 - [x] Asset lưu ngày mua, giá mua, thời hạn sử dụng, giá trị thu hồi và bảo hành.
 - [x] Asset có trạng thái active, maintenance, off service, retired.
 - [x] API asset trả structured `location` và `responsible_employee`.
@@ -31,7 +31,7 @@ Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên ch�
 
 ## Maintenance
 
-- [x] Maintenance type chuyển sang IT-safe: inspection, preventive, software_update, hardware_upgrade, calibration, repair, cleaning, replacement, other.
+- [x] Maintenance type dùng nhóm vận hành thiết bị: inspection, preventive, software_update, hardware_upgrade, calibration, repair, cleaning, replacement, other.
 - [x] Manager/technician tạo và cập nhật maintenance.
 - [x] Maintenance có chi tiết xử lý, technician, chi phí và thời điểm hoàn tất.
 - [x] Báo cáo và dashboard đọc được trạng thái maintenance.
@@ -39,7 +39,7 @@ Scope mới: quản lý trang thiết bị IT theo vị trí và nhân viên ch�
 ## Requests
 
 - [x] Employee tạo phiếu báo sự cố thiết bị mình phụ trách.
-- [x] Employee tạo phiếu xin vật tư hoặc linh kiện IT.
+- [x] Employee tạo phiếu xin vật tư hoặc linh kiện.
 - [x] Manager duyệt hoặc từ chối request.
 
 ## Inventory Và Valuation

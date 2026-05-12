@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, getUserRole, hasOperationalAccess } from '../utils/roles';
+import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, getUserRole } from '../utils/roles';
 
 const mesocoLogoUrl = import.meta.env.DEV && typeof window !== 'undefined'
     ? `${window.location.protocol}//${window.location.hostname}:5173/images/mesoco_logo.png`
     : '/images/mesoco_logo.png';
 
 /**
- * Sidebar focused on the 5 DFD level-0 tasks.
+ * Sidebar follows the six BFD level-0 business functions from the thesis doc.
  */
 const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const location = useLocation();
@@ -19,143 +19,203 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     const isManager = role === ROLE_MANAGER;
     const isTechnician = role === ROLE_TECHNICIAN;
     const isSupplier = role === ROLE_SUPPLIER;
-    const isOperationalRole = hasOperationalAccess(user);
-
-    const baseNavItems = isSupplier ? [
-        {
-            id: 'dashboard',
-            path: '/dashboard',
-            labelKey: 'nav.dashboard',
-            icon: 'dashboard'
-        },
-        {
-            id: 'purchase-orders',
-            path: '/purchase-orders',
-            labelKey: 'nav.purchaseOrders',
-            icon: 'purchaseOrders'
-        },
-    ] : [
-        { 
+    const navItems = {
+        dashboard: {
             id: 'dashboard',
             path: '/dashboard', 
             labelKey: 'nav.dashboard', 
             icon: 'dashboard'
         },
-        {
+        qrScan: {
             id: 'qr-scan',
             path: '/qr-scan',
             labelKey: 'nav.qrScan',
             icon: 'qr',
         },
-        {
+        requests: {
             id: 'requests',
             path: '/requests',
             labelKey: 'nav.requests',
             icon: 'requests'
         },
-        ...(isManager ? [{
+        reviewRequests: {
             id: 'review-requests',
             path: '/review-requests',
             labelKey: 'nav.reviewRequests',
             icon: 'reviewRequests'
-        }] : []),
-        ...(isOperationalRole ? [{
-            id: 'catalog-records',
+        },
+        assets: {
+            id: 'assets',
             path: '/assets',
-            labelKey: 'nav.catalogRecords',
+            labelKey: 'nav.assets',
             icon: 'assets',
-            children: [
-                { path: '/assets', label: t('nav.assets') },
-                { path: '/inventory', label: t('nav.inventoryValuation') },
-                { path: '/locations', label: t('nav.locations') },
-                { path: '/suppliers', label: t('nav.suppliers') },
-                { path: '/purchase-orders', label: t('nav.purchaseOrders') },
-            ]
-        }] : []),
-        ...(isOperationalRole ? [{
+        },
+        handover: {
+            id: 'handover',
+            path: '/assets#handover',
+            labelKey: 'nav.handoverRecovery',
+            icon: 'requests',
+        },
+        locations: {
+            id: 'locations',
+            path: '/locations',
+            labelKey: 'nav.locations',
+            icon: 'locations',
+        },
+        suppliers: {
+            id: 'suppliers',
+            path: '/suppliers',
+            labelKey: 'nav.suppliers',
+            icon: 'suppliers',
+        },
+        purchaseOrders: {
+            id: 'purchase-orders',
+            path: '/purchase-orders',
+            labelKey: 'nav.purchaseOrders',
+            icon: 'purchaseOrders'
+        },
+        maintenance: {
             id: 'maintenance',
             path: '/maintenance', 
             labelKey: 'nav.maintenance', 
             icon: 'maintenance'
-        }] : []),
-        ...(isOperationalRole ? [{
+        },
+        inventory: {
+            id: 'inventory',
+            path: '/inventory',
+            labelKey: 'nav.inventory',
+            icon: 'inventory',
+        },
+        disposal: {
             id: 'disposal',
             path: '/disposal',
             labelKey: 'nav.disposal',
             icon: 'disposal'
-        }] : []),
-        ...(isManager ? [{
+        },
+        reports: {
             id: 'reports',
             path: '/reports', 
             labelKey: 'nav.reports', 
             icon: 'reports'
-        }] : []),
-    ];
+        },
+    };
+
+    const bfdGroup = (id, labelKey, icon, children) => ({
+        id,
+        path: children[0]?.path || '/dashboard',
+        labelKey,
+        icon,
+        children: children.map((item) => ({
+            ...item,
+            label: t(item.labelKey),
+        })),
+    });
 
     const sectionLabel = (vi, en) => (locale === 'vi' ? vi : en);
 
-    const navSections = isSupplier
-        ? [
-            {
-                id: 'supplier-overview',
-                    label: sectionLabel('Theo dõi giao hàng', 'Delivery Workspace'),
-                items: baseNavItems,
-            },
-        ]
+    const managerBfdItems = [
+        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
+            navItems.assets,
+            navItems.locations,
+            navItems.suppliers,
+        ]),
+        bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
+            navItems.purchaseOrders,
+        ]),
+        bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
+            navItems.qrScan,
+            navItems.requests,
+            navItems.reviewRequests,
+            navItems.handover,
+        ]),
+        bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
+            navItems.maintenance,
+        ]),
+        bfdGroup('bfd-inventory-disposal', 'nav.bfdInventoryDisposal', 'inventory', [
+            navItems.inventory,
+            navItems.disposal,
+        ]),
+        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
+            navItems.dashboard,
+            navItems.reports,
+        ]),
+    ];
+
+    const technicianBfdItems = [
+        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
+            navItems.assets,
+            navItems.locations,
+            navItems.suppliers,
+        ]),
+        bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
+            navItems.purchaseOrders,
+        ]),
+        bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
+            navItems.qrScan,
+            navItems.requests,
+            navItems.handover,
+        ]),
+        bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
+            navItems.maintenance,
+        ]),
+        bfdGroup('bfd-inventory-disposal', 'nav.bfdInventoryDisposal', 'inventory', [
+            navItems.inventory,
+            navItems.disposal,
+        ]),
+        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
+            navItems.dashboard,
+        ]),
+    ];
+
+    const employeeBfdItems = [
+        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
+            navItems.qrScan,
+        ]),
+        bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
+            navItems.requests,
+        ]),
+        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
+            navItems.dashboard,
+        ]),
+    ];
+
+    const supplierBfdItems = [
+        bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
+            navItems.purchaseOrders,
+        ]),
+        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
+            navItems.dashboard,
+        ]),
+    ];
+
+    const bfdItems = isSupplier
+        ? supplierBfdItems
         : isManager
-            ? [
-                {
-                    id: 'manager-overview',
-                        label: sectionLabel('Tổng quan', 'Overview'),
-                    items: baseNavItems.filter((item) => ['dashboard', 'qr-scan'].includes(item.id)),
-                },
-                {
-                    id: 'manager-inventory',
-                        label: sectionLabel('Kho & danh mục', 'Inventory & Catalog'),
-                    items: baseNavItems.filter((item) => ['catalog-records'].includes(item.id)),
-                },
-                {
-                    id: 'manager-operations',
-                        label: sectionLabel('Phê duyệt & vận hành', 'Approvals & Operations'),
-                    items: baseNavItems.filter((item) => ['requests', 'review-requests', 'maintenance', 'disposal'].includes(item.id)),
-                },
-                {
-                    id: 'manager-insights',
-                        label: sectionLabel('Mua sắm & báo cáo', 'Procurement & Reports'),
-                    items: baseNavItems.filter((item) => ['reports'].includes(item.id)),
-                },
-            ]
-            : isOperationalRole
-                ? [
-                    {
-                        id: 'tech-overview',
-                        label: sectionLabel('Tổng quan', 'Overview'),
-                        items: baseNavItems.filter((item) => ['dashboard', 'qr-scan', 'requests'].includes(item.id)),
-                    },
-                    {
-                        id: 'tech-assets',
-                            label: sectionLabel('Tra cứu tài sản', 'Asset Lookup'),
-                        items: baseNavItems.filter((item) => ['catalog-records'].includes(item.id)),
-                    },
-                    {
-                        id: 'tech-operations',
-                            label: sectionLabel('Bảo trì & thanh lý', 'Maintenance & Disposal'),
-                        items: baseNavItems.filter((item) => ['maintenance', 'disposal'].includes(item.id)),
-                    },
-                ]
-                : [
-                    {
-                        id: 'staff-workspace',
-                        label: sectionLabel('Không gian của tôi', 'My Workspace'),
-                        items: baseNavItems,
-                    },
-                ];
+            ? managerBfdItems
+            : isTechnician
+                ? technicianBfdItems
+                : employeeBfdItems;
+
+    const navSections = [
+        {
+            id: 'bfd',
+            label: sectionLabel('Sơ đồ chức năng BFD', 'BFD functions'),
+            items: bfdItems,
+        },
+    ];
 
     const isActive = (path) => {
+        const [pathnameWithSearch, hash = ''] = path.split('#');
+        const pathname = pathnameWithSearch.split('?')[0];
+
+        if (hash) {
+            return location.pathname === pathname && location.hash === `#${hash}`;
+        }
+
         if (path === '/dashboard') {
             return location.pathname === '/' || location.pathname === '/dashboard';
         }
-        return location.pathname.startsWith(path);
+        return location.pathname.startsWith(pathname);
     };
 
     const toggleSubmenu = (id) => {
@@ -344,7 +404,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                                 <Link
                                     key={idx}
                                     to={child.path}
-                                    className={`nav-subitem ${location.pathname === child.path ? 'active' : ''}`}
+                                    className={`nav-subitem ${isActive(child.path) ? 'active' : ''}`}
                                     onClick={onMobileClose}
                                 >
                                     {child.label}
@@ -377,7 +437,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     <span className="logo-mark">
                         <img src={mesocoLogoUrl} alt="Mesoco" className="logo-image" />
                     </span>
-                    {!collapsed && <span className="logo-text text-text font-semibold">Mesoco IT</span>}
                 </Link>
 
                 {/* Mobile Close Button */}

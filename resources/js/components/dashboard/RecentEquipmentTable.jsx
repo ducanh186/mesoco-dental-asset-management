@@ -199,8 +199,8 @@ const RecentEquipmentTable = ({
     // Loading skeleton
     if (loading) {
         return (
-            <div className="data-table-section bg-surface rounded-lg shadow-sm border border-border">
-                <div className="section-header p-4 border-b border-border flex items-center justify-between">
+            <div className="data-table-section dashboard-panel dashboard-table-panel">
+                <div className="section-header">
                     <div className="h-5 bg-surface-muted rounded w-40 animate-pulse"></div>
                     <div className="h-4 bg-surface-muted rounded w-20 animate-pulse"></div>
                 </div>
@@ -222,9 +222,9 @@ const RecentEquipmentTable = ({
     // Empty state
     if (!data || data.length === 0) {
         return (
-            <div className="data-table-section bg-surface rounded-lg shadow-sm border border-border">
-                <div className="section-header p-4 border-b border-border">
-                    <h3 className="section-title text-text font-semibold">
+            <div className="data-table-section dashboard-panel dashboard-table-panel">
+                <div className="section-header">
+                    <h3 className="section-title">
                         {isOperationalRole ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
                     </h3>
                 </div>
@@ -247,14 +247,14 @@ const RecentEquipmentTable = ({
     }
 
     return (
-        <div className="data-table-section bg-surface rounded-lg shadow-sm border border-border overflow-hidden">
-            <div className="section-header p-4 border-b border-border flex items-center justify-between">
-                <h3 className="section-title text-text font-semibold">
+        <div className="data-table-section dashboard-panel dashboard-table-panel">
+            <div className="section-header">
+                <h3 className="section-title">
                     {isOperationalRole ? t('dashboard.recentEquipment') : t('dashboard.myRecentEquipment')}
                 </h3>
                 <Link
                     to={isOperationalRole ? '/assets' : '/requests'}
-                    className="view-all-link text-sm text-primary hover:text-primary-hover flex items-center gap-1"
+                    className="view-all-link"
                 >
                     {t('dashboard.viewAll')}
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

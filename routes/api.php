@@ -24,9 +24,9 @@ $legacyContractModuleResponse = static function () {
     ], 410);
 };
 
-$removedQrModuleResponse = static function () {
+$removedPersonalAssetModuleResponse = static function () {
     return response()->json([
-        'message' => 'QR scanning and personal borrow/return flows have been removed. Assets are now managed by location and responsible employee.',
+        'message' => 'Personal borrow/return flows have been removed. Assets are now managed by location and responsible employee.',
     ], 410);
 };
 
@@ -41,7 +41,7 @@ $removedQrModuleResponse = static function () {
 | ├─────────────┼────────────────────────────────────────────────────────────────────┤
 | │ manager     │ Báo cáo, cấu hình, kiểm kê và điều phối hệ thống                   │
 | │ technician  │ Danh mục, cấp phát, bảo trì, thu hủy và vận hành thiết bị          │
-| │ employee    │ Báo sự cố thiết bị và yêu cầu vật tư IT với tài sản phụ trách       │
+| │ employee    │ Báo sự cố thiết bị và yêu cầu vật tư/linh kiện với tài sản phụ trách │
 | │ supplier    │ Theo dõi và cập nhật trạng thái đơn hàng của chính nhà cung cấp     │
 | └─────────────┴────────────────────────────────────────────────────────────────────┘
 |
@@ -51,7 +51,7 @@ $removedQrModuleResponse = static function () {
 /**
  * Authenticated Routes
  */
-Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () use ($legacyContractModuleResponse, $removedQrModuleResponse) {
+Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () use ($legacyContractModuleResponse, $removedPersonalAssetModuleResponse) {
     /**
      * GET /api/me
      * Get current authenticated user
@@ -77,7 +77,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
-    Route::middleware('role:manager,technician,employee')->group(function () use ($removedQrModuleResponse) {
+    Route::middleware('role:manager,technician,employee')->group(function () use ($removedPersonalAssetModuleResponse) {
         /**
          * QR asset resolution remains available for internal users.
          */
@@ -86,10 +86,10 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         /**
          * Responsible assets - internal users can pick assets assigned to them.
          */
-        Route::get('/my-assets', $removedQrModuleResponse);
+        Route::get('/my-assets', $removedPersonalAssetModuleResponse);
         Route::get('/my-assigned-assets/dropdown', [AssetController::class, 'myAssignedAssetsDropdown']);
         Route::get('/department-assets/dropdown', [AssetController::class, 'myAssignedAssetsDropdown']);
-        Route::get('/assets/available-for-loan', $removedQrModuleResponse);
+        Route::get('/assets/available-for-loan', $removedPersonalAssetModuleResponse);
 
         /**
          * Shifts and check-ins
@@ -101,8 +101,8 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::patch('/checkins/{checkin}/checkout', [CheckinController::class, 'checkout']);
         Route::get('/assets/{asset}/checkin-status', [CheckinController::class, 'assetCheckinStatus']);
 
-        Route::get('/my-asset-history', $removedQrModuleResponse);
-        Route::get('/my-asset-history/summary', $removedQrModuleResponse);
+        Route::get('/my-asset-history', $removedPersonalAssetModuleResponse);
+        Route::get('/my-asset-history/summary', $removedPersonalAssetModuleResponse);
 
         Route::get('/requests', [\App\Http\Controllers\RequestController::class, 'index']);
         Route::post('/requests', [\App\Http\Controllers\RequestController::class, 'store']);
@@ -167,7 +167,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
     | 4. Disposal
     | 5. Inventory checks
     */
-    Route::middleware('role:manager,technician')->group(function () use ($removedQrModuleResponse) {
+    Route::middleware('role:manager,technician')->group(function () {
         Route::get('/employees/available', [EmployeeController::class, 'available']);
         Route::apiResource('employees', EmployeeController::class);
 

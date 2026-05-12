@@ -312,7 +312,7 @@ const LocationsPage = () => {
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
-                            placeholder="VD: Kho IT tầng 1"
+                            placeholder="VD: Kho thiết bị tầng 1"
                             error={formErrors.name?.[0]}
                         />
                     </div>

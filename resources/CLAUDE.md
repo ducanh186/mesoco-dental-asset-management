@@ -1,6 +1,6 @@
 # Frontend Guide
 
-Frontend là React SPA trong `resources/js`. Scope UI hiện tại là IT Asset Management theo phòng ban.
+Frontend là React SPA trong `resources/js`. Scope UI hiện tại là Mesoco Asset Management theo vị trí và nhân viên chịu trách nhiệm.
 
 ## Page Active
 
@@ -20,7 +20,7 @@ Frontend là React SPA trong `resources/js`. Scope UI hiện tại là IT Asset 
 ## Quy Tắc UI
 
 - Không thêm lại page quét mã cá nhân, personal asset history, available-for-loan hoặc employee contract CRUD.
-- Label phải dùng wording IT asset, department handover, maintenance, inventory, purchase order, request.
+- Label phải dùng wording Mesoco asset, handover, maintenance, inventory, purchase order, request.
 - Nếu thêm i18n key mới, cập nhật cả `en.js` và `vi.js`.
 - Sau khi sửa i18n, chạy `npm run check:i18n`.
 

@@ -1,6 +1,6 @@
 /**
  * Vietnamese Translations - Tiếng Việt
- * Mesoco IT Asset Management
+ * Mesoco Asset Management
  * Quy ước: Dùng từ ngữ thân thiện vận hành công ty công nghệ
  * - "Phiếu" thay vì "Request"
  * - "Chờ duyệt" thay vì "Submitted"
@@ -110,16 +110,23 @@ export default {
         dashboard: 'Tổng quan',
         profile: 'Hồ sơ',
         qrScan: 'Quét QR tài sản',
+        bfdCatalog: 'Quản lý danh mục & hồ sơ',
+        bfdOrders: 'Quản lý đơn hàng',
+        bfdOperations: 'Quản lý vận hành',
+        bfdMaintenance: 'Quản lý bảo trì',
+        bfdInventoryDisposal: 'Quản lý kiểm kê & thu hủy',
+        bfdReports: 'Báo cáo & thống kê',
         catalogRecords: 'Quản lý danh mục & hồ sơ',
         allocationManagement: 'Quản lý cấp phát',
         employees: 'Hồ sơ nhân viên',
         assets: 'Danh mục tài sản',
+        handoverRecovery: 'Bàn giao / Thu hồi',
         equipmentCatalog: 'Danh mục tài sản',
         myEquipment: 'Thiết bị tôi phụ trách',
         equipment: 'Thiết bị',
         shifts: 'Ca làm',
         checkin: 'Ghi nhận ca',
-        requests: 'Phiếu sự cố / vật tư IT',
+        requests: 'Phiếu yêu cầu',
         reviewRequests: 'Duyệt yêu cầu',
         inventory: 'Kiểm kê định kì',
         inventoryValuation: 'Kiểm kê & định giá',
@@ -258,7 +265,7 @@ export default {
         title: 'Tổng quan',
         welcome: 'Chào mừng trở lại, {name}!',
         welcomeSubtitle: 'Đây là tình hình thiết bị của bạn hôm nay.',
-        welcomeSubtitleAdmin: 'Tổng quan hệ thống quản lý thiết bị IT.',
+        welcomeSubtitleAdmin: 'Tổng quan hệ thống quản lý tài sản Mesoco.',
         welcomeSubtitleUser: 'Xem thiết bị được giao và quản lý phiếu yêu cầu của bạn.',
         welcomeSubtitleTechnician: 'Theo dõi lịch bảo trì và quản lý thiết bị.',
         welcomeSubtitleSupplier: 'Theo dõi đơn hàng và cập nhật tiến độ giao hàng của nhà cung cấp.',
@@ -351,7 +358,7 @@ export default {
     // ========================================================================
     assets: {
         title: 'Thiết bị',
-        subtitle: 'Quản lý thiết bị IT theo vị trí và nhân viên chịu trách nhiệm',
+        subtitle: 'Quản lý tài sản theo vị trí và nhân viên chịu trách nhiệm',
         allAssets: 'Tất cả thiết bị',
         createAsset: 'Tạo thiết bị mới',
         editAsset: 'Chỉnh sửa thiết bị',
@@ -611,7 +618,7 @@ export default {
     // ========================================================================
     requests: {
         title: 'Phiếu yêu cầu',
-        subtitle: 'Quản lý phiếu báo sự cố thiết bị IT và xin vật tư IT',
+        subtitle: 'Quản lý phiếu bàn giao, thu hồi và sự cố thiết bị',
         myRequests: 'Phiếu của tôi',
         allRequests: 'Tất cả phiếu',
         totalRequests: 'Tổng phiếu',
@@ -1071,7 +1078,7 @@ export default {
         popupBlocked: 'Vui lòng cho phép cửa sổ bật lên để in nhãn',
         unnamedAsset: 'Thiết bị chưa đặt tên',
         scanInstruction: 'Dùng nhãn này để đối chiếu thiết bị khi kiểm kê',
-        handoverNote: 'Tài sản IT gắn với nhân viên chịu trách nhiệm',
+        handoverNote: 'Tài sản gắn với nhân viên chịu trách nhiệm',
         qrPortalHint: 'Quét mã để mở portal tài sản trên điện thoại hoặc trình duyệt',
         qrLoading: 'Đang tạo QR...',
         qrUnavailable: 'Tạo lại QR để in nhãn',
@@ -1138,7 +1145,7 @@ export default {
     // ========================================================================
     placeholderPages: {
         equipmentTitle: 'Quản lý thiết bị',
-        equipmentDescription: 'Quản lý thiết bị IT của công ty.',
+        equipmentDescription: 'Quản lý thiết bị của công ty.',
         usersTitle: 'Quản lý người dùng',
         usersDescription: 'Quản lý người dùng và quyền truy cập hệ thống.',
         settingsTitle: 'Cài đặt hệ thống',

@@ -1,6 +1,6 @@
 # Hướng Dẫn Tính Năng QR Tài Sản
 
-Tài liệu này mô tả cách dùng QR trong hệ thống quản lý tài sản thiết bị IT tại Mesoco.
+Tài liệu này mô tả cách dùng QR trong hệ thống quản lý tài sản thiết bị tại Mesoco.
 
 ## Mục Tiêu
 

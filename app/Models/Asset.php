@@ -59,7 +59,7 @@ class Asset extends Model
     public const DISPOSAL_RECOMMENDATION_THRESHOLD = 75;
 
     /**
-     * Common IT asset categories.
+     * Common Mesoco asset categories.
      */
     public const CATEGORIES = [
         'Laptop',
@@ -70,7 +70,7 @@ class Asset extends Model
         'Peripheral',
         'Printer',
         'Mobile Device',
-        'Office IT',
+        'Office Device',
         'Other',
     ];
 

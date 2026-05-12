@@ -1,4 +1,4 @@
-# Tài Liệu Dự Án IT Asset Management
+# Tài Liệu Dự Án Mesoco Asset Management
 
 Thư mục này mô tả hệ thống theo hướng báo cáo/luận văn: bài toán nhỏ, đúng nghiệp vụ và dễ giải thích cho người không chuyên kỹ thuật. Scope hiện tại là quản lý tài sản IT theo **vị trí**, **nhân viên chịu trách nhiệm** và **workspace điều phối vận hành** cho manager hoặc technician.
 

@@ -4,7 +4,7 @@ import { useI18n } from '../i18n';
 import { buildQrDataUrl, getPrintableQrValue, getQrPayload, getQrPortalUrl } from '../utils/qr';
 
 /**
- * PrintableAssetLabel - printable responsible asset label for IT assets.
+ * PrintableAssetLabel - printable responsible asset label for Mesoco assets.
  */
 const PrintableAssetLabel = ({ asset, onClose }) => {
     const { t } = useI18n();
@@ -145,7 +145,7 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
             <div className="flex justify-center">
                 <div ref={printRef} className="label-container w-[3in] p-4 border-2 border-border rounded-lg bg-white">
                     <div className="company-name text-xs uppercase text-text-muted text-center mb-2">
-                        MESOCO IT Asset Management
+                        MESOCO Asset Management
                     </div>
                     <div className="flex justify-center mb-3">
                         {qrImageUrl ? (

@@ -22,7 +22,7 @@
 | `app/Http/Requests` | Validation request đầu vào |
 | `routes/api.php` | Khai báo API và legacy endpoint `410 Gone` |
 | `database/migrations` | Lịch sử schema, không rewrite trong cleanup hiện tại |
-| `database/seeders` | Demo data theo IT Asset Management |
+| `database/seeders` | Demo data theo Mesoco Asset Management |
 | `resources/js/pages` | Page React theo module |
 | `resources/js/components` | Component dùng chung |
 | `resources/js/i18n` | Dịch EN/VI, có script kiểm tra key parity |

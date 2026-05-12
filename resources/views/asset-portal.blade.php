@@ -326,7 +326,7 @@
         <div class="brand">
             <img src="{{ $logoUrl }}" alt="Mesoco">
             <div class="brand-copy">
-                <p class="brand-title">Quản lý tài sản thiết bị IT tại Mesoco</p>
+                <p class="brand-title">Quản lý tài sản thiết bị tại Mesoco</p>
                 <p class="brand-subtitle">Cổng tra cứu tài sản bằng mã QR</p>
             </div>
         </div>

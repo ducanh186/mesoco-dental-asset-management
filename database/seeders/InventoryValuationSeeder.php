@@ -71,7 +71,7 @@ class InventoryValuationSeeder extends Seeder
                 'warranty_years' => 2,
             ],
             Asset::TYPE_TRAY => [
-                'category' => 'Office IT',
+                'category' => 'Office Device',
                 'cost_range' => [100, 1200],
                 'life_months' => 24,
                 'salvage_pct' => 0,

@@ -102,7 +102,7 @@ const RequestsPage = ({ user }) => {
     }, [typeFilter, statusFilter, searchQuery, toast]);
 
     const fetchAssets = async () => {
-        // Operational users can pick from the full active IT asset catalog.
+        // Operational users can pick from the full active asset catalog.
         try {
             const data = await assetsApi.list({ per_page: 100 });
             setAssetOptions((data.assets || []).map(a => ({

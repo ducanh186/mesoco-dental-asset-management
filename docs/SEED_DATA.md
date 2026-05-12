@@ -1,6 +1,6 @@
 # Seed Data
 
-Seed data dùng để demo hệ thống IT Asset Management sau khi migrate fresh. Dữ liệu mẫu tập trung vào thiết bị máy tính, vị trí, nhân viên chịu trách nhiệm, nhà cung cấp, maintenance, inventory và purchase order.
+Seed data dùng để demo hệ thống Mesoco Asset Management sau khi migrate fresh. Dữ liệu mẫu tập trung vào thiết bị máy tính, vị trí, nhân viên chịu trách nhiệm, nhà cung cấp, maintenance, inventory và purchase order.
 
 ## Chạy Seed
 
@@ -21,7 +21,7 @@ php artisan db:seed --class=DatabaseSeeder
 | Role | Employee code | Email | Password | Mục đích |
 | --- | --- | --- | --- | --- |
 | manager | E1001 | `manager@mesoco.vn` | password | Quản lý toàn hệ thống |
-| technician | E1002 | `technician@mesoco.vn` | password | Vận hành IT asset |
+| technician | E1002 | `technician@mesoco.vn` | password | Vận hành tài sản thiết bị |
 | employee | E1003 | `employee@mesoco.vn` | password | Gửi request và xem thiết bị mình phụ trách |
 | employee | E1004 | `frontdesk@mesoco.vn` | password | Nhân viên lễ tân để test assignment |
 | employee | E1005 | `warehouse@mesoco.vn` | password | Nhân viên kho để test assignment |
@@ -32,7 +32,7 @@ php artisan db:seed --class=DatabaseSeeder
 
 | Code | Tên vị trí | Mô tả |
 | --- | --- | --- |
-| LOC-001 | Kho IT | Lưu thiết bị IT chưa cấp phát hoặc đang chờ xử lý |
+| LOC-001 | Kho thiết bị | Lưu thiết bị chưa cấp phát hoặc đang chờ xử lý |
 | LOC-002 | Phòng kỹ thuật | Khu vực kỹ thuật viên kiểm tra và sửa thiết bị |
 | LOC-003 | Khu làm việc nhân viên | Khu vực nhân viên sử dụng thiết bị hằng ngày |
 | LOC-004 | Phòng server | Khu vực đặt thiết bị mạng và server |
@@ -46,7 +46,7 @@ php artisan db:seed --class=DatabaseSeeder
 | IT-MON-001 | LG 27-inch Monitor | Monitor | LOC-003 - Khu làm việc nhân viên |
 | IT-NET-001 | Cisco Catalyst Switch | Network | LOC-004 - Phòng server |
 | IT-SRV-001 | Dell PowerEdge R450 | Server | LOC-004 - Phòng server |
-| IT-PRN-001 | HP LaserJet Pro M404dn | Printer | LOC-001 - Kho IT |
+| IT-PRN-001 | HP LaserJet Pro M404dn | Printer | LOC-001 - Kho thiết bị |
 
 ## Nhân Viên Chịu Trách Nhiệm
 

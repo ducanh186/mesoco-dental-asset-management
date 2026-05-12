@@ -17,12 +17,12 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed a small IT asset management dataset.
+     * Seed a small Mesoco asset management dataset.
      *
      * This seeder is intentionally compact and idempotent:
      * - creates a few employees and user accounts
      * - creates canonical asset locations
-     * - creates representative IT assets
+     * - creates representative Mesoco assets
      * - creates responsible employee assignments
      * - creates a few maintenance events for reporting flows
      */
@@ -137,8 +137,8 @@ class DatabaseSeeder extends Seeder
         $rows = [
             'it_storage' => [
                 'code' => 'LOC-001',
-                'name' => 'Kho IT',
-                'description' => 'Nơi lưu thiết bị IT chưa cấp phát hoặc đang chờ xử lý.',
+                'name' => 'Kho thiết bị',
+                'description' => 'Nơi lưu thiết bị chưa cấp phát hoặc đang chờ xử lý.',
             ],
             'support_room' => [
                 'code' => 'LOC-002',
@@ -170,7 +170,7 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * Create representative IT assets.
+     * Create representative Mesoco assets.
      *
      * @return array<string, Asset>
      */
@@ -264,7 +264,7 @@ class DatabaseSeeder extends Seeder
                     'location' => $location?->name,
                     'depreciation_method' => Asset::DEPRECIATION_TIME,
                     'warranty_expiry' => now()->addYears(2)->toDateString(),
-                    'notes' => 'Seeded IT asset for location and responsible employee workflows.',
+                    'notes' => 'Seeded Mesoco asset for location and responsible employee workflows.',
                 ]
             );
         }

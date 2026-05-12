@@ -16,27 +16,29 @@ const DepartmentDistribution = ({ title, subtitle, data }) => {
     const maxCount = Math.max(...data.map((item) => item.count), 1);
 
     return (
-        <Card className="p-5">
-            <div className="mb-5">
-                <h3 className="text-lg font-semibold text-text">{title}</h3>
-                <p className="text-sm text-text-muted mt-1">{subtitle}</p>
+        <Card className="dashboard-panel dashboard-distribution-panel">
+            <div className="dashboard-panel-header">
+                <div>
+                    <h3 className="dashboard-panel-title">{title}</h3>
+                    <p className="dashboard-panel-subtitle">{subtitle}</p>
+                </div>
             </div>
 
             {data.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                <div className="dashboard-empty-state">
                     Chưa có dữ liệu phân bổ tài sản.
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="dashboard-progress-list">
                     {data.map((item) => (
-                        <div key={item.label}>
-                            <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-                                <span className="font-medium text-text">{item.label}</span>
-                                <span className="text-text-muted">{item.count}</span>
+                        <div key={item.label} className="dashboard-progress-row">
+                            <div className="dashboard-progress-meta">
+                                <span>{item.label}</span>
+                                <strong>{item.count}</strong>
                             </div>
-                            <div className="h-2.5 overflow-hidden rounded-full bg-surface-muted">
+                            <div className="dashboard-progress-track">
                                 <div
-                                    className="h-full rounded-full bg-primary"
+                                    className="dashboard-progress-fill"
                                     style={{ width: `${Math.max((item.count / maxCount) * 100, 8)}%` }}
                                 />
                             </div>
@@ -52,29 +54,31 @@ const AssetTrend = ({ title, subtitle, data }) => {
     const maxCount = Math.max(...data.map((item) => item.count), 1);
 
     return (
-        <Card className="p-5">
-            <div className="mb-5">
-                <h3 className="text-lg font-semibold text-text">{title}</h3>
-                <p className="text-sm text-text-muted mt-1">{subtitle}</p>
+        <Card className="dashboard-panel dashboard-chart-panel">
+            <div className="dashboard-panel-header">
+                <div>
+                    <h3 className="dashboard-panel-title">{title}</h3>
+                    <p className="dashboard-panel-subtitle">{subtitle}</p>
+                </div>
             </div>
 
             {data.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                <div className="dashboard-empty-state">
                     Chưa có dữ liệu biến động theo tháng.
                 </div>
             ) : (
-                <div className="flex h-56 items-end gap-3">
+                <div className="dashboard-trend-chart">
                     {data.map((item) => (
-                        <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-3">
-                            <div className="flex h-40 w-full items-end rounded-2xl bg-surface-muted/80 px-1 pb-1">
+                        <div key={item.label} className="dashboard-trend-column">
+                            <div className="dashboard-trend-track">
                                 <div
-                                    className="w-full rounded-xl bg-gradient-to-t from-primary to-info"
+                                    className="dashboard-trend-fill"
                                     style={{ height: `${Math.max((item.count / maxCount) * 100, item.count > 0 ? 12 : 0)}%` }}
                                 />
                             </div>
-                            <div className="text-center">
-                                <div className="text-sm font-semibold text-text">{item.count}</div>
-                                <div className="text-xs text-text-muted">{item.label}</div>
+                            <div className="dashboard-trend-caption">
+                                <strong>{item.count}</strong>
+                                <span>{item.label}</span>
                             </div>
                         </div>
                     ))}
@@ -460,31 +464,31 @@ const Dashboard = ({ user }) => {
         .slice(0, 6);
 
     return (
-        <div className="dashboard-page p-6">
+        <div className="dashboard-page">
             {/* Welcome Section */}
-            <div className="welcome-section bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
-                <h2 className="text-xl font-semibold text-text mb-1">
-                    {t('dashboard.welcome', { name: user?.name || 'Bạn' })}
-                </h2>
-                <p className="text-text-muted">
-                    {isManager 
-                        ? t('dashboard.welcomeSubtitleAdmin')
-                        : isTechnician
-                            ? t('dashboard.welcomeSubtitleTechnician')
-                            : isSupplier
-                                ? t('dashboard.welcomeSubtitleSupplier')
-                                : t('dashboard.welcomeSubtitleUser')
-                    }
-                </p>
+            <div className="dashboard-welcome-panel">
+                <div>
+                    <h2>{t('dashboard.welcome', { name: user?.name || 'Bạn' })}</h2>
+                    <p>
+                        {isManager 
+                            ? t('dashboard.welcomeSubtitleAdmin')
+                            : isTechnician
+                                ? t('dashboard.welcomeSubtitleTechnician')
+                                : isSupplier
+                                    ? t('dashboard.welcomeSubtitleSupplier')
+                                    : t('dashboard.welcomeSubtitleUser')
+                        }
+                    </p>
+                </div>
             </div>
 
             {/* Error State */}
             {error && (
-                <div className="bg-error/10 border border-error text-error rounded-lg p-4 mb-6">
+                <div className="dashboard-error-panel">
                     <p>{error}</p>
                     <button 
                         onClick={fetchDashboardData}
-                        className="mt-2 text-sm underline hover:no-underline"
+                        className="dashboard-error-action"
                     >
                         {t('common.retry')}
                     </button>
@@ -492,7 +496,7 @@ const Dashboard = ({ user }) => {
             )}
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div className="dashboard-stat-grid">
                 {stats.map((stat, index) => (
                     <StatCard
                         key={index}
@@ -508,7 +512,7 @@ const Dashboard = ({ user }) => {
             </div>
 
             {isOperationalRole && (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                <div className="dashboard-analysis-grid">
                     <DepartmentDistribution
                         title="Tình trạng tài sản theo bộ phận"
                         subtitle="Theo nhân viên đang được giao hoặc bộ phận quản lý"
@@ -523,11 +527,11 @@ const Dashboard = ({ user }) => {
             )}
 
             {isOperationalRole && (
-                <Card className="p-5 mb-6">
-                    <div className="mb-4 flex items-start justify-between gap-4">
+                <Card className="dashboard-panel dashboard-depreciation-panel">
+                    <div className="dashboard-panel-header dashboard-panel-header-split">
                         <div>
-                            <h3 className="text-lg font-semibold text-text">Cảnh báo khấu hao</h3>
-                            <p className="text-sm text-text-muted mt-1">Danh sách thiết bị đang tiến sát ngưỡng hoặc đã vượt mốc đề xuất thu hủy 75%.</p>
+                            <h3 className="dashboard-panel-title">Cảnh báo khấu hao</h3>
+                            <p className="dashboard-panel-subtitle">Danh sách thiết bị đang tiến sát ngưỡng hoặc đã vượt mốc đề xuất thu hủy 75%.</p>
                         </div>
                         <Badge variant={depreciationAlerts.length > 0 ? 'warning' : 'success'} size="sm">
                             {depreciationAlerts.length > 0 ? `${depreciationAlerts.length} cần theo dõi` : 'Ổn định'}
@@ -535,21 +539,21 @@ const Dashboard = ({ user }) => {
                     </div>
 
                     {depreciationAlerts.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                        <div className="dashboard-empty-state">
                             Chưa có thiết bị nào gần ngưỡng 75%.
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="dashboard-alert-list">
                             {depreciationAlerts.map((asset) => (
-                                <div key={asset.id} className="flex flex-col gap-3 rounded-xl border border-border bg-background px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div key={asset.id} className="dashboard-alert-row">
                                     <div>
-                                        <div className="font-semibold text-text">{asset.name}</div>
-                                        <div className="mt-1 text-sm text-text-muted">{asset.assetCode} · {asset.department}</div>
+                                        <div className="dashboard-alert-title">{asset.name}</div>
+                                        <div className="dashboard-alert-subtitle">{asset.assetCode} · {asset.department}</div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-right">
-                                            <div className="text-sm font-semibold text-text">{asset.percentage.toFixed(1)}%</div>
-                                            <div className="text-xs text-text-muted">Giá trị còn lại {formatCurrency(asset.currentBookValue)}</div>
+                                    <div className="dashboard-alert-meta">
+                                        <div>
+                                            <div className="dashboard-alert-percent">{asset.percentage.toFixed(1)}%</div>
+                                            <div className="dashboard-alert-value">Giá trị còn lại {formatCurrency(asset.currentBookValue)}</div>
                                         </div>
                                         <Badge variant={asset.percentage > 75 ? 'danger' : 'warning'} size="sm">
                                             {asset.percentage > 75 ? 'Đề xuất thu hủy' : 'Theo dõi'}
@@ -566,15 +570,15 @@ const Dashboard = ({ user }) => {
             <QuickActionGrid role={role} />
 
             {isSupplier ? (
-                <Card className="p-4">
-                    <div className="flex items-center justify-between mb-4">
+                <Card className="dashboard-panel dashboard-table-panel">
+                    <div className="dashboard-panel-header dashboard-panel-header-split">
                         <div>
-                            <h3 className="text-lg font-semibold text-text">{t('dashboard.recentOrders')}</h3>
-                            <p className="text-sm text-text-muted">{t('dashboard.recentOrdersHint')}</p>
+                            <h3 className="dashboard-panel-title">{t('dashboard.recentOrders')}</h3>
+                            <p className="dashboard-panel-subtitle">{t('dashboard.recentOrdersHint')}</p>
                         </div>
                         <Link
                             to="/purchase-orders"
-                            className="text-sm text-primary hover:text-primary-hover"
+                            className="dashboard-view-all-link"
                         >
                             {t('dashboard.viewAll')}
                         </Link>

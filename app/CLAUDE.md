@@ -1,6 +1,6 @@
 # Backend Guide
 
-Backend dùng Laravel 12. Mục tiêu nghiệp vụ là IT Asset Management theo vị trí và nhân viên chịu trách nhiệm.
+Backend dùng Laravel 12. Mục tiêu nghiệp vụ là Mesoco Asset Management theo vị trí và nhân viên chịu trách nhiệm.
 
 ## Quy Tắc
 
@@ -12,11 +12,11 @@ Backend dùng Laravel 12. Mục tiêu nghiệp vụ là IT Asset Management theo
 
 ## Module Chính
 
-- `Asset`: danh mục thiết bị IT, location, responsible employee, supplier, valuation.
+- `Asset`: danh mục thiết bị, location, responsible employee, supplier, valuation.
 - `MaintenanceEvent`: bảo trì, sửa chữa, cập nhật phần mềm, nâng cấp phần cứng.
 - `InventoryCheck`: kiểm kê và đối chiếu tình trạng.
 - `PurchaseOrder`: mua sắm thiết bị/vật tư từ supplier.
-- `AssetRequest`: báo sự cố thiết bị hoặc xin vật tư IT.
+- `AssetRequest`: báo sự cố thiết bị hoặc xin vật tư/linh kiện.
 - `Disposal`: đưa asset khỏi vận hành và ghi nhận thanh lý.
 
 ## Legacy

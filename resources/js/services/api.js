@@ -1,5 +1,5 @@
 /**
- * API Client Module - IT Asset Management
+ * API Client Module - Mesoco Asset Management
  * Handles all API calls with consistent error handling
  */
 import axios from 'axios';

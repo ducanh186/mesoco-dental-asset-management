@@ -180,19 +180,24 @@ const QuickActionGrid = ({ role }) => {
     const actions = getActionsForRole(role);
 
     return (
-        <div className="quick-actions-section mb-6">
-            <h3 className="section-title text-text font-semibold mb-4">{t('dashboard.quickActions')}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="quick-actions-section dashboard-panel dashboard-actions-panel">
+            <div className="dashboard-panel-header">
+                <div>
+                    <h3 className="dashboard-panel-title">{t('dashboard.quickActions')}</h3>
+                    <p className="dashboard-panel-subtitle">Truy cập nhanh các nghiệp vụ thường dùng.</p>
+                </div>
+            </div>
+            <div className="quick-actions-grid">
                 {actions.map((action) => (
                     <Link 
                         key={action.key}
                         to={action.to} 
-                        className="quick-action-btn flex flex-col items-center justify-center gap-2 p-4 bg-surface hover:bg-surface-hover border border-border text-text rounded-lg shadow-sm hover:shadow-md transition-all"
+                        className="quick-action-btn"
                     >
-                        <div className="w-8 h-8 text-primary">
+                        <div className="quick-action-icon" aria-hidden="true">
                             {action.icon}
                         </div>
-                        <span className="text-sm font-medium text-center">{action.label}</span>
+                        <span className="quick-action-label">{action.label}</span>
                     </Link>
                 ))}
             </div>
