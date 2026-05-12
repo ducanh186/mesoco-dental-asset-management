@@ -14,7 +14,7 @@
      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
      <!-- Vite Assets -->
-     @if(app()->environment('local') && file_exists(public_path('hot')))
+     @if(config('app.vite_use_dev_server') && file_exists(public_path('hot')))
           @viteReactRefresh
      @endif
      @vite(['resources/css/app.css', 'resources/js/app.jsx'])

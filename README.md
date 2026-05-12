@@ -51,17 +51,58 @@ npm run dev
 
 ## Chạy Với Docker
 
-Từ thư mục gốc repo:
+Nếu máy đã có Docker Desktop, làm theo đúng 4 bước sau từ thư mục gốc repo:
+
+1. Khởi động toàn bộ stack:
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
+```
+
+1. Chạy migrate và seed dữ liệu demo:
+
+```bash
 docker compose -f docker/docker-compose.yml exec app php artisan migrate --seed
 ```
 
-- `app` tự cài dependency, tạo `.env` nếu thiếu và chạy PHP built-in server tại `http://localhost:8000`.
-- `vite` chạy HMR tại `http://localhost:5173`.
-- `db` dùng MySQL 8.0 và publish cổng `3307` cho máy local.
-- Trên Windows có thể dùng các helper script `scripts\docker-setup.bat`, `scripts\docker-start.bat`, `scripts\docker-stop.bat`.
+1. Mở UI tại `http://localhost:8000`.
+
+1. Đăng nhập thử bằng tài khoản seed:
+
+```text
+username: E1001
+password: password
+```
+
+Ghi chú nhanh:
+
+- `http://localhost:8000` là cổng để mở UI và test nghiệp vụ.
+- `http://localhost:5173` chỉ là Vite dev server cho frontend; không dùng cổng này làm URL chính để đăng nhập.
+- MySQL trong Docker được publish ra `localhost:3307`.
+- Container `app` sẽ tự cài dependency và phục vụ luôn UI trên `8000`.
+- Trên Windows có thể dùng các script `scripts\docker-setup.bat`, `scripts\docker-start.bat`, `scripts\docker-stop.bat` nếu không muốn gõ lệnh dài.
+
+Lệnh hay dùng:
+
+```bash
+docker compose -f docker/docker-compose.yml stop
+docker compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml logs -f app
+docker compose -f docker/docker-compose.yml exec app php artisan db:seed --class=DatabaseSeeder
+```
+
+Nếu vừa sửa file Docker hoặc entrypoint và muốn áp dụng lại image mới:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d --build app
+```
+
+Nếu mở `localhost:8000` mà vẫn không đăng nhập được:
+
+1. Kiểm tra đã chạy lệnh `migrate --seed` trong container `app` chưa.
+2. Dùng đúng `username`, không dùng email để login.
+3. Mở lại đúng URL `http://localhost:8000`, không mở `5173`.
+4. Xem log app bằng `docker compose -f docker/docker-compose.yml logs -f app`.
 
 Chạy kiểm tra:
 

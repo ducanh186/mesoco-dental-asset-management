@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'vite_use_dev_server' => env('VITE_USE_DEV_SERVER', env('APP_ENV', 'production') === 'local'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

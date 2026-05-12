@@ -81,4 +81,4 @@ fi
 # -----------------------------------------------------------------------------
 # Start Laravel development server
 # -----------------------------------------------------------------------------
-exec php -S 0.0.0.0:8000 -t public public/index.php
+exec php -S 0.0.0.0:8000 -t public docker/app/router.php

@@ -19,6 +19,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,8 +37,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureVite();
         $this->configureRateLimiting();
         $this->registerPolicies();
+    }
+
+    /**
+     * Configure Vite asset resolution for the current runtime.
+     */
+    protected function configureVite(): void
+    {
+        if (! config('app.vite_use_dev_server')) {
+            Vite::useHotFile(storage_path('framework/vite.hot.disabled'));
+        }
     }
 
     /**
