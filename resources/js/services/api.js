@@ -145,6 +145,29 @@ export const assetsApi = {
         return response.data;
     },
 
+    /**
+     * Regenerate asset QR identity.
+     * POST /api/assets/{id}/regenerate-qr
+     */
+    regenerateQr: async (id) => {
+        const response = await axios.post(`/api/assets/${id}/regenerate-qr`);
+        return response.data;
+    },
+
+};
+
+// ============================================================================
+// QR Portal API
+// ============================================================================
+export const qrApi = {
+    /**
+     * Resolve a QR payload to role-aware asset portal data.
+     * POST /api/qr/resolve
+     */
+    resolve: async (payload) => {
+        const response = await axios.post('/api/qr/resolve', { payload });
+        return response.data;
+    },
 };
 
 // ============================================================================

@@ -2,7 +2,7 @@ import React from 'react';
 import { useI18n } from '../../i18n';
 
 /**
- * Table Component - OrangeHRM-inspired data table
+ * Table Component - Mesoco UI data table
  * 
  * @param {Array} columns - Array of { key, label, width?, align?, render? }
  * @param {Array} data - Array of row objects

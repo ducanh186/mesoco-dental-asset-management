@@ -13,7 +13,7 @@ import {
     Modal,
     useToast
 } from '../components/ui';
-import { inventoryApi, handleApiError } from '../services/api';
+import { assetsApi, inventoryApi, handleApiError } from '../services/api';
 import PrintableAssetLabel from '../components/PrintableAssetLabel';
 import { useI18n } from '../i18n';
 
@@ -53,6 +53,7 @@ const InventoryPage = ({ user }) => {
     // Print label modal
     const [printLabelItem, setPrintLabelItem] = useState(null);
     const [isPrintLabelOpen, setIsPrintLabelOpen] = useState(false);
+    const [printLabelLoadingId, setPrintLabelLoadingId] = useState(null);
     // View mode: 'inventory' | 'valuation'
     const [viewMode, setViewMode] = useState('inventory');
 
@@ -121,6 +122,20 @@ const InventoryPage = ({ user }) => {
             setValuationLoading(false);
         }
     }, [currentPage, searchQuery, categoryFilter, toast]);
+
+    const openPrintLabel = async (asset) => {
+        setPrintLabelLoadingId(asset.id);
+
+        try {
+            const response = await assetsApi.get(asset.id);
+            setPrintLabelItem(response.asset);
+            setIsPrintLabelOpen(true);
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setPrintLabelLoadingId(null);
+        }
+    };
     
     // Handle CSV export
     const handleExportCsv = async () => {
@@ -201,6 +216,26 @@ const InventoryPage = ({ user }) => {
         return t(`assets.types.${typeKey}`);
     }, [t]);
 
+    const getLocationLabel = (location, row = {}) => {
+        if (row.location_name) {
+            return row.location_name;
+        }
+
+        if (!location) {
+            return '—';
+        }
+
+        if (typeof location === 'string') {
+            return location;
+        }
+
+        return location.label
+            || [location.code, location.name].filter(Boolean).join(' - ')
+            || location.name
+            || location.code
+            || '—';
+    };
+
     // Inventory columns
     const inventoryColumns = [
         { 
@@ -219,7 +254,7 @@ const InventoryPage = ({ user }) => {
                 </div>
             )
         },
-        { key: 'location', label: 'Vị trí', render: (v) => v || '—' },
+        { key: 'location', label: 'Vị trí', render: (value, row) => getLocationLabel(value, row) },
         { 
             key: 'status', 
             label: 'Trạng thái',
@@ -246,10 +281,8 @@ const InventoryPage = ({ user }) => {
                         size="sm" 
                         variant="ghost"
                         title="In nhãn"
-                        onClick={() => {
-                            setPrintLabelItem(row);
-                            setIsPrintLabelOpen(true);
-                        }}
+                        loading={printLabelLoadingId === row.id}
+                        onClick={() => openPrintLabel(row)}
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -348,7 +381,20 @@ const InventoryPage = ({ user }) => {
 
     const locationOptions = [
         { value: '', label: 'Tất cả vị trí' },
-        ...(filters?.locations || []).map(l => ({ value: l, label: l }))
+        ...(filters?.locations || []).map((location) => {
+            if (typeof location === 'string') {
+                return { value: location, label: location };
+            }
+
+            const value = location.value || location.code || location.name || '';
+            const label = location.label
+                || [location.code, location.name].filter(Boolean).join(' - ')
+                || location.name
+                || location.code
+                || value;
+
+            return { value, label };
+        })
     ];
 
     const isLoading = viewMode === 'inventory' ? loading : valuationLoading;
@@ -591,7 +637,7 @@ const InventoryPage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-sm text-text-muted">Vị trí</p>
-                                <p className="font-medium text-text">{selectedItem.location || '—'}</p>
+                                <p className="font-medium text-text">{getLocationLabel(selectedItem.location, selectedItem)}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-text-muted">Trạng thái</p>

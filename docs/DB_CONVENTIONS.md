@@ -94,9 +94,15 @@ QR asset portal dùng hai lớp dữ liệu:
 - `asset_qr_identities.qr_uid`: identity bền vững cho từng lần regenerate QR.
 - `assets.qr_code` / `assets.qr_value`: payload QR gần nhất để workspace đọc nhanh.
 
+Contract active cho dual-flow QR:
+
+- QR in ra trên nhãn nên encode `GET /asset-portal/{qrUid}` để camera điện thoại mở portal trực tiếp.
+- `POST /api/qr/resolve` chấp nhận cả portal URL `/asset-portal/{qrUid}` và payload legacy `MESOCO|ASSET|v1|<uuid>`.
+- Payload legacy vẫn được lưu trong `assets.qr_code` / `assets.qr_value` để compatibility với scanner nội bộ và nhãn cũ.
+
 API/route active:
 
-- `POST /api/qr/resolve`: resolve payload `MESOCO|ASSET|v1|<uuid>` sang asset hiện tại.
+- `POST /api/qr/resolve`: resolve portal URL hoặc payload `MESOCO|ASSET|v1|<uuid>` sang asset hiện tại.
 - `POST /api/assets/{asset}/regenerate-qr`: tạo QR identity mới nhưng vẫn giữ lịch sử QR cũ.
 - `GET /asset-portal/{qrUid}`: read-only portal view cho tài sản được resolve từ QR.
 

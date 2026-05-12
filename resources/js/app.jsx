@@ -26,12 +26,17 @@ import ReportPage from './pages/ReportPage';
 import RequestsPage from './pages/RequestsPage';
 import ReviewRequestsPage from './pages/ReviewRequestsPage';
 import DisposalPage from './pages/DisposalPage';
+import QrScanPage from './pages/QrScanPage';
 
 // UI Components
 import { ToastProvider } from './components/ui';
 
 // i18n - Internationalization
 import { I18nProvider, useI18n } from './i18n';
+
+const mesocoLogoUrl = import.meta.env.DEV && typeof window !== 'undefined'
+     ? `${window.location.protocol}//${window.location.hostname}:5173/images/mesoco_logo.png`
+     : '/images/mesoco_logo.png';
 
 // ============================================================================
 // Axios Configuration
@@ -422,9 +427,9 @@ const ForgotPasswordPage = () => {
           <div className="auth-layout">
                <div className="auth-card">
                     <div className="auth-header auth-header-logo">
-                         <img 
-                              src="/images/mesoco_logo.png" 
-                              alt="Logo Mesoco" 
+                         <img
+                              src={mesocoLogoUrl}
+                              alt="Logo Mesoco"
                               className="auth-logo-image"
                          />
                     </div>
@@ -720,9 +725,9 @@ const LoginPage = () => {
           <div className="auth-layout">
                <div className="auth-card">
                     <div className="auth-header auth-header-logo">
-                         <img 
-                              src="/images/mesoco_logo.png" 
-                              alt="Logo Mesoco" 
+                         <img
+                              src={mesocoLogoUrl}
+                              alt="Logo Mesoco"
                               className="auth-logo-image"
                          />
                     </div>
@@ -903,6 +908,20 @@ const AssetsPageWrapper = () => {
                breadcrumbs={[{ label: t('nav.assets') }]}
           >
                <AssetsPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
+const QrScanPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+
+     return (
+          <AdminLayoutWrapper
+               title={t('nav.qrScan')}
+               breadcrumbs={[{ label: t('nav.qrScan') }]}
+          >
+               <QrScanPage user={user} />
           </AdminLayoutWrapper>
      );
 };
@@ -1167,6 +1186,11 @@ const App = () => {
                               <OperatorRoute>
                                    <AssetsPageWrapper />
                               </OperatorRoute>
+                         } />
+                         <Route path="/qr-scan" element={
+                              <InternalRoute>
+                                   <QrScanPageWrapper />
+                              </InternalRoute>
                          } />
                          <Route path="/purchase-orders" element={
                               <PurchaseOrderRoute>

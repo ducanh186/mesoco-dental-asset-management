@@ -40,7 +40,7 @@ class AssetController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $includeCheckinStatus = $request->boolean('include_checkin_status', false);
 
-        $query = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
+        $query = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition', 'latestQrIdentity'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -201,6 +201,7 @@ class AssetController extends Controller
             'currentAssignment.assignedByUser',
             'supplier',
             'locationDefinition',
+            'latestQrIdentity',
             'assignments' => fn($q) => $q->with(['employee.user', 'assignedByUser'])->orderByDesc('assigned_at')->limit(10),
         ]);
 
@@ -432,7 +433,7 @@ class AssetController extends Controller
      */
     public function available(Request $request): JsonResponse
     {
-        $assets = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition'])
+        $assets = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition', 'latestQrIdentity'])
             ->where('status', Asset::STATUS_ACTIVE)
             ->unassigned()
             ->orderBy('asset_code')
@@ -478,7 +479,7 @@ class AssetController extends Controller
     public function resolveQr(Request $request): JsonResponse
     {
         $payload = trim((string) $request->input('payload', ''));
-        $parsedPayload = $this->parseQrPayload($payload);
+        $parsedPayload = $this->parseQrResolvable($payload);
 
         if (!$parsedPayload) {
             return response()->json([
@@ -584,6 +585,7 @@ class AssetController extends Controller
                 'role' => $role,
                 'sections' => $sections,
             ],
+            'available_actions' => $this->assetPortalActions($role),
         ];
 
         if ($canSeeTechnical) {
@@ -613,12 +615,38 @@ class AssetController extends Controller
         return $data;
     }
 
+    private function assetPortalActions(string $role): array
+    {
+        return match ($role) {
+            User::ROLE_MANAGER => [
+                'view_basic',
+                'view_technical',
+                'view_supplier',
+                'regenerate_qr',
+                'review_disposal',
+            ],
+            User::ROLE_TECHNICIAN => [
+                'view_basic',
+                'view_technical',
+                'open_maintenance',
+                'inventory_check',
+            ],
+            User::ROLE_EMPLOYEE => [
+                'view_basic',
+                'report_issue',
+            ],
+            default => [
+                'view_basic',
+            ],
+        };
+    }
+
     private function transformWarrantyStatus(Asset $asset): array
     {
         if (!$asset->warranty_expiry) {
             return [
                 'status' => 'unknown',
-                'label' => 'No warranty expiry recorded',
+                'label' => 'Chưa có ngày hết hạn bảo hành',
                 'expires_at' => null,
             ];
         }
@@ -628,7 +656,7 @@ class AssetController extends Controller
 
         return [
             'status' => $active ? 'active' : 'expired',
-            'label' => $active ? 'Warranty active' : 'Warranty expired',
+            'label' => $active ? 'Còn bảo hành' : 'Hết bảo hành',
             'expires_at' => $asset->warranty_expiry->format('Y-m-d'),
         ];
     }
@@ -645,6 +673,9 @@ class AssetController extends Controller
             : null;
         $purchasePrice = $this->assetPurchasePrice($asset);
         $depreciationRate = $this->assetDepreciationRate($asset);
+        $repairLogs = $asset->repairLogs->isNotEmpty()
+            ? $asset->repairLogs
+            : $asset->maintenanceDetails;
 
         return [
             'device_status' => $asset->lifecycle_status,
@@ -655,7 +686,7 @@ class AssetController extends Controller
             'remaining_value' => $purchasePrice !== null && $depreciationRate !== null
                 ? round(max(0, $purchasePrice * (1 - ($depreciationRate / 100))), 2)
                 : null,
-            'repair_logs' => $asset->repairLogs
+            'repair_logs' => $repairLogs
                 ->sortByDesc(fn ($log) => $log->completed_at ?? $log->logged_at ?? $log->created_at)
                 ->take(10)
                 ->values()
@@ -919,6 +950,42 @@ class AssetController extends Controller
 
         return [
             'payload_version' => $version,
+            'qr_uid' => $qrUid,
+        ];
+    }
+
+    private function parseQrResolvable(string $value): ?array
+    {
+        $normalizedValue = trim($value);
+
+        if ($normalizedValue === '') {
+            return null;
+        }
+
+        $parsedPayload = $this->parseQrPayload($normalizedValue);
+
+        if ($parsedPayload) {
+            return $parsedPayload;
+        }
+
+        $path = parse_url($normalizedValue, PHP_URL_PATH);
+
+        if (!is_string($path) || $path === '') {
+            return null;
+        }
+
+        if (!preg_match('~(?:^|/)asset-portal/([0-9a-fA-F-]{36})/?$~', $path, $matches)) {
+            return null;
+        }
+
+        $qrUid = $matches[1];
+
+        if (!Str::isUuid($qrUid)) {
+            return null;
+        }
+
+        return [
+            'payload_version' => 'v1',
             'qr_uid' => $qrUid,
         ];
     }

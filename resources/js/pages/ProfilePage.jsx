@@ -16,7 +16,7 @@ import { normalizeRole } from '../utils/roles';
 import { preferLocalizedMessage } from '../services/api';
 
 /**
- * ProfilePage - Personal Details form (OrangeHRM-style)
+ * ProfilePage - Personal details form
  * 
  * Fields:
  * - Employee Full Name (editable)

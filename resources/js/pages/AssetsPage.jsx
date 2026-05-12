@@ -4,6 +4,7 @@ import {
     Button,
     Card,
     CardBody,
+    Badge,
     ConfirmModal,
     Input,
     Modal,
@@ -14,12 +15,20 @@ import {
     useToast,
 } from '../components/ui';
 import { assetsApi, employeesApi, handleApiError, locationsApi, suppliersApi } from '../services/api';
+import { buildQrDataUrl, getPrintableQrValue, getQrPayload, getQrPortalUrl } from '../utils/qr';
 
 const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
     maximumFractionDigits: 0,
 }).format(Number(value || 0));
+
+const escapeHtml = (value) => String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 
 const AssetsPage = () => {
     const toast = useToast();
@@ -50,6 +59,7 @@ const AssetsPage = () => {
 
     const [createLoading, setCreateLoading] = useState(false);
     const [handoverLoading, setHandoverLoading] = useState(false);
+    const [qrLoading, setQrLoading] = useState(false);
     const [createErrors, setCreateErrors] = useState({});
 
     const [createForm, setCreateForm] = useState({
@@ -335,6 +345,167 @@ const AssetsPage = () => {
     const openMaintenanceWorkspace = (asset) => {
         toast.info(`Mở workspace bảo trì để tạo phiếu cho ${asset.name}.`);
         navigate('/maintenance');
+    };
+
+    const copyText = async (text) => {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return;
+        }
+
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', 'true');
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    };
+
+    const handleCopyQrPayload = async () => {
+        const payload = getQrPayload(selectedAsset);
+
+        if (!payload) {
+            toast.warning('Tài sản chưa có payload QR để sao chép.', { title: 'Chưa có QR' });
+            return;
+        }
+
+        try {
+            await copyText(payload);
+            toast.success('Payload QR đã được sao chép.', { title: 'Đã sao chép QR' });
+        } catch (error) {
+            toast.error('Không thể sao chép QR. Vui lòng thử lại.');
+        }
+    };
+
+    const handleRegenerateQr = async () => {
+        if (!selectedAsset) {
+            return;
+        }
+
+        setQrLoading(true);
+        try {
+            const response = await assetsApi.regenerateQr(selectedAsset.id);
+            setSelectedAsset(response.asset);
+            fetchAssets();
+            toast.success('Mã QR mới đã sẵn sàng để in hoặc quét.', { title: 'Đã tạo lại QR' });
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setQrLoading(false);
+        }
+    };
+
+    const openQrPortal = () => {
+        const portalUrl = getQrPortalUrl(selectedAsset);
+
+        if (!portalUrl) {
+            toast.warning('Tài sản chưa có portal URL. Hãy tạo lại QR trước.', { title: 'Chưa có portal' });
+            return;
+        }
+
+        window.open(portalUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    const buildQrLabelMarkup = async (asset) => {
+        const payload = getQrPayload(asset);
+        const portalUrl = getQrPortalUrl(asset);
+        const printableQrValue = getPrintableQrValue(asset);
+        const qrImageUrl = printableQrValue ? await buildQrDataUrl(printableQrValue, { width: 240 }) : '';
+        const assetCode = escapeHtml(asset.asset_code);
+        const assetName = escapeHtml(asset.name || 'Asset');
+        const safePayload = escapeHtml(payload || 'Chưa có payload QR');
+        const safePortalUrl = escapeHtml(portalUrl || 'Tạo lại QR để có portal URL');
+        const qrMarkup = qrImageUrl
+            ? `<img class="qr" src="${qrImageUrl}" alt="Asset QR" />`
+            : '<div class="qr-placeholder">Tạo lại QR để in nhãn</div>';
+
+        return `<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Mesoco QR Label - ${assetCode}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #0f2742; }
+        .label { width: 360px; border: 2px solid #1b5f9e; border-radius: 12px; padding: 18px; }
+        .brand { color: #1b5f9e; font-size: 28px; font-weight: 800; letter-spacing: 0; }
+        .accent { color: #f5822a; }
+        .qr-wrap { margin-top: 16px; display: flex; justify-content: center; }
+        .qr { width: 220px; height: 220px; object-fit: contain; }
+        .qr-placeholder { width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; border: 1px dashed #88a8c6; border-radius: 12px; font-size: 12px; color: #486177; text-align: center; padding: 16px; }
+        .asset { margin-top: 12px; font-size: 18px; font-weight: 700; }
+        .code { margin-top: 4px; font-family: monospace; font-size: 13px; color: #486177; }
+        .hint { margin-top: 12px; font-size: 12px; color: #486177; }
+        .portal { margin-top: 8px; font-size: 11px; color: #486177; overflow-wrap: anywhere; }
+        .payload-label { margin-top: 16px; font-size: 11px; font-weight: 700; color: #486177; text-transform: uppercase; }
+        .payload { margin-top: 6px; padding: 12px; border: 1px dashed #88a8c6; border-radius: 8px; font-family: monospace; font-size: 11px; overflow-wrap: anywhere; }
+        @media print { body { margin: 0; } .label { margin: 0; } }
+    </style>
+</head>
+<body>
+    <div class="label">
+        <div class="brand">MES<span class="accent">O</span>CO</div>
+        <div class="qr-wrap">${qrMarkup}</div>
+        <div class="asset">${assetName}</div>
+        <div class="code">${assetCode}</div>
+        <div class="hint">Quét bằng camera để mở portal tài sản</div>
+        <div class="portal">${safePortalUrl}</div>
+        <div class="payload-label">Payload nội bộ</div>
+        <div class="payload">${safePayload}</div>
+    </div>
+</body>
+</html>`;
+    };
+
+    const printQrLabel = async () => {
+        if (!selectedAsset) {
+            return;
+        }
+
+        const printWindow = window.open('', '_blank', 'width=520,height=620');
+        if (!printWindow) {
+            toast.warning('Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép popup.');
+            return;
+        }
+
+        printWindow.document.write('<!doctype html><html><body style="font-family: Arial, sans-serif; padding: 24px;">Đang tạo nhãn QR...</body></html>');
+        printWindow.document.close();
+
+        try {
+            const markup = await buildQrLabelMarkup(selectedAsset);
+            printWindow.document.open();
+            printWindow.document.write(markup);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        } catch (error) {
+            printWindow.close();
+            toast.error('Không thể tạo nhãn QR để in. Vui lòng thử lại.');
+        }
+    };
+
+    const downloadQrLabel = async () => {
+        if (!selectedAsset) {
+            return;
+        }
+
+        try {
+            const markup = await buildQrLabelMarkup(selectedAsset);
+            const blob = new Blob([markup], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `${selectedAsset.asset_code || 'mesoco-asset'}-qr-label.html`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            URL.revokeObjectURL(url);
+            toast.success('Đã tải nhãn QR dạng HTML.', { title: 'Tải xuống thành công' });
+        } catch (error) {
+            toast.error('Không thể tạo nhãn QR để tải xuống. Vui lòng thử lại.');
+        }
     };
 
     const handleHandoverAsset = async () => {
@@ -864,6 +1035,49 @@ const AssetsPage = () => {
                                             <div className="text-sm text-text whitespace-pre-wrap">{selectedAsset.configuration}</div>
                                         </div>
                                     )}
+                                </CardBody>
+                            </Card>
+
+                            <Card>
+                                <CardBody className="space-y-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <div className="font-semibold text-text">QR tài sản</div>
+                                            <div className="text-sm text-text-muted">Dùng cùng một mã QR, dữ liệu sẽ được lọc theo quyền người quét.</div>
+                                        </div>
+                                        <Badge variant={getQrPayload(selectedAsset) ? 'success' : 'warning'} size="sm">
+                                            {getQrPayload(selectedAsset) ? 'Sẵn sàng' : 'Chưa có QR'}
+                                        </Badge>
+                                    </div>
+
+                                    <div className="rounded-lg border border-border bg-background px-3 py-3">
+                                        <div className="text-xs font-semibold uppercase text-text-muted">QR in ra</div>
+                                        <div className="mt-1 break-all text-xs text-text">
+                                            {getQrPortalUrl(selectedAsset) || 'Tạo lại QR để có portal URL cho mobile'}
+                                        </div>
+                                        <div className="mt-3 text-xs font-semibold uppercase text-text-muted">Payload nội bộ</div>
+                                        <div className="mt-1 break-all font-mono text-xs text-text">
+                                            {getQrPayload(selectedAsset) || 'Chưa tạo QR'}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button size="sm" onClick={handleRegenerateQr} loading={qrLoading}>
+                                            Tạo lại QR
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={handleCopyQrPayload}>
+                                            Sao chép payload
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={openQrPortal}>
+                                            Mở portal
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={printQrLabel}>
+                                            In nhãn
+                                        </Button>
+                                        <Button size="sm" variant="ghost" className="col-span-2" onClick={downloadQrLabel}>
+                                            Tải nhãn HTML
+                                        </Button>
+                                    </div>
                                 </CardBody>
                             </Card>
 

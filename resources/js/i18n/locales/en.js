@@ -105,6 +105,7 @@ export default {
     nav: {
         dashboard: 'Dashboard',
         profile: 'Profile',
+        qrScan: 'Asset QR Scan',
         catalogRecords: 'Catalog & Records',
         allocationManagement: 'Allocation Management',
         employees: 'Employee Profiles',
@@ -1057,6 +1058,10 @@ export default {
         unnamedAsset: 'Unnamed Asset',
         scanInstruction: 'Use this label for inventory reconciliation',
         handoverNote: 'IT asset assigned to a responsible employee',
+        qrPortalHint: 'Scan to open the asset portal on mobile or in a browser',
+        qrLoading: 'Generating QR...',
+        qrUnavailable: 'Regenerate QR to print the label',
+        internalPayload: 'Internal payload',
     },
 
     // ========================================================================

@@ -3,6 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import { ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, getUserRole, hasOperationalAccess } from '../utils/roles';
 
+const mesocoLogoUrl = import.meta.env.DEV && typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.hostname}:5173/images/mesoco_logo.png`
+    : '/images/mesoco_logo.png';
+
 /**
  * Sidebar focused on the 5 DFD level-0 tasks.
  */
@@ -36,6 +40,12 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             path: '/dashboard', 
             labelKey: 'nav.dashboard', 
             icon: 'dashboard'
+        },
+        {
+            id: 'qr-scan',
+            path: '/qr-scan',
+            labelKey: 'nav.qrScan',
+            icon: 'qr',
         },
         {
             id: 'requests',
@@ -97,7 +107,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 {
                     id: 'manager-overview',
                         label: sectionLabel('Tổng quan', 'Overview'),
-                    items: baseNavItems.filter((item) => ['dashboard'].includes(item.id)),
+                    items: baseNavItems.filter((item) => ['dashboard', 'qr-scan'].includes(item.id)),
                 },
                 {
                     id: 'manager-inventory',
@@ -119,8 +129,8 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 ? [
                     {
                         id: 'tech-overview',
-                            label: sectionLabel('Tổng quan', 'Overview'),
-                        items: baseNavItems.filter((item) => ['dashboard', 'requests'].includes(item.id)),
+                        label: sectionLabel('Tổng quan', 'Overview'),
+                        items: baseNavItems.filter((item) => ['dashboard', 'qr-scan', 'requests'].includes(item.id)),
                     },
                     {
                         id: 'tech-assets',
@@ -183,6 +193,15 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     <rect x="9" y="3" width="6" height="4" rx="1" />
                     <path d="M9 12h6" />
                     <path d="M9 16h6" />
+                </svg>
+            ),
+            qr: (
+                <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                    <path d="M14 14h3v3h-3z" />
+                    <path d="M19 14h2v7h-7v-2" />
                 </svg>
             ),
             reviewRequests: (
@@ -355,9 +374,9 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
             {/* Sidebar Header / Logo */}
             <div className="sidebar-header border-b border-border">
                 <Link to="/dashboard" className="sidebar-logo text-primary hover:text-primary-hover" onClick={onMobileClose}>
-                    <svg className="logo-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                    </svg>
+                    <span className="logo-mark">
+                        <img src={mesocoLogoUrl} alt="Mesoco" className="logo-image" />
+                    </span>
                     {!collapsed && <span className="logo-text text-text font-semibold">Mesoco IT</span>}
                 </Link>
 
@@ -384,7 +403,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                     return (
                         <div key={section.id} className="px-3 py-2">
                             {!collapsed && (
-                                <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-text-light">
+                                <div className="px-3 pb-2 text-[11px] font-semibold uppercase text-text-light">
                                     {section.label}
                                 </div>
                             )}

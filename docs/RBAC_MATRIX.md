@@ -44,11 +44,12 @@ Các API cũ ngoài scope active vẫn trả HTTP `410 Gone` cùng JSON message 
 
 | Endpoint active | Quyền |
 | --- | --- |
-| `/api/qr/resolve` | `manager`, `technician`, `employee` |
+| `/api/qr/resolve` | `manager`, `technician`, `employee`; nhận cả portal URL `/asset-portal/{qrUid}` và payload legacy `MESOCO\|ASSET\|v1\|{uuid}` |
 | `/api/assets/{asset}/regenerate-qr` | `manager`, `technician` |
-| `/asset-portal/{qrUid}` | Read-only portal view; public/basic nếu chưa đăng nhập, role-aware nếu có session |
+| `/asset-portal/{qrUid}` | Read-only portal view; public/basic nếu chưa đăng nhập, role-aware nếu có session; là nội dung QR ưu tiên cho nhãn in/mobile |
 
 ## Nguyên Tắc
 
 Employee chỉ nhìn thấy asset đang gắn với `employee_id` của chính mình trong active assignment. Login active dùng `username + password` và vẫn tạm chấp nhận payload `employee_code` cũ ở lớp compatibility.
 Technician và manager chịu trách nhiệm vận hành, kiểm kê, bảo trì, disposal và QR lifecycle.
+QR vật lý nên encode portal URL để camera điện thoại mở trực tiếp; scanner nội bộ vẫn hỗ trợ resolve cả portal URL mới và payload QR cũ để không phá nhãn đã in.

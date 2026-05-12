@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useI18n } from '../../i18n';
 
 /**
- * Toast System - OrangeHRM-inspired notifications
+ * Toast System - Mesoco notifications
  */
 
 // Toast Context

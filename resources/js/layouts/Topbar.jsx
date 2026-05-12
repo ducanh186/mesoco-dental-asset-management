@@ -5,7 +5,7 @@ import { useI18n } from '../i18n';
 import { normalizeRole } from '../utils/roles';
 
 /**
- * Topbar - OrangeHRM-inspired top navigation bar
+ * Topbar - Mesoco top navigation bar
  */
 const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar }) => {
     const { t } = useI18n();
