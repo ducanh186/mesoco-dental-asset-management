@@ -57,11 +57,11 @@ echo  Frontend:  http://localhost:5173
 echo  Backend:   http://localhost:8000
 echo.
 echo  Accounts:
-echo    E0001 / password (Admin)
-echo    E0002 / password (HR)
-echo    E0003 / password (Doctor)
-echo    E0004 / password (Technician)
-echo    E0005 / password (Staff)
+echo    E1001 / password (Manager)
+echo    E1002 / password (Technician)
+echo    E1003 / password (Employee)
+echo    E1004 / password (Frontdesk)
+echo    E1005 / password (Warehouse)
 echo ========================================
 cd ..
 cd ..

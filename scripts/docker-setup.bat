@@ -91,11 +91,11 @@ echo  Test Accounts:
 echo  +-----------+---------------+----------+
 echo  ^| Role      ^| Employee Code ^| Password ^|
 echo  +-----------+---------------+----------+
-echo  ^| Admin     ^| E0001         ^| password ^|
-echo  ^| HR        ^| E0002         ^| password ^|
-echo  ^| Doctor    ^| E0003         ^| password ^|
-echo  ^| Technician^| E0004         ^| password ^|
-echo  ^| Staff     ^| E0005         ^| password ^|
+echo  ^| Manager   ^| E1001         ^| password ^|
+echo  ^| Technician^| E1002         ^| password ^|
+echo  ^| Employee  ^| E1003         ^| password ^|
+echo  ^| Frontdesk ^| E1004         ^| password ^|
+echo  ^| Warehouse ^| E1005         ^| password ^|
 echo  +-----------+---------------+----------+
 echo.
 echo  Useful commands:

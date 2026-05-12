@@ -62,7 +62,7 @@ async function runTests() {
   console.log('=' .repeat(60));
 
   // ============================================
-  // Setup: Login as Admin
+  // Setup: Login as Manager
   // ============================================
   console.log('\n📁 Setup\n');
 
@@ -70,15 +70,15 @@ async function runTests() {
   let res = await request('GET', '/sanctum/csrf-cookie');
   test('CSRF 204', res.status === 204, `got ${res.status}`);
 
-  console.log('\n→ Login as Admin (E0001)');
-  res = await request('POST', '/login', { employee_code: 'E0001', password: 'password' });
+  console.log('\n→ Login as Manager (E1001)');
+  res = await request('POST', '/login', { employee_code: 'E1001', password: 'password' });
   test('Login 200', res.status === 200, `got ${res.status}`);
 
   // ============================================
-  // Assets CRUD (Admin)
+  // Assets CRUD (Manager)
   // ============================================
   console.log('\n' + '=' .repeat(60));
-  console.log('\n📁 PHASE 3 - Assets CRUD (Admin)\n');
+  console.log('\n📁 PHASE 3 - Assets CRUD (Manager)\n');
 
   // 1. List Assets
   console.log('→ 1. List Assets');
@@ -135,9 +135,9 @@ async function runTests() {
   console.log('\n📁 PHASE 3 - Assignment Workflow\n');
 
   // 6. Assign Asset
-  console.log('→ 6. Assign Asset to Employee (E0003 - Doctor)');
+  console.log('→ 6. Assign Asset to Employee (E1003)');
   res = await request('POST', `/api/assets/${testAssetId}/assign`, {
-    employee_id: 3 // Doctor employee
+    employee_id: 3 // Demo employee
   });
   test('Status 200', res.status === 200, `got ${res.status}`);
   test('Has assignment', !!res.data?.assignment);
@@ -145,7 +145,7 @@ async function runTests() {
   // 7. Try assign again (should fail)
   console.log('\n→ 7. Try Assign Again (expect 422 ALREADY_ASSIGNED)');
   res = await request('POST', `/api/assets/${testAssetId}/assign`, {
-    employee_id: 4 // Technician
+    employee_id: 4 // Another demo employee
   });
   test('Status 422', res.status === 422, `got ${res.status}`);
   test('Error ALREADY_ASSIGNED', res.data?.error === 'ALREADY_ASSIGNED');
@@ -204,31 +204,31 @@ async function runTests() {
   test('Status 200', res.status === 200, `got ${res.status}`);
 
   // ============================================
-  // RBAC Tests (Non-Admin)
+  // RBAC Tests (Non-Manager)
   // ============================================
   console.log('\n' + '=' .repeat(60));
-  console.log('\n📁 PHASE 3 - RBAC Tests (Doctor Role)\n');
+  console.log('\n📁 PHASE 3 - RBAC Tests (Employee Role)\n');
 
-  // Logout and login as Doctor
-  console.log('→ Switch to Doctor (E0003)');
+  // Logout and login as Employee
+  console.log('→ Switch to Employee (E1003)');
   await request('POST', '/logout');
-  res = await request('POST', '/login', { employee_code: 'E0003', password: 'password' });
-  test('Logged in as Doctor', res.status === 200);
+  res = await request('POST', '/login', { employee_code: 'E1003', password: 'password' });
+  test('Logged in as Employee', res.status === 200);
 
-  // 15. Doctor can view my-assets
-  console.log('\n→ 15. Doctor can view My Assets');
+  // 15. Employee can view my-assets
+  console.log('\n→ 15. Employee can view My Assets');
   res = await request('GET', '/api/my-assets');
   test('Status 200', res.status === 200, `got ${res.status}`);
   test('Has assets array', Array.isArray(res.data?.assets));
-  console.log(`   Doctor has ${res.data?.assets?.length || 0} assigned assets`);
+  console.log(`   Employee has ${res.data?.assets?.length || 0} assigned assets`);
 
-  // 16. Doctor cannot list all assets via /api/assets -> 403 (admin only)
-  console.log('\n→ 16. Doctor /api/assets -> 403 (admin only)');
+  // 16. Employee cannot list all assets via /api/assets -> 403
+  console.log('\n→ 16. Employee /api/assets -> 403');
   res = await request('GET', '/api/assets');
   test('Status 403', res.status === 403, `got ${res.status}`);
 
-  // 17. Doctor cannot create asset
-  console.log('\n→ 17. Doctor cannot create asset -> 403');
+  // 17. Employee cannot create asset
+  console.log('\n→ 17. Employee cannot create asset -> 403');
   res = await request('POST', '/api/assets', {
     asset_code: 'HACK-001',
     name: 'Hacked Asset',
@@ -236,13 +236,13 @@ async function runTests() {
   });
   test('Status 403', res.status === 403, `got ${res.status}`);
 
-  // 18. Doctor cannot assign asset
-  console.log('\n→ 18. Doctor cannot assign asset -> 403');
+  // 18. Employee cannot assign asset
+  console.log('\n→ 18. Employee cannot assign asset -> 403');
   res = await request('POST', '/api/assets/1/assign', { employee_id: 1 });
   test('Status 403', res.status === 403, `got ${res.status}`);
 
-  // 19. Doctor CAN resolve QR (all users can)
-  console.log('\n→ 19. Doctor CAN resolve QR');
+  // 19. Employee CAN resolve QR
+  console.log('\n→ 19. Employee CAN resolve QR');
   res = await request('POST', '/api/qr/resolve', { payload: newQrPayload });
   test('Status 200', res.status === 200, `got ${res.status}`);
 
@@ -252,9 +252,9 @@ async function runTests() {
   console.log('\n' + '=' .repeat(60));
   console.log('\n📁 Cleanup + Soft Delete Test\n');
 
-  // Login back as admin
+  // Login back as manager
   await request('POST', '/logout');
-  res = await request('POST', '/login', { employee_code: 'E0001', password: 'password' });
+  res = await request('POST', '/login', { employee_code: 'E1001', password: 'password' });
   
   // Delete test asset (soft delete)
   console.log('→ 20. Delete test asset (soft delete)');

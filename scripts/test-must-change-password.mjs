@@ -59,15 +59,15 @@ async function testMustChangePasswordFlow() {
   let res = await request('GET', '/sanctum/csrf-cookie');
   console.log(`   ✅ Status ${res.status}`);
 
-  // 2. Login as admin
-  console.log('\n→ 2. Login as Admin');
-  res = await request('POST', '/login', { employee_code: 'E0001', password: 'password' });
+  // 2. Login as manager
+  console.log('\n→ 2. Login as Manager');
+  res = await request('POST', '/login', { employee_code: 'E1001', password: 'password' });
   console.log(`   ✅ Status ${res.status}`);
 
   // 3. Create user with must_change_password=true (simulate new user)
-  console.log('\n→ 3. Create user E0006 with must_change_password=true');
+  console.log('\n→ 3. Create a user with must_change_password=true');
   res = await request('POST', '/api/users', {
-    employee_id: 6, // E0006 from seeder
+    employee_id: 6,
     role: 'employee',
     default_password: 'TempPass123!'
   });
@@ -77,15 +77,16 @@ async function testMustChangePasswordFlow() {
   }
   console.log(`   ✅ User created (ID: ${res.data.user.id})`);
   const testUserId = res.data.user.id;
+  const newUserCode = res.data.user.employee_code;
 
-  // 4. Logout admin
-  console.log('\n→ 4. Logout admin');
+  // 4. Logout manager
+  console.log('\n→ 4. Logout manager');
   res = await request('POST', '/logout');
   console.log(`   ✅ Status ${res.status}`);
 
   // 5. Login as new user (should have must_change_password=true)
-  console.log('\n→ 5. Login as E0006 (must_change_password=true)');
-  res = await request('POST', '/login', { employee_code: 'E0006', password: 'TempPass123!' });
+  console.log(`\n→ 5. Login as ${newUserCode} (must_change_password=true)`);
+  res = await request('POST', '/login', { employee_code: newUserCode, password: 'TempPass123!' });
   if (res.status !== 200) {
     console.log(`   ❌ Login failed: ${res.status} - ${JSON.stringify(res.data)}`);
     return;
@@ -125,10 +126,10 @@ async function testMustChangePasswordFlow() {
   const finalWorks = res.status === 200 || res.status === 403; // 403 is OK (role permission), not 409
   console.log(`   ${finalWorks ? '✅' : '❌'} Status ${res.status} (403 is OK - role issue, not password)`);
 
-  // Cleanup - login as admin and delete test user
+  // Cleanup - login as manager and delete test user
   console.log('\n→ Cleanup: Delete test user');
   res = await request('POST', '/logout');
-  res = await request('POST', '/login', { employee_code: 'E0001', password: 'password' });
+  res = await request('POST', '/login', { employee_code: 'E1001', password: 'password' });
   res = await request('DELETE', `/api/users/${testUserId}`);
   console.log(`   ✅ Cleanup done`);
 

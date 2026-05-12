@@ -79,26 +79,26 @@ async function runTests() {
   test('Status 204', res.status === 204, `got ${res.status}`);
 
   // 2. Login
-  console.log('\n→ 2. Login (E0001/password)');
-  res = await request('POST', '/login', { employee_code: 'E0001', password: 'password' });
+  console.log('\n→ 2. Login (E1001/password)');
+  res = await request('POST', '/login', { employee_code: 'E1001', password: 'password' });
   test('Status 200', res.status === 200, `got ${res.status}`);
-  test('Has user data', res.data?.user?.employee_code === 'E0001');
+  test('Has user data', res.data?.user?.employee_code === 'E1001');
 
   // 3. Get Current User
   console.log('\n→ 3. Get Current User');
   res = await request('GET', '/api/me');
   test('Status 200', res.status === 200, `got ${res.status}`);
-  test('User is E0001', res.data?.user?.employee_code === 'E0001');
+  test('User is E1001', res.data?.user?.employee_code === 'E1001');
 
   // 4. Forgot Password - Request (skip actual test, just check endpoint)
   console.log('\n→ 4. Forgot Password - Request');
-  res = await request('POST', '/forgot-password/request', { email: 'admin@mesoco.vn' });
+  res = await request('POST', '/forgot-password/request', { email: 'manager@mesoco.vn' });
   test('Status 200', res.status === 200, `got ${res.status}`);
 
   // 5. Forgot Password - Reset (will fail without real OTP)
   console.log('\n→ 5. Forgot Password - Reset (expected 422 without OTP)');
   res = await request('POST', '/forgot-password/reset', { 
-    email: 'admin@mesoco.vn', 
+    email: 'manager@mesoco.vn', 
     verification_code: '000000', 
     password: 'NewPass123!',
     password_confirmation: 'NewPass123!'
@@ -132,7 +132,7 @@ async function runTests() {
 
   // 2. Update Profile (valid)
   console.log('\n→ 2. Update Profile (valid fields)');
-  res = await request('PUT', '/api/profile', { full_name: 'Admin User', position: 'System Administrator', phone: '0901234567' });
+  res = await request('PUT', '/api/profile', { full_name: 'Manager User', position: 'System Administrator', phone: '0901234567' });
   test('Status 200', res.status === 200, `got ${res.status}`);
   test('Message includes updated', res.data?.message?.includes('updated'));
 
@@ -148,8 +148,8 @@ async function runTests() {
   test('Status 422', res.status === 422, `got ${res.status}`);
   test('Error has email', !!res.data?.errors?.email);
 
-  // --- Employees (Admin/HR) ---
-  console.log('\n📂 Employees (Admin/HR)\n');
+  // --- Employees (Manager) ---
+  console.log('\n📂 Employees (Manager)\n');
 
   // 1. List Employees
   console.log('→ 1. List Employees');
@@ -198,8 +198,8 @@ async function runTests() {
     test('Status 200', res.status === 200, `got ${res.status}`);
   }
 
-  // --- Users / Roles & Permission (Admin/HR) ---
-  console.log('\n📂 Users / Roles & Permission (Admin/HR)\n');
+  // --- Users / Roles & Permission (Manager) ---
+  console.log('\n📂 Users / Roles & Permission (Manager)\n');
 
   // 1. List Users
   console.log('→ 1. List Users');
@@ -263,23 +263,23 @@ async function runTests() {
     test('Status 200', res.status === 200, `got ${res.status}`);
   }
 
-  // --- RBAC Tests (Login as Doctor) ---
-  console.log('\n📂 RBAC Tests (Doctor Role)\n');
+  // --- RBAC Tests (Login as Employee) ---
+  console.log('\n📂 RBAC Tests (Employee Role)\n');
 
-  // Logout and login as doctor
+  // Logout and login as employee
   await request('POST', '/logout');
   await request('GET', '/sanctum/csrf-cookie');
-  res = await request('POST', '/login', { employee_code: 'E0003', password: 'password' });
-  test('Logged in as Doctor (E0003)', res.status === 200);
+  res = await request('POST', '/login', { employee_code: 'E1003', password: 'password' });
+  test('Logged in as Employee (E1003)', res.status === 200);
 
-  // 9. Doctor cannot list employees
-  console.log('\n→ RBAC: Doctor cannot list employees → 403');
+  // 9. Employee cannot list employees
+  console.log('\n→ RBAC: Employee cannot list employees → 403');
   res = await request('GET', '/api/employees');
   test('Status 403', res.status === 403, `got ${res.status}`);
   test('Message has Forbidden', res.data?.message?.includes('Forbidden'));
 
-  // 10. Doctor cannot list users
-  console.log('\n→ RBAC: Doctor cannot list users → 403');
+  // 10. Employee cannot list users
+  console.log('\n→ RBAC: Employee cannot list users → 403');
   res = await request('GET', '/api/users');
   test('Status 403', res.status === 403, `got ${res.status}`);
   test('Has your_role', !!res.data?.your_role);

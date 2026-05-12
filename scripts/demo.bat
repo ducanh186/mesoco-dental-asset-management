@@ -84,9 +84,9 @@ echo SMOKE TEST COMPLETE
 echo ========================================
 echo.
 echo Demo accounts:
-echo   Admin      : E0001 / password
-echo   Doctor     : E0002 / password
-echo   Technician : E0003 / password
+echo   Manager    : E1001 / password
+echo   Technician : E1002 / password
+echo   Employee   : E1003 / password
 echo.
 echo ========================================
 echo Starting Dev Servers...

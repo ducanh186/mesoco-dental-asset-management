@@ -133,6 +133,18 @@ Sau khi chạy `php artisan migrate --seed`, dùng các tài khoản mẫu sau �
 
 `Supplier` không được seed mặc định trong `DatabaseSeeder`; nếu cần test luồng supplier, tạo user supplier riêng trong hệ thống hoặc bằng factory/seeder bổ sung.
 
+Nếu `E1001 / password` vẫn báo sai tài khoản, database đang chạy chưa được seed theo bản mới. Chạy lại seed trên đúng môi trường app đang mở:
+
+```bash
+php artisan db:seed --class=DatabaseSeeder
+```
+
+Với Docker, có thể dùng script reset hoặc chạy trong container app:
+
+```bash
+docker compose -f docker/docker-compose.yml exec app php artisan db:seed --class=DatabaseSeeder
+```
+
 ## Tài Liệu
 
 - [docs/README.md](docs/README.md): mục lục tài liệu theo hướng báo cáo/luận văn.
