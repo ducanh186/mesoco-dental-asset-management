@@ -15,6 +15,7 @@ Công ty cần biết mỗi tài sản IT đang ở vị trí nào, ai đang ch�
 | [RBAC_MATRIX.md](RBAC_MATRIX.md) | Ma trận quyền theo role |
 | [ROLE_FEATURES.md](ROLE_FEATURES.md) | Tính năng nhìn từ từng người dùng |
 | [DB_CONVENTIONS.md](DB_CONVENTIONS.md) | Database, bảng chính, enum và legacy compatibility |
+| [QR_FEATURE_GUIDE.md](QR_FEATURE_GUIDE.md) | Hướng dẫn QR portal, login bằng điện thoại và dữ liệu theo role |
 | [SEED_DATA.md](SEED_DATA.md) | Tài khoản mẫu và dữ liệu demo IT |
 | [CLASS_DIAGRAM.md](CLASS_DIAGRAM.md) | Class diagram Mermaid cho báo cáo |
 | [feat_role.md](feat_role.md) | Checklist nghiệm thu theo yêu cầu khách |
@@ -25,6 +26,7 @@ Công ty cần biết mỗi tài sản IT đang ở vị trí nào, ai đang ch�
 - `Asset Workspace`: danh mục tài sản IT, global search, bộ lọc vị trí hoặc assignment và thông tin vòng đời.
 - `Location Catalog`: mã vị trí, tên vị trí và mô tả nơi đặt tài sản.
 - `Responsible Employee`: gắn hoặc thu hồi tài sản khỏi một nhân viên chịu trách nhiệm.
+- `QR Asset Portal`: quét QR trên điện thoại, bắt buộc đăng nhập và hiển thị dữ liệu theo role.
 - `Maintenance`: bảo trì một hoặc nhiều thiết bị, có chi tiết xử lý và chi phí.
 - `Inventory & Valuation`: kiểm kê, khấu hao, giá trị còn lại và bảo hành.
 - `Requests`: báo sự cố thiết bị và xin vật tư/linh kiện IT.

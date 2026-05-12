@@ -60,6 +60,7 @@ const AssetsPage = () => {
     const [createLoading, setCreateLoading] = useState(false);
     const [handoverLoading, setHandoverLoading] = useState(false);
     const [qrLoading, setQrLoading] = useState(false);
+    const [detailQrImageUrl, setDetailQrImageUrl] = useState('');
     const [createErrors, setCreateErrors] = useState({});
 
     const [createForm, setCreateForm] = useState({
@@ -125,6 +126,42 @@ const AssetsPage = () => {
         fetchEmployees();
         fetchLocations();
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        const printableQrValue = getPrintableQrValue(selectedAsset);
+
+        if (!detailDrawerOpen || !printableQrValue) {
+            setDetailQrImageUrl('');
+            return () => {
+                cancelled = true;
+            };
+        }
+
+        setDetailQrImageUrl('');
+        buildQrDataUrl(printableQrValue, { width: 260 })
+            .then((dataUrl) => {
+                if (!cancelled) {
+                    setDetailQrImageUrl(dataUrl);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setDetailQrImageUrl('');
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        detailDrawerOpen,
+        selectedAsset?.id,
+        selectedAsset?.qr?.uid,
+        selectedAsset?.qr?.portal_url,
+        selectedAsset?.qr?.payload,
+        selectedAsset?.qr_code,
+    ]);
 
     const fetchAssets = async () => {
         setLoading(true);
@@ -1049,6 +1086,26 @@ const AssetsPage = () => {
                                             {getQrPayload(selectedAsset) ? 'Sẵn sàng' : 'Chưa có QR'}
                                         </Badge>
                                     </div>
+
+                                    {detailQrImageUrl ? (
+                                        <div className="rounded-lg border border-border bg-white p-4 flex flex-col items-center gap-3">
+                                            <img
+                                                data-testid="asset-detail-qr-image"
+                                                src={detailQrImageUrl}
+                                                alt="QR tài sản để quét"
+                                                className="h-48 w-48 object-contain"
+                                            />
+                                            <div className="text-center text-xs font-medium text-text-muted">
+                                                Quét bằng điện thoại để mở portal tài sản
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-lg border border-dashed border-border bg-background px-4 py-8 text-center text-sm text-text-muted">
+                                            {getPrintableQrValue(selectedAsset)
+                                                ? 'Đang tạo ảnh QR...'
+                                                : 'Tạo lại QR để hiển thị mã quét'}
+                                        </div>
+                                    )}
 
                                     <div className="rounded-lg border border-border bg-background px-3 py-3">
                                         <div className="text-xs font-semibold uppercase text-text-muted">QR in ra</div>

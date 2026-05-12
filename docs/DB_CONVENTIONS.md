@@ -104,15 +104,15 @@ API/route active:
 
 - `POST /api/qr/resolve`: resolve portal URL hoặc payload `MESOCO|ASSET|v1|<uuid>` sang asset hiện tại.
 - `POST /api/assets/{asset}/regenerate-qr`: tạo QR identity mới nhưng vẫn giữ lịch sử QR cũ.
-- `GET /asset-portal/{qrUid}`: read-only portal view cho tài sản được resolve từ QR.
+- `GET /asset-portal/{qrUid}`: read-only portal view cho tài sản được resolve từ QR; nếu chưa đăng nhập thì redirect tới `/login?redirect=/asset-portal/{qrUid}`.
 
 QR portal response dùng cùng một QR payload nhưng cắt dữ liệu theo role:
 
-- `employee`/public: nhóm basic gồm asset name, model/configuration, status, warranty status, current responsible user, category/location.
+- `employee`: nhóm basic gồm asset name, model/configuration, status, warranty status, current responsible user, category/location.
 - `technician`: basic + technical gồm repair logs, last maintenance date, last issue/action, depreciation rate, remaining value, device status.
 - `manager`: basic + technical + supplier/purchase gồm purchase price, purchase date và supplier contact.
 
-Phần này tương ứng với view báo cáo `View_AssetPortal_Full`; trong app Laravel, dữ liệu được compose ở controller để vẫn áp dụng RBAC theo user đang đăng nhập.
+Phần này tương ứng với view báo cáo `View_AssetPortal_Full`; trong app Laravel, dữ liệu được compose ở controller để vẫn áp dụng RBAC theo user đang đăng nhập. Public user không xem portal trực tiếp vì hệ thống cần biết role trước khi hiển thị dữ liệu.
 
 ## Request Types
 

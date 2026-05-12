@@ -18,6 +18,7 @@ use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -515,8 +516,14 @@ class AssetController extends Controller
         ]);
     }
 
-    public function portal(Request $request, string $qrUid): View
+    public function portal(Request $request, string $qrUid): View|RedirectResponse
     {
+        if (!$request->user()) {
+            return redirect()->route('login', [
+                'redirect' => "/asset-portal/{$qrUid}",
+            ]);
+        }
+
         $qrIdentity = $this->findQrIdentity($qrUid);
 
         abort_if(!$qrIdentity || !$qrIdentity->asset || $qrIdentity->asset->trashed(), 404);

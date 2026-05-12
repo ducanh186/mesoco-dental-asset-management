@@ -226,8 +226,28 @@ class AssetQrPortalTest extends TestCase
         $this->assertSame('Cleaned fan', $assetPayload['technical']['repair_logs'][0]['action_taken']);
     }
 
-    public function test_asset_portal_view_renders_resolved_asset_details(): void
+    public function test_asset_portal_requires_login_and_preserves_return_url(): void
     {
+        $asset = Asset::factory()->create([
+            'name' => 'Login Required QR Asset',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+        $qrIdentity = AssetQrIdentity::create([
+            'qr_uid' => '99999999-9999-4999-8999-999999999999',
+            'asset_id' => $asset->id,
+            'payload_version' => 'v1',
+            'printed_at' => now(),
+        ]);
+
+        $returnPath = "/asset-portal/{$qrIdentity->qr_uid}";
+
+        $this->get($returnPath)
+            ->assertRedirect(route('login', ['redirect' => $returnPath]));
+    }
+
+    public function test_asset_portal_view_renders_resolved_asset_details_after_login(): void
+    {
+        $employee = User::factory()->employee()->create(['must_change_password' => false]);
         $asset = Asset::factory()->create([
             'name' => 'Portal Monitor',
             'serial_number' => 'SN-PORTAL-001',
@@ -242,7 +262,8 @@ class AssetQrPortalTest extends TestCase
             'printed_at' => now(),
         ]);
 
-        $this->get("/asset-portal/{$qrIdentity->qr_uid}")
+        $this->actingAs($employee)
+            ->get("/asset-portal/{$qrIdentity->qr_uid}")
             ->assertOk()
             ->assertSee('Portal Monitor')
             ->assertSee('SN-PORTAL-001')

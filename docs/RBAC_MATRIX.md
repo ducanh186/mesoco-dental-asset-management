@@ -46,7 +46,7 @@ Các API cũ ngoài scope active vẫn trả HTTP `410 Gone` cùng JSON message 
 | --- | --- |
 | `/api/qr/resolve` | `manager`, `technician`, `employee`; nhận cả portal URL `/asset-portal/{qrUid}` và payload legacy `MESOCO\|ASSET\|v1\|{uuid}` |
 | `/api/assets/{asset}/regenerate-qr` | `manager`, `technician` |
-| `/asset-portal/{qrUid}` | Read-only portal view; public/basic nếu chưa đăng nhập, role-aware nếu có session; là nội dung QR ưu tiên cho nhãn in/mobile |
+| `/asset-portal/{qrUid}` | Read-only portal view; bắt buộc đăng nhập, nếu chưa login sẽ redirect về `/login?redirect=/asset-portal/{qrUid}`; là nội dung QR ưu tiên cho nhãn in/mobile |
 
 ## Nguyên Tắc
 

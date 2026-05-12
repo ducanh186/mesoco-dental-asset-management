@@ -17,6 +17,7 @@ Các flow cũ như quét mã cá nhân, mượn/trả thiết bị và hợp đ�
 ## Điểm Nổi Bật Hiện Tại
 
 - `Asset workspace`: tìm kiếm theo mã tài sản, danh mục, vị trí, nhân viên đang giữ; lọc theo trạng thái, vị trí và assignment; thao tác nhanh xem chi tiết, bàn giao/thu hồi và mở workspace bảo trì.
+- `QR asset portal`: mỗi thiết bị có `AssetID` tự tăng và một QR active duy nhất. QR in ra mở portal trên điện thoại; người dùng phải đăng nhập để hệ thống hiển thị dữ liệu theo role.
 - `Operational dashboard`: manager và technician có dashboard với giá trị tồn kho, thiết bị gián đoạn, hàng đợi duyệt, phân bổ theo bộ phận, xu hướng tài sản theo tháng và cảnh báo khấu hao.
 - `Purchase order workspace`: form đơn hàng tách khối nhà cung cấp, danh sách sản phẩm và tổng hợp thanh toán để thao tác nhanh hơn.
 - `Legacy compatibility`: endpoint cũ ngoài scope vẫn phản hồi `410 Gone` kèm message JSON rõ ràng.
@@ -46,7 +47,7 @@ php artisan serve
 npm run dev
 ```
 
-Đăng nhập UI bằng `employee_code + password`. Email vẫn dùng cho profile và forgot-password.
+Đăng nhập UI bằng `username + password`. Seed demo vẫn đặt `username` trùng `employee_code` như `E1001`, nên có thể dùng các mã trong bảng dưới để đăng nhập. Email vẫn dùng cho profile và forgot-password.
 
 ## Chạy Với Docker
 
@@ -70,9 +71,36 @@ npm run build
 php artisan test
 ```
 
+## Tính Năng QR Tài Sản
+
+Mỗi thiết bị có `AssetID` do hệ thống tự tăng và một QR active duy nhất. QR vật lý nên được in từ asset detail hoặc inventory label. Nội dung QR ưu tiên là link portal:
+
+```text
+http://<host>/asset-portal/<qr_uid>
+```
+
+Luồng sử dụng:
+
+1. Manager hoặc technician tạo lại QR trong màn chi tiết tài sản nếu tài sản chưa có QR.
+2. In nhãn QR và dán lên thiết bị.
+3. Người dùng mở điện thoại, đăng nhập vào hệ thống Mesoco, rồi quét QR.
+4. Nếu điện thoại chưa đăng nhập, hệ thống chuyển tới màn login và quay lại đúng portal tài sản sau khi đăng nhập.
+5. Portal tự hiển thị dữ liệu theo role:
+   - `employee`: thông tin cơ bản, cấu hình, trạng thái, bảo hành, người đang sở hữu.
+   - `technician`: phần employee + nhật ký sửa chữa/bảo trì, lần bảo trì cuối, mức khấu hao, giá trị còn lại.
+   - `manager`: toàn bộ phần technician + giá mua, ngày mua và nhà cung cấp.
+
+Khi test bằng điện thoại thật, không dùng `localhost` trong QR vì `localhost` trên điện thoại là chính điện thoại đó. Hãy dùng IP LAN của máy chạy app, ví dụ:
+
+```text
+http://192.168.1.20:8000/asset-portal/<qr_uid>
+```
+
+Màn `/qr-scan` vẫn hỗ trợ scanner nội bộ: có thể paste portal URL hoặc payload legacy `MESOCO|ASSET|v1|<qr_uid>` để kiểm thử nhanh trên PC.
+
 ## Tài Khoản Demo
 
-Sau khi chạy `php artisan migrate --seed`, dùng các tài khoản mẫu sau để đăng nhập bằng `employee_code`:
+Sau khi chạy `php artisan migrate --seed`, dùng các tài khoản mẫu sau để đăng nhập bằng `username`:
 
 | Role | Employee code | Email | Password | Mục đích |
 | --- | --- | --- | --- | --- |
@@ -89,6 +117,7 @@ Sau khi chạy `php artisan migrate --seed`, dùng các tài khoản mẫu sau �
 - [docs/README.md](docs/README.md): mục lục tài liệu theo hướng báo cáo/luận văn.
 - [docs/STACK.md](docs/STACK.md): Stack, cấu trúc repo và runtime flow.
 - [docs/DB_CONVENTIONS.md](docs/DB_CONVENTIONS.md): quy ước database, enum và bảng legacy giữ lại.
+- [docs/QR_FEATURE_GUIDE.md](docs/QR_FEATURE_GUIDE.md): hướng dẫn nghiệp vụ QR, phân quyền khi quét và cách demo bằng điện thoại.
 - [docs/RBAC_MATRIX.md](docs/RBAC_MATRIX.md): quyền theo role.
 - [docs/ROLE_FEATURES.md](docs/ROLE_FEATURES.md): chức năng theo từng người dùng.
 - [docs/SEED_DATA.md](docs/SEED_DATA.md): seed data IT.

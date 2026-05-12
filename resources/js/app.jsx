@@ -667,7 +667,14 @@ const LoginPage = () => {
      const usernameRef = React.useRef(null);
      const passwordRef = React.useRef(null);
 
-     const from = location.state?.from?.pathname || '/dashboard';
+     const redirectParam = new URLSearchParams(location.search).get('redirect');
+     const safeRedirect = redirectParam?.startsWith('/') && !redirectParam.startsWith('//')
+          ? redirectParam
+          : null;
+     const stateFrom = location.state?.from
+          ? `${location.state.from.pathname || '/dashboard'}${location.state.from.search || ''}`
+          : null;
+     const from = safeRedirect || stateFrom || '/dashboard';
 
      const validateFields = () => {
           const errors = {};
@@ -702,6 +709,11 @@ const LoginPage = () => {
 
           try {
                await login(username, password, remember);
+               if (from.startsWith('/asset-portal/')) {
+                    window.location.assign(from);
+                    return;
+               }
+
                navigate(from, { replace: true });
           } catch (err) {
                // Generic error message - do not leak user existence
