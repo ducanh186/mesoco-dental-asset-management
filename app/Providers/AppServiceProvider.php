@@ -19,6 +19,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -37,9 +38,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureApplicationUrl();
         $this->configureVite();
         $this->configureRateLimiting();
         $this->registerPolicies();
+    }
+
+    /**
+     * Make generated absolute URLs follow APP_URL, including QR portal links.
+     */
+    protected function configureApplicationUrl(): void
+    {
+        $url = rtrim((string) config('app.url'), '/');
+
+        if ($url === '') {
+            return;
+        }
+
+        URL::forceRootUrl($url);
+
+        if (str_starts_with($url, 'https://')) {
+            URL::forceScheme('https');
+        }
     }
 
     /**

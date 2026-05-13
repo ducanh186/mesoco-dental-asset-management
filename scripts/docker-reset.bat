@@ -14,17 +14,26 @@ if /i not "%confirm%"=="Y" (
 cd /d "%~dp0.."
 cd docker
 
+echo Detecting LAN IP for QR links...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0write-runtime-env.ps1"
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to create Docker runtime environment.
+    pause
+    exit /b 1
+)
+set "COMPOSE_CMD=docker compose --env-file .env.runtime"
+
 echo.
 echo [1/4] Removing containers and volumes...
-docker compose down -v
+%COMPOSE_CMD% down -v
 
 echo.
 echo [2/4] Rebuilding images (no cache)...
-docker compose build --no-cache
+%COMPOSE_CMD% build --no-cache
 
 echo.
 echo [3/4] Starting containers...
-docker compose up -d
+%COMPOSE_CMD% up -d
 
 echo.
 echo [4/4] Waiting for MySQL to be ready...
@@ -36,7 +45,7 @@ if %RETRIES% gtr 30 (
     pause
     exit /b 1
 )
-docker compose exec app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception \$e) { exit(1); }" >nul 2>&1
+%COMPOSE_CMD% exec app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception $e) { exit(1); }" >nul 2>&1
 if %errorlevel% neq 0 (
     echo    Waiting for MySQL... attempt %RETRIES%/30
     timeout /t 3 /nobreak >nul
@@ -46,15 +55,16 @@ echo    MySQL is ready!
 
 echo.
 echo Running migrations + seeders...
-docker compose exec app php artisan migrate:fresh --seed
+%COMPOSE_CMD% exec app php artisan migrate:fresh --seed
 
 echo.
 echo ========================================
 echo  Reset complete!
 echo ========================================
 echo.
-echo  Frontend:  http://localhost:5173
-echo  Backend:   http://localhost:8000
+echo  Frontend:  see detected URL above
+echo  Backend:   see detected URL above
+echo  Laptop:    http://localhost:8000
 echo.
 echo  Accounts:
 echo    E1001 / password (Manager)

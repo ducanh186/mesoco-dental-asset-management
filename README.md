@@ -78,6 +78,15 @@ Sau khi chạy xong, mở:
 http://localhost:8000
 ```
 
+Script cũng tự tìm IP Wi-Fi/LAN của laptop và in thêm link dạng:
+
+```text
+Backend:   http://192.168.x.x:8000
+Frontend:  http://192.168.x.x:5173
+```
+
+Laptop có thể mở `localhost`. Điện thoại hoặc máy khác cùng Wi-Fi thì dùng link `192.168.x.x`.
+
 Tài khoản demo:
 
 | Vai trò | Username | Password |
@@ -101,6 +110,7 @@ scripts\docker-start.bat
 Lệnh này làm gì?
 
 - Bật lại các container.
+- Tự tìm IP hiện tại của laptop để tạo link QR dùng được cho thiết bị cùng Wi-Fi.
 - Chạy migration mới nếu có.
 - Xóa cache Laravel để tránh lỗi cấu hình cũ.
 
@@ -213,6 +223,62 @@ Nếu chỉ muốn dùng app, ưu tiên mở:
 http://localhost:8000
 ```
 
+### Test QR bằng điện thoại trong mạng nội bộ
+
+Khi test QR ở máy local, cần nhớ một điểm rất dễ nhầm: `localhost` trên laptop và `localhost` trên điện thoại là 2 máy khác nhau.
+
+Vì vậy app không nên in QR bằng link:
+
+```text
+http://localhost:8000/asset-portal/...
+```
+
+Điện thoại quét link đó sẽ mở `localhost` của chính điện thoại, không phải laptop.
+
+Project đã xử lý chuyện này trong script Docker. Khi bạn chạy `scripts\docker-setup.bat` hoặc `scripts\docker-start.bat`, script sẽ tự tìm IP thật của laptop và cấu hình app sinh QR bằng link dạng:
+
+```text
+http://192.168.x.x:8000/asset-portal/...
+```
+
+Nhờ vậy điện thoại cùng Wi-Fi có thể quét QR và mở trang tài sản trên app đang chạy ở laptop.
+
+Cách test đúng cho tính năng này:
+
+1. Bật app trên laptop bằng `scripts\docker-start.bat`.
+2. Nhìn dòng `Backend` mà script in ra, ví dụ `http://192.168.123.5:8000`.
+3. Mở app trên laptop bằng `http://localhost:8000` hoặc bằng đúng link IP ở trên.
+4. Đăng nhập bằng tài khoản demo, ví dụ `E1001 / password`.
+5. Mở danh sách tài sản, xem QR hoặc in nhãn QR của một tài sản.
+6. Dùng điện thoại cùng Wi-Fi quét QR.
+7. Điện thoại sẽ mở link `http://192.168.x.x:8000/asset-portal/...` và xem được trang tài sản.
+
+Muốn lấy IP laptop cho dễ, chạy:
+
+```powershell
+scripts\show-lan-ip.bat
+```
+
+Script này in ra các URL dạng:
+
+```text
+Backend:   http://192.168.x.x:8000
+Frontend:  http://192.168.x.x:5173
+```
+
+Chỉ dùng các URL này khi laptop và điện thoại cùng mạng Wi-Fi. Nếu mạng công ty chặn thiết bị truy cập lẫn nhau, QR vẫn đúng nhưng điện thoại sẽ không vào được laptop. Khi đó hãy đổi sang cùng một Wi-Fi khác hoặc dùng hotspot cá nhân.
+
+Nếu máy có nhiều card mạng và script chọn sai IP, có thể chỉ định IP thủ công trước khi start:
+
+```powershell
+$env:MESOCO_HOST_IP = "192.168.123.5"
+scripts\docker-start.bat
+```
+
+Sau khi đổi Wi-Fi hoặc đổi IP, chạy lại `scripts\docker-start.bat` để QR mới dùng IP hiện tại.
+
+Ghi chú về khấu hao: khi tài sản có khấu hao lớn hơn 75%, hệ thống chỉ đưa vào nhóm đề xuất theo dõi/thu hủy ở màn `Disposal`. App không tự thanh lý, không tự xóa vị trí và không tự đổi trạng thái nếu người dùng chưa bấm thao tác thu hủy.
+
 ## 7. Khi Pull Code Mới Từ GitHub
 
 Quy trình an toàn:
@@ -229,6 +295,7 @@ Lệnh này làm gì?
 - `git status`: xem máy bạn đang có file nào thay đổi chưa commit không.
 - `git pull`: lấy code mới từ GitHub.
 - `scripts\docker-start.bat`: bật lại app, chạy migration nếu có và seed lại dữ liệu demo.
+- `scripts\show-lan-ip.bat`: xem IP laptop để test QR hoặc app từ thiết bị cùng Wi-Fi.
 
 Nếu code mới có thay đổi dependency hoặc Docker:
 

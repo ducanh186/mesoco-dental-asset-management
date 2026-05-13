@@ -28,13 +28,22 @@ echo.
 cd /d "%~dp0.."
 cd docker
 
+echo Detecting LAN IP for QR links...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0write-runtime-env.ps1"
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to create Docker runtime environment.
+    pause
+    exit /b 1
+)
+set "COMPOSE_CMD=docker compose --env-file .env.runtime"
+
 echo [1/5] Cleaning up old containers (if any)...
-docker compose down -v 2>nul
+%COMPOSE_CMD% down -v 2>nul
 
 echo.
 echo [2/5] Building Docker images...
 echo (First time takes 2-3 minutes, subsequent runs are faster)
-docker compose build
+%COMPOSE_CMD% build
 if %errorlevel% neq 0 (
     echo [ERROR] Docker build failed!
     pause
@@ -43,7 +52,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [3/5] Starting containers...
-docker compose up -d
+%COMPOSE_CMD% up -d
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to start containers!
     pause
@@ -60,7 +69,7 @@ if %RETRIES% gtr 30 (
     pause
     exit /b 1
 )
-docker compose exec app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception \$e) { exit(1); }" >nul 2>&1
+%COMPOSE_CMD% exec app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception $e) { exit(1); }" >nul 2>&1
 if %errorlevel% neq 0 (
     echo    Waiting for MySQL... attempt %RETRIES%/30
     timeout /t 3 /nobreak >nul
@@ -70,7 +79,7 @@ echo    MySQL is ready!
 
 echo.
 echo [5/5] Creating database + demo data...
-docker compose exec app php artisan migrate:fresh --seed
+%COMPOSE_CMD% exec app php artisan migrate:fresh --seed
 if %errorlevel% neq 0 (
     echo [ERROR] Migration or seeding failed!
     echo Try running manually: docker compose exec app php artisan migrate:fresh --seed
@@ -84,8 +93,9 @@ echo  SETUP COMPLETE!
 echo ========================================
 echo.
 echo  Open browser:
-echo     Frontend:  http://localhost:5173
-echo     Backend:   http://localhost:8000
+echo     Frontend:  see detected URL above
+echo     Backend:   see detected URL above
+echo     Laptop:    http://localhost:8000
 echo.
 echo  Test Accounts:
 echo  +-----------+---------------+----------+

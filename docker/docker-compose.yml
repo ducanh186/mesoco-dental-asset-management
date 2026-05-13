@@ -24,8 +24,8 @@ services:
       - vendor_data:/var/www/html/vendor
       - node_modules_data:/var/www/html/node_modules
     environment:
-      - APP_URL=http://localhost:8000
-      - ASSET_URL=http://localhost:8000
+      - APP_URL=${APP_URL:-http://localhost:8000}
+      - ASSET_URL=${ASSET_URL:-http://localhost:8000}
       - VITE_USE_DEV_SERVER=false
       - DB_CONNECTION=mysql
       - DB_HOST=db
@@ -33,10 +33,10 @@ services:
       - DB_DATABASE=mesoco_dental
       - DB_USERNAME=mesoco
       - DB_PASSWORD=secret
-      - SESSION_DOMAIN=(null)
+      - SESSION_DOMAIN=${SESSION_DOMAIN:-(null)}
       - SESSION_SECURE_COOKIE=false
       - SESSION_SAME_SITE=lax
-      - SANCTUM_STATEFUL_DOMAINS=localhost,localhost:8000,127.0.0.1,127.0.0.1:8000,localhost:5173,127.0.0.1:5173
+      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost,localhost:8000,127.0.0.1,127.0.0.1:8000,localhost:5173,127.0.0.1:5173}
     depends_on:
       db:
         condition: service_healthy
@@ -64,7 +64,7 @@ services:
         npx vite --host 0.0.0.0 --port 5173
       "
     environment:
-      - VITE_HMR_HOST=localhost
+      - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
     networks:
       - mesoco-network
 

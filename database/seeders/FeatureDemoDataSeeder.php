@@ -32,6 +32,8 @@ use RuntimeException;
 class FeatureDemoDataSeeder extends Seeder
 {
     private const ASSET_COUNT = 100;
+    private const PURCHASE_ORDER_COUNT = 24;
+    private const INVENTORY_CHECK_COUNT = 10;
 
     public function run(): void
     {
@@ -512,7 +514,19 @@ class FeatureDemoDataSeeder extends Seeder
      */
     private function seedPurchaseOrders(Collection $assets, Collection $suppliers, User $manager): void
     {
-        foreach (range(1, 12) as $number) {
+        PurchaseOrderItem::query()
+            ->whereHas('purchaseOrder', fn ($query) => $query->where('order_code', 'like', 'DEMO-PO-%'))
+            ->delete();
+
+        $paymentMethods = ['Chuyển khoản', 'COD', 'Công nợ 30 ngày', 'Công nợ 45 ngày'];
+        $notes = [
+            'Bổ sung laptop và phụ kiện cho nhân viên mới.',
+            'Thay thế thiết bị mạng đã gần hết vòng đời.',
+            'Mua vật tư dự phòng cho kho IT.',
+            'Trang bị thiết bị phòng họp và khu lễ tân.',
+        ];
+
+        foreach (range(1, self::PURCHASE_ORDER_COUNT) as $number) {
             $supplier = $suppliers[($number - 1) % $suppliers->count()];
             $status = PurchaseOrder::STATUSES[($number - 1) % count(PurchaseOrder::STATUSES)];
             $order = PurchaseOrder::updateOrCreate(
@@ -525,26 +539,26 @@ class FeatureDemoDataSeeder extends Seeder
                     'expected_delivery_date' => now()->addDays(5 + $number)->toDateString(),
                     'status' => $status,
                     'total_amount' => 0,
-                    'payment_method' => ['Chuyển khoản', 'COD', 'Công nợ 30 ngày'][$number % 3],
-                    'note' => 'Đơn mua demo phục vụ luồng nhà cung cấp và nhập thiết bị.',
+                    'payment_method' => $paymentMethods[($number - 1) % count($paymentMethods)],
+                    'note' => $notes[($number - 1) % count($notes)],
                 ]
             );
 
             $total = 0;
-            foreach (range(1, 3) as $line) {
-                $asset = $assets[(($number * 3) + $line) % $assets->count()];
-                $qty = $line === 1 ? 1 : ($line + 1);
-                $unitPrice = 750000 + (($number + $line) * 350000);
+            foreach (range(1, 4) as $line) {
+                $asset = $assets[(($number * 4) + $line) % $assets->count()];
+                $qty = $line === 1 ? 1 : (($line + $number) % 4) + 1;
+                $unitPrice = 650000 + (($number + $line) * 280000);
                 $lineTotal = $qty * $unitPrice;
                 $total += $lineTotal;
 
                 PurchaseOrderItem::updateOrCreate(
-                    ['purchase_order_id' => $order->id, 'item_name' => $asset->name . ' - phụ kiện ' . $line],
+                    ['purchase_order_id' => $order->id, 'item_name' => $this->purchaseOrderItemName($asset, $line)],
                     [
                         'asset_id' => $line === 1 ? $asset->id : null,
                         'category_id' => $asset->category_id,
                         'qty' => $qty,
-                        'unit' => $line === 1 ? 'cái' : 'bộ',
+                        'unit' => $line === 1 ? 'cái' : ($line === 4 ? 'gói' : 'bộ'),
                         'unit_price' => $unitPrice,
                         'line_total' => $lineTotal,
                         'note' => 'Dòng hàng demo cho kiểm thử purchase order.',
@@ -556,12 +570,26 @@ class FeatureDemoDataSeeder extends Seeder
         }
     }
 
+    private function purchaseOrderItemName(Asset $asset, int $line): string
+    {
+        return match ($line) {
+            1 => $asset->name,
+            2 => $asset->category . ' - phụ kiện thay thế',
+            3 => $asset->category . ' - dịch vụ cài đặt',
+            default => $asset->category . ' - vật tư dự phòng',
+        };
+    }
+
     /**
      * @param Collection<int, Asset> $assets
      */
     private function seedInventoryChecks(Collection $assets, User $manager, User $technician): void
     {
-        foreach (range(1, 6) as $number) {
+        InventoryCheckItem::query()
+            ->whereHas('inventoryCheck', fn ($query) => $query->where('code', 'like', 'DEMO-INV-%'))
+            ->delete();
+
+        foreach (range(1, self::INVENTORY_CHECK_COUNT) as $number) {
             $status = InventoryCheck::STATUSES[($number - 1) % count(InventoryCheck::STATUSES)];
             $check = InventoryCheck::updateOrCreate(
                 ['code' => sprintf('DEMO-INV-%03d', $number)],
@@ -577,7 +605,8 @@ class FeatureDemoDataSeeder extends Seeder
                 ]
             );
 
-            foreach ($assets->slice(($number - 1) * 15, 15)->values() as $index => $asset) {
+            foreach (range(0, 11) as $index) {
+                $asset = $assets[(($number - 1) * 10 + $index) % $assets->count()];
                 $result = InventoryCheckItem::RESULTS[($index + $number) % count(InventoryCheckItem::RESULTS)];
                 $actualLocation = $result === InventoryCheckItem::RESULT_MOVED
                     ? 'Vị trí phát sinh trong kiểm kê'

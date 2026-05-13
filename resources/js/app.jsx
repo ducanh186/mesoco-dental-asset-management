@@ -1,6 +1,6 @@
 import './bootstrap';
 import '../css/app.css';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, lazy, Suspense, useContext, useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -10,23 +10,23 @@ import { ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_SUPPLIER, ROLE_TECHNICIAN, normalizeR
 // Layout Components
 import AdminLayout from './layouts/AdminLayout';
 
-// Page Components
-import Dashboard from './pages/Dashboard';
-import UIKit from './pages/UIKit';
-import ProfilePage from './pages/ProfilePage';
-import ChangePasswordPage from './pages/ChangePasswordPage';
-import AssetsPage from './pages/AssetsPage';
-import MaintenancePage from './pages/MaintenancePage';
-import InventoryPage from './pages/InventoryPage';
-import LocationsPage from './pages/LocationsPage';
-import SuppliersPage from './pages/SuppliersPage';
-import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
-import FeedbackPage from './pages/FeedbackPage';
-import ReportPage from './pages/ReportPage';
-import RequestsPage from './pages/RequestsPage';
-import ReviewRequestsPage from './pages/ReviewRequestsPage';
-import DisposalPage from './pages/DisposalPage';
-import QrScanPage from './pages/QrScanPage';
+// Route pages are lazy-loaded so the first app bundle does not carry every feature screen.
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const UIKit = lazy(() => import('./pages/UIKit'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
+const AssetsPage = lazy(() => import('./pages/AssetsPage'));
+const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
+const InventoryPage = lazy(() => import('./pages/InventoryPage'));
+const LocationsPage = lazy(() => import('./pages/LocationsPage'));
+const SuppliersPage = lazy(() => import('./pages/SuppliersPage'));
+const PurchaseOrdersPage = lazy(() => import('./pages/PurchaseOrdersPage'));
+const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
+const ReportPage = lazy(() => import('./pages/ReportPage'));
+const RequestsPage = lazy(() => import('./pages/RequestsPage'));
+const ReviewRequestsPage = lazy(() => import('./pages/ReviewRequestsPage'));
+const DisposalPage = lazy(() => import('./pages/DisposalPage'));
+const QrScanPage = lazy(() => import('./pages/QrScanPage'));
 
 // UI Components
 import { ToastProvider } from './components/ui';
@@ -1158,6 +1158,7 @@ const App = () => {
                <I18nProvider>
                     <ToastProvider position="top-right">
                          <AuthProvider>
+                              <Suspense fallback={<LoadingScreen />}>
                               <Routes>
                                    {/* Guest Routes */}
                                    <Route path="/login" element={
@@ -1268,6 +1269,7 @@ const App = () => {
                          {/* 404 */}
                          <Route path="*" element={<NotFoundPage />} />
                     </Routes>
+                    </Suspense>
                </AuthProvider>
           </ToastProvider>
           </I18nProvider>
