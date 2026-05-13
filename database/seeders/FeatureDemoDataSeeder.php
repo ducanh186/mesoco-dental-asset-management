@@ -177,13 +177,26 @@ class FeatureDemoDataSeeder extends Seeder
                 ]
             );
 
-            $qrIdentity = AssetQrIdentity::firstOrCreate(
-                ['asset_id' => $asset->id, 'payload_version' => 'v1'],
-                [
+            $qrIdentities = AssetQrIdentity::query()
+                ->where('asset_id', $asset->id)
+                ->where('payload_version', 'v1')
+                ->orderBy('id')
+                ->get();
+
+            $qrIdentity = $qrIdentities->first();
+
+            if (!$qrIdentity) {
+                $qrIdentity = AssetQrIdentity::create([
+                    'asset_id' => $asset->id,
+                    'payload_version' => 'v1',
                     'qr_uid' => (string) Str::uuid(),
                     'printed_at' => now()->subDays($number % 60),
-                ]
-            );
+                ]);
+            }
+
+            $qrIdentities
+                ->skip(1)
+                ->each(fn (AssetQrIdentity $duplicate) => $duplicate->delete());
 
             $asset->forceFill([
                 'qr_value' => implode('|', ['MESOCO', 'ASSET', 'v1', $qrIdentity->qr_uid]),
