@@ -36,7 +36,44 @@ echo [3/4] Starting containers...
 %COMPOSE_CMD% up -d
 
 echo.
-echo [4/4] Waiting for MySQL to be ready...
+echo [4/5] Ensuring PHP dependencies are installed...
+set DEP_RETRIES=0
+:wait_vendor
+set /a DEP_RETRIES+=1
+%COMPOSE_CMD% exec -T app test -f vendor/autoload.php >nul 2>&1
+if %errorlevel% neq 0 (
+    if %DEP_RETRIES% gtr 80 goto install_vendor
+    echo    Waiting for Composer dependencies... attempt %DEP_RETRIES%/80
+    timeout /t 3 /nobreak >nul
+    goto wait_vendor
+)
+goto vendor_ready
+
+:install_vendor
+echo    vendor/autoload.php is still missing; running composer install manually...
+%COMPOSE_CMD% exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
+if %errorlevel% neq 0 (
+    echo [ERROR] PHP dependencies are missing inside the Docker app container.
+    echo Recent app logs:
+    %COMPOSE_CMD% logs --tail=80 app
+    echo Try running manually:
+    echo cd /d "%cd%"
+    echo docker compose --env-file .env.runtime exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
+    pause
+    exit /b 1
+)
+%COMPOSE_CMD% exec -T app test -f vendor/autoload.php
+if %errorlevel% neq 0 (
+    echo [ERROR] composer install finished but vendor/autoload.php is still missing.
+    pause
+    exit /b 1
+)
+
+:vendor_ready
+echo    PHP dependencies are ready.
+
+echo.
+echo [5/5] Waiting for MySQL to be ready...
 set RETRIES=0
 :wait_db
 set /a RETRIES+=1
@@ -55,7 +92,7 @@ echo    MySQL is ready!
 
 echo.
 echo Running migrations + seeders...
-%COMPOSE_CMD% exec app php artisan migrate:fresh --seed
+%COMPOSE_CMD% exec -T app php artisan migrate:fresh --seed
 
 echo.
 echo ========================================

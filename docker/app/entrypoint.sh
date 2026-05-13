@@ -27,6 +27,13 @@ else
     echo "[1/3] PHP dependencies already installed ✓"
 fi
 
+if [ ! -f "vendor/autoload.php" ]; then
+    echo "[ERROR] PHP dependencies are still missing after composer install."
+    echo "        Expected file: /var/www/html/vendor/autoload.php"
+    echo "        Run: docker compose --env-file .env.runtime exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader"
+    exit 1
+fi
+
 # -----------------------------------------------------------------------------
 # Install Node dependencies (if node_modules missing or empty)
 # -----------------------------------------------------------------------------
