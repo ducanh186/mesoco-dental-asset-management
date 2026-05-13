@@ -32,22 +32,26 @@ if %RETRIES% gtr 30 (
     pause
     exit /b 1
 )
-docker compose exec app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception \$e) { exit(1); }" >nul 2>&1
+docker compose exec -T app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception $e) { exit(1); }" >nul 2>&1
 if %errorlevel% neq 0 (
     echo    Waiting for MySQL... attempt %RETRIES%/30
-    timeout /t 3 /nobreak >nul
+    ping -n 4 127.0.0.1 >nul
     goto wait_db
 )
 echo    MySQL is ready!
 
 echo.
 echo Running migrations (if any)...
-docker compose exec app php artisan migrate --force
+docker compose exec -T app php artisan migrate --force
+
+echo.
+echo Seeding demo data (safe to run again)...
+docker compose exec -T app php artisan db:seed --class=DatabaseSeeder --force
 
 echo.
 echo Clearing Laravel cache...
-docker compose exec app php artisan config:clear
-docker compose exec app php artisan cache:clear
+docker compose exec -T app php artisan config:clear
+docker compose exec -T app php artisan cache:clear
 
 echo.
 echo ========================================

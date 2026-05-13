@@ -226,6 +226,64 @@ class AssetQrPortalTest extends TestCase
         $this->assertSame('Cleaned fan', $assetPayload['technical']['repair_logs'][0]['action_taken']);
     }
 
+    public function test_qr_portal_normalizes_mojibake_repair_text_for_api_and_view(): void
+    {
+        $technician = User::factory()->technician()->create(['must_change_password' => false]);
+        $asset = Asset::factory()->create([
+            'name' => 'Mojibake Repair Asset',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+        $maintenanceEvent = MaintenanceEvent::factory()->completed()->create([
+            'asset_id' => $asset->id,
+            'completed_at' => '2026-05-05 11:00:00',
+        ]);
+        MaintenanceDetail::create([
+            'maintenance_event_id' => $maintenanceEvent->id,
+            'asset_id' => $asset->id,
+            'technician_user_id' => $technician->id,
+            'status' => 'completed',
+            'issue_description' => 'Quáº¡t kÃªu lá»›n',
+            'action_taken' => 'Vá»‡ sinh quáº¡t vÃ  kiá»ƒm tra SSD',
+            'completed_at' => '2026-05-05 11:00:00',
+            'logged_at' => '2026-05-05 11:05:00',
+        ]);
+        RepairLog::create([
+            'asset_id' => $asset->id,
+            'maintenance_event_id' => $maintenanceEvent->id,
+            'technician_user_id' => $technician->id,
+            'status' => 'completed',
+            'issue_description' => 'Quáº¡t kÃªu lá»›n',
+            'action_taken' => 'Vá»‡ sinh quáº¡t vÃ  kiá»ƒm tra SSD',
+            'completed_at' => '2026-05-05 11:00:00',
+            'logged_at' => '2026-05-05 11:05:00',
+        ]);
+        $qrIdentity = AssetQrIdentity::create([
+            'qr_uid' => '93939393-9393-4393-9393-939393939393',
+            'asset_id' => $asset->id,
+            'payload_version' => 'v1',
+        ]);
+
+        $payload = 'MESOCO|ASSET|v1|' . $qrIdentity->qr_uid;
+
+        $assetPayload = $this->actingAs($technician)
+            ->postJson('/api/qr/resolve', ['payload' => $payload])
+            ->assertOk()
+            ->assertJsonPath('asset.technical.last_issue_note', 'Quạt kêu lớn')
+            ->assertJsonPath('asset.technical.last_action_taken', 'Vệ sinh quạt và kiểm tra SSD')
+            ->json('asset');
+
+        $this->assertSame('Quạt kêu lớn', $assetPayload['technical']['repair_logs'][0]['issue_description']);
+        $this->assertSame('Vệ sinh quạt và kiểm tra SSD', $assetPayload['technical']['repair_logs'][0]['action_taken']);
+
+        $this->actingAs($technician)
+            ->get("/asset-portal/{$qrIdentity->qr_uid}")
+            ->assertOk()
+            ->assertSee('Quạt kêu lớn')
+            ->assertSee('Vệ sinh quạt và kiểm tra SSD')
+            ->assertDontSee('Quáº¡t kÃªu lá»›n')
+            ->assertDontSee('Vá»‡ sinh quáº¡t vÃ  kiá»ƒm tra SSD');
+    }
+
     public function test_asset_portal_requires_login_and_preserves_return_url(): void
     {
         $asset = Asset::factory()->create([

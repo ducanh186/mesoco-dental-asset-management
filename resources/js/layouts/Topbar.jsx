@@ -7,7 +7,7 @@ import { normalizeRole } from '../utils/roles';
 /**
  * Topbar - Mesoco top navigation bar
  */
-const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar }) => {
+const Topbar = ({ user, onLogout, onMenuClick }) => {
     const { t } = useI18n();
     const location = useLocation();
     const navigate = useNavigate();
@@ -99,22 +99,6 @@ const Topbar = ({ user, onLogout, onMenuClick, sidebarCollapsed, onToggleSidebar
                         <line x1="3" y1="12" x2="21" y2="12" />
                         <line x1="3" y1="18" x2="21" y2="18" />
                     </svg>
-                </button>
-
-                {/* Desktop Sidebar Toggle */}
-                <button 
-                    className="topbar-menu-btn topbar-sidebar-toggle desktop-only text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
-                    onClick={onToggleSidebar}
-                    aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
-                    aria-pressed={sidebarCollapsed}
-                    title={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <line x1="3" y1="12" x2="21" y2="12" />
-                        <line x1="3" y1="18" x2="21" y2="18" />
-                    </svg>
-                    <span>{sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}</span>
                 </button>
 
                 {/* Search (optional placeholder) */}

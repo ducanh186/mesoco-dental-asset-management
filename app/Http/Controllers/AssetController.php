@@ -687,8 +687,8 @@ class AssetController extends Controller
         return [
             'device_status' => $asset->lifecycle_status,
             'last_maintenance_date' => $lastMaintenanceDate?->format('Y-m-d H:i:s'),
-            'last_issue_note' => $lastMaintenance?->issue_description,
-            'last_action_taken' => $lastMaintenance?->action_taken,
+            'last_issue_note' => $this->normalizeQrPortalText($lastMaintenance?->issue_description),
+            'last_action_taken' => $this->normalizeQrPortalText($lastMaintenance?->action_taken),
             'current_depreciation_rate' => $depreciationRate,
             'remaining_value' => $purchasePrice !== null && $depreciationRate !== null
                 ? round(max(0, $purchasePrice * (1 - ($depreciationRate / 100))), 2)
@@ -700,8 +700,8 @@ class AssetController extends Controller
                 ->map(fn ($log) => [
                     'id' => $log->id,
                     'status' => $log->status,
-                    'issue_description' => $log->issue_description,
-                    'action_taken' => $log->action_taken,
+                    'issue_description' => $this->normalizeQrPortalText($log->issue_description),
+                    'action_taken' => $this->normalizeQrPortalText($log->action_taken),
                     'cost' => $log->cost !== null ? (float) $log->cost : null,
                     'started_at' => $log->started_at?->toIso8601String(),
                     'completed_at' => $log->completed_at?->toIso8601String(),
@@ -713,6 +713,22 @@ class AssetController extends Controller
                     ] : null,
                 ]),
         ];
+    }
+
+    private function normalizeQrPortalText(?string $value): ?string
+    {
+        if ($value === null || !preg_match('/(?:Ã|Â|áº|á»)/u', $value)) {
+            return $value;
+        }
+
+        $source = preg_replace('/Ã\s+/', 'Ã  ', $value) ?? $value;
+        $decoded = @iconv('UTF-8', 'Windows-1252//IGNORE', $source);
+
+        if (!is_string($decoded) || $decoded === '' || !mb_check_encoding($decoded, 'UTF-8')) {
+            return $value;
+        }
+
+        return $decoded;
     }
 
     private function assetPurchasePrice(Asset $asset): ?float

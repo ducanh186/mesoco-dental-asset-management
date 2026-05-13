@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
         $assets = $this->seedAssets($locations);
         $this->seedAssignments($people, $assets);
         $this->seedMaintenanceEvents($people, $assets);
+        $this->call(FeatureDemoDataSeeder::class);
     }
 
     /**

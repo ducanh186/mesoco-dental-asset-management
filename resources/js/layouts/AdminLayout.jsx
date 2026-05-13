@@ -31,6 +31,10 @@ const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {
         setSidebarCollapsed(!sidebarCollapsed);
     };
 
+    const expandSidebar = () => {
+        setSidebarCollapsed(false);
+    };
+
     const toggleMobileSidebar = () => {
         setSidebarMobileOpen(!sidebarMobileOpen);
     };
@@ -51,6 +55,7 @@ const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {
                 collapsed={sidebarCollapsed}
                 mobileOpen={sidebarMobileOpen}
                 onToggle={toggleSidebar}
+                onExpand={expandSidebar}
                 onMobileClose={() => setSidebarMobileOpen(false)}
                 user={user}
             />
@@ -62,8 +67,6 @@ const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {
                     user={user}
                     onLogout={onLogout}
                     onMenuClick={toggleMobileSidebar}
-                    sidebarCollapsed={sidebarCollapsed}
-                    onToggleSidebar={toggleSidebar}
                 />
 
                 {/* Page Content */}

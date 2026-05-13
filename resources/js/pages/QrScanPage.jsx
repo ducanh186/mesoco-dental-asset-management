@@ -157,9 +157,6 @@ const QrScanPage = () => {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h2 className="text-xl font-bold text-text">Quét QR tài sản</h2>
-                    <p className="text-sm text-text-muted">
-                        Quét QR portal hoặc payload nội bộ, hệ thống sẽ chỉ hiển thị đúng phần dữ liệu phù hợp với quyền của bạn.
-                    </p>
                 </div>
                 {role && <Badge variant="primary">Đang xem như: {roleLabel(role)}</Badge>}
             </div>

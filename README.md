@@ -1,203 +1,443 @@
 # Mesoco Asset Management
 
-Hệ thống quản lý tài sản thiết bị tại Mesoco. Phạm vi hiện tại tập trung vào tài sản theo vị trí đặt và nhân viên chịu trách nhiệm: tra cứu danh mục tài sản, bàn giao trực tiếp, bảo trì, kiểm kê, khấu hao, thu hủy, đơn mua hàng và phiếu yêu cầu xử lý thiết bị.
+Đây là hệ thống quản lý tài sản nội bộ cho Mesoco. Bạn có thể dùng app để xem tài sản, vị trí đặt tài sản, người đang chịu trách nhiệm, bảo trì, kiểm kê, đơn mua hàng, yêu cầu xử lý thiết bị và thanh lý tài sản.
 
-## Phạm Vi Nghiệp Vụ
+Tài liệu này viết cho người mới. Mục tiêu là: tải code về, mở app bằng Docker, biết đăng nhập thử, biết vài lệnh hay dùng và biết xử lý những lỗi Docker phổ biến.
 
-- `Asset Catalog`: quản lý laptop, desktop, monitor, network device, server, printer, peripheral, mobile device, thiết bị văn phòng và nhóm khác.
-- `Responsible Handover`: thiết bị đang ở vị trí nào, ai đang chịu trách nhiệm và lịch sử bàn giao active.
-- `Maintenance`: quản lý lịch kiểm tra, sửa chữa, nâng cấp phần cứng, cập nhật phần mềm, vệ sinh và thay thế linh kiện.
-- `Inventory & Valuation`: kiểm kê định kỳ, giá mua, khấu hao, giá trị còn lại, bảo hành và tình trạng sử dụng.
-- `Purchase Orders`: quản lý đơn mua thiết bị, nhà cung cấp và trạng thái giao hàng.
-- `Requests`: nhân viên gửi phiếu yêu cầu bàn giao, thu hồi hoặc xử lý sự cố thiết bị.
-- `Disposal`: khóa sử dụng, thanh lý hoặc loại bỏ tài sản không còn dùng.
+## 1. Cần Cài Gì Trước?
 
-Các flow cũ như quét mã cá nhân, mượn/trả thiết bị và hợp đồng nhân viên đã bị gỡ khỏi UI active. API legacy vẫn trả JSON với HTTP `410 Gone` để client cũ không rơi vào lỗi mơ hồ.
+Bạn chỉ cần chuẩn bị:
 
-## Điểm Nổi Bật Hiện Tại
+- `Git`: dùng để tải code từ GitHub và cập nhật code mới.
+- `Docker Desktop`: dùng để chạy app mà không cần tự cài PHP, Node.js, MySQL.
+- Một terminal: trên Windows có thể dùng `PowerShell`.
 
-- `Asset workspace`: tìm kiếm theo mã tài sản, danh mục, vị trí, nhân viên đang giữ; lọc theo trạng thái, vị trí và assignment; thao tác nhanh xem chi tiết, bàn giao/thu hồi và mở workspace bảo trì.
-- `QR asset portal`: mỗi thiết bị có `AssetID` tự tăng và một QR active duy nhất. QR in ra mở portal trên điện thoại; người dùng phải đăng nhập để hệ thống hiển thị dữ liệu theo role.
-- `Operational dashboard`: manager và technician có dashboard với giá trị tồn kho, thiết bị gián đoạn, hàng đợi duyệt, phân bổ theo bộ phận, xu hướng tài sản theo tháng và cảnh báo khấu hao.
-- `Purchase order workspace`: form đơn hàng tách khối nhà cung cấp, danh sách sản phẩm và tổng hợp thanh toán để thao tác nhanh hơn.
-- `Legacy compatibility`: endpoint cũ ngoài scope vẫn phản hồi `410 Gone` kèm message JSON rõ ràng.
+Giải thích nhanh:
 
-## Stack
+- `Git` là công cụ quản lý source code.
+- `Docker` là công cụ đóng gói môi trường chạy app.
+- `Container` là một "máy nhỏ" do Docker tạo ra để chạy từng phần của app.
+- `Docker Compose` là cách bật nhiều container cùng lúc, ví dụ app Laravel, Vite và MySQL.
 
-- Backend: Laravel 12, PHP 8.2, Laravel Sanctum.
-- Frontend: React 19, Vite 7, Axios, custom i18n.
-- Database: SQLite mặc định cho local/test, migration Laravel là nguồn sự thật.
-- Test: PHPUnit feature tests, Vite production build, i18n key parity checker.
+## 2. Lấy Code Từ GitHub
 
-## Quick Start
+Nếu máy chưa có repo:
 
-```bash
-composer install
-npm install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-npm run build
+```powershell
+cd D:\CODE
+git clone <GITHUB_REPO_URL>
+cd mesoco-dental-asset-management
 ```
 
-Chạy app local:
+Lệnh này làm gì?
 
-```bash
-php artisan serve
-npm run dev
+- `cd D:\CODE`: đi vào thư mục bạn muốn để project.
+- `git clone <GITHUB_REPO_URL>`: tải code từ GitHub về máy.
+- `cd mesoco-dental-asset-management`: đi vào thư mục project vừa tải.
+
+Nếu máy đã có repo và chỉ muốn kéo code mới nhất:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management
+git pull
 ```
 
-Đăng nhập UI bằng `username + password`. Seed demo vẫn đặt `username` trùng `employee_code` như `E1001`, nên có thể dùng các mã trong bảng dưới để đăng nhập. Email vẫn dùng cho profile và forgot-password.
+Lệnh này làm gì?
 
-## Chạy Với Docker
+- `git pull`: lấy thay đổi mới nhất từ GitHub về nhánh hiện tại.
 
-Nếu máy đã có Docker Desktop, làm theo đúng 4 bước sau từ thư mục gốc repo:
+Nếu `git pull` báo conflict, đừng xóa lung tung. Conflict nghĩa là cùng một file có thay đổi ở cả máy bạn và GitHub. Hãy nhờ người phụ trách repo kiểm tra trước khi sửa.
 
-1. Khởi động toàn bộ stack:
+## 3. Chạy App Bằng Docker
 
-```bash
-docker compose -f docker/docker-compose.yml up -d --build
+Cách dễ nhất trên Windows là dùng script có sẵn.
+
+Mở `PowerShell`, đi vào project:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management
 ```
 
-1. Chạy migrate và seed dữ liệu demo:
+Chạy setup lần đầu:
 
-```bash
-docker compose -f docker/docker-compose.yml exec app php artisan migrate --seed
+```powershell
+scripts\docker-setup.bat
 ```
 
-1. Mở UI tại `http://localhost:8000`.
+Lệnh này làm gì?
 
-1. Đăng nhập thử bằng tài khoản seed:
+- Kiểm tra Docker Desktop đã bật chưa.
+- Xóa container cũ nếu có.
+- Build image Docker mới.
+- Bật app, Vite và MySQL.
+- Tạo database và dữ liệu demo.
+
+Sau khi chạy xong, mở:
 
 ```text
-username: E1001
-password: password
+http://localhost:8000
 ```
 
-Ghi chú nhanh:
+Tài khoản demo:
 
-- `http://localhost:8000` là cổng để mở UI và test nghiệp vụ.
-- `http://localhost:5173` chỉ là Vite dev server cho frontend; không dùng cổng này làm URL chính để đăng nhập.
-- MySQL trong Docker được publish ra `localhost:3307`.
-- Container `app` sẽ tự cài dependency và phục vụ luôn UI trên `8000`.
-- Trên Windows có thể dùng các script `scripts\docker-setup.bat`, `scripts\docker-start.bat`, `scripts\docker-stop.bat` nếu không muốn gõ lệnh dài.
+| Vai trò | Username | Password |
+| --- | --- | --- |
+| Manager | `E1001` | `password` |
+| Technician | `E1002` | `password` |
+| Employee | `E1003` | `password` |
+| Frontdesk | `E1004` | `password` |
+| Warehouse | `E1005` | `password` |
 
-Lệnh hay dùng:
+Ghi chú quan trọng: đăng nhập bằng `Username`, ví dụ `E1001`, không dùng email.
 
-```bash
-docker compose -f docker/docker-compose.yml stop
-docker compose -f docker/docker-compose.yml up -d
-docker compose -f docker/docker-compose.yml logs -f app
-docker compose -f docker/docker-compose.yml exec app php artisan db:seed --class=DatabaseSeeder
+## 4. Mở Lại App Sau Khi Đã Setup
+
+Những lần sau, nếu Docker đã từng setup rồi, chạy:
+
+```powershell
+scripts\docker-start.bat
 ```
 
-Nếu vừa sửa file Docker hoặc entrypoint và muốn áp dụng lại image mới:
+Lệnh này làm gì?
 
-```bash
-docker compose -f docker/docker-compose.yml up -d --build app
+- Bật lại các container.
+- Chạy migration mới nếu có.
+- Xóa cache Laravel để tránh lỗi cấu hình cũ.
+
+Muốn tắt app:
+
+```powershell
+scripts\docker-stop.bat
 ```
 
-Nếu mở `localhost:8000` mà vẫn không đăng nhập được:
+Lệnh này làm gì?
 
-1. Kiểm tra đã chạy lệnh `migrate --seed` trong container `app` chưa.
-2. Dùng đúng `username`, không dùng email để login.
-3. Mở lại đúng URL `http://localhost:8000`, không mở `5173`.
-4. Xem log app bằng `docker compose -f docker/docker-compose.yml logs -f app`.
+- Dừng container.
+- Dữ liệu Docker volume vẫn còn, nên lần sau bật lại vẫn dùng tiếp được.
 
-Chạy kiểm tra:
+Muốn reset sạch dữ liệu demo:
 
-```bash
+```powershell
+scripts\docker-reset.bat
+```
+
+Lệnh này làm gì?
+
+- Xóa dữ liệu Docker cũ.
+- Tạo lại database từ đầu.
+- Seed lại dữ liệu demo.
+
+## 5. Các Lệnh Docker Hay Dùng
+
+Nếu bạn muốn gõ lệnh Docker trực tiếp, hãy đi vào thư mục `docker` trước:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+```
+
+Bật app:
+
+```powershell
+docker compose up -d
+```
+
+`up -d` nghĩa là bật container ở chế độ chạy nền.
+
+Bật app và build lại image:
+
+```powershell
+docker compose up -d --build
+```
+
+Dùng khi vừa pull code mới, sửa `Dockerfile`, sửa dependency hoặc app chạy không đúng bản mới.
+
+Tắt app:
+
+```powershell
+docker compose down
+```
+
+Lệnh này dừng và gỡ container, nhưng không xóa volume dữ liệu.
+
+Xem container đang chạy:
+
+```powershell
+docker compose ps
+```
+
+Lệnh này giúp kiểm tra container nào đang `running`, container nào bị `exited`.
+
+Xem log app:
+
+```powershell
+docker compose logs -f app
+```
+
+`logs` là nhật ký chạy app. `-f` nghĩa là tiếp tục theo dõi log mới.
+
+Chạy migration:
+
+```powershell
+docker compose exec app php artisan migrate
+```
+
+Lệnh này cập nhật cấu trúc database theo migration Laravel.
+
+Seed lại dữ liệu demo:
+
+```powershell
+docker compose exec app php artisan db:seed --class=DatabaseSeeder
+```
+
+Lệnh này tạo lại dữ liệu mẫu như tài khoản `E1001 / password`.
+
+Reset database thật sạch:
+
+```powershell
+docker compose exec app php artisan migrate:fresh --seed
+```
+
+Lệnh này xóa bảng cũ, tạo lại bảng mới và seed dữ liệu. Chỉ dùng cho local/dev, không dùng bừa trên production.
+
+## 6. Các Cổng Cần Nhớ
+
+| URL | Dùng để làm gì |
+| --- | --- |
+| `http://localhost:8000` | Mở app chính |
+| `http://localhost:5173` | Vite dev server cho frontend |
+| `localhost:3307` | MySQL trên máy host |
+
+Nếu chỉ muốn dùng app, ưu tiên mở:
+
+```text
+http://localhost:8000
+```
+
+## 7. Khi Pull Code Mới Từ GitHub
+
+Quy trình an toàn:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management
+git status
+git pull
+scripts\docker-start.bat
+```
+
+Lệnh này làm gì?
+
+- `git status`: xem máy bạn đang có file nào thay đổi chưa commit không.
+- `git pull`: lấy code mới từ GitHub.
+- `scripts\docker-start.bat`: bật lại app, chạy migration nếu có và seed lại dữ liệu demo.
+
+Nếu code mới có thay đổi dependency hoặc Docker:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose up -d --build
+```
+
+Sau đó mở lại:
+
+```text
+http://localhost:8000
+```
+
+## 8. Lỗi Docker Phổ Biến Và Cách Xử Lý
+
+### Lỗi 1: Docker Desktop chưa bật
+
+Dấu hiệu:
+
+```text
+Docker Desktop is not running
+```
+
+Cách xử lý:
+
+1. Mở Docker Desktop.
+2. Chờ tới khi Docker báo đang chạy.
+3. Chạy lại lệnh setup/start.
+
+Kiểm tra nhanh:
+
+```powershell
+docker info
+```
+
+Nếu lệnh này chạy ra thông tin Docker là ổn.
+
+### Lỗi 2: Cổng 8000 hoặc 5173 đã bị dùng
+
+Dấu hiệu:
+
+```text
+port is already allocated
+```
+
+Cách xử lý nhanh:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose down
+docker compose up -d
+```
+
+Nếu vẫn lỗi, có thể máy đang có app khác dùng cùng cổng. Đóng app đó hoặc đổi port trong `docker/docker-compose.yml`.
+
+### Lỗi 3: MySQL chưa sẵn sàng
+
+Dấu hiệu:
+
+```text
+SQLSTATE[HY000] [2002] Connection refused
+```
+
+Cách xử lý:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose ps
+docker compose logs -f db
+```
+
+Nếu database vẫn đang khởi động, chờ thêm 30-60 giây rồi chạy lại:
+
+```powershell
+docker compose exec app php artisan migrate
+```
+
+### Lỗi 4: Đăng nhập `E1001 / password` không được
+
+Nguyên nhân thường gặp: database chưa được seed dữ liệu demo.
+
+Cách xử lý:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose exec app php artisan db:seed --class=DatabaseSeeder
+```
+
+Nếu vẫn không được, reset sạch database local:
+
+```powershell
+docker compose exec app php artisan migrate:fresh --seed
+```
+
+### Lỗi 5: Pull image quá chậm hoặc timeout
+
+Dấu hiệu:
+
+```text
+TLS handshake timeout
+```
+
+Cách xử lý:
+
+```powershell
+docker pull mysql:8.0
+docker compose up -d --build
+```
+
+Nếu lỗi nằm ở image khác, thay `mysql:8.0` bằng tên image đang báo lỗi.
+
+### Lỗi 6: App chạy nhưng giao diện nhìn như bản cũ
+
+Cách xử lý:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose exec app php artisan config:clear
+docker compose exec app php artisan cache:clear
+docker compose up -d --build
+```
+
+Lệnh này xóa cache Laravel và build lại image.
+
+### Lỗi 7: Container bị `exited`
+
+Kiểm tra trước:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose ps
+docker compose logs app
+```
+
+`ps` cho biết container nào bị tắt. `logs app` cho biết lý do app tắt.
+
+## 9. Kiểm Tra Project Có Ổn Không
+
+Các lệnh kiểm tra thường dùng:
+
+```powershell
 npm run check:i18n
 npm run build
 php artisan test
 ```
 
-## Tính Năng QR Tài Sản
+Lệnh này làm gì?
 
-Mỗi thiết bị có `AssetID` do hệ thống tự tăng và một QR active duy nhất. Trên web PC, quản lý hoặc kỹ thuật viên mở chi tiết tài sản để hiển thị QR, sau đó nhân viên dùng điện thoại đã đăng nhập hệ thống để quét QR và xem đúng phần thông tin theo quyền.
+- `npm run check:i18n`: kiểm tra key ngôn ngữ frontend có bị thiếu không.
+- `npm run build`: build frontend production để xem có lỗi compile không.
+- `php artisan test`: chạy test backend Laravel.
 
-QR không lưu trực tiếp giá tiền, cấu hình hay nhật ký sửa chữa. QR chỉ chứa đường dẫn portal của thiết bị:
+Nếu muốn chạy test bên trong Docker:
 
-```text
-http://<host>/asset-portal/<qr_uid>
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose exec app php artisan test
 ```
 
-### Luồng Demo Trên PC Và Điện Thoại
+## 10. App Này Có Những Phần Chính Nào?
 
-1. Đăng nhập PC bằng tài khoản `manager` hoặc `technician`.
-2. Vào `Quản lý danh mục & hồ sơ` -> `Danh mục tài sản`.
-3. Mở chi tiết một thiết bị.
-4. Nếu chưa có QR, bấm `Tạo lại QR`.
-5. Kiểm tra card QR trong asset detail: có mã QR để quét, payload nội bộ, link portal, nút in/tải nhãn.
-6. Dùng điện thoại cùng mạng LAN, đăng nhập hệ thống Mesoco.
-7. Quét QR đang hiển thị trên màn hình PC hoặc QR đã in trên nhãn thiết bị.
-8. Portal mở đúng thiết bị và tự ẩn/hiện dữ liệu theo role.
+- `Asset Catalog`: danh mục tài sản như laptop, desktop, monitor, network device, server, printer và thiết bị văn phòng.
+- `Responsible Handover`: theo dõi thiết bị đang ở vị trí nào và ai chịu trách nhiệm.
+- `Maintenance`: quản lý bảo trì, sửa chữa, nâng cấp, vệ sinh hoặc thay linh kiện.
+- `Inventory & Valuation`: kiểm kê, giá mua, khấu hao, giá trị còn lại và bảo hành.
+- `Purchase Orders`: quản lý đơn mua thiết bị và nhà cung cấp.
+- `Requests`: nhân viên gửi yêu cầu bàn giao, thu hồi hoặc xử lý sự cố thiết bị.
+- `Disposal`: thanh lý hoặc loại bỏ tài sản không còn sử dụng.
 
-### Dữ Liệu Hiển Thị Theo Role
+## 11. Tài Khoản Demo
 
-| Role | Khi quét QR sẽ thấy |
-| --- | --- |
-| `employee` | Tên thiết bị, mã tài sản, serial, model, cấu hình, trạng thái, bảo hành, vị trí, người đang chịu trách nhiệm |
-| `technician` | Toàn bộ phần employee + nhật ký sửa chữa/bảo trì, lần bảo trì cuối, mức khấu hao, giá trị còn lại |
-| `manager` | Toàn bộ phần technician + giá mua, ngày mua, nhà cung cấp và thông tin liên hệ |
+Sau khi seed dữ liệu, dùng các tài khoản sau để đăng nhập:
 
-### Test Bằng Điện Thoại Thật
-
-Không dùng `localhost` trong QR khi test bằng điện thoại, vì `localhost` trên điện thoại là chính điện thoại đó. Hãy dùng IP LAN của máy chạy app, ví dụ:
-
-```text
-http://192.168.1.20:8000/asset-portal/<qr_uid>
-```
-
-### Test Nhanh Trên PC
-
-Màn `/qr-scan` hỗ trợ scanner nội bộ và fallback nhập tay. Có thể paste một trong hai định dạng:
-
-```text
-http://<host>/asset-portal/<qr_uid>
-MESOCO|ASSET|v1|<qr_uid>
-```
-
-Đây là cách ổn định để test bằng browser automation hoặc scanner USB mà không cần camera.
-
-## Tài Khoản Demo
-
-Sau khi chạy `php artisan migrate --seed`, dùng các tài khoản mẫu sau để đăng nhập bằng `username`:
-
-| Role | Employee code | Email | Password | Mục đích |
+| Role | Username | Email | Password | Dùng để test |
 | --- | --- | --- | --- | --- |
-| manager | E1001 | `manager@mesoco.vn` | password | Quản lý báo cáo, user, duyệt phiếu |
-| technician | E1002 | `technician@mesoco.vn` | password | Vận hành asset, maintenance, inventory |
-| employee | E1003 | `employee@mesoco.vn` | password | Xem thiết bị được giao và gửi request |
-| employee | E1004 | `frontdesk@mesoco.vn` | password | Nhân viên quầy lễ tân để test assignment |
-| employee | E1005 | `warehouse@mesoco.vn` | password | Nhân viên kho để test assignment |
+| manager | `E1001` | `manager@mesoco.vn` | `password` | Báo cáo, user, duyệt phiếu |
+| technician | `E1002` | `technician@mesoco.vn` | `password` | Asset, maintenance, inventory |
+| employee | `E1003` | `employee@mesoco.vn` | `password` | Xem thiết bị được giao, gửi request |
+| employee | `E1004` | `frontdesk@mesoco.vn` | `password` | Test assignment |
+| employee | `E1005` | `warehouse@mesoco.vn` | `password` | Test assignment kho |
 
-`Supplier` không được seed mặc định trong `DatabaseSeeder`; nếu cần test luồng supplier, tạo user supplier riêng trong hệ thống hoặc bằng factory/seeder bổ sung.
+## 12. Tài Liệu Khác
 
-Nếu `E1001 / password` vẫn báo sai tài khoản, database đang chạy chưa được seed theo bản mới. Chạy lại seed trên đúng môi trường app đang mở:
-
-```bash
-php artisan db:seed --class=DatabaseSeeder
-```
-
-Với Docker, có thể dùng script reset hoặc chạy trong container app:
-
-```bash
-docker compose -f docker/docker-compose.yml exec app php artisan db:seed --class=DatabaseSeeder
-```
-
-## Tài Liệu
-
-- [docs/README.md](docs/README.md): mục lục tài liệu theo hướng báo cáo/luận văn.
-- [docs/STACK.md](docs/STACK.md): Stack, cấu trúc repo và runtime flow.
-- [docs/DB_CONVENTIONS.md](docs/DB_CONVENTIONS.md): quy ước database, enum và bảng legacy giữ lại.
-- [docs/QR_FEATURE_GUIDE.md](docs/QR_FEATURE_GUIDE.md): hướng dẫn nghiệp vụ QR, phân quyền khi quét và cách demo bằng điện thoại.
+- [docs/README.md](docs/README.md): mục lục tài liệu.
+- [docs/STACK.md](docs/STACK.md): stack và cách app chạy.
+- [docs/DB_CONVENTIONS.md](docs/DB_CONVENTIONS.md): quy ước database.
+- [docs/QR_FEATURE_GUIDE.md](docs/QR_FEATURE_GUIDE.md): hướng dẫn QR tài sản.
 - [docs/RBAC_MATRIX.md](docs/RBAC_MATRIX.md): quyền theo role.
 - [docs/ROLE_FEATURES.md](docs/ROLE_FEATURES.md): chức năng theo từng người dùng.
-- [docs/SEED_DATA.md](docs/SEED_DATA.md): seed data IT.
-- [docs/CLASS_DIAGRAM.md](docs/CLASS_DIAGRAM.md): class diagram Mermaid.
-- [docs/feat_role.md](docs/feat_role.md): checklist nghiệm thu theo yêu cầu mới.
+- [docs/SEED_DATA.md](docs/SEED_DATA.md): dữ liệu mẫu.
+- [docs/CLASS_DIAGRAM.md](docs/CLASS_DIAGRAM.md): sơ đồ class.
 
-## Quy Tắc Cleanup Hiện Tại
+## 13. Ghi Nhớ Ngắn
 
-Không drop migration lịch sử và không đổi tên bảng/cột cũ trong lần cleanup này. Nếu sau này cần xóa vật lý bảng/cột legacy, cần lập một plan migration phá vỡ tương thích riêng, có backup và script chuyển dữ liệu.
+Nếu chỉ nhớ 4 dòng, hãy nhớ:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management
+git pull
+scripts\docker-start.bat
+start http://localhost:8000
+```
+
+Khi app lỗi, kiểm tra theo thứ tự:
+
+```powershell
+docker info
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose ps
+docker compose logs -f app
+```

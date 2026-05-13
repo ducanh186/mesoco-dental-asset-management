@@ -10,7 +10,7 @@ const mesocoLogoUrl = import.meta.env.DEV && typeof window !== 'undefined'
 /**
  * Sidebar follows the six BFD level-0 business functions from the thesis doc.
  */
-const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
+const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, user }) => {
     const location = useLocation();
     const { t, locale } = useI18n();
     const [expandedMenus, setExpandedMenus] = useState({});
@@ -219,10 +219,25 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
     };
 
     const toggleSubmenu = (id) => {
+        if (collapsed) {
+            onExpand?.();
+            return;
+        }
+
         setExpandedMenus(prev => ({
             ...prev,
             [id]: !prev[id]
         }));
+    };
+
+    const handleNavLinkClick = (event) => {
+        if (collapsed) {
+            event.preventDefault();
+            onExpand?.();
+            return;
+        }
+
+        onMobileClose?.();
     };
 
     const renderIcon = (iconName) => {
@@ -405,7 +420,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                                     key={idx}
                                     to={child.path}
                                     className={`nav-subitem ${isActive(child.path) ? 'active' : ''}`}
-                                    onClick={onMobileClose}
+                                    onClick={handleNavLinkClick}
                                 >
                                     {child.label}
                                 </Link>
@@ -421,7 +436,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                 key={item.id}
                 to={item.path}
                 className={`nav-item ${active ? 'active' : ''}`}
-                onClick={onMobileClose}
+                onClick={handleNavLinkClick}
             >
                 {renderIcon(item.icon)}
                 {!collapsed && <span className="nav-label">{t(item.labelKey)}</span>}
@@ -472,29 +487,27 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onMobileClose, user }) => {
                         </div>
                     );
                 })}
-            </nav>
-
-            {/* Sidebar Footer */}
-            <div className="sidebar-footer border-t border-border">
-                <button 
-                    className="collapse-btn text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
-                    onClick={onToggle}
-                    aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
-                    aria-pressed={collapsed}
-                    title={collapsed ? t('nav.expand') : t('nav.collapse')}
-                >
-                    <svg 
-                        className={`collapse-icon ${collapsed ? 'collapsed' : ''}`}
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2"
+                <div className="sidebar-collapse-panel">
+                    <button
+                        className="collapse-btn text-text-muted hover:text-text hover:bg-surface-muted rounded-md"
+                        onClick={onToggle}
+                        aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
+                        aria-pressed={collapsed}
+                        title={collapsed ? t('nav.expand') : t('nav.collapse')}
                     >
-                        <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                    {!collapsed && <span>{collapsed ? t('nav.expand') : t('nav.collapse')}</span>}
-                </button>
-            </div>
+                        <svg
+                            className={`collapse-icon ${collapsed ? 'collapsed' : ''}`}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                        {!collapsed && <span>{collapsed ? t('nav.expand') : t('nav.collapse')}</span>}
+                    </button>
+                </div>
+            </nav>
         </aside>
     );
 };
