@@ -7,6 +7,7 @@ use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\CheckinController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\HandoverController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MaintenanceEventController;
@@ -184,6 +185,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
         Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
         Route::post('/assets/{asset}/regenerate-qr', [AssetController::class, 'regenerateQr']);
+        Route::get('/handover-records', [HandoverController::class, 'index']);
 
         Route::get('/inventory/summary', [InventoryController::class, 'summary']);
         Route::get('/inventory/assets', [InventoryController::class, 'assets']);

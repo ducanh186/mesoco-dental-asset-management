@@ -118,6 +118,21 @@ class LocationApiTest extends TestCase
             ->assertJsonCount(3, 'data');
     }
 
+    public function test_can_filter_locations_by_area_name(): void
+    {
+        $user = $this->createUserWithRole('admin');
+
+        Location::factory()->create(['name' => 'Bàn 1 - Kho tầng 1', 'is_active' => true]);
+        Location::factory()->create(['name' => 'Bàn 2 - Kho tầng 2', 'is_active' => true]);
+        Location::factory()->create(['name' => 'Khu HR', 'is_active' => true]);
+
+        $response = $this->actingAs($user)->getJson('/api/locations?area=Kho%20t%E1%BA%A7ng%202');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Bàn 2 - Kho tầng 2');
+    }
+
     public function test_can_search_locations_by_name(): void
     {
         $user = $this->createUserWithRole('admin');
@@ -150,6 +165,26 @@ class LocationApiTest extends TestCase
 
         $this->assertDatabaseHas('locations', ['code' => 'LOC-NEW', 'name' => 'Phòng khám mới']);
         $this->assertArrayNotHasKey('address', $response->json('data'));
+    }
+
+    public function test_can_create_location_without_manual_code(): void
+    {
+        $user = $this->createUserWithRole('admin');
+
+        $response = $this->actingAs($user)->postJson('/api/locations', [
+            'name' => 'Bàn 1 - Kho tầng 1',
+            'description' => 'Vị trí lưu thiết bị mới nhập kho',
+            'is_active' => true,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.name', 'Bàn 1 - Kho tầng 1')
+            ->assertJsonPath('data.description', 'Vị trí lưu thiết bị mới nhập kho');
+
+        $this->assertDatabaseHas('locations', [
+            'name' => 'Bàn 1 - Kho tầng 1',
+            'description' => 'Vị trí lưu thiết bị mới nhập kho',
+        ]);
     }
 
     public function test_cannot_create_location_with_duplicate_name(): void

@@ -57,6 +57,39 @@ class PurchaseOrderApiTest extends TestCase
         $this->assertDatabaseCount('purchase_order_items', 2);
     }
 
+    public function test_manager_can_create_purchase_order_without_price_or_payment_fields(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+
+        $response = $this->actingAs($manager)->postJson('/api/purchase-orders', [
+            'supplier_id' => $supplier->id,
+            'order_date' => '2026-05-14',
+            'status' => PurchaseOrder::STATUS_PREPARING,
+            'items' => [
+                [
+                    'item_name' => 'PC văn phòng',
+                    'qty' => 3,
+                    'unit' => 'cái',
+                    'note' => 'Nhập giá sau khi kiểm hàng đạt',
+                ],
+            ],
+            'note' => 'Đơn hàng chưa chốt giá ở bước tạo',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.payment_method', null)
+            ->assertJsonPath('data.total_amount', null)
+            ->assertJsonPath('data.items.0.unit_price', null)
+            ->assertJsonPath('data.items.0.line_total', null);
+
+        $this->assertDatabaseHas('purchase_order_items', [
+            'item_name' => 'PC văn phòng',
+            'unit_price' => null,
+            'line_total' => null,
+        ]);
+    }
+
     public function test_supplier_only_sees_own_purchase_orders(): void
     {
         $supplierA = Supplier::factory()->create(['name' => 'NCC A']);

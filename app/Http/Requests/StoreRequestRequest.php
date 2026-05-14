@@ -139,7 +139,7 @@ class StoreRequestRequest extends FormRequest
                 if (empty($assetId)) {
                     $validator->errors()->add(
                         "items.{$index}.asset_id",
-                        'Vui lòng chọn tài sản cần báo cáo.'
+                        'Vui lòng chọn thiết bị cần báo cáo.'
                     );
                 } else {
                     // Employee can report only assets they are currently responsible for.
@@ -148,12 +148,12 @@ class StoreRequestRequest extends FormRequest
                     if (!$asset) {
                         $validator->errors()->add(
                             "items.{$index}.asset_id",
-                            'Tài sản được chọn không tồn tại.'
+                            'Thiết bị được chọn không tồn tại.'
                         );
                     } elseif (!$employeeId || !$asset->isAssignedToResponsibleEmployee($user->employee)) {
                         $validator->errors()->add(
                             "items.{$index}.asset_id",
-                            'Bạn chỉ có thể báo cáo sự cố cho tài sản mình đang chịu trách nhiệm.'
+                            'Bạn chỉ có thể báo cáo sự cố cho thiết bị mình đang chịu trách nhiệm.'
                         );
                     }
                 }

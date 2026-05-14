@@ -15,7 +15,7 @@ class AssetLocationResponsibilityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_location_requires_unique_code_for_active_location_catalog(): void
+    public function test_location_accepts_optional_code_but_rejects_duplicate_codes(): void
     {
         $manager = User::factory()->manager()->create(['must_change_password' => false]);
 
@@ -25,8 +25,9 @@ class AssetLocationResponsibilityTest extends TestCase
                 'description' => 'Kho thiết bị IT',
                 'is_active' => true,
             ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['code']);
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'Kho IT')
+            ->assertJsonPath('data.code', null);
 
         Location::factory()->create([
             'code' => 'LOC-001',

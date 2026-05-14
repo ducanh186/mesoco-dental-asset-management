@@ -8,7 +8,7 @@ Scope mới: quản lý trang thiết bị Mesoco theo vị trí và nhân viên
 - [x] Asset lưu ngày mua, giá mua, thời hạn sử dụng, giá trị thu hồi và bảo hành.
 - [x] Asset có trạng thái active, maintenance, off service, retired.
 - [x] API asset trả structured `location` và `responsible_employee`.
-- [x] Asset workspace hỗ trợ tìm theo mã tài sản, danh mục, vị trí và người đang giữ.
+- [x] Asset workspace hỗ trợ tìm theo mã thiết bị, danh mục, vị trí và người đang giữ.
 - [x] Asset workspace có filter riêng cho vị trí, trạng thái và assignment.
 
 ## Location
@@ -48,7 +48,7 @@ Scope mới: quản lý trang thiết bị Mesoco theo vị trí và nhân viên
 - [x] Tính giá trị còn lại theo purchase cost, useful life và salvage value.
 - [x] Theo dõi warranty expiring soon.
 - [x] Location filter dùng canonical location code/name.
-- [x] Dashboard manager và technician hiển thị valuation summary, phân bổ tài sản và depreciation alert.
+- [x] Dashboard manager và technician hiển thị valuation summary, phân bổ thiết bị và depreciation alert.
 
 ## Depreciation Và Disposal
 

@@ -7,7 +7,7 @@
 - Không rewrite migration lịch sử trong cleanup hiện tại.
 - Không drop bảng/cột legacy nếu chưa có plan migration phá vỡ tương thích.
 - Model và API active dùng scope: `Asset -> Location`, `Asset -> Responsible Employee`, `Asset -> Depreciation -> Disposal Proposal`.
-- Seed data active tạo tài sản thiết bị, vị trí, nhân viên chịu trách nhiệm, maintenance, inventory và purchase order.
+- Seed data active tạo thiết bị, vị trí, nhân viên chịu trách nhiệm, maintenance, inventory và purchase order.
 - Legacy endpoint trả lỗi rõ ràng thay vì rơi vào HTML của SPA.
 
 ## Bảng Chính
@@ -17,11 +17,11 @@
 | `users` | Tài khoản đăng nhập, role canonical và liên kết employee/supplier |
 | `employees` | Hồ sơ nhân viên nội bộ; dùng `position` để thể hiện chức vụ |
 | `suppliers` | Nhà cung cấp thiết bị/vật tư |
-| `locations` | Mã vị trí, tên vị trí, mô tả nơi đặt tài sản |
-| `assets` | Tài sản thiết bị, trạng thái, vị trí, serial/model/QR, chi phí, khấu hao, bảo hành |
+| `locations` | Mã vị trí auto increment, tên vị trí, mô tả nơi đặt thiết bị |
+| `assets` | Thiết bị, trạng thái, vị trí, serial/model/QR, chi phí, khấu hao, bảo hành |
 | `asset_qr_identities` | Lịch sử phát hành QR identity cho asset portal |
 | `categories` | Danh mục category cho asset |
-| `assignments` | Header bàn giao tài sản theo user/staff |
+| `assignments` | Header bàn giao thiết bị theo user/staff |
 | `assignment_details` | Asset lines nằm trong từng lần bàn giao |
 | `returns` | Giao dịch thu hồi cho một lần bàn giao |
 | `asset_assignments` | Mirror compatibility cho flow cũ theo employee |
@@ -35,14 +35,15 @@
 | `requests` | Phiếu báo sự cố hoặc xin vật tư/linh kiện |
 | `request_items` | Dòng asset/vật tư trong request |
 | `request_events` | Lịch sử trạng thái request |
-| `disposals`, `disposal_details` | Thanh lý hoặc loại bỏ tài sản |
+| `disposals`, `disposal_details` | Thu hủy hoặc loại bỏ thiết bị |
 
 ## Location
 
 Nguồn chính của vị trí là bảng `locations`:
 
-- `code`: mã vị trí, unique, ví dụ `LOC-001`.
-- `name`: tên vị trí, ví dụ `Kho thiết bị`.
+- `id`: mã vị trí hiển thị, auto increment.
+- `code`: mã legacy/compatibility, nullable; UI active không bắt nhập.
+- `name`: tên vị trí, ví dụ `Bàn 1 - Kho tầng 1`.
 - `description`: mô tả ngắn.
 
 `assets.location_id` trỏ tới `locations.id`. Các cột `assets.location` và `locations.address` được giữ để tương thích dữ liệu cũ, không dùng làm nguồn chính trong UI active.
@@ -64,7 +65,7 @@ API active hiện trả song song cả field compatibility và field ERD mới �
 
 Nguồn active đang chuyển sang workflow mới:
 
-- `assignments.staff_id`: user nhận tài sản.
+- `assignments.staff_id`: user nhận thiết bị.
 - `assignment_details.asset_id`: asset thuộc lần bàn giao nào.
 - `returns.assignment_id`: đánh dấu lần bàn giao đã được thu hồi.
 
@@ -78,7 +79,7 @@ Trong giai đoạn chuyển tiếp:
 
 ## Depreciation Và Disposal
 
-Tài sản được đưa vào danh sách đề xuất thu hủy khi depreciation percentage `> 75%`. Mốc này chỉ tạo đề xuất nghiệp vụ, không tự chuyển status.
+Thiết bị được đưa vào danh sách đề xuất thu hủy khi depreciation percentage `> 75%`. Mốc này chỉ tạo đề xuất nghiệp vụ, không tự chuyển status.
 
 Khi retire/dispose asset:
 
@@ -104,7 +105,7 @@ API/route active:
 
 - `POST /api/qr/resolve`: resolve portal URL hoặc payload `MESOCO|ASSET|v1|<uuid>` sang asset hiện tại.
 - `POST /api/assets/{asset}/regenerate-qr`: tạo QR identity mới nhưng vẫn giữ lịch sử QR cũ.
-- `GET /asset-portal/{qrUid}`: read-only portal view cho tài sản được resolve từ QR; nếu chưa đăng nhập thì redirect tới `/login?redirect=/asset-portal/{qrUid}`.
+- `GET /asset-portal/{qrUid}`: read-only portal view cho thiết bị được resolve từ QR; nếu chưa đăng nhập thì redirect tới `/login?redirect=/asset-portal/{qrUid}`.
 
 QR portal response dùng cùng một QR payload nhưng cắt dữ liệu theo role:
 

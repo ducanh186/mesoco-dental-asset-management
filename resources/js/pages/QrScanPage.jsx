@@ -156,7 +156,7 @@ const QrScanPage = () => {
         <div className="space-y-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h2 className="text-xl font-bold text-text">Quét QR tài sản</h2>
+                    <h2 className="text-xl font-bold text-text">Quét QR thiết bị</h2>
                 </div>
                 {role && <Badge variant="primary">Đang xem như: {roleLabel(role)}</Badge>}
             </div>
@@ -220,7 +220,7 @@ const QrScanPage = () => {
                                     </svg>
                                 </div>
                                 <h3 className="font-semibold text-text">Chưa có dữ liệu QR</h3>
-                                <p className="mt-1 text-sm text-text-muted">Quét camera hoặc paste payload để xem thông tin tài sản.</p>
+                                <p className="mt-1 text-sm text-text-muted">Quét camera hoặc paste payload để xem thông tin thiết bị.</p>
                             </CardBody>
                         </Card>
                     ) : (

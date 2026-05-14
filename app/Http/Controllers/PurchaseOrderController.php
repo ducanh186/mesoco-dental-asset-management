@@ -210,12 +210,19 @@ class PurchaseOrderController extends Controller
         $purchaseOrder->items()->delete();
 
         $totalAmount = 0;
+        $hasPricedItems = false;
 
         foreach ($items as $item) {
             $qty = (float) $item['qty'];
-            $unitPrice = (float) $item['unit_price'];
-            $lineTotal = round($qty * $unitPrice, 2);
-            $totalAmount += $lineTotal;
+            $unitPrice = array_key_exists('unit_price', $item) && $item['unit_price'] !== null && $item['unit_price'] !== ''
+                ? (float) $item['unit_price']
+                : null;
+            $lineTotal = $unitPrice !== null ? round($qty * $unitPrice, 2) : null;
+
+            if ($lineTotal !== null) {
+                $totalAmount += $lineTotal;
+                $hasPricedItems = true;
+            }
 
             $purchaseOrder->items()->create([
                 'asset_id' => $item['asset_id'] ?? null,
@@ -230,7 +237,7 @@ class PurchaseOrderController extends Controller
         }
 
         $purchaseOrder->forceFill([
-            'total_amount' => round($totalAmount, 2),
+            'total_amount' => $hasPricedItems ? round($totalAmount, 2) : null,
         ])->save();
     }
 

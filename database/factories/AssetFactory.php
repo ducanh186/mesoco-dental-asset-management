@@ -129,7 +129,7 @@ class AssetFactory extends Factory
                     'Enterprise UPS System'
                 ]),
                 'type' => Asset::TYPE_MACHINE,
-                'category' => 'Server',
+                'category' => 'Thiết bị Test',
                 'location' => 'Server Room',
                 'purchase_date' => $purchaseDate,
                 'purchase_cost' => $purchaseCost,

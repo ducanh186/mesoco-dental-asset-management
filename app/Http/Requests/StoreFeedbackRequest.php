@@ -44,7 +44,7 @@ class StoreFeedbackRequest extends FormRequest
             'content.max' => 'Nội dung phản hồi không được vượt quá 5000 ký tự.',
             'rating.min' => 'Đánh giá phải từ 1 đến 5.',
             'rating.max' => 'Đánh giá phải từ 1 đến 5.',
-            'asset_id.exists' => 'Tài sản không tồn tại.',
+            'asset_id.exists' => 'Thiết bị không tồn tại.',
             'maintenance_event_id.exists' => 'Sự kiện bảo trì không tồn tại.',
         ];
     }

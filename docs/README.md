@@ -1,10 +1,10 @@
 # Tài Liệu Dự Án Mesoco Asset Management
 
-Thư mục này mô tả hệ thống theo hướng báo cáo/luận văn: bài toán nhỏ, đúng nghiệp vụ và dễ giải thích cho người không chuyên kỹ thuật. Scope hiện tại là quản lý tài sản IT theo **vị trí**, **nhân viên chịu trách nhiệm** và **workspace điều phối vận hành** cho manager hoặc technician.
+Thư mục này mô tả hệ thống theo hướng báo cáo/luận văn: bài toán nhỏ, đúng nghiệp vụ và dễ giải thích cho người không chuyên kỹ thuật. Scope hiện tại là quản lý thiết bị IT theo **vị trí**, **nhân viên chịu trách nhiệm** và **workspace điều phối vận hành** cho manager hoặc technician.
 
 ## Bài Toán
 
-Công ty cần biết mỗi tài sản IT đang ở vị trí nào, ai đang chịu trách nhiệm, mua từ ngày nào, còn bảo hành không, đã bảo trì gần nhất khi nào, còn bao nhiêu giá trị sổ sách và khi nào nên đề xuất thu hủy. Người vận hành còn cần một workspace để tìm nhanh tài sản theo mã, danh mục, vị trí hoặc người đang giữ, sau đó bàn giao, mở bảo trì hoặc xem valuation mà không phải đi qua nhiều màn hình. Người dùng chính là `manager`, `technician`, `employee` và `supplier`.
+Công ty cần biết mỗi thiết bị IT đang ở vị trí nào, ai đang chịu trách nhiệm, mua từ ngày nào, còn bảo hành không, đã bảo trì gần nhất khi nào, còn bao nhiêu giá trị sổ sách và khi nào nên đề xuất thu hủy. Người vận hành còn cần một workspace để tìm nhanh thiết bị theo mã, danh mục, vị trí hoặc người đang giữ, sau đó bàn giao, mở bảo trì hoặc xem valuation mà không phải đi qua nhiều màn hình. Người dùng chính là `manager`, `technician`, `employee` và `supplier`.
 
 ## Mục Lục
 
@@ -22,16 +22,16 @@ Công ty cần biết mỗi tài sản IT đang ở vị trí nào, ai đang ch�
 
 ## Module Chính
 
-- `Dashboard & Triage`: tổng quan vận hành, valuation, approval queue, phân bổ tài sản và cảnh báo khấu hao.
-- `Asset Workspace`: danh mục tài sản IT, global search, bộ lọc vị trí hoặc assignment và thông tin vòng đời.
-- `Location Catalog`: mã vị trí, tên vị trí và mô tả nơi đặt tài sản.
-- `Responsible Employee`: gắn hoặc thu hồi tài sản khỏi một nhân viên chịu trách nhiệm.
+- `Dashboard & Triage`: tổng quan vận hành, valuation, approval queue, phân bổ thiết bị và cảnh báo khấu hao.
+- `Asset Workspace`: danh mục thiết bị IT, global search, bộ lọc vị trí hoặc assignment và thông tin vòng đời.
+- `Location Catalog`: mã vị trí auto increment, tên vị trí và mô tả nơi đặt thiết bị.
+- `Responsible Employee`: gắn hoặc thu hồi thiết bị khỏi một nhân viên chịu trách nhiệm.
 - `QR Asset Portal`: quét QR trên điện thoại, bắt buộc đăng nhập và hiển thị dữ liệu theo role.
 - `Maintenance`: bảo trì một hoặc nhiều thiết bị, có chi tiết xử lý và chi phí.
 - `Inventory & Valuation`: kiểm kê, khấu hao, giá trị còn lại và bảo hành.
 - `Requests`: báo sự cố thiết bị và xin vật tư/linh kiện IT.
 - `Disposal`: thu hồi khỏi vận hành; khi thu hủy thì asset mất vị trí và mất người phụ trách active.
-- `Purchase Orders`: nhà cung cấp, đơn mua hàng, tổng tiền và trạng thái giao.
+- `Purchase Orders`: nhà cung cấp, đơn mua hàng, danh sách thiết bị, đơn vị, số lượng, ghi chú và trạng thái giao.
 
 ## Legacy Compatibility
 

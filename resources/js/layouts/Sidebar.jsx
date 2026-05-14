@@ -7,9 +7,6 @@ const mesocoLogoUrl = import.meta.env.DEV && typeof window !== 'undefined'
     ? `${window.location.protocol}//${window.location.hostname}:5173/images/mesoco_logo.png`
     : '/images/mesoco_logo.png';
 
-/**
- * Sidebar follows the six BFD level-0 business functions from the thesis doc.
- */
 const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, user }) => {
     const location = useLocation();
     const { t, locale } = useI18n();
@@ -52,7 +49,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         },
         handover: {
             id: 'handover',
-            path: '/assets#handover',
+            path: '/handover',
             labelKey: 'nav.handoverRecovery',
             icon: 'requests',
         },
@@ -98,6 +95,36 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             labelKey: 'nav.reports', 
             icon: 'reports'
         },
+        assetRecords: {
+            id: 'asset-records',
+            path: '/assets',
+            labelKey: 'nav.assetRecords',
+            icon: 'history',
+        },
+        handoverRecords: {
+            id: 'handover-records',
+            path: '/handover',
+            labelKey: 'nav.handoverRecords',
+            icon: 'history',
+        },
+        returnRecords: {
+            id: 'return-records',
+            path: '/handover',
+            labelKey: 'nav.returnRecords',
+            icon: 'history',
+        },
+        inventoryRecords: {
+            id: 'inventory-records',
+            path: '/inventory',
+            labelKey: 'nav.inventoryRecords',
+            icon: 'history',
+        },
+        maintenanceRecords: {
+            id: 'maintenance-records',
+            path: '/maintenance',
+            labelKey: 'nav.maintenanceRecords',
+            icon: 'history',
+        },
     };
 
     const bfdGroup = (id, labelKey, icon, children) => ({
@@ -114,6 +141,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
     const sectionLabel = (vi, en) => (locale === 'vi' ? vi : en);
 
     const managerBfdItems = [
+        navItems.dashboard,
         bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
             navItems.assets,
             navItems.locations,
@@ -135,13 +163,20 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.inventory,
             navItems.disposal,
         ]),
+        bfdGroup('bfd-records', 'nav.recordsManagement', 'history', [
+            navItems.assetRecords,
+            navItems.handoverRecords,
+            navItems.returnRecords,
+            navItems.inventoryRecords,
+            navItems.maintenanceRecords,
+        ]),
         bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
-            navItems.dashboard,
             navItems.reports,
         ]),
     ];
 
     const technicianBfdItems = [
+        navItems.dashboard,
         bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
             navItems.assets,
             navItems.locations,
@@ -162,29 +197,32 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.inventory,
             navItems.disposal,
         ]),
+        bfdGroup('bfd-records', 'nav.recordsManagement', 'history', [
+            navItems.assetRecords,
+            navItems.handoverRecords,
+            navItems.returnRecords,
+            navItems.inventoryRecords,
+            navItems.maintenanceRecords,
+        ]),
         bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
-            navItems.dashboard,
+            navItems.reports,
         ]),
     ];
 
     const employeeBfdItems = [
+        navItems.dashboard,
         bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
             navItems.qrScan,
         ]),
         bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
             navItems.requests,
         ]),
-        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
-            navItems.dashboard,
-        ]),
     ];
 
     const supplierBfdItems = [
+        navItems.dashboard,
         bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
             navItems.purchaseOrders,
-        ]),
-        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
-            navItems.dashboard,
         ]),
     ];
 
@@ -198,8 +236,8 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
 
     const navSections = [
         {
-            id: 'bfd',
-            label: sectionLabel('Sơ đồ chức năng BFD', 'BFD functions'),
+            id: 'main',
+            label: sectionLabel('Menu chính', 'Main menu'),
             items: bfdItems,
         },
     ];

@@ -12,4 +12,12 @@ class StaticImageRouteTest extends TestCase
             ->assertOk()
             ->assertHeader('content-type', 'image/png');
     }
+
+    public function test_spa_assets_do_not_force_localhost_when_opened_from_lan_host(): void
+    {
+        $response = $this->withHeader('Host', '192.168.123.8:8000')->get('/assets');
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('http://localhost:8000/build/', $response->getContent());
+    }
 }

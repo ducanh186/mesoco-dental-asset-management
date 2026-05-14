@@ -30,11 +30,12 @@ class Asset extends Model
     /**
      * Asset statuses
      */
-    public const STATUSES = ['active', 'off_service', 'maintenance', 'retired'];
+    public const STATUSES = ['active', 'off_service', 'maintenance', 'inventorying', 'retired'];
     
     public const STATUS_ACTIVE = 'active';
     public const STATUS_OFF_SERVICE = 'off_service';
     public const STATUS_MAINTENANCE = 'maintenance';
+    public const STATUS_INVENTORYING = 'inventorying';
     public const STATUS_RETIRED = 'retired';
 
     public const ERD_STATUS_AVAILABLE = 'Available';
@@ -62,16 +63,19 @@ class Asset extends Model
      * Common Mesoco asset categories.
      */
     public const CATEGORIES = [
-        'Laptop',
-        'Desktop',
-        'Monitor',
-        'Network',
-        'Server',
-        'Peripheral',
-        'Printer',
-        'Mobile Device',
-        'Office Device',
-        'Other',
+        'PC',
+        'Màn hình',
+        'Thiết bị Test',
+        'Phụ kiện dùng',
+        'Linh kiện thay thế',
+        'RAM',
+        'SSD',
+        'HDD',
+        'Tai nghe',
+        'Adapter',
+        'Cáp kết nối',
+        'Mainboard',
+        'Bộ nguồn',
     ];
 
     /**
@@ -180,7 +184,7 @@ class Asset extends Model
      * Statuses that indicate an asset is locked (unavailable for use).
      * Used by isLocked() for consistent lock checking across the system.
      */
-    public const LOCKED_STATUSES = [self::STATUS_OFF_SERVICE, self::STATUS_MAINTENANCE];
+    public const LOCKED_STATUSES = [self::STATUS_OFF_SERVICE, self::STATUS_MAINTENANCE, self::STATUS_INVENTORYING];
 
     // =========================================================================
     // Lock Status Methods (Phase 7)
@@ -216,6 +220,7 @@ class Asset extends Model
         return match ($this->status) {
             self::STATUS_MAINTENANCE => 'Asset is under maintenance',
             self::STATUS_OFF_SERVICE => 'Asset is off service',
+            self::STATUS_INVENTORYING => 'Asset is being inventoried',
             default => null,
         };
     }
@@ -232,6 +237,7 @@ class Asset extends Model
             self::STATUS_ACTIVE,
             self::STATUS_OFF_SERVICE,
             self::STATUS_MAINTENANCE,
+            self::STATUS_INVENTORYING,
             self::STATUS_RETIRED => $normalized,
             'available', 'assigned' => self::STATUS_ACTIVE,
             'repairing' => self::STATUS_MAINTENANCE,
@@ -407,6 +413,12 @@ class Asset extends Model
     public function scopeByStatus($query, ?string $status)
     {
         if ($status) {
+            if ($status === self::STATUS_INVENTORYING) {
+                return $query->whereHas('inventoryCheckItems.inventoryCheck', function ($inventoryQuery) {
+                    $inventoryQuery->where('status', InventoryCheck::STATUS_IN_PROGRESS);
+                });
+            }
+
             return $query->where('status', $status);
         }
         return $query;
@@ -712,7 +724,10 @@ class Asset extends Model
     {
         if ($location) {
             return $query->where(function ($q) use ($location) {
-                $q->where('location', $location)
+                $q->when(is_numeric($location), function ($numericQuery) use ($location) {
+                    $numericQuery->orWhere('location_id', (int) $location);
+                })
+                    ->orWhere('location', $location)
                     ->orWhereHas('locationDefinition', function ($locationQuery) use ($location) {
                         $locationQuery->where('code', $location)
                             ->orWhere('name', $location);

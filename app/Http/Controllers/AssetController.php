@@ -44,6 +44,7 @@ class AssetController extends Controller
         $query = Asset::with(['currentAssignment.employee.user', 'currentAssignment.assignedByUser', 'supplier', 'locationDefinition', 'latestQrIdentity'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
+            ->byCategory($request->input('category'))
             ->byStatus($request->input('status'))
             ->byLocation($request->input('location'));
 
@@ -56,6 +57,7 @@ class AssetController extends Controller
             }
         }
 
+        $summary = $this->assetCatalogSummary();
         $assets = $query->orderBy('asset_code')->paginate($perPage);
 
         // Phase 4: Batch load check-in status
@@ -95,10 +97,31 @@ class AssetController extends Controller
                 'per_page' => $assets->perPage(),
                 'total' => $assets->total(),
             ],
+            'summary' => $summary,
             'available_types' => Asset::TYPES,
             'available_categories' => Asset::CATEGORIES,
             'available_statuses' => Asset::STATUSES,
         ]);
+    }
+
+    private function assetCatalogSummary(): array
+    {
+        return [
+            'total' => Asset::query()->count(),
+            'available' => Asset::query()
+                ->where('status', Asset::STATUS_ACTIVE)
+                ->whereDoesntHave('currentAssignment')
+                ->count(),
+            'assigned' => Asset::query()
+                ->whereHas('currentAssignment')
+                ->count(),
+            'maintenance' => Asset::query()
+                ->where('status', Asset::STATUS_MAINTENANCE)
+                ->count(),
+            'inventorying' => Asset::query()
+                ->where('status', Asset::STATUS_INVENTORYING)
+                ->count(),
+        ];
     }
 
     /**

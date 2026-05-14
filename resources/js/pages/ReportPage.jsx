@@ -112,7 +112,7 @@ const ReportPage = ({ user }) => {
             {/* Asset Statistics */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
-                    <CardHeader title="Tài sản" subtitle="Tổng quan trạng thái tài sản" />
+                    <CardHeader title="Thiết bị" subtitle="Tổng quan trạng thái thiết bị" />
                     <CardBody>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             <div className="text-center p-4 bg-surface-muted rounded-lg">
@@ -121,7 +121,7 @@ const ReportPage = ({ user }) => {
                             </div>
                             <div className="text-center p-4 bg-success/10 rounded-lg">
                                 <p className="text-3xl font-bold text-success">{assets?.active || 0}</p>
-                                <p className="text-sm text-text-muted">Đang hoạt động</p>
+                                <p className="text-sm text-text-muted">Sẵn sàng</p>
                             </div>
                             <div className="text-center p-4 bg-error/10 rounded-lg">
                                 <p className="text-3xl font-bold text-error">{assets?.locked || 0}</p>

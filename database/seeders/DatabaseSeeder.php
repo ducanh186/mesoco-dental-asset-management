@@ -137,22 +137,22 @@ class DatabaseSeeder extends Seeder
     {
         $rows = [
             'it_storage' => [
-                'code' => 'LOC-001',
-                'name' => 'Kho thiết bị',
+                'code' => null,
+                'name' => 'Bàn 1 - Kho tầng 1',
                 'description' => 'Nơi lưu thiết bị chưa cấp phát hoặc đang chờ xử lý.',
             ],
             'support_room' => [
-                'code' => 'LOC-002',
-                'name' => 'Phòng kỹ thuật',
+                'code' => null,
+                'name' => 'Khu kỹ thuật',
                 'description' => 'Khu vực kỹ thuật viên kiểm tra và sửa thiết bị.',
             ],
             'office_area' => [
-                'code' => 'LOC-003',
-                'name' => 'Khu làm việc nhân viên',
+                'code' => null,
+                'name' => 'Khu dự án',
                 'description' => 'Khu vực nhân viên sử dụng thiết bị hằng ngày.',
             ],
             'server_room' => [
-                'code' => 'LOC-004',
+                'code' => null,
                 'name' => 'Phòng server',
                 'description' => 'Khu vực đặt thiết bị mạng và server.',
             ],
@@ -162,7 +162,7 @@ class DatabaseSeeder extends Seeder
 
         foreach ($rows as $key => $row) {
             $locations[$key] = Location::updateOrCreate(
-                ['code' => $row['code']],
+                ['name' => $row['name']],
                 $row + ['is_active' => true]
             );
         }
@@ -182,7 +182,7 @@ class DatabaseSeeder extends Seeder
                 'asset_code' => 'IT-LAP-001',
                 'name' => 'Dell Latitude 5440',
                 'type' => Asset::TYPE_EQUIPMENT,
-                'category' => 'Laptop',
+                'category' => 'PC',
                 'location_key' => 'support_room',
                 'purchase_date' => '2025-01-10',
                 'purchase_cost' => 28000000,
@@ -194,7 +194,7 @@ class DatabaseSeeder extends Seeder
                 'asset_code' => 'IT-DES-001',
                 'name' => 'HP EliteDesk 800 G9',
                 'type' => Asset::TYPE_EQUIPMENT,
-                'category' => 'Desktop',
+                'category' => 'PC',
                 'location_key' => 'office_area',
                 'purchase_date' => '2024-10-18',
                 'purchase_cost' => 22000000,
@@ -206,7 +206,7 @@ class DatabaseSeeder extends Seeder
                 'asset_code' => 'IT-MON-001',
                 'name' => 'LG 27-inch Monitor',
                 'type' => Asset::TYPE_EQUIPMENT,
-                'category' => 'Monitor',
+                'category' => 'Màn hình',
                 'location_key' => 'office_area',
                 'purchase_date' => '2024-08-21',
                 'purchase_cost' => 6500000,
@@ -218,7 +218,7 @@ class DatabaseSeeder extends Seeder
                 'asset_code' => 'IT-NET-001',
                 'name' => 'Cisco Catalyst Switch',
                 'type' => Asset::TYPE_MACHINE,
-                'category' => 'Network',
+                'category' => 'Thiết bị Test',
                 'location_key' => 'server_room',
                 'purchase_date' => '2024-05-05',
                 'purchase_cost' => 45000000,
@@ -230,7 +230,7 @@ class DatabaseSeeder extends Seeder
                 'asset_code' => 'IT-SRV-001',
                 'name' => 'Dell PowerEdge R450',
                 'type' => Asset::TYPE_MACHINE,
-                'category' => 'Server',
+                'category' => 'Thiết bị Test',
                 'location_key' => 'server_room',
                 'purchase_date' => '2024-03-12',
                 'purchase_cost' => 98000000,
@@ -242,7 +242,7 @@ class DatabaseSeeder extends Seeder
                 'asset_code' => 'IT-PRN-001',
                 'name' => 'HP LaserJet Pro M404dn',
                 'type' => Asset::TYPE_EQUIPMENT,
-                'category' => 'Printer',
+                'category' => 'Phụ kiện dùng',
                 'location_key' => 'it_storage',
                 'purchase_date' => '2024-12-02',
                 'purchase_cost' => 8900000,

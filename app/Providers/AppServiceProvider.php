@@ -39,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureApplicationUrl();
+        $this->configureSanctumStatefulDomains();
         $this->configureVite();
         $this->configureRateLimiting();
         $this->registerPolicies();
@@ -55,11 +56,56 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        if (! $this->app->runningInConsole() && $this->isLocalConfiguredUrlForDifferentHost($url)) {
+            return;
+        }
+
         URL::forceRootUrl($url);
 
         if (str_starts_with($url, 'https://')) {
             URL::forceScheme('https');
         }
+    }
+
+    private function isLocalConfiguredUrlForDifferentHost(string $url): bool
+    {
+        $configuredHost = parse_url($url, PHP_URL_HOST);
+
+        if (! in_array($configuredHost, ['localhost', '127.0.0.1'], true)) {
+            return false;
+        }
+
+        $requestHost = request()->getHost();
+
+        return ! in_array($requestHost, ['localhost', '127.0.0.1'], true);
+    }
+
+    /**
+     * Allow first-party SPA auth from the current LAN host.
+     *
+     * Docker demos are often opened via a machine IP such as 192.168.x.x:8000.
+     * If config is cached before the request exists, Sanctum's default
+     * currentRequestHost() entry can miss that host and /api/me returns 401
+     * immediately after a successful login.
+     */
+    protected function configureSanctumStatefulDomains(): void
+    {
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        $request = request();
+        $host = $request->getHost();
+        $hostWithPort = $request->getHttpHost();
+
+        $statefulDomains = collect(config('sanctum.stateful', []))
+            ->merge([$host, $hostWithPort])
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        config(['sanctum.stateful' => $statefulDomains]);
     }
 
     /**
@@ -69,6 +115,9 @@ class AppServiceProvider extends ServiceProvider
     {
         if (! config('app.vite_use_dev_server')) {
             Vite::useHotFile(storage_path('framework/vite.hot.disabled'));
+            Vite::createAssetPathsUsing(
+                fn (string $path) => '/' . ltrim($path, '/')
+            );
         }
     }
 

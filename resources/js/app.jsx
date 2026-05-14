@@ -16,6 +16,7 @@ const UIKit = lazy(() => import('./pages/UIKit'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'));
 const AssetsPage = lazy(() => import('./pages/AssetsPage'));
+const HandoverPage = lazy(() => import('./pages/HandoverPage'));
 const MaintenancePage = lazy(() => import('./pages/MaintenancePage'));
 const InventoryPage = lazy(() => import('./pages/InventoryPage'));
 const LocationsPage = lazy(() => import('./pages/LocationsPage'));
@@ -924,6 +925,20 @@ const AssetsPageWrapper = () => {
      );
 };
 
+const HandoverPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+
+     return (
+          <AdminLayoutWrapper
+               title={t('nav.handoverRecovery')}
+               breadcrumbs={[{ label: t('nav.handoverRecovery') }]}
+          >
+               <HandoverPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
 const QrScanPageWrapper = () => {
      const { user } = useAuth();
      const { t } = useI18n();
@@ -1198,6 +1213,11 @@ const App = () => {
                          <Route path="/assets" element={
                               <OperatorRoute>
                                    <AssetsPageWrapper />
+                              </OperatorRoute>
+                         } />
+                         <Route path="/handover" element={
+                              <OperatorRoute>
+                                   <HandoverPageWrapper />
                               </OperatorRoute>
                          } />
                          <Route path="/qr-scan" element={

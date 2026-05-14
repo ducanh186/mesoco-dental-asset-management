@@ -97,7 +97,7 @@ class UpdateMaintenanceEventRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'asset_id' => 'tài sản',
+            'asset_id' => 'thiết bị',
             'details' => 'chi tiết bảo trì',
             'details.*.asset_id' => 'thiết bị trong chi tiết',
             'details.*.qty' => 'số lượng thiết bị',

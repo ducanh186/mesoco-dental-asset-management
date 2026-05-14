@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Button,
     Card,
@@ -33,6 +33,7 @@ const escapeHtml = (value) => String(value || '')
 const AssetsPage = () => {
     const toast = useToast();
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
     const querySearch = searchParams.get('q') || '';
 
@@ -41,13 +42,19 @@ const AssetsPage = () => {
     const [employees, setEmployees] = useState([]);
     const [locations, setLocations] = useState([]);
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
+    const [summary, setSummary] = useState({
+        total: 0,
+        available: 0,
+        assigned: 0,
+        maintenance: 0,
+        inventorying: 0,
+    });
     const [loading, setLoading] = useState(true);
 
     const [searchQuery, setSearchQuery] = useState(querySearch);
-    const [typeFilter, setTypeFilter] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [locationFilter, setLocationFilter] = useState('');
-    const [assignmentFilter, setAssignmentFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
     const [selectedAsset, setSelectedAsset] = useState(null);
@@ -85,32 +92,41 @@ const AssetsPage = () => {
 
     const [handoverTarget, setHandoverTarget] = useState('');
 
-    const assetTypes = [
-        { value: '', label: 'Tất cả loại' },
-        { value: 'tray', label: 'Khay' },
-        { value: 'machine', label: 'Máy' },
-        { value: 'tool', label: 'Dụng cụ' },
-        { value: 'equipment', label: 'Thiết bị' },
-        { value: 'other', label: 'Khác' },
+    const deviceCategories = [
+        { value: '', label: 'Tất cả danh mục' },
+        { value: 'PC', label: 'PC' },
+        { value: 'Màn hình', label: 'Màn hình' },
+        { value: 'Thiết bị Test', label: 'Thiết bị Test' },
+        { value: 'Phụ kiện dùng', label: 'Phụ kiện dùng' },
+        { value: 'Linh kiện thay thế', label: 'Linh kiện thay thế' },
+        { value: 'RAM', label: 'RAM' },
+        { value: 'SSD', label: 'SSD' },
+        { value: 'HDD', label: 'HDD' },
+        { value: 'Tai nghe', label: 'Tai nghe' },
+        { value: 'Adapter', label: 'Adapter' },
+        { value: 'Cáp kết nối', label: 'Cáp kết nối' },
+        { value: 'Mainboard', label: 'Mainboard' },
+        { value: 'Bộ nguồn', label: 'Bộ nguồn' },
     ];
 
     const assetStatuses = [
         { value: '', label: 'Tất cả trạng thái' },
-        { value: 'active', label: 'Đang hoạt động' },
-        { value: 'off_service', label: 'Ngưng sử dụng' },
+        { value: 'available', label: 'Sẵn sàng' },
+        { value: 'assigned', label: 'Đã bàn giao' },
         { value: 'maintenance', label: 'Đang bảo trì' },
+        { value: 'inventorying', label: 'Đang kiểm kê' },
         { value: 'retired', label: 'Đã thu hủy' },
     ];
 
-    const assignmentOptions = [
-        { value: '', label: 'Tất cả phụ trách' },
-        { value: 'assigned', label: 'Có người phụ trách' },
-        { value: 'unassigned', label: 'Chưa có người phụ trách' },
-    ];
+    useEffect(() => {
+        if (location.hash === '#handover') {
+            navigate('/handover', { replace: true });
+        }
+    }, [location.hash, navigate]);
 
     useEffect(() => {
         fetchAssets();
-    }, [currentPage, searchQuery, typeFilter, statusFilter, locationFilter, assignmentFilter]);
+    }, [currentPage, searchQuery, categoryFilter, statusFilter, locationFilter]);
 
     useEffect(() => {
         if (querySearch === searchQuery) {
@@ -169,21 +185,21 @@ const AssetsPage = () => {
             const response = await assetsApi.list({
                 page: currentPage,
                 search: searchQuery || undefined,
-                type: typeFilter || undefined,
-                status: statusFilter || undefined,
+                category: categoryFilter || undefined,
+                status: statusFilter === 'available' ? 'active' : (statusFilter === 'assigned' ? undefined : statusFilter || undefined),
+                assigned: statusFilter === 'assigned' ? true : (statusFilter === 'available' ? false : undefined),
                 location: locationFilter || undefined,
             });
 
-            let nextAssets = response.assets || [];
-            if (assignmentFilter === 'assigned') {
-                nextAssets = nextAssets.filter((asset) => asset.is_assigned);
-            }
-            if (assignmentFilter === 'unassigned') {
-                nextAssets = nextAssets.filter((asset) => !asset.is_assigned);
-            }
-
-            setAssets(nextAssets);
+            setAssets(response.assets || []);
             setPagination(response.pagination || { current_page: 1, last_page: 1, total: 0 });
+            setSummary(response.summary || {
+                total: 0,
+                available: 0,
+                assigned: 0,
+                maintenance: 0,
+                inventorying: 0,
+            });
         } catch (error) {
             handleApiError(error, toast);
         } finally {
@@ -234,12 +250,19 @@ const AssetsPage = () => {
         }
     };
 
-    const getAssetTypeLabel = (type) => assetTypes.find((option) => option.value === type)?.label || 'Khác';
+    const getDeviceCategoryLabel = (category) => deviceCategories.find((option) => option.value === category)?.label || category || 'Chưa gắn danh mục';
     const getResponsibleEmployee = (asset) => asset.responsible_employee?.full_name || asset.current_assignment?.assignment_target?.name || 'Chưa có';
     const getDepartmentLabel = (asset) => asset.responsible_employee?.department || 'Chưa bàn giao';
+    const getOperationalStatus = (asset) => {
+        if (asset?.is_assigned && asset?.status === 'active') {
+            return 'assigned';
+        }
+
+        return asset?.status;
+    };
     const getLocationLabel = (asset) => {
         if (asset.location?.code && asset.location?.name) {
-            return `${asset.location.code} - ${asset.location.name}`;
+            return `${asset.location.id} - ${asset.location.name}`;
         }
         return asset.location_name || 'Chưa chọn';
     };
@@ -274,24 +297,16 @@ const AssetsPage = () => {
     const locationOptions = [
         { value: '', label: 'Tất cả vị trí' },
         ...locations.map((location) => ({
-            value: location.code,
-            label: `${location.code} - ${location.name}`,
+            value: String(location.id),
+            label: `${location.id} - ${location.name}`,
         })),
     ];
 
-    const filteredSummary = {
-        total: assets.length,
-        assigned: assets.filter((asset) => asset.is_assigned).length,
-        available: assets.filter((asset) => !asset.is_assigned && asset.status === 'active').length,
-        attention: assets.filter((asset) => ['maintenance', 'off_service', 'retired'].includes(asset.status)).length,
-    };
-
     const activeFilterTags = [
         searchQuery ? `Tìm kiếm: ${searchQuery}` : null,
-        typeFilter ? `Loại: ${getAssetTypeLabel(typeFilter)}` : null,
+        categoryFilter ? `Danh mục: ${getDeviceCategoryLabel(categoryFilter)}` : null,
         statusFilter ? `Trạng thái: ${assetStatuses.find((option) => option.value === statusFilter)?.label}` : null,
         locationFilter ? `Vị trí: ${locationOptions.find((option) => option.value === locationFilter)?.label}` : null,
-        assignmentFilter ? `Phụ trách: ${assignmentOptions.find((option) => option.value === assignmentFilter)?.label}` : null,
     ].filter(Boolean);
 
     const normalizeAssetPayload = (form) => ({
@@ -323,7 +338,7 @@ const AssetsPage = () => {
 
         try {
             const response = await assetsApi.create(normalizeAssetPayload(createForm));
-            toast.success('Đã tạo tài sản.');
+            toast.success('Đã tạo thiết bị.');
             setCreateModalOpen(false);
             setCreateForm({
                 asset_code: '',
@@ -371,10 +386,9 @@ const AssetsPage = () => {
 
     const resetFilters = () => {
         setSearchQuery('');
-        setTypeFilter('');
+        setCategoryFilter('');
         setStatusFilter('');
         setLocationFilter('');
-        setAssignmentFilter('');
         setCurrentPage(1);
         setSearchParams(new URLSearchParams());
     };
@@ -405,7 +419,7 @@ const AssetsPage = () => {
         const payload = getQrPayload(selectedAsset);
 
         if (!payload) {
-            toast.warning('Tài sản chưa có payload QR để sao chép.', { title: 'Chưa có QR' });
+            toast.warning('Thiết bị chưa có payload QR để sao chép.', { title: 'Chưa có QR' });
             return;
         }
 
@@ -439,7 +453,7 @@ const AssetsPage = () => {
         const portalUrl = getQrPortalUrl(selectedAsset);
 
         if (!portalUrl) {
-            toast.warning('Tài sản chưa có portal URL. Hãy tạo lại QR trước.', { title: 'Chưa có portal' });
+            toast.warning('Thiết bị chưa có portal URL. Hãy tạo lại QR trước.', { title: 'Chưa có portal' });
             return;
         }
 
@@ -487,7 +501,7 @@ const AssetsPage = () => {
         <div class="qr-wrap">${qrMarkup}</div>
         <div class="asset">${assetName}</div>
         <div class="code">${assetCode}</div>
-        <div class="hint">Quét bằng camera để mở portal tài sản</div>
+        <div class="hint">Quét bằng camera để mở portal thiết bị</div>
         <div class="portal">${safePortalUrl}</div>
         <div class="payload-label">Payload nội bộ</div>
         <div class="payload">${safePayload}</div>
@@ -549,7 +563,7 @@ const AssetsPage = () => {
         const handoverSelection = parseHandoverValue(handoverTarget);
 
         if (!selectedAsset || !handoverSelection) {
-            toast.error('Vui lòng chọn người nhận tài sản.');
+            toast.error('Vui lòng chọn người nhận thiết bị.');
             return;
         }
 
@@ -599,7 +613,7 @@ const AssetsPage = () => {
 
         try {
             await assetsApi.delete(selectedAsset.id);
-            toast.success('Đã xóa tài sản.');
+            toast.success('Đã xóa thiết bị.');
             setConfirmDeleteOpen(false);
             setDetailDrawerOpen(false);
             setSelectedAsset(null);
@@ -612,13 +626,13 @@ const AssetsPage = () => {
     const columns = [
         {
             key: 'asset_code',
-            label: 'Mã tài sản',
+            label: 'Mã thiết bị',
             width: '140px',
             render: (value) => <span className="font-mono text-sm font-semibold text-text">{value}</span>,
         },
         {
             key: 'name',
-            label: 'Tài sản',
+            label: 'Thiết bị',
             render: (value, row) => (
                 <div>
                     <div className="font-medium text-text">{value}</div>
@@ -627,10 +641,10 @@ const AssetsPage = () => {
             ),
         },
         {
-            key: 'type',
-            label: 'Loại',
+            key: 'category',
+            label: 'Danh mục thiết bị',
             width: '120px',
-            render: (value) => <span className="text-sm text-text-muted">{getAssetTypeLabel(value)}</span>,
+            render: (value) => <span className="text-sm text-text-muted">{getDeviceCategoryLabel(value)}</span>,
         },
         {
             key: 'current_assignment',
@@ -655,7 +669,7 @@ const AssetsPage = () => {
             key: 'status',
             label: 'Trạng thái',
             width: '140px',
-            render: (value) => <StatusBadge status={value} />,
+            render: (_, row) => <StatusBadge status={getOperationalStatus(row)} />,
         },
         {
             key: 'actions',
@@ -708,49 +722,49 @@ const AssetsPage = () => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-xl font-bold text-text">Danh mục tài sản</h2>
-                    <p className="text-sm text-text-muted">Tra cứu nhanh tài sản theo vị trí, người giữ và trạng thái vận hành.</p>
+                    <h2 className="text-xl font-bold text-text">Danh mục thiết bị</h2>
+                    <p className="text-sm text-text-muted">Tra cứu nhanh thiết bị theo danh mục, vị trí và trạng thái vận hành.</p>
                 </div>
                 <Button onClick={() => setCreateModalOpen(true)}>
-                    + Tạo tài sản
+                    + Tạo thiết bị
                 </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <Card className="p-4">
-                    <div className="text-sm text-text-muted">Tài sản phù hợp</div>
-                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.total}</div>
+                    <div className="text-sm text-text-muted">Thiết bị sẵn sàng</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{summary.available}</div>
                 </Card>
                 <Card className="p-4">
-                    <div className="text-sm text-text-muted">Đang bàn giao</div>
-                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.assigned}</div>
+                    <div className="text-sm text-text-muted">Đã bàn giao</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{summary.assigned}</div>
                 </Card>
                 <Card className="p-4">
-                    <div className="text-sm text-text-muted">Sẵn sàng điều phối</div>
-                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.available}</div>
+                    <div className="text-sm text-text-muted">Đang bảo trì</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{summary.maintenance}</div>
                 </Card>
                 <Card className="p-4">
-                    <div className="text-sm text-text-muted">Cần chú ý</div>
-                    <div className="mt-1 text-2xl font-semibold text-text">{filteredSummary.attention}</div>
+                    <div className="text-sm text-text-muted">Đang kiểm kê</div>
+                    <div className="mt-1 text-2xl font-semibold text-text">{summary.inventorying}</div>
                 </Card>
             </div>
 
             <Card>
                 <CardBody className="py-4">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                         <div className="xl:col-span-2">
                             <Input
                                 placeholder="Tìm theo mã, serial, QR, model, vị trí hoặc người đang giữ"
                                 value={searchQuery}
                                 onChange={(e) => handleSearchChange(e.target.value)}
-                                helper="Global search cho mã tài sản, serial, QR, model, vị trí và người phụ trách"
+                                helper="Tìm theo mã thiết bị, serial, QR, model, vị trí và người phụ trách"
                             />
                         </div>
                         <Select
-                            options={assetTypes}
-                            value={typeFilter}
+                            options={deviceCategories}
+                            value={categoryFilter}
                             onChange={(e) => {
-                                setTypeFilter(e.target.value);
+                                setCategoryFilter(e.target.value);
                                 setCurrentPage(1);
                             }}
                         />
@@ -767,14 +781,6 @@ const AssetsPage = () => {
                             value={locationFilter}
                             onChange={(e) => {
                                 setLocationFilter(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        />
-                        <Select
-                            options={assignmentOptions}
-                            value={assignmentFilter}
-                            onChange={(e) => {
-                                setAssignmentFilter(e.target.value);
                                 setCurrentPage(1);
                             }}
                         />
@@ -800,7 +806,7 @@ const AssetsPage = () => {
                     columns={columns}
                     data={assets}
                     loading={loading}
-                    emptyMessage="Chưa có tài sản phù hợp"
+                    emptyMessage="Chưa có thiết bị phù hợp"
                     onRowClick={handleViewAsset}
                 />
                 {pagination.last_page > 1 && (
@@ -818,12 +824,12 @@ const AssetsPage = () => {
             <Modal
                 isOpen={createModalOpen}
                 onClose={() => setCreateModalOpen(false)}
-                title="Tạo tài sản"
+                title="Tạo thiết bị"
                 size="md"
             >
                 <form onSubmit={handleCreateAsset} className="space-y-4">
                     <Input
-                        label="Mã tài sản (không bắt buộc)"
+                        label="Mã thiết bị (không bắt buộc)"
                         value={createForm.asset_code}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, asset_code: e.target.value }))}
                         error={createErrors.asset_code?.[0]}
@@ -835,7 +841,7 @@ const AssetsPage = () => {
                         error={createErrors.serial_number?.[0]}
                     />
                     <Input
-                        label="Tên tài sản *"
+                        label="Tên thiết bị *"
                         value={createForm.name}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
                         error={createErrors.name?.[0]}
@@ -866,17 +872,12 @@ const AssetsPage = () => {
                         )}
                     </div>
                     <Select
-                        label="Loại tài sản *"
-                        options={assetTypes.filter((option) => option.value)}
-                        value={createForm.type}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, type: e.target.value }))}
-                    />
-                    <Input
-                        label="Danh mục"
+                        label="Danh mục thiết bị *"
+                        options={deviceCategories.filter((option) => option.value)}
                         value={createForm.category}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, category: e.target.value }))}
-                        placeholder="VD: Laptop, Printer, Network"
                         error={createErrors.category?.[0]}
+                        required
                     />
                     <Select
                         label="Vị trí"
@@ -884,7 +885,7 @@ const AssetsPage = () => {
                             { value: '', label: 'Chọn vị trí' },
                             ...locations.map((location) => ({
                                 value: location.id,
-                                label: `${location.code} - ${location.name}`,
+                                label: `${location.id} - ${location.name}`,
                             })),
                         ]}
                         value={createForm.location_id}
@@ -958,7 +959,7 @@ const AssetsPage = () => {
                             Hủy
                         </Button>
                         <Button type="submit" disabled={createLoading}>
-                            {createLoading ? 'Đang tạo...' : 'Tạo tài sản'}
+                            {createLoading ? 'Đang tạo...' : 'Tạo thiết bị'}
                         </Button>
                     </div>
                 </form>
@@ -976,7 +977,7 @@ const AssetsPage = () => {
                         <div className="text-xs text-text-muted font-mono">{selectedAsset?.asset_code}</div>
                     </div>
                     <Select
-                        label="Người nhận tài sản *"
+                        label="Người nhận thiết bị *"
                         options={[
                             { value: '', label: 'Chọn người nhận' },
                             ...employees.map((employee) => ({
@@ -1011,7 +1012,7 @@ const AssetsPage = () => {
                                     <h2 className="text-lg font-bold text-text">{selectedAsset.name}</h2>
                                     <p className="text-sm text-text-muted font-mono">{selectedAsset.asset_code}</p>
                                     <div className="mt-3 inline-flex">
-                                        <StatusBadge status={selectedAsset.status} />
+                                        <StatusBadge status={getOperationalStatus(selectedAsset)} />
                                     </div>
                                 </div>
                                 <button
@@ -1079,7 +1080,7 @@ const AssetsPage = () => {
                                 <CardBody className="space-y-4">
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
-                                            <div className="font-semibold text-text">QR tài sản</div>
+                                            <div className="font-semibold text-text">QR thiết bị</div>
                                             <div className="text-sm text-text-muted">Dùng cùng một mã QR, dữ liệu sẽ được lọc theo quyền người quét.</div>
                                         </div>
                                         <Badge variant={getQrPayload(selectedAsset) ? 'success' : 'warning'} size="sm">
@@ -1092,11 +1093,11 @@ const AssetsPage = () => {
                                             <img
                                                 data-testid="asset-detail-qr-image"
                                                 src={detailQrImageUrl}
-                                                alt="QR tài sản để quét"
+                                                alt="QR thiết bị để quét"
                                                 className="h-48 w-48 object-contain"
                                             />
                                             <div className="text-center text-xs font-medium text-text-muted">
-                                                Quét bằng điện thoại để mở portal tài sản
+                                                Quét bằng điện thoại để mở portal thiết bị
                                             </div>
                                         </div>
                                     ) : (
@@ -1224,7 +1225,7 @@ const AssetsPage = () => {
                                     className="w-full flex items-center justify-center gap-2 p-3 text-error hover:bg-error-light rounded-lg transition-colors"
                                     onClick={() => setConfirmDeleteOpen(true)}
                                 >
-                                    Xóa tài sản
+                                    Xóa thiết bị
                                 </button>
                             </div>
                         </div>
@@ -1246,7 +1247,7 @@ const AssetsPage = () => {
                 isOpen={confirmDeleteOpen}
                 onClose={() => setConfirmDeleteOpen(false)}
                 onConfirm={handleDeleteAsset}
-                title="Xóa tài sản"
+                title="Xóa thiết bị"
                 message={`Bạn có chắc muốn xóa ${selectedAsset?.name || ''}?`}
                 confirmText="Xóa"
                 variant="danger"

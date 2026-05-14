@@ -4,21 +4,21 @@ Tài liệu này mô tả hệ thống từ góc nhìn người dùng. Cách đ�
 
 ## Manager
 
-Manager là người chịu trách nhiệm quản lý tổng thể tài sản IT.
+Manager là người chịu trách nhiệm quản lý tổng thể thiết bị IT.
 
 Manager có thể:
 
 - Xem dashboard tổng quan với giá trị tồn kho, thiết bị gián đoạn, hàng đợi request chờ duyệt, phân bổ theo bộ phận và cảnh báo khấu hao.
-- Tra cứu tài sản theo mã, danh mục, vị trí hoặc nhân viên đang giữ ngay từ topbar hoặc asset workspace.
-- Tạo, sửa, xóa tài sản IT.
-- Quản lý vị trí đặt tài sản.
-- Gắn hoặc thu hồi nhân viên chịu trách nhiệm cho tài sản.
-- Mở workspace bảo trì trực tiếp từ danh sách hoặc chi tiết tài sản.
+- Tra cứu thiết bị theo mã, danh mục, vị trí hoặc nhân viên đang giữ ngay từ topbar hoặc asset workspace.
+- Tạo, sửa, xóa thiết bị IT.
+- Quản lý vị trí đặt thiết bị.
+- Gắn hoặc thu hồi nhân viên chịu trách nhiệm cho thiết bị.
+- Mở workspace bảo trì trực tiếp từ danh sách hoặc chi tiết thiết bị.
 - Duyệt hoặc từ chối request của nhân viên.
 - Xem báo cáo và export dữ liệu.
 - Quản lý user và role.
-- Theo dõi purchase order của tất cả nhà cung cấp với form chia khối nhà cung cấp, dòng hàng và tổng tiền.
-- Thực hiện disposal cho tài sản không còn dùng.
+- Theo dõi purchase order của tất cả nhà cung cấp với form chia khối nhà cung cấp và danh sách thiết bị cần đặt.
+- Thực hiện disposal cho thiết bị không còn dùng.
 
 ## Technician
 
@@ -26,14 +26,14 @@ Technician là người vận hành kỹ thuật hằng ngày.
 
 Technician có thể:
 
-- Xem dashboard vận hành với giá trị tồn kho, maintenance đang chạy, xu hướng tài sản và cảnh báo khấu hao cao.
+- Xem dashboard vận hành với giá trị tồn kho, maintenance đang chạy, xu hướng thiết bị và cảnh báo khấu hao cao.
 - Quản lý danh mục asset.
-- Tra cứu tài sản theo mã, danh mục, vị trí hoặc người đang giữ.
+- Tra cứu thiết bị theo mã, danh mục, vị trí hoặc người đang giữ.
 - Cập nhật trạng thái, vị trí và nhân viên chịu trách nhiệm.
 - Tạo và xử lý maintenance event.
 - Thực hiện inventory check.
 - Theo dõi valuation, depreciation và warranty.
-- Tạo purchase order khi cần bổ sung thiết bị hoặc linh kiện và xem tổng tiền đơn mua ngay trên form.
+- Tạo purchase order khi cần bổ sung thiết bị hoặc linh kiện, chưa bắt buộc nhập giá ở bước tạo đơn.
 - Xử lý disposal theo quy trình vận hành.
 
 Technician không duyệt request và không xem báo cáo cấp quản lý nếu không có role manager.
@@ -50,7 +50,7 @@ Employee có thể:
 - Xem trạng thái request của mình.
 - Cập nhật hồ sơ cá nhân.
 
-Employee đăng nhập bằng `employee_code`, không tự chuyển người phụ trách cho tài sản và không truy cập asset workspace nội bộ. Nếu cần chuyển trách nhiệm, technician hoặc manager cập nhật assignment.
+Employee đăng nhập bằng `employee_code`, không tự chuyển người phụ trách cho thiết bị và không truy cập asset workspace nội bộ. Nếu cần chuyển trách nhiệm, technician hoặc manager cập nhật assignment.
 
 ## Supplier
 
@@ -66,13 +66,13 @@ Supplier không thấy asset catalog nội bộ, request nội bộ, maintenance
 
 ## Flow Sử Dụng Thực Tế
 
-1. Manager hoặc technician mở `Asset Workspace` và tìm laptop theo mã asset, vị trí hoặc người đang giữ.
-2. Manager hoặc technician tạo asset mới khi công ty mua laptop.
+1. Manager hoặc technician mở `Asset Workspace` và tìm laptop theo mã thiết bị, vị trí hoặc người đang giữ.
+2. Manager hoặc technician tạo thiết bị mới khi công ty mua laptop.
 3. Technician đặt laptop vào vị trí phù hợp và gắn nhân viên chịu trách nhiệm.
 4. Employee thấy laptop trong danh sách thiết bị mình phụ trách và gửi request nếu laptop lỗi.
 5. Manager duyệt request và gán technician xử lý.
 6. Technician mở maintenance trực tiếp từ asset, cập nhật kết quả và chi phí.
 7. Dashboard và inventory module ghi nhận giá trị còn lại, tình trạng thiết bị và cảnh báo khấu hao.
-8. Nếu cần bổ sung thiết bị, manager hoặc technician tạo purchase order và theo dõi tổng tiền trên form.
+8. Nếu cần bổ sung thiết bị, manager hoặc technician tạo purchase order với danh sách thiết bị, đơn vị, số lượng và ghi chú.
 9. Khi depreciation `> 75%`, hệ thống đưa laptop vào danh sách đề xuất thu hủy.
-10. Khi asset bị thu hủy, vị trí và người phụ trách active được clear.
+10. Khi thiết bị bị thu hủy, vị trí và người phụ trách active được clear.

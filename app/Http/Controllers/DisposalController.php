@@ -32,7 +32,7 @@ class DisposalController extends Controller
             ->get();
 
         $eligibleCount = 0;
-        $highDepreciationCount = 0; // >= 90%
+        $highDepreciationCount = 0;
         $totalDepreciatedValue = 0;
 
         foreach ($allAssets as $asset) {
@@ -40,9 +40,7 @@ class DisposalController extends Controller
             if ($percentage !== null && $percentage > Asset::DISPOSAL_RECOMMENDATION_THRESHOLD) {
                 $eligibleCount++;
                 $totalDepreciatedValue += $asset->getCurrentBookValue() ?? 0;
-                if ($percentage >= 90) {
-                    $highDepreciationCount++;
-                }
+                $highDepreciationCount++;
             }
         }
 

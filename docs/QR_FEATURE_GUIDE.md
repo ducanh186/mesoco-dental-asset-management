@@ -1,6 +1,6 @@
 # Hướng Dẫn Tính Năng QR Tài Sản
 
-Tài liệu này mô tả cách dùng QR trong hệ thống quản lý tài sản thiết bị tại Mesoco.
+Tài liệu này mô tả cách dùng QR trong hệ thống quản lý thiết bị tại Mesoco.
 
 ## Mục Tiêu
 
@@ -10,7 +10,7 @@ Mỗi thiết bị có:
 - `qr_uid`: mã định danh QR duy nhất cho QR active hiện tại.
 - `QRCode`: payload legacy để scanner nội bộ vẫn resolve được.
 
-QR không chứa trực tiếp giá tiền, cấu hình hay nhật ký sửa chữa. QR chỉ dẫn người dùng tới portal tài sản. Hệ thống kiểm tra người đang đăng nhập rồi mới quyết định dữ liệu nào được hiển thị.
+QR không chứa trực tiếp giá tiền, cấu hình hay nhật ký sửa chữa. QR chỉ dẫn người dùng tới portal thiết bị. Hệ thống kiểm tra người đang đăng nhập rồi mới quyết định dữ liệu nào được hiển thị.
 
 ## Luồng Sử Dụng Trên Điện Thoại
 
@@ -20,14 +20,14 @@ QR không chứa trực tiếp giá tiền, cấu hình hay nhật ký sửa ch�
 4. Dán QR lên thiết bị.
 5. Nhân viên dùng điện thoại quét QR.
 6. Nếu chưa đăng nhập, hệ thống chuyển tới màn login.
-7. Đăng nhập thành công thì hệ thống quay lại đúng portal tài sản.
+7. Đăng nhập thành công thì hệ thống quay lại đúng portal thiết bị.
 8. Portal hiển thị dữ liệu theo role.
 
 ## Dữ Liệu Theo Role
 
 | Role | Dữ liệu được thấy khi quét QR |
 | --- | --- |
-| `employee` | Tên máy, mã tài sản, serial, model, cấu hình, trạng thái, bảo hành, vị trí, người đang sở hữu |
+| `employee` | Tên máy, mã thiết bị, serial, model, cấu hình, trạng thái, bảo hành, vị trí, người đang sở hữu |
 | `technician` | Toàn bộ phần employee + lần bảo trì cuối, nhật ký sửa chữa/bảo trì, tình trạng thiết bị, mức khấu hao, giá trị còn lại |
 | `manager` | Toàn bộ phần technician + giá mua, ngày mua, nhà cung cấp và thông tin liên hệ |
 

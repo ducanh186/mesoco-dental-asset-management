@@ -24,7 +24,7 @@
 ## Role Canonical
 
 - `manager`: người quản lý hệ thống, báo cáo và phê duyệt.
-- `technician`: kỹ thuật viên IT vận hành tài sản, bảo trì, kiểm kê.
+- `technician`: kỹ thuật viên IT vận hành thiết bị, bảo trì, kiểm kê.
 - `employee`: nhân viên công ty gửi request và xem thiết bị mình phụ trách.
 - `supplier`: nhà cung cấp theo dõi purchase order liên quan.
 

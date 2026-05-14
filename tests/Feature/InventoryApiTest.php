@@ -476,6 +476,35 @@ class InventoryApiTest extends TestCase
             ]);
     }
 
+    public function test_inventory_summary_counts_assets_in_active_inventory_checks(): void
+    {
+        Asset::query()->forceDelete();
+
+        $asset = Asset::factory()->create([
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+
+        $check = InventoryCheck::create([
+            'code' => 'INV-TEST-001',
+            'title' => 'Đợt kiểm kê test',
+            'check_date' => now()->toDateString(),
+            'status' => InventoryCheck::STATUS_IN_PROGRESS,
+            'created_by_user_id' => $this->admin->id,
+        ]);
+
+        InventoryCheckItem::create([
+            'inventory_check_id' => $check->id,
+            'asset_id' => $asset->id,
+            'expected_status' => Asset::STATUS_ACTIVE,
+            'result' => InventoryCheckItem::RESULT_PENDING,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->getJson('/api/inventory/summary')
+            ->assertOk()
+            ->assertJsonPath('summary.by_status.inventorying', 1);
+    }
+
     public function test_inventory_assets_include_warranty_fields(): void
     {
         // Create asset with warranty

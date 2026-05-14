@@ -41,8 +41,8 @@ class AssignAssetRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'staff_id.required_without' => 'Vui lòng chọn người nhận tài sản.',
-            'staff_id.exists' => 'Người nhận tài sản không tồn tại.',
+            'staff_id.required_without' => 'Vui lòng chọn người nhận thiết bị.',
+            'staff_id.exists' => 'Người nhận thiết bị không tồn tại.',
             'employee_id.required' => 'Vui lòng chọn nhân viên chịu trách nhiệm.',
             'employee_id.exists' => 'Nhân viên được chọn không tồn tại.',
         ];

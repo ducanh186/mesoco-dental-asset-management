@@ -148,24 +148,29 @@ const SuppliersPage = () => {
 
     const columns = [
         {
+            key: 'code',
+            label: 'Mã nhà cung cấp',
+            render: (value) => <span className="font-mono text-sm text-text-muted">{value || '—'}</span>,
+        },
+        {
             key: 'name',
-            label: 'Nhà cung cấp',
-            render: (value, row) => (
-                <div>
-                    <div className="font-medium text-text">{value}</div>
-                    <div className="text-xs text-text-muted">{row.code || 'Chưa có mã'}</div>
-                </div>
-            ),
+            label: 'Tên nhà cung cấp',
+            render: (value) => <span className="font-medium text-text">{value}</span>,
         },
         {
             key: 'contact_person',
-            label: 'Liên hệ',
-            render: (value, row) => (
-                <div>
-                    <div className="text-sm text-text">{value || '—'}</div>
-                    <div className="text-xs text-text-muted">{row.phone || row.email || '—'}</div>
-                </div>
-            ),
+            label: 'Người liên hệ',
+            render: (value) => <span className="text-sm text-text">{value || '—'}</span>,
+        },
+        {
+            key: 'phone',
+            label: 'Số điện thoại',
+            render: (value) => <span className="text-sm text-text-muted">{value || '—'}</span>,
+        },
+        {
+            key: 'email',
+            label: 'Email',
+            render: (value) => <span className="text-sm text-text-muted">{value || '—'}</span>,
         },
         {
             key: 'address',
@@ -173,18 +178,6 @@ const SuppliersPage = () => {
             render: (value) => (
                 <span className="text-text-muted">{value || '—'}</span>
             ),
-        },
-        {
-            key: 'assets_count',
-            label: 'Thiết bị',
-            align: 'center',
-            render: (value) => <span className="font-medium">{value ?? 0}</span>,
-        },
-        {
-            key: 'repair_logs_count',
-            label: 'Lần sửa chữa',
-            align: 'center',
-            render: (value) => <span className="font-medium">{value ?? 0}</span>,
         },
         {
             key: 'actions',

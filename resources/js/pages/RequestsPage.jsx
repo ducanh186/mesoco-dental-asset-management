@@ -387,7 +387,6 @@ const RequestsPage = ({ user }) => {
         { value: REQUEST_STATUSES.SUBMITTED, label: t('requests.statuses.SUBMITTED') },
         { value: REQUEST_STATUSES.APPROVED, label: t('requests.statuses.APPROVED') },
         { value: REQUEST_STATUSES.REJECTED, label: t('requests.statuses.REJECTED') },
-        { value: REQUEST_STATUSES.CANCELLED, label: t('requests.statuses.CANCELLED') },
     ];
 
     // Stats

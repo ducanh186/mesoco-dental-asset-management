@@ -6,6 +6,9 @@ use App\Models\Asset;
 use App\Models\AssetAssignment;
 use App\Models\AssetQrIdentity;
 use App\Models\AssetRequest;
+use App\Models\AssetReturn;
+use App\Models\Assignment;
+use App\Models\AssignmentDetail;
 use App\Models\Disposal;
 use App\Models\DisposalDetail;
 use App\Models\Employee;
@@ -54,6 +57,7 @@ class FeatureDemoDataSeeder extends Seeder
             $assets = $this->seedAssets($locations, $suppliers);
 
             $this->seedAssignments($assets, $employees, $manager);
+            $this->seedHandoverRecords($assets, $employees, $users, $manager);
             $this->seedMaintenance($assets, $suppliers, $manager, $technician);
             $this->seedRequests($assets, $employees, $manager, $technician);
             $this->seedFeedbacks($assets, $users, $manager);
@@ -68,25 +72,33 @@ class FeatureDemoDataSeeder extends Seeder
      */
     private function seedLocations(): Collection
     {
-        $rows = [
-            ['code' => 'DEMO-LOC-001', 'name' => 'Demo - Kho IT tầng 1', 'address' => 'Tầng 1 - Khu A'],
-            ['code' => 'DEMO-LOC-002', 'name' => 'Demo - Phòng kỹ thuật', 'address' => 'Tầng 2 - Khu A'],
-            ['code' => 'DEMO-LOC-003', 'name' => 'Demo - Phòng server', 'address' => 'Tầng 3 - Khu B'],
-            ['code' => 'DEMO-LOC-004', 'name' => 'Demo - Khu lễ tân', 'address' => 'Tầng trệt'],
-            ['code' => 'DEMO-LOC-005', 'name' => 'Demo - Phòng kế toán', 'address' => 'Tầng 2 - Khu B'],
-            ['code' => 'DEMO-LOC-006', 'name' => 'Demo - Phòng nhân sự', 'address' => 'Tầng 2 - Khu C'],
-            ['code' => 'DEMO-LOC-007', 'name' => 'Demo - Phòng họp lớn', 'address' => 'Tầng 4'],
-            ['code' => 'DEMO-LOC-008', 'name' => 'Demo - Kho thiết bị cũ', 'address' => 'Tầng hầm B1'],
-            ['code' => 'DEMO-LOC-009', 'name' => 'Demo - Khu vận hành', 'address' => 'Tầng 5'],
-            ['code' => 'DEMO-LOC-010', 'name' => 'Demo - Khu đào tạo', 'address' => 'Tầng 6'],
-        ];
+        $rows = collect(['Kho tầng 1', 'Kho tầng 2', 'Kho tầng 3'])
+            ->flatMap(fn (string $area) => collect(range(1, 8))->map(fn (int $desk) => [
+                'code' => null,
+                'name' => "Bàn {$desk} - {$area}",
+                'address' => $area,
+            ]))
+            ->merge([
+                ['code' => null, 'name' => 'Khu HR', 'address' => 'Khu văn phòng'],
+                ['code' => null, 'name' => 'Khu kế toán', 'address' => 'Khu văn phòng'],
+                ['code' => null, 'name' => 'Khu lễ tân', 'address' => 'Tầng trệt'],
+                ['code' => null, 'name' => 'Khu dự án', 'address' => 'Khu làm việc'],
+                ['code' => null, 'name' => 'Khu kỹ thuật', 'address' => 'Khu IT'],
+                ['code' => null, 'name' => 'Phòng server', 'address' => 'Khu hạ tầng'],
+            ])
+            ->values()
+            ->all();
+
+        Location::query()
+            ->where('code', 'like', 'DEMO-LOC-%')
+            ->update(['is_active' => false]);
 
         return collect($rows)->map(fn (array $row) => Location::updateOrCreate(
-            ['code' => $row['code']],
+            ['name' => $row['name']],
             [
-                'name' => $row['name'],
+                'code' => $row['code'],
                 'address' => $row['address'],
-                'description' => 'Vị trí demo dùng để kiểm thử danh mục, bàn giao, kiểm kê và báo cáo.',
+                'description' => null,
                 'is_active' => true,
             ]
         ))->values();
@@ -98,27 +110,36 @@ class FeatureDemoDataSeeder extends Seeder
     private function seedSuppliers(): Collection
     {
         $rows = [
-            ['code' => 'DEMO-SUP-001', 'name' => 'FPT Services', 'contact_person' => 'Nguyen Minh Khoa'],
-            ['code' => 'DEMO-SUP-002', 'name' => 'CMC Technology', 'contact_person' => 'Tran Hoai Nam'],
-            ['code' => 'DEMO-SUP-003', 'name' => 'Dell Authorized Partner', 'contact_person' => 'Le Thu Ha'],
-            ['code' => 'DEMO-SUP-004', 'name' => 'HP Vietnam Partner', 'contact_person' => 'Pham Quang Huy'],
-            ['code' => 'DEMO-SUP-005', 'name' => 'Cisco Network Partner', 'contact_person' => 'Vo Thanh Dat'],
-            ['code' => 'DEMO-SUP-006', 'name' => 'Synology Storage Partner', 'contact_person' => 'Do Minh Anh'],
-            ['code' => 'DEMO-SUP-007', 'name' => 'An Phat Computer', 'contact_person' => 'Dang Bao Chau'],
-            ['code' => 'DEMO-SUP-008', 'name' => 'Phong Vu Business', 'contact_person' => 'Huynh Gia Bao'],
+            ['code' => 'NCC-001', 'name' => 'Công ty Thiết bị CNTT ABC', 'contact_person' => 'Nguyen Minh Khoa', 'email' => 'contact@abc-it.vn'],
+            ['code' => 'NCC-002', 'name' => 'FPT Services', 'contact_person' => 'Tran Hoai Nam', 'email' => 'services@fpt.vn'],
+            ['code' => 'NCC-003', 'name' => 'CMC Technology', 'contact_person' => 'Le Thu Ha', 'email' => 'business@cmc.vn'],
+            ['code' => 'NCC-004', 'name' => 'Dell Authorized Partner', 'contact_person' => 'Pham Quang Huy', 'email' => 'dell.partner@mesoco.vn'],
+            ['code' => 'NCC-005', 'name' => 'HP Vietnam Partner', 'contact_person' => 'Vo Thanh Dat', 'email' => 'hp.partner@mesoco.vn'],
+            ['code' => 'NCC-006', 'name' => 'Cisco Network Partner', 'contact_person' => 'Do Minh Anh', 'email' => 'network@cisco-partner.vn'],
+            ['code' => 'NCC-007', 'name' => 'Synology Storage Partner', 'contact_person' => 'Dang Bao Chau', 'email' => 'storage@synology-partner.vn'],
+            ['code' => 'NCC-008', 'name' => 'An Phat Computer', 'contact_person' => 'Huynh Gia Bao', 'email' => 'enterprise@anphat.vn'],
+            ['code' => 'NCC-009', 'name' => 'Phong Vu Business', 'contact_person' => 'Bui Thanh Lam', 'email' => 'business@phongvu.vn'],
+            ['code' => 'NCC-010', 'name' => 'Tinhoc Ngôi Sao Enterprise', 'contact_person' => 'Nguyen Thai Son', 'email' => 'enterprise@tinhocngoisao.com'],
         ];
 
-        return collect($rows)->map(fn (array $row, int $index) => Supplier::updateOrCreate(
-            ['code' => $row['code']],
-            [
+        return collect($rows)->map(function (array $row, int $index) {
+            $supplier = Supplier::query()
+                ->where('code', $row['code'])
+                ->orWhere('name', $row['name'])
+                ->first() ?? new Supplier();
+
+            $supplier->fill([
+                'code' => $row['code'],
                 'name' => $row['name'],
                 'contact_person' => $row['contact_person'],
                 'phone' => sprintf('090%07d', $index + 1000),
-                'email' => sprintf('demo-supplier-%02d@mesoco.vn', $index + 1),
-                'address' => 'Ho Chi Minh City',
-                'note' => 'Nhà cung cấp demo cho luồng mua hàng, bảo trì và bảo hành.',
-            ]
-        ))->values();
+                'email' => $row['email'],
+                'address' => 'TP. Hồ Chí Minh',
+                'note' => 'Nhà cung cấp thiết bị CNTT, linh kiện và dịch vụ bảo trì.',
+            ])->save();
+
+            return $supplier->refresh();
+        })->values();
     }
 
     /**
@@ -129,16 +150,22 @@ class FeatureDemoDataSeeder extends Seeder
     private function seedAssets(Collection $locations, Collection $suppliers): Collection
     {
         $templates = [
-            ['category' => 'Laptop', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Dell Latitude 5440', 'model' => 'Latitude 5440', 'cost' => 28000000, 'life' => 48],
-            ['category' => 'Laptop', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'HP EliteBook 840 G10', 'model' => 'EliteBook 840 G10', 'cost' => 31000000, 'life' => 48],
-            ['category' => 'Desktop', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'HP EliteDesk 800 G9', 'model' => 'EliteDesk 800 G9', 'cost' => 22000000, 'life' => 60],
-            ['category' => 'Monitor', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'LG UltraFine 27 inch', 'model' => '27UP850N', 'cost' => 7500000, 'life' => 48],
-            ['category' => 'Network', 'type' => Asset::TYPE_MACHINE, 'name' => 'Cisco Catalyst Switch', 'model' => 'C9200L-24T', 'cost' => 46000000, 'life' => 72],
-            ['category' => 'Server', 'type' => Asset::TYPE_MACHINE, 'name' => 'Dell PowerEdge R450', 'model' => 'R450', 'cost' => 98000000, 'life' => 84],
-            ['category' => 'Printer', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'HP LaserJet Pro', 'model' => 'M404dn', 'cost' => 8900000, 'life' => 48],
-            ['category' => 'Peripheral', 'type' => Asset::TYPE_TOOL, 'name' => 'Logitech Keyboard Mouse Kit', 'model' => 'MK545', 'cost' => 1200000, 'life' => 24],
-            ['category' => 'Mobile Device', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Samsung Galaxy Tab', 'model' => 'Tab A9+', 'cost' => 6500000, 'life' => 36],
-            ['category' => 'Office Device', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Meeting Room Webcam', 'model' => 'Logitech C930e', 'cost' => 3200000, 'life' => 36],
+            ['category' => 'PC', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Dell Latitude 5440', 'model' => 'Latitude 5440', 'cost' => 28000000, 'life' => 48],
+            ['category' => 'PC', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'HP EliteBook 840 G10', 'model' => 'EliteBook 840 G10', 'cost' => 31000000, 'life' => 48],
+            ['category' => 'PC', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'HP EliteDesk 800 G9', 'model' => 'EliteDesk 800 G9', 'cost' => 22000000, 'life' => 60],
+            ['category' => 'Màn hình', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'LG UltraFine 27 inch', 'model' => '27UP850N', 'cost' => 7500000, 'life' => 48],
+            ['category' => 'Thiết bị Test', 'type' => Asset::TYPE_MACHINE, 'name' => 'Cisco Catalyst Switch', 'model' => 'C9200L-24T', 'cost' => 46000000, 'life' => 72],
+            ['category' => 'Thiết bị Test', 'type' => Asset::TYPE_MACHINE, 'name' => 'Dell PowerEdge R450', 'model' => 'R450', 'cost' => 98000000, 'life' => 84],
+            ['category' => 'Phụ kiện dùng', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'HP LaserJet Pro', 'model' => 'M404dn', 'cost' => 8900000, 'life' => 48],
+            ['category' => 'Phụ kiện dùng', 'type' => Asset::TYPE_TOOL, 'name' => 'Logitech Keyboard Mouse Kit', 'model' => 'MK545', 'cost' => 1200000, 'life' => 24],
+            ['category' => 'RAM', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'RAM 16GB', 'model' => 'DDR4 16GB', 'cost' => 1300000, 'life' => 36],
+            ['category' => 'SSD', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'SSD 1TB', 'model' => 'NVMe 1TB', 'cost' => 2200000, 'life' => 36],
+            ['category' => 'HDD', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'HDD 2TB', 'model' => 'SATA 2TB', 'cost' => 1800000, 'life' => 36],
+            ['category' => 'Tai nghe', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Tai nghe Jabra', 'model' => 'Evolve 20', 'cost' => 950000, 'life' => 24],
+            ['category' => 'Adapter', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Adapter Dell 65W', 'model' => 'USB-C 65W', 'cost' => 850000, 'life' => 24],
+            ['category' => 'Cáp kết nối', 'type' => Asset::TYPE_TOOL, 'name' => 'Cáp HDMI 2m', 'model' => 'HDMI 2.0', 'cost' => 180000, 'life' => 18],
+            ['category' => 'Mainboard', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Mainboard Intel B760', 'model' => 'B760M', 'cost' => 3200000, 'life' => 36],
+            ['category' => 'Bộ nguồn', 'type' => Asset::TYPE_EQUIPMENT, 'name' => 'Bộ nguồn 650W', 'model' => '80 Plus Bronze', 'cost' => 1400000, 'life' => 36],
         ];
 
         return collect(range(1, self::ASSET_COUNT))->map(function (int $number) use ($templates, $locations, $suppliers) {
@@ -229,13 +256,12 @@ class FeatureDemoDataSeeder extends Seeder
     private function configurationFor(string $category, int $number): string
     {
         return match ($category) {
-            'Laptop' => ($number % 2 === 0 ? 'Intel i7, 16GB RAM, 512GB SSD' : 'Intel i5, 16GB RAM, 256GB SSD'),
-            'Desktop' => 'Intel i5, 16GB RAM, 512GB SSD, Windows 11 Pro',
-            'Monitor' => '27 inch, 4K, USB-C',
-            'Network' => '24 ports, managed switch, VLAN ready',
-            'Server' => 'Xeon Silver, 64GB RAM, RAID storage',
-            'Printer' => 'Duplex, network print, monochrome laser',
-            default => 'Cấu hình demo tiêu chuẩn cho tài sản IT.',
+            'PC' => ($number % 2 === 0 ? 'Intel i7, 16GB RAM, 512GB SSD' : 'Intel i5, 16GB RAM, 256GB SSD'),
+            'Màn hình' => '27 inch, 4K, USB-C',
+            'Thiết bị Test' => 'Thiết bị kiểm thử/hạ tầng IT theo cấu hình chuẩn',
+            'Phụ kiện dùng' => 'Phụ kiện dùng hằng ngày cho thiết bị IT',
+            'Linh kiện thay thế' => 'Linh kiện thay thế theo chuẩn kho IT',
+            default => 'Cấu hình demo tiêu chuẩn cho thiết bị IT.',
         };
     }
 
@@ -285,6 +311,63 @@ class FeatureDemoDataSeeder extends Seeder
                         'unassigned_at' => now()->startOfDay()->subDays(45 + ($index % 20)),
                     ]
                 );
+            }
+        }
+    }
+
+    /**
+     * @param Collection<int, Asset> $assets
+     * @param Collection<int, Employee> $employees
+     * @param Collection<int, User> $users
+     */
+    private function seedHandoverRecords(Collection $assets, Collection $employees, Collection $users, User $manager): void
+    {
+        if (!Schema::hasTable('assignments') || !Schema::hasTable('assignment_details') || !Schema::hasTable('returns')) {
+            return;
+        }
+
+        $demoAssignmentIds = Assignment::query()
+            ->where('note', 'like', 'Demo bàn giao%')
+            ->pluck('id');
+
+        if ($demoAssignmentIds->isNotEmpty()) {
+            AssetReturn::query()->whereIn('assignment_id', $demoAssignmentIds)->delete();
+            AssignmentDetail::query()->whereIn('assignment_id', $demoAssignmentIds)->delete();
+            Assignment::query()->whereIn('id', $demoAssignmentIds)->delete();
+        }
+
+        $eligibleAssets = $assets
+            ->filter(fn (Asset $asset) => $asset->status === Asset::STATUS_ACTIVE)
+            ->take(30)
+            ->values();
+
+        foreach ($eligibleAssets as $index => $asset) {
+            $employee = $employees[$index % $employees->count()];
+            $staff = $users->firstWhere('employee_id', $employee->id) ?? $manager;
+            $assignDate = now()->startOfDay()->subDays(45 - $index);
+
+            $assignment = Assignment::create([
+                'staff_id' => $staff->id,
+                'admin_id' => $manager->id,
+                'assign_date' => $assignDate,
+                'note' => 'Demo bàn giao thiết bị ' . $asset->asset_code,
+                'approved_by' => $manager->id,
+            ]);
+
+            AssignmentDetail::create([
+                'assignment_id' => $assignment->id,
+                'asset_id' => $asset->id,
+            ]);
+
+            if (($index + 1) % 4 === 0) {
+                AssetReturn::create([
+                    'assignment_id' => $assignment->id,
+                    'staff_id' => $staff->id,
+                    'admin_id' => $manager->id,
+                    'return_date' => $assignDate->copy()->addDays(12),
+                    'reason' => 'Demo thu hồi để tái phân bổ thiết bị.',
+                    'approved_by' => $manager->id,
+                ]);
             }
         }
     }
@@ -384,7 +467,11 @@ class FeatureDemoDataSeeder extends Seeder
             return;
         }
 
-        $statuses = AssetRequest::STATUSES;
+        $statuses = [
+            AssetRequest::STATUS_SUBMITTED,
+            AssetRequest::STATUS_APPROVED,
+            AssetRequest::STATUS_REJECTED,
+        ];
         $consumables = [
             ['sku' => 'TONER-HP-85A', 'name' => 'Mực in HP 85A', 'unit' => 'hộp'],
             ['sku' => 'MOUSE-WL-01', 'name' => 'Chuột không dây', 'unit' => 'cái'],
@@ -411,7 +498,7 @@ class FeatureDemoDataSeeder extends Seeder
                     'reviewed_at' => in_array($status, [AssetRequest::STATUS_APPROVED, AssetRequest::STATUS_REJECTED], true) ? now()->subDays($number % 12) : null,
                     'review_note' => $status === AssetRequest::STATUS_REJECTED ? 'Chưa đủ thông tin để duyệt yêu cầu.' : null,
                     'title' => $type === AssetRequest::TYPE_JUSTIFICATION
-                        ? 'Báo sự cố tài sản ' . $asset->asset_code
+                        ? 'Báo sự cố thiết bị ' . $asset->asset_code
                         : 'Yêu cầu cấp vật tư IT tháng ' . (($number % 12) + 1),
                     'description' => $type === AssetRequest::TYPE_JUSTIFICATION
                         ? 'Thiết bị có dấu hiệu hoạt động không ổn định, cần kỹ thuật kiểm tra.'
@@ -430,8 +517,8 @@ class FeatureDemoDataSeeder extends Seeder
                     [
                         'asset_id' => $asset->id,
                         'qty' => 1,
-                        'unit' => 'tài sản',
-                        'note' => 'Kiểm tra tài sản liên quan đến phiếu yêu cầu.',
+                        'unit' => 'thiết bị',
+                        'note' => 'Kiểm tra thiết bị liên quan đến phiếu yêu cầu.',
                     ]
                 );
             } else {
@@ -623,7 +710,7 @@ class FeatureDemoDataSeeder extends Seeder
                         'condition_note' => $result === InventoryCheckItem::RESULT_DAMAGED ? 'Có dấu hiệu hư hỏng, cần tạo lịch bảo trì.' : null,
                         'counted_by_user_id' => $technician->id,
                         'checked_at' => $status === InventoryCheck::STATUS_IN_PROGRESS ? null : now()->subDays($number),
-                        'note' => 'Dòng kiểm kê demo cho tài sản ' . $asset->asset_code,
+                        'note' => 'Dòng kiểm kê demo cho thiết bị ' . $asset->asset_code,
                     ]
                 );
             }
@@ -644,13 +731,13 @@ class FeatureDemoDataSeeder extends Seeder
                 [
                     'asset_id' => $asset->id,
                     'method' => Disposal::METHODS[$index % count(Disposal::METHODS)],
-                    'reason' => 'Tài sản đã hết vòng đời sử dụng hoặc chi phí sửa chữa không còn hợp lý.',
+                    'reason' => 'Thiết bị đã hết vòng đời sử dụng hoặc chi phí sửa chữa không còn hợp lý.',
                     'disposed_by_user_id' => $manager->id,
                     'approved_by_user_id' => $manager->id,
                     'disposed_at' => now()->subDays(20 + $index),
                     'asset_book_value' => $bookValue,
                     'proceeds_amount' => $proceeds,
-                    'note' => 'Dữ liệu thanh lý demo; tài sản retired không còn gắn vị trí.',
+                    'note' => 'Dữ liệu thu hủy demo; thiết bị retired không còn gắn vị trí.',
                 ]
             );
 

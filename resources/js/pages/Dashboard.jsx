@@ -26,7 +26,7 @@ const DepartmentDistribution = ({ title, subtitle, data }) => {
 
             {data.length === 0 ? (
                 <div className="dashboard-empty-state">
-                    Chưa có dữ liệu phân bổ tài sản.
+                    Chưa có dữ liệu phân bổ thiết bị.
                 </div>
             ) : (
                 <div className="dashboard-progress-list">
@@ -263,7 +263,7 @@ const Dashboard = ({ user }) => {
                 {
                     title: 'Giá trị tồn kho',
                     value: formatCurrency(totalInventoryValue),
-                    subtitle: `${inventoryValuation?.assets_with_valuation || 0} tài sản đã định giá`,
+                    subtitle: `${inventoryValuation?.assets_with_valuation || 0} thiết bị đã định giá`,
                     color: 'info',
                     trend: 'neutral',
                     icon: requestsIcon
@@ -306,7 +306,7 @@ const Dashboard = ({ user }) => {
                 {
                     title: 'Giá trị tồn kho',
                     value: formatCurrency(totalInventoryValue),
-                    subtitle: `${inventoryValuation?.assets_with_valuation || 0} tài sản đã định giá`,
+                    subtitle: `${inventoryValuation?.assets_with_valuation || 0} thiết bị đã định giá`,
                     color: 'info',
                     trend: 'neutral',
                     icon: requestsIcon
@@ -514,13 +514,13 @@ const Dashboard = ({ user }) => {
             {isOperationalRole && (
                 <div className="dashboard-analysis-grid">
                     <DepartmentDistribution
-                        title="Tình trạng tài sản theo bộ phận"
+                        title="Tình trạng thiết bị theo bộ phận"
                         subtitle="Theo nhân viên đang được giao hoặc bộ phận quản lý"
                         data={departmentDistribution}
                     />
                     <AssetTrend
-                        title="Xu hướng biến động tài sản"
-                        subtitle="Số tài sản mới được ghi nhận trong 6 tháng gần đây"
+                        title="Xu hướng biến động thiết bị"
+                        subtitle="Số thiết bị mới được ghi nhận trong 6 tháng gần đây"
                         data={monthlyTrend}
                     />
                 </div>

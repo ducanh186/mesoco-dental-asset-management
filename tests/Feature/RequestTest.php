@@ -13,18 +13,19 @@ class RequestTest extends TestCase
 
     public function test_request_workflow_routes_still_work_for_supported_types(): void
     {
-        $employee = User::factory()->employee()->create(['must_change_password' => false]);
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
 
-        $this->actingAs($employee)
+        $this->actingAs($manager)
             ->getJson('/api/requests')
             ->assertOk()
-            ->assertJsonPath('available_types', ['JUSTIFICATION', 'CONSUMABLE_REQUEST']);
+            ->assertJsonPath('available_types', ['JUSTIFICATION', 'CONSUMABLE_REQUEST'])
+            ->assertJsonPath('available_statuses', ['SUBMITTED', 'APPROVED', 'REJECTED']);
     }
 
-    public function test_request_tables_are_not_part_of_current_schema(): void
+    public function test_request_tables_are_part_of_current_schema(): void
     {
-        $this->assertFalse(Schema::hasTable('requests'));
-        $this->assertFalse(Schema::hasTable('request_items'));
-        $this->assertFalse(Schema::hasTable('request_events'));
+        $this->assertTrue(Schema::hasTable('requests'));
+        $this->assertTrue(Schema::hasTable('request_items'));
+        $this->assertTrue(Schema::hasTable('request_events'));
     }
 }

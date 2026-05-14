@@ -31,6 +31,7 @@ const LocationsPage = () => {
     
     // Filter state
     const [search, setSearch] = useState('');
+    const [areaFilter, setAreaFilter] = useState('');
     const [showInactive, setShowInactive] = useState(false);
     
     // Modal state
@@ -40,7 +41,6 @@ const LocationsPage = () => {
     
     // Form state
     const [formData, setFormData] = useState({
-        code: '',
         name: '',
         description: '',
         is_active: true,
@@ -55,6 +55,7 @@ const LocationsPage = () => {
                 page,
                 per_page: pagination.per_page,
                 search: search || undefined,
+                area: areaFilter || undefined,
                 active_only: showInactive ? undefined : '1',
                 sort_by: 'name',
                 sort_dir: 'asc',
@@ -73,17 +74,27 @@ const LocationsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [search, showInactive, pagination.per_page, toast]);
+    }, [search, areaFilter, showInactive, pagination.per_page, toast]);
 
     useEffect(() => {
         fetchLocations(1);
-    }, [search, showInactive]);
+    }, [search, areaFilter, showInactive]);
+
+    const areaOptions = [
+        { value: '', label: 'Tất cả khu vực' },
+        { value: 'Kho tầng 1', label: 'Kho tầng 1' },
+        { value: 'Kho tầng 2', label: 'Kho tầng 2' },
+        { value: 'Kho tầng 3', label: 'Kho tầng 3' },
+        { value: 'Khu HR', label: 'Khu HR' },
+        { value: 'Khu kế toán', label: 'Khu kế toán' },
+        { value: 'Khu lễ tân', label: 'Khu lễ tân' },
+        { value: 'Khu dự án', label: 'Khu Dự án' },
+    ];
 
     // Open modal for create
     const handleCreate = () => {
         setEditingLocation(null);
         setFormData({
-            code: '',
             name: '',
             description: '',
             is_active: true,
@@ -96,7 +107,6 @@ const LocationsPage = () => {
     const handleEdit = (location) => {
         setEditingLocation(location);
         setFormData({
-            code: location.code || '',
             name: location.name,
             description: location.description || '',
             is_active: location.is_active,
@@ -167,9 +177,9 @@ const LocationsPage = () => {
     // Table columns
     const columns = [
         {
-            key: 'code',
+            key: 'id',
             label: 'Mã vị trí',
-            render: (value) => <span className="font-mono text-sm text-text-muted">{value || '—'}</span>,
+            render: (value) => <span className="font-mono text-sm text-text-muted">{value}</span>,
         },
         {
             key: 'name',
@@ -190,14 +200,6 @@ const LocationsPage = () => {
             label: 'Mô tả',
             render: (value) => (
                 <span className="text-text-muted">{value || '—'}</span>
-            ),
-        },
-        {
-            key: 'assets_count',
-            label: 'Thiết bị',
-            align: 'center',
-            render: (value) => (
-                <span className="font-medium">{value ?? '—'}</span>
             ),
         },
         {
@@ -232,7 +234,7 @@ const LocationsPage = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-text">Vị trí</h1>
-                    <p className="text-text-muted mt-1">Quản lý mã vị trí, tên vị trí và mô tả nơi đặt tài sản</p>
+                    <p className="text-text-muted mt-1">Quản lý mã vị trí, tên vị trí và mô tả nơi đặt thiết bị</p>
                 </div>
                 <Button onClick={handleCreate}>
                     <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,6 +254,17 @@ const LocationsPage = () => {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
+                    <select
+                        value={areaFilter}
+                        onChange={(e) => setAreaFilter(e.target.value)}
+                        className="min-w-[180px] rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                        {areaOptions.map((option) => (
+                            <option key={option.value || 'all'} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                     <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
                         <input
                             type="checkbox"
@@ -291,19 +304,6 @@ const LocationsPage = () => {
                 title={editingLocation ? 'Chỉnh sửa vị trí' : 'Thêm vị trí'}
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-text mb-1">
-                            Mã vị trí <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            name="code"
-                            value={formData.code}
-                            onChange={handleInputChange}
-                            placeholder="VD: LOC-001"
-                            error={formErrors.code?.[0]}
-                        />
-                    </div>
-
                     <div>
                         <label className="block text-sm font-medium text-text mb-1">
                             Tên vị trí <span className="text-red-500">*</span>

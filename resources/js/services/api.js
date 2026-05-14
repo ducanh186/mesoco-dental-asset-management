@@ -543,6 +543,16 @@ export const suppliersApi = {
 };
 
 // ============================================================================
+// Handover / Return API
+// ============================================================================
+export const handoverApi = {
+    list: async (params = {}) => {
+        const response = await axios.get('/api/handover-records', { params });
+        return response.data;
+    },
+};
+
+// ============================================================================
 // Purchase Orders API
 // ============================================================================
 export const purchaseOrdersApi = {
@@ -810,6 +820,7 @@ export default {
     inventory: inventoryApi,
     locations: locationsApi,
     suppliers: suppliersApi,
+    handover: handoverApi,
     purchaseOrders: purchaseOrdersApi,
     maintenance: maintenanceApi,
     feedback: feedbackApi,

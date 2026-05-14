@@ -50,35 +50,35 @@ class InventoryValuationSeeder extends Seeder
     {
         $valuationProfiles = [
             Asset::TYPE_MACHINE => [
-                'category' => 'Server',
+                'category' => 'Thiết bị Test',
                 'cost_range' => [20000, 150000],
                 'life_months' => 120,
                 'salvage_pct' => 0.10,
                 'warranty_years' => 5,
             ],
             Asset::TYPE_EQUIPMENT => [
-                'category' => 'Laptop',
+                'category' => 'PC',
                 'cost_range' => [800, 35000],
                 'life_months' => 60,
                 'salvage_pct' => 0.10,
                 'warranty_years' => 3,
             ],
             Asset::TYPE_TOOL => [
-                'category' => 'Peripheral',
+                'category' => 'Phụ kiện dùng',
                 'cost_range' => [50, 3000],
                 'life_months' => 36,
                 'salvage_pct' => 0.05,
                 'warranty_years' => 2,
             ],
             Asset::TYPE_TRAY => [
-                'category' => 'Office Device',
+                'category' => 'Thiết bị Test',
                 'cost_range' => [100, 1200],
                 'life_months' => 24,
                 'salvage_pct' => 0,
                 'warranty_years' => 1,
             ],
             Asset::TYPE_OTHER => [
-                'category' => 'Other',
+                'category' => 'Linh kiện thay thế',
                 'cost_range' => [200, 2000],
                 'life_months' => 48,
                 'salvage_pct' => 0.05,

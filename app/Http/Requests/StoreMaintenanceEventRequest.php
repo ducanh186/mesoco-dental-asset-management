@@ -98,7 +98,7 @@ class StoreMaintenanceEventRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'asset_id' => 'tài sản',
+            'asset_id' => 'thiết bị',
             'details' => 'chi tiết bảo trì',
             'details.*.asset_id' => 'thiết bị trong chi tiết',
             'details.*.qty' => 'số lượng thiết bị',
@@ -118,8 +118,8 @@ class StoreMaintenanceEventRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'asset_id.required' => 'Vui lòng chọn tài sản cần bảo trì.',
-            'asset_id.exists' => 'Tài sản không tồn tại.',
+            'asset_id.required' => 'Vui lòng chọn thiết bị cần bảo trì.',
+            'asset_id.exists' => 'Thiết bị không tồn tại.',
             'details.required_without' => 'Vui lòng thêm ít nhất một dòng chi tiết bảo trì.',
             'details.min' => 'Phiếu bảo trì phải có ít nhất một thiết bị.',
             'details.*.asset_id.required_with' => 'Mỗi dòng chi tiết phải chọn thiết bị.',

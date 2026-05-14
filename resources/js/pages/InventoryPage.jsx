@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Card, 
-    CardHeader, 
-    CardBody, 
-    Button, 
-    Input, 
+    Card,
+    CardHeader,
+    CardBody,
+    Button,
+    Input,
     Select,
     Badge,
     StatusBadge,
@@ -24,7 +24,7 @@ import { useI18n } from '../i18n';
 const InventoryPage = ({ user }) => {
     const toast = useToast();
     const { t } = useI18n();
-    
+
     // State
     const [loading, setLoading] = useState(true);
     const [summaryLoading, setSummaryLoading] = useState(true);
@@ -49,7 +49,7 @@ const InventoryPage = ({ user }) => {
     // Detail modal
     const [selectedItem, setSelectedItem] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
-    
+
     // Print label modal
     const [printLabelItem, setPrintLabelItem] = useState(null);
     const [isPrintLabelOpen, setIsPrintLabelOpen] = useState(false);
@@ -60,9 +60,10 @@ const InventoryPage = ({ user }) => {
     // Valuation data
     const [valuationData, setValuationData] = useState([]);
     const [valuationLoading, setValuationLoading] = useState(false);
-    
+
     // Export loading state
     const [exportLoading, setExportLoading] = useState(false);
+    const [planLoading, setPlanLoading] = useState(false);
 
     // Fetch summary data
     const fetchSummary = useCallback(async () => {
@@ -90,7 +91,7 @@ const InventoryPage = ({ user }) => {
                 location: locationFilter || undefined,
                 warranty_expiring_soon: warrantyExpiringSoonFilter || undefined,
             };
-            
+
             const data = await inventoryApi.assets(params);
             setAssets(data.assets || []);
             setPagination(data.pagination);
@@ -112,7 +113,7 @@ const InventoryPage = ({ user }) => {
                 search: searchQuery || undefined,
                 category: categoryFilter || undefined,
             };
-            
+
             const data = await inventoryApi.valuation(params);
             setValuationData(data.assets || []);
             setPagination(data.pagination);
@@ -136,7 +137,24 @@ const InventoryPage = ({ user }) => {
             setPrintLabelLoadingId(null);
         }
     };
-    
+
+    const handleCreateInventoryPlan = async () => {
+        setPlanLoading(true);
+        try {
+            await inventoryApi.createCheck({
+                title: 'Kế hoạch kiểm kê thiết bị',
+                location: locationFilter || null,
+                asset_ids: assets.map((asset) => asset.id),
+            });
+            toast.success('Đã lập kế hoạch kiểm kê');
+            fetchSummary();
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setPlanLoading(false);
+        }
+    };
+
     // Handle CSV export
     const handleExportCsv = async () => {
         try {
@@ -148,9 +166,9 @@ const InventoryPage = ({ user }) => {
                 location: locationFilter || undefined,
                 warranty_expiring_soon: warrantyExpiringSoonFilter || undefined,
             };
-            
+
             const response = await inventoryApi.exportCsv(params);
-            
+
             // Create download link
             const blob = new Blob([response.data], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
@@ -161,7 +179,7 @@ const InventoryPage = ({ user }) => {
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-            
+
             toast.success('Xuất tệp thành công');
         } catch (error) {
             handleApiError(error, toast);
@@ -238,14 +256,14 @@ const InventoryPage = ({ user }) => {
 
     // Inventory columns
     const inventoryColumns = [
-        { 
-            key: 'asset_code', 
+        {
+            key: 'asset_code',
             label: 'Mã',
             width: '120px',
             render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded font-mono">{value || '—'}</code>
         },
-        { 
-            key: 'name', 
+        {
+            key: 'name',
             label: 'Thiết bị',
             render: (value, row) => (
                 <div>
@@ -255,18 +273,18 @@ const InventoryPage = ({ user }) => {
             )
         },
         { key: 'location', label: 'Vị trí', render: (value, row) => getLocationLabel(value, row) },
-        { 
-            key: 'status', 
+        {
+            key: 'status',
             label: 'Trạng thái',
             render: (value) => <StatusBadge status={value} />
         },
-        { 
-            key: 'assigned_to', 
+        {
+            key: 'assigned_to',
             label: 'Người sử dụng',
             render: (value) => value?.name || <span className="text-text-light">—</span>
         },
-        { 
-            key: 'current_book_value', 
+        {
+            key: 'current_book_value',
             label: 'Giá trị còn lại',
             align: 'right',
             render: (value) => <span className="font-medium">{formatCurrency(value)}</span>
@@ -277,8 +295,8 @@ const InventoryPage = ({ user }) => {
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-1 justify-end">
-                    <Button 
-                        size="sm" 
+                    <Button
+                        size="sm"
                         variant="ghost"
                         title="In nhãn"
                         loading={printLabelLoadingId === row.id}
@@ -288,9 +306,9 @@ const InventoryPage = ({ user }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                     </Button>
-                    <Button 
-                        size="sm" 
-                        variant="ghost" 
+                    <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => {
                             setSelectedItem(row);
                             setIsDetailOpen(true);
@@ -305,15 +323,15 @@ const InventoryPage = ({ user }) => {
 
     // Valuation columns
     const valuationColumns = [
-        { 
-            key: 'asset_code', 
+        {
+            key: 'asset_code',
             label: 'Mã',
             width: '100px',
             render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded font-mono">{value || '—'}</code>
         },
-        { 
-            key: 'name', 
-            label: 'Tài sản',
+        {
+            key: 'name',
+            label: 'Thiết bị',
             render: (value, row) => (
                 <div>
                     <p className="font-medium text-text">{value}</p>
@@ -321,32 +339,32 @@ const InventoryPage = ({ user }) => {
                 </div>
             )
         },
-        { 
-            key: 'valuation.purchase_cost', 
+        {
+            key: 'valuation.purchase_cost',
             label: 'Nguyên giá',
             align: 'right',
             render: (_, row) => formatCurrency(row.valuation?.purchase_cost)
         },
-        { 
-            key: 'valuation.months_in_service', 
+        {
+            key: 'valuation.months_in_service',
             label: 'Số tháng sử dụng',
             align: 'center',
             render: (_, row) => row.valuation?.months_in_service ?? '—'
         },
-        { 
-            key: 'valuation.monthly_depreciation', 
+        {
+            key: 'valuation.monthly_depreciation',
             label: 'Khấu hao/tháng',
             align: 'right',
             render: (_, row) => formatCurrency(row.valuation?.monthly_depreciation)
         },
-        { 
-            key: 'valuation.accumulated_depreciation', 
+        {
+            key: 'valuation.accumulated_depreciation',
             label: 'Khấu hao lũy kế',
             align: 'right',
             render: (_, row) => formatCurrency(row.valuation?.accumulated_depreciation)
         },
-        { 
-            key: 'valuation.current_book_value', 
+        {
+            key: 'valuation.current_book_value',
             label: 'Giá trị còn lại',
             align: 'right',
             render: (_, row) => (
@@ -355,11 +373,11 @@ const InventoryPage = ({ user }) => {
                 </span>
             )
         },
-        { 
-            key: 'valuation.is_fully_depreciated', 
+        {
+            key: 'valuation.is_fully_depreciated',
             label: 'Trạng thái',
             align: 'center',
-            render: (_, row) => row.valuation?.is_fully_depreciated 
+            render: (_, row) => row.valuation?.is_fully_depreciated
                 ? <Badge variant="warning" size="sm">Khấu hao hết</Badge>
                 : <Badge variant="success" size="sm">Đang sử dụng</Badge>
         },
@@ -373,10 +391,10 @@ const InventoryPage = ({ user }) => {
 
     const statusOptions = [
         { value: '', label: 'Tất cả trạng thái' },
-        { value: 'active', label: 'Đang hoạt động' },
+        { value: 'active', label: 'Sẵn sàng' },
         { value: 'maintenance', label: 'Đang bảo trì' },
-        { value: 'off_service', label: 'Tạm ngưng' },
-        { value: 'retired', label: 'Đã thanh lý' },
+        { value: 'inventorying', label: 'Đang kiểm kê' },
+        { value: 'retired', label: 'Đã thu hủy' },
     ];
 
     const locationOptions = [
@@ -404,7 +422,7 @@ const InventoryPage = ({ user }) => {
     return (
         <div className="inventory-page space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
                 {summaryLoading ? (
                     <div className="col-span-5 flex justify-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -423,7 +441,7 @@ const InventoryPage = ({ user }) => {
                             <CardBody>
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-success">{summary.summary.by_status.active}</p>
-                                    <p className="text-sm text-text-muted">Đang hoạt động</p>
+                                    <p className="text-sm text-text-muted">Sẵn sàng</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -431,7 +449,7 @@ const InventoryPage = ({ user }) => {
                             <CardBody>
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-primary">{summary.summary.by_assignment.assigned}</p>
-                                    <p className="text-sm text-text-muted">Đã giao</p>
+                                    <p className="text-sm text-text-muted">Đã bàn giao</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -439,7 +457,15 @@ const InventoryPage = ({ user }) => {
                             <CardBody>
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-warning">{summary.summary.by_status.maintenance}</p>
-                                    <p className="text-sm text-text-muted">Bảo trì</p>
+                                    <p className="text-sm text-text-muted">Đang bảo trì</p>
+                                </div>
+                            </CardBody>
+                        </Card>
+                        <Card>
+                            <CardBody>
+                                <div className="text-center">
+                                    <p className="text-3xl font-bold text-info">{summary.summary.by_status.inventorying}</p>
+                                    <p className="text-sm text-text-muted">Đang kiểm kê</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -478,8 +504,8 @@ const InventoryPage = ({ user }) => {
                                     </p>
                                 </div>
                             </div>
-                            <Button 
-                                size="sm" 
+                            <Button
+                                size="sm"
                                 variant={warrantyExpiringSoonFilter ? "primary" : "outline"}
                                 onClick={() => {
                                     setWarrantyExpiringSoonFilter(!warrantyExpiringSoonFilter);
@@ -495,16 +521,16 @@ const InventoryPage = ({ user }) => {
 
             {/* Main Content Card */}
             <Card>
-                <CardHeader 
-                    title={viewMode === 'inventory' ? 'Tồn kho thiết bị' : 'Báo cáo định giá tài sản'}
+                <CardHeader
+                    title={viewMode === 'inventory' ? 'Tồn kho thiết bị' : 'Báo cáo định giá thiết bị'}
                     subtitle={`${pagination.total} mục${warrantyExpiringSoonFilter ? ' (lọc sắp hết hạn bảo hành)' : ''}`}
                     action={
                         <div className="flex gap-2">
                             <div className="flex rounded-lg border border-border overflow-hidden">
                                 <button
                                     className={`px-4 py-2 text-sm font-medium transition-colors ${
-                                        viewMode === 'inventory' 
-                                            ? 'bg-primary text-white' 
+                                        viewMode === 'inventory'
+                                            ? 'bg-primary text-white'
                                             : 'bg-surface text-text hover:bg-surface-muted'
                                     }`}
                                     onClick={() => setViewMode('inventory')}
@@ -513,8 +539,8 @@ const InventoryPage = ({ user }) => {
                                 </button>
                                 <button
                                     className={`px-4 py-2 text-sm font-medium transition-colors ${
-                                        viewMode === 'valuation' 
-                                            ? 'bg-primary text-white' 
+                                        viewMode === 'valuation'
+                                            ? 'bg-primary text-white'
                                             : 'bg-surface text-text hover:bg-surface-muted'
                                     }`}
                                     onClick={() => setViewMode('valuation')}
@@ -522,9 +548,17 @@ const InventoryPage = ({ user }) => {
                                     Định giá
                                 </button>
                             </div>
-                            <Button 
-                                size="sm" 
-                                variant="outline" 
+                            <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={handleCreateInventoryPlan}
+                                disabled={planLoading || assets.length === 0}
+                            >
+                                {planLoading ? 'Đang lập...' : 'Lập kế hoạch kiểm kê'}
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={handleExportCsv}
                                 disabled={exportLoading}
                             >

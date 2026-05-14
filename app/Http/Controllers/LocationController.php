@@ -34,6 +34,15 @@ class LocationController extends Controller
             });
         }
 
+        if ($request->filled('area')) {
+            $area = '%' . $request->string('area')->toString() . '%';
+            $query->where(function ($areaQuery) use ($area) {
+                $areaQuery->where('name', 'like', $area)
+                    ->orWhere('description', 'like', $area)
+                    ->orWhere('address', 'like', $area);
+            });
+        }
+
         // Sorting
         $sortBy = $request->get('sort_by', 'name');
         $sortDir = $request->get('sort_dir', 'asc');
@@ -58,7 +67,7 @@ class LocationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'code' => ['required', 'string', 'max:50', 'unique:locations,code'],
+            'code' => ['sometimes', 'nullable', 'string', 'max:50', 'unique:locations,code'],
             'name' => ['required', 'string', 'max:255', 'unique:locations,name'],
             'description' => ['nullable', 'string', 'max:1000'],
             'address' => ['nullable', 'string', 'max:500'],
@@ -105,7 +114,7 @@ class LocationController extends Controller
             ],
             'code' => [
                 'sometimes',
-                'required',
+                'nullable',
                 'string',
                 'max:50',
                 Rule::unique('locations', 'code')->ignore($location->id),

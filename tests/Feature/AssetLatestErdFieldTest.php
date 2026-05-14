@@ -11,6 +11,25 @@ class AssetLatestErdFieldTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_asset_categories_match_current_it_device_catalog(): void
+    {
+        $this->assertSame([
+            'PC',
+            'Màn hình',
+            'Thiết bị Test',
+            'Phụ kiện dùng',
+            'Linh kiện thay thế',
+            'RAM',
+            'SSD',
+            'HDD',
+            'Tai nghe',
+            'Adapter',
+            'Cáp kết nối',
+            'Mainboard',
+            'Bộ nguồn',
+        ], Asset::CATEGORIES);
+    }
+
     public function test_store_accepts_latest_erd_asset_alias_fields(): void
     {
         $manager = User::factory()->manager()->create(['must_change_password' => false]);

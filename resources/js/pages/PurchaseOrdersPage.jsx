@@ -18,29 +18,19 @@ const EMPTY_ITEM = {
     item_name: '',
     qty: '1',
     unit: '',
-    unit_price: '',
     note: '',
 };
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 const createEmptyForm = () => ({
     supplier_id: '',
-    order_date: '',
+    order_date: today(),
     expected_delivery_date: '',
     status: 'preparing',
-    payment_method: '',
     note: '',
     items: [{ ...EMPTY_ITEM }],
 });
-
-const formatCurrency = (value) => {
-    const amount = Number(value || 0);
-
-    return new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-        maximumFractionDigits: 0,
-    }).format(amount);
-};
 
 const getStatusVariant = (status) => {
     switch ((status || '').toLowerCase()) {
@@ -97,12 +87,6 @@ const PurchaseOrdersPage = ({ user }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState(createEmptyForm);
     const [formErrors, setFormErrors] = useState({});
-
-    const orderGrandTotal = formData.items.reduce((total, item) => (
-        total + (Number(item.qty || 0) * Number(item.unit_price || 0))
-    ), 0);
-
-    const selectedSupplier = suppliers.find((supplier) => String(supplier.id) === formData.supplier_id);
 
     const supplierOptions = useMemo(() => (
         suppliers.map((supplier) => ({
@@ -200,14 +184,12 @@ const PurchaseOrdersPage = ({ user }) => {
                 order_date: payload.order_date || '',
                 expected_delivery_date: payload.expected_delivery_date || '',
                 status: payload.status || 'preparing',
-                payment_method: payload.payment_method || '',
                 note: payload.note || '',
                 items: (payload.items || []).length > 0
                     ? payload.items.map((item) => ({
                         item_name: item.item_name || '',
                         qty: item.qty || '1',
                         unit: item.unit || '',
-                        unit_price: item.unit_price || '',
                         note: item.note || '',
                     }))
                     : [{ ...EMPTY_ITEM }],
@@ -290,16 +272,14 @@ const PurchaseOrdersPage = ({ user }) => {
 
         const payload = {
             supplier_id: Number(formData.supplier_id),
-            order_date: formData.order_date,
-            expected_delivery_date: formData.expected_delivery_date || null,
-            status: formData.status,
-            payment_method: formData.payment_method || null,
+            order_date: formData.order_date || today(),
+            expected_delivery_date: null,
+            status: formData.status || 'preparing',
             note: formData.note || null,
             items: formData.items.map((item) => ({
                 item_name: item.item_name,
                 qty: Number(item.qty),
                 unit: item.unit || null,
-                unit_price: Number(item.unit_price),
                 note: item.note || null,
             })),
         };
@@ -350,7 +330,7 @@ const PurchaseOrdersPage = ({ user }) => {
         }] : []),
         {
             key: 'items_count',
-            label: 'Sản phẩm',
+            label: 'Thiết bị',
             align: 'center',
             render: (value, row) => (
                 <div>
@@ -358,17 +338,6 @@ const PurchaseOrdersPage = ({ user }) => {
                     <div className="text-xs text-text-muted">{row.items?.[0]?.item_name || '—'}</div>
                 </div>
             ),
-        },
-        {
-            key: 'payment_method',
-            label: 'Thanh toán',
-            render: (value) => <span className="text-text-muted">{value || '—'}</span>,
-        },
-        {
-            key: 'total_amount',
-            label: 'Thành tiền',
-            align: 'right',
-            render: (value) => <span className="font-medium text-text">{formatCurrency(value)}</span>,
         },
         {
             key: 'status',
@@ -428,7 +397,7 @@ const PurchaseOrdersPage = ({ user }) => {
                     <p className="text-text-muted mt-1">
                         {isSupplier
                             ? 'Theo dõi tiến độ giao hàng và cập nhật trạng thái đơn hàng của nhà cung cấp'
-                            : 'Quản lý đơn đặt hàng theo nhà cung cấp, sản phẩm, số lượng và thanh toán'}
+                            : 'Quản lý đơn đặt hàng theo nhà cung cấp, thiết bị, đơn vị và số lượng'}
                     </p>
                 </div>
                 {isOperationalRole && (
@@ -458,7 +427,7 @@ const PurchaseOrdersPage = ({ user }) => {
             <Card className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input
-                        placeholder="Tìm theo mã đơn, sản phẩm, nhà cung cấp..."
+                        placeholder="Tìm theo mã đơn, thiết bị, nhà cung cấp..."
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
                     />
@@ -505,12 +474,11 @@ const PurchaseOrdersPage = ({ user }) => {
                 title={editingOrderId ? 'Chỉnh sửa đơn hàng' : 'Tạo đơn hàng mới'}
             >
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_360px]">
-                        <div className="space-y-6">
+                    <div className="space-y-6">
                             <Card className="p-5">
                                 <div className="mb-4">
                                     <h3 className="text-lg font-semibold text-text">Khối 1 · Thông tin nhà cung cấp</h3>
-                                    <p className="mt-1 text-sm text-text-muted">Chọn đối tác, ngày đặt và lịch giao dự kiến cho đơn hàng.</p>
+                                    <p className="mt-1 text-sm text-text-muted">Chọn nhà cung cấp và ghi chú đơn hàng nếu cần.</p>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -524,28 +492,13 @@ const PurchaseOrdersPage = ({ user }) => {
                                         error={formErrors.supplier_id?.[0]}
                                         required
                                     />
-                                    <Input
-                                        label="Ngày đặt hàng"
-                                        type="date"
-                                        name="order_date"
-                                        value={formData.order_date}
+                                    <Textarea
+                                        label="Ghi chú đơn hàng"
+                                        name="note"
+                                        value={formData.note}
                                         onChange={handleInputChange}
-                                        error={formErrors.order_date?.[0]}
-                                        required
-                                    />
-                                    <Input
-                                        label="Ngày giao dự kiến"
-                                        type="date"
-                                        name="expected_delivery_date"
-                                        value={formData.expected_delivery_date}
-                                        onChange={handleInputChange}
-                                        error={formErrors.expected_delivery_date?.[0]}
-                                    />
-                                    <Input
-                                        label="Người liên hệ"
-                                        value={selectedSupplier?.contact_person || ''}
-                                        disabled
-                                        placeholder="Tự động theo nhà cung cấp"
+                                        rows={3}
+                                        error={formErrors.note?.[0]}
                                     />
                                 </div>
                             </Card>
@@ -553,27 +506,36 @@ const PurchaseOrdersPage = ({ user }) => {
                             <Card className="p-5">
                                 <div className="mb-4 flex items-center justify-between gap-4">
                                     <div>
-                                        <h3 className="text-lg font-semibold text-text">Khối 2 · Danh sách sản phẩm</h3>
-                                        <p className="mt-1 text-sm text-text-muted">Nhập từng dòng sản phẩm theo dạng bảng nhỏ: tên, số lượng, đơn giá và thành tiền.</p>
+                                        <h3 className="text-lg font-semibold text-text">Khối 2 · Danh sách thiết bị</h3>
+                                        <p className="mt-1 text-sm text-text-muted">Nhập từng dòng thiết bị cần đặt: tên, đơn vị, số lượng và ghi chú.</p>
                                     </div>
                                     <Button type="button" variant="outline" onClick={handleAddItem}>
-                                        Thêm sản phẩm
+                                        Thêm thiết bị
                                     </Button>
                                 </div>
 
                                 <div className="space-y-4">
                                     {formData.items.map((item, index) => (
                                         <Card key={`item-${index}`} className="border border-border p-4 shadow-none">
-                                            <div className="mb-3 flex items-center justify-between gap-3">
-                                                <div className="text-sm font-semibold text-text">Dòng sản phẩm #{index + 1}</div>
-                                                <div className="text-sm font-semibold text-primary">
-                                                    {formatCurrency(Number(item.qty || 0) * Number(item.unit_price || 0))}
-                                                </div>
+                                            <div className="mb-3 flex items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveItem(index)}
+                                                    disabled={formData.items.length === 1}
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                                    title="Gỡ thiết bị khỏi đơn hàng"
+                                                    aria-label={`Gỡ dòng thiết bị ${index + 1}`}
+                                                >
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1m-6-3h4a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z" />
+                                                    </svg>
+                                                </button>
+                                                <div className="text-sm font-semibold text-text">Dòng thiết bị #{index + 1}</div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.6fr_0.8fr_0.7fr_0.9fr]">
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.8fr_0.8fr_0.7fr]">
                                                 <Input
-                                                    label="Tên sản phẩm"
+                                                    label="Chọn thiết bị"
                                                     value={item.item_name}
                                                     onChange={(event) => handleItemChange(index, 'item_name', event.target.value)}
                                                     error={formErrors[`items.${index}.item_name`]?.[0]}
@@ -596,110 +558,21 @@ const PurchaseOrdersPage = ({ user }) => {
                                                     error={formErrors[`items.${index}.qty`]?.[0]}
                                                     required
                                                 />
-                                                <Input
-                                                    label="Đơn giá"
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={item.unit_price}
-                                                    onChange={(event) => handleItemChange(index, 'unit_price', event.target.value)}
-                                                    error={formErrors[`items.${index}.unit_price`]?.[0]}
-                                                    required
-                                                />
                                             </div>
 
-                                            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-start">
+                                            <div className="mt-4">
                                                 <Textarea
-                                                    label="Ghi chú sản phẩm"
+                                                    label="Ghi chú thiết bị"
                                                     value={item.note}
                                                     onChange={(event) => handleItemChange(index, 'note', event.target.value)}
                                                     rows={2}
                                                     error={formErrors[`items.${index}.note`]?.[0]}
                                                 />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="text-red-600 hover:text-red-700"
-                                                    onClick={() => handleRemoveItem(index)}
-                                                    disabled={formData.items.length === 1}
-                                                >
-                                                    Gỡ sản phẩm
-                                                </Button>
                                             </div>
                                         </Card>
                                     ))}
                                 </div>
                             </Card>
-                        </div>
-
-                        <div className="space-y-6">
-                            <Card className="p-5">
-                                <div className="mb-4">
-                                    <h3 className="text-lg font-semibold text-text">Khối 3 · Thanh toán & giao hàng</h3>
-                                    <p className="mt-1 text-sm text-text-muted">Theo dõi phương thức thanh toán và trạng thái vận chuyển của đơn hàng.</p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <Input
-                                        label="Phương thức thanh toán"
-                                        name="payment_method"
-                                        value={formData.payment_method}
-                                        onChange={handleInputChange}
-                                        placeholder="Ví dụ: Chuyển khoản"
-                                        error={formErrors.payment_method?.[0]}
-                                    />
-                                    <Select
-                                        label="Trạng thái giao hàng"
-                                        value={formData.status}
-                                        onChange={(event) => handleInputChange({
-                                            target: { name: 'status', value: event.target.value },
-                                        })}
-                                        options={statusSelectOptions}
-                                        error={formErrors.status?.[0]}
-                                        required
-                                    />
-                                    <Textarea
-                                        label="Ghi chú đơn hàng"
-                                        name="note"
-                                        value={formData.note}
-                                        onChange={handleInputChange}
-                                        rows={4}
-                                        error={formErrors.note?.[0]}
-                                    />
-                                </div>
-                            </Card>
-
-                            <Card className="p-5">
-                                <div className="mb-4">
-                                    <h3 className="text-lg font-semibold text-text">Tổng hợp đơn hàng</h3>
-                                    <p className="mt-1 text-sm text-text-muted">Kiểm tra nhanh tổng giá trị và thông tin nhà cung cấp trước khi lưu.</p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="rounded-xl bg-surface-muted px-4 py-3">
-                                        <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">Nhà cung cấp</div>
-                                        <div className="mt-1 font-medium text-text">{selectedSupplier?.name || 'Chưa chọn nhà cung cấp'}</div>
-                                        <div className="text-sm text-text-muted">{selectedSupplier?.code || selectedSupplier?.email || 'Thông tin sẽ hiện sau khi chọn'}</div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="rounded-xl border border-border px-4 py-3">
-                                            <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">Số dòng</div>
-                                            <div className="mt-1 text-2xl font-semibold text-text">{formData.items.length}</div>
-                                        </div>
-                                        <div className="rounded-xl border border-border px-4 py-3">
-                                            <div className="text-xs font-semibold uppercase tracking-wide text-text-muted">Tổng SL</div>
-                                            <div className="mt-1 text-2xl font-semibold text-text">
-                                                {formData.items.reduce((total, item) => total + Number(item.qty || 0), 0)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="rounded-2xl bg-primary/10 px-4 py-4">
-                                        <div className="text-xs font-semibold uppercase tracking-wide text-primary">Tổng cộng</div>
-                                        <div className="mt-2 text-3xl font-semibold text-text">{formatCurrency(orderGrandTotal)}</div>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
                     </div>
 
                     <div className="flex justify-end gap-3 border-t border-border pt-4">

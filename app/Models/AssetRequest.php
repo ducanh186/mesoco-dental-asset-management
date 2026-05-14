@@ -37,7 +37,7 @@ class AssetRequest extends Model
     /**
      * Request statuses
      */
-    public const STATUSES = ['SUBMITTED', 'APPROVED', 'REJECTED', 'CANCELLED'];
+    public const STATUSES = ['SUBMITTED', 'APPROVED', 'REJECTED'];
 
     public const STATUS_SUBMITTED = 'SUBMITTED';
     public const STATUS_APPROVED = 'APPROVED';

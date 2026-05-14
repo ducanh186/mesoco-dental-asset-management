@@ -239,6 +239,12 @@ class InventoryController extends Controller
         $totalAssets = Asset::count();
         $assignedCount = Asset::assigned()->count();
         $unassignedCount = $totalAssets - $assignedCount;
+        $inventoryingCount = InventoryCheckItem::query()
+            ->whereHas('inventoryCheck', function ($query) {
+                $query->where('status', InventoryCheck::STATUS_IN_PROGRESS);
+            })
+            ->distinct('asset_id')
+            ->count('asset_id');
 
         // Valuation totals (only assets with purchase_cost)
         $valuationStats = Asset::withValuation()
@@ -270,6 +276,7 @@ class InventoryController extends Controller
                 'by_status' => [
                     'active' => $statusCounts[Asset::STATUS_ACTIVE] ?? 0,
                     'maintenance' => $statusCounts[Asset::STATUS_MAINTENANCE] ?? 0,
+                    'inventorying' => $inventoryingCount,
                     'off_service' => $statusCounts[Asset::STATUS_OFF_SERVICE] ?? 0,
                     'retired' => $statusCounts[Asset::STATUS_RETIRED] ?? 0,
                 ],
