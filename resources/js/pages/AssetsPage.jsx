@@ -754,10 +754,10 @@ const AssetsPage = () => {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                         <div className="xl:col-span-2">
                             <Input
-                                placeholder="Tìm theo mã, serial, QR, model, vị trí hoặc người đang giữ"
+                                placeholder="Tìm theo mã, serial, QR, model hoặc vị trí"
                                 value={searchQuery}
                                 onChange={(e) => handleSearchChange(e.target.value)}
-                                helper="Tìm theo mã thiết bị, serial, QR, model, vị trí và người phụ trách"
+                                helper="Tìm theo mã thiết bị, serial, QR, model và vị trí"
                             />
                         </div>
                         <Select

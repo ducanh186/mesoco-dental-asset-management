@@ -142,6 +142,8 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
 
     const managerBfdItems = [
         navItems.dashboard,
+        navItems.qrScan,
+        navItems.reviewRequests,
         bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
             navItems.assets,
             navItems.locations,
@@ -151,9 +153,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.purchaseOrders,
         ]),
         bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
-            navItems.qrScan,
             navItems.requests,
-            navItems.reviewRequests,
             navItems.handover,
         ]),
         bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
@@ -177,6 +177,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
 
     const technicianBfdItems = [
         navItems.dashboard,
+        navItems.qrScan,
         bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
             navItems.assets,
             navItems.locations,
@@ -186,7 +187,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.purchaseOrders,
         ]),
         bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
-            navItems.qrScan,
             navItems.requests,
             navItems.handover,
         ]),
@@ -211,12 +211,8 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
 
     const employeeBfdItems = [
         navItems.dashboard,
-        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
-            navItems.qrScan,
-        ]),
-        bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
-            navItems.requests,
-        ]),
+        navItems.qrScan,
+        navItems.requests,
     ];
 
     const supplierBfdItems = [
