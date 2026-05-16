@@ -44,7 +44,7 @@ const MaintenancePage = ({ user }) => {
     const [formLoading, setFormLoading] = useState(false);
 
     const [formData, setFormData] = useState({
-        type: 'inspection',
+        type: 'preventive',
         planned_at: '',
         priority: 'normal',
         note: '',
@@ -62,17 +62,11 @@ const MaintenancePage = ({ user }) => {
     ];
 
     const typeOptions = [
-        { value: '', label: 'Tất cả loại' },
-        { value: 'inspection', label: 'Kiểm tra' },
-        { value: 'preventive', label: 'Bảo trì định kỳ' },
-        { value: 'software_update', label: 'Cập nhật phần mềm' },
-        { value: 'hardware_upgrade', label: 'Nâng cấp phần cứng' },
-        { value: 'calibration', label: 'Hiệu chuẩn' },
-        { value: 'repair', label: 'Sửa chữa' },
-        { value: 'cleaning', label: 'Vệ sinh' },
-        { value: 'replacement', label: 'Thay thế linh kiện' },
-        { value: 'other', label: 'Khác' },
+        { value: '', label: 'Tất cả nhóm' },
+        { value: 'maintenance_group', label: 'Bảo trì' },
+        { value: 'repair_group', label: 'Sửa chữa' },
     ];
+    const repairTypes = ['repair', 'replacement'];
 
     const priorityOptions = [
         { value: 'low', label: 'Thấp' },
@@ -110,7 +104,6 @@ const MaintenancePage = ({ user }) => {
                 page: currentPage,
                 per_page: 15,
                 status: statusFilter || undefined,
-                type: typeFilter || undefined,
             });
 
             setEvents(response.data || []);
@@ -149,7 +142,13 @@ const MaintenancePage = ({ user }) => {
         }
     };
 
-    const getTypeLabel = (type) => typeOptions.find((option) => option.value === type)?.label || 'Khác';
+    const getMaintenanceGroup = (type) => (
+        repairTypes.includes(type) ? 'repair_group' : 'maintenance_group'
+    );
+    const createTypeFromGroup = (group) => (
+        group === 'repair_group' ? 'repair' : 'preventive'
+    );
+    const getTypeLabel = (type) => getMaintenanceGroup(type) === 'repair_group' ? 'Sửa chữa' : 'Bảo trì';
     const getPriorityLabel = (priority) => priorityOptions.find((option) => option.value === priority)?.label || 'Không xác định';
     const getStatusLabel = (status) => statusOptions.find((option) => option.value === status)?.label || 'Không xác định';
 
@@ -227,6 +226,10 @@ const MaintenancePage = ({ user }) => {
     };
 
     const filteredEvents = events.filter((event) => {
+        if (typeFilter && getMaintenanceGroup(event.type) !== typeFilter) {
+            return false;
+        }
+
         if (!searchQuery.trim()) {
             return true;
         }
@@ -277,7 +280,7 @@ const MaintenancePage = ({ user }) => {
 
     const resetForm = () => {
         setFormData({
-            type: 'inspection',
+            type: 'preventive',
             planned_at: '',
             priority: 'normal',
             note: '',
@@ -557,9 +560,10 @@ const MaintenancePage = ({ user }) => {
                             <label className="block text-sm font-medium text-text mb-1">Loại bảo trì *</label>
                             <Select
                                 options={typeOptions.filter((option) => option.value)}
-                                value={formData.type}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
+                                value={getMaintenanceGroup(formData.type)}
+                                onChange={(e) => setFormData((prev) => ({ ...prev, type: createTypeFromGroup(e.target.value) }))}
                             />
+                            <p className="mt-1 text-xs text-text-muted">Bảo trì định kỳ nên được lập theo chu kỳ 6-12 tháng.</p>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text mb-1">Ngày dự kiến *</label>

@@ -11,6 +11,9 @@ class UserFacingCopyTest extends TestCase
         $assetsPage = file_get_contents(resource_path('js/pages/AssetsPage.jsx'));
         $locationsPage = file_get_contents(resource_path('js/pages/LocationsPage.jsx'));
         $purchaseOrdersPage = file_get_contents(resource_path('js/pages/PurchaseOrdersPage.jsx'));
+        $maintenancePage = file_get_contents(resource_path('js/pages/MaintenancePage.jsx'));
+        $inventoryPage = file_get_contents(resource_path('js/pages/InventoryPage.jsx'));
+        $reportPage = file_get_contents(resource_path('js/pages/ReportPage.jsx'));
         $sidebar = file_get_contents(resource_path('js/layouts/Sidebar.jsx'));
         $vi = file_get_contents(resource_path('js/i18n/locales/vi.js'));
 
@@ -50,6 +53,16 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringNotContainsString('Đang giao', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Đơn giá', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Thanh toán', $purchaseOrdersPage);
+
+        $this->assertStringContainsString("value: 'maintenance_group', label: 'Bảo trì'", $maintenancePage);
+        $this->assertStringContainsString("value: 'repair_group', label: 'Sửa chữa'", $maintenancePage);
+        $this->assertStringNotContainsString("value: 'inspection', label: 'Kiểm tra'", $maintenancePage);
+        $this->assertStringNotContainsString("{ value: 'inventorying'", $inventoryPage);
+        $this->assertStringNotContainsString('Đang kiểm kê</p>', $inventoryPage);
+        $this->assertStringContainsString('Báo cáo trạng thái thiết bị', $reportPage);
+        $this->assertStringContainsString('Báo cáo khấu hao / giá trị còn lại', $reportPage);
+        $this->assertStringContainsString('Báo cáo đề xuất thu hủy', $reportPage);
+        $this->assertStringContainsString('Báo cáo phân tích vòng đời', $reportPage);
 
         $this->assertStringNotContainsString('Sơ đồ chức năng BFD', $sidebar);
         $this->assertStringContainsString('Quản lý hồ sơ', $vi);

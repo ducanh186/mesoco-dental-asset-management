@@ -37,6 +37,7 @@ class ReportTest extends TestCase
                 'maintenance',
                 'disposal',
                 'inventory',
+                'report_types',
             ]);
     }
 
@@ -93,7 +94,11 @@ class ReportTest extends TestCase
             ->assertJsonPath('assets.total', 11)
             ->assertJsonPath('assets.active', 5)
             ->assertJsonPath('assets.locked', 3) // off_service + maintenance
-            ->assertJsonPath('assets.retired', 3);
+            ->assertJsonPath('assets.retired', 3)
+            ->assertJsonPath('report_types.0.key', 'device_status')
+            ->assertJsonPath('report_types.1.key', 'depreciation_remaining_value')
+            ->assertJsonPath('report_types.2.key', 'disposal_proposal')
+            ->assertJsonPath('report_types.3.key', 'lifecycle_analysis');
     }
 
     // =========================================================================

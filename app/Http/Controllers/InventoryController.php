@@ -316,7 +316,7 @@ class InventoryController extends Controller
         $perPage = min($request->input('per_page', 15), 100);
         $warrantyThresholdDays = config('inventory.warranty_expiry_threshold_days', 30);
 
-        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'locationDefinition'])
+        $query = Asset::with(['currentAssignment.employee', 'currentAssignment.assignedByUser', 'locationDefinition', 'latestInventoryItem.countedBy'])
             ->search($request->input('search'))
             ->byType($request->input('type'))
             ->byStatus($request->input('status'))
@@ -354,7 +354,8 @@ class InventoryController extends Controller
                 'asset_code' => $asset->asset_code,
                 'name' => $asset->name,
                 'type' => $asset->type,
-                'category' => $asset->category,
+                'category' => Asset::displayCategory($asset->category),
+                'raw_category' => $asset->category,
                 'location' => $this->transformLocation($asset),
                 'location_name' => $this->locationLabel($asset),
                 'status' => $asset->status,
@@ -366,6 +367,13 @@ class InventoryController extends Controller
                 'warranty_days_left' => $asset->getWarrantyDaysLeft(),
                 'is_warranty_expiring_soon' => $asset->isWarrantyExpiringSoon($warrantyThresholdDays),
                 'current_book_value' => $asset->getCurrentBookValue(),
+                'depreciation_percentage' => $asset->getDepreciationPercentage(),
+                'last_checked_at' => $asset->latestInventoryItem?->checked_at?->toISOString(),
+                'actual_condition' => $asset->latestInventoryItem?->condition_note,
+                'checker' => $asset->latestInventoryItem?->countedBy ? [
+                    'id' => $asset->latestInventoryItem->countedBy->id,
+                    'name' => $asset->latestInventoryItem->countedBy->name,
+                ] : null,
                 'assigned_to' => $asset->currentAssignment ? [
                     'id' => $asset->currentAssignment->id,
                     'name' => $asset->currentAssignment->employee?->full_name,

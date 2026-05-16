@@ -111,7 +111,14 @@ class InventoryApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'assets',
+                'assets' => [
+                    '*' => [
+                        'depreciation_percentage',
+                        'last_checked_at',
+                        'actual_condition',
+                        'checker',
+                    ],
+                ],
                 'pagination' => ['current_page', 'last_page', 'per_page', 'total'],
                 'filters' => ['types', 'statuses', 'categories', 'locations'],
             ]);
@@ -152,14 +159,15 @@ class InventoryApiTest extends TestCase
             'purchase_cost' => 10000,
         ]);
 
-        $response = $this->actingAs($this->admin)->getJson('/api/inventory/assets?category=Server');
+        $response = $this->actingAs($this->admin)->getJson('/api/inventory/assets?category=PC');
 
         $response->assertStatus(200);
         
         $assets = $response->json('assets');
         foreach ($assets as $asset) {
-            $this->assertEquals('Server', $asset['category']);
+            $this->assertEquals('PC', $asset['category']);
         }
+        $this->assertContains('Server', array_column($assets, 'raw_category'));
     }
 
     public function test_inventory_assets_filters_by_canonical_location_code(): void

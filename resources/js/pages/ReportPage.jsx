@@ -32,6 +32,7 @@ const ReportPage = ({ user }) => {
     // State
     const [loading, setLoading] = useState(true);
     const [report, setReport] = useState(null);
+    const [exportingType, setExportingType] = useState(null);
     
     // Date range
     const [fromDate, setFromDate] = useState(() => {
@@ -65,6 +66,22 @@ const ReportPage = ({ user }) => {
         fetchReport();
     };
 
+    const handleExport = async (type) => {
+        setExportingType(type.key);
+        try {
+            await reportsApi.export({
+                type: type.key,
+                from: fromDate,
+                to: toDate,
+            });
+            toast.success(`Đã tạo tệp ${type.label}.`);
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setExportingType(null);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -74,6 +91,12 @@ const ReportPage = ({ user }) => {
     }
 
     const { assets, maintenance, requests, disposal } = report || {};
+    const reportTypes = report?.report_types || [
+        { key: 'device_status', label: 'Báo cáo trạng thái thiết bị', exportable: true },
+        { key: 'depreciation_remaining_value', label: 'Báo cáo khấu hao / giá trị còn lại', exportable: true },
+        { key: 'disposal_proposal', label: 'Báo cáo đề xuất thu hủy', exportable: true },
+        { key: 'lifecycle_analysis', label: 'Báo cáo phân tích vòng đời', exportable: true, method: 'rule_based' },
+    ];
 
     return (
         <div className="report-page space-y-6">
@@ -105,6 +128,39 @@ const ReportPage = ({ user }) => {
                                 Làm mới
                             </Button>
                         </div>
+                    </div>
+                </CardBody>
+            </Card>
+
+            <Card>
+                <CardHeader
+                    title="Tạo / xuất báo cáo"
+                    subtitle="Các mẫu báo cáo quản trị hiện có trong hệ thống."
+                />
+                <CardBody>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        {reportTypes.map((type) => (
+                            <div key={type.key} className="border border-border rounded-lg p-4 space-y-3">
+                                <div>
+                                    <h3 className="font-semibold text-text">{type.label}</h3>
+                                    {type.method === 'rule_based' && (
+                                        <p className="text-xs text-text-muted mt-1">Phân tích dựa trên quy tắc.</p>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={handleRefresh}>
+                                        Tạo báo cáo
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => handleExport(type)}
+                                        disabled={!type.exportable || exportingType === type.key}
+                                    >
+                                        {exportingType === type.key ? 'Đang xuất...' : 'Xuất'}
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </CardBody>
             </Card>

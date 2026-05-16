@@ -386,6 +386,11 @@ class Asset extends Model
         return $this->hasMany(InventoryCheckItem::class);
     }
 
+    public function latestInventoryItem(): HasOne
+    {
+        return $this->hasOne(InventoryCheckItem::class)->latestOfMany('checked_at');
+    }
+
     public function latestDisposal(): HasOne
     {
         return $this->hasOne(Disposal::class)->latest('disposed_at');

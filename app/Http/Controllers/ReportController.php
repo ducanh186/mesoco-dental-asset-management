@@ -46,7 +46,35 @@ class ReportController extends Controller
             'maintenance' => $this->getMaintenanceStats($fromDate, $toDate),
             'disposal' => $this->getDisposalStats($fromDate, $toDate),
             'inventory' => $this->getInventoryStats($fromDate, $toDate),
+            'report_types' => $this->reportTypes(),
         ]);
+    }
+
+    protected function reportTypes(): array
+    {
+        return [
+            [
+                'key' => 'device_status',
+                'label' => 'Báo cáo trạng thái thiết bị',
+                'exportable' => true,
+            ],
+            [
+                'key' => 'depreciation_remaining_value',
+                'label' => 'Báo cáo khấu hao / giá trị còn lại',
+                'exportable' => true,
+            ],
+            [
+                'key' => 'disposal_proposal',
+                'label' => 'Báo cáo đề xuất thu hủy',
+                'exportable' => true,
+            ],
+            [
+                'key' => 'lifecycle_analysis',
+                'label' => 'Báo cáo phân tích vòng đời',
+                'exportable' => true,
+                'method' => 'rule_based',
+            ],
+        ];
     }
 
     /**

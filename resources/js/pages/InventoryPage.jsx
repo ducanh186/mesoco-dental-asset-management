@@ -290,6 +290,23 @@ const InventoryPage = ({ user }) => {
             render: (value) => <span className="font-medium">{formatCurrency(value)}</span>
         },
         {
+            key: 'depreciation_percentage',
+            label: 'Khấu hao %',
+            align: 'right',
+            render: (value) => value === null || value === undefined ? '—' : `${value}%`
+        },
+        {
+            key: 'last_checked_at',
+            label: 'Kiểm kê gần nhất',
+            render: (value, row) => (
+                <div>
+                    <p className="text-sm text-text">{formatDate(value)}</p>
+                    <p className="text-xs text-text-muted">{row.checker?.name || 'Chưa có người kiểm'}</p>
+                    <p className="text-xs text-text-muted">{row.actual_condition || 'Chưa ghi nhận tình trạng'}</p>
+                </div>
+            )
+        },
+        {
             key: 'actions',
             label: '',
             align: 'right',
@@ -393,7 +410,6 @@ const InventoryPage = ({ user }) => {
         { value: '', label: 'Tất cả trạng thái' },
         { value: 'active', label: 'Sẵn sàng' },
         { value: 'maintenance', label: 'Đang bảo trì' },
-        { value: 'inventorying', label: 'Đang kiểm kê' },
         { value: 'retired', label: 'Đã thu hủy' },
     ];
 
@@ -422,7 +438,7 @@ const InventoryPage = ({ user }) => {
     return (
         <div className="inventory-page space-y-6">
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {summaryLoading ? (
                     <div className="col-span-5 flex justify-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -458,14 +474,6 @@ const InventoryPage = ({ user }) => {
                                 <div className="text-center">
                                     <p className="text-3xl font-bold text-warning">{summary.summary.by_status.maintenance}</p>
                                     <p className="text-sm text-text-muted">Đang bảo trì</p>
-                                </div>
-                            </CardBody>
-                        </Card>
-                        <Card>
-                            <CardBody>
-                                <div className="text-center">
-                                    <p className="text-3xl font-bold text-info">{summary.summary.by_status.inventorying}</p>
-                                    <p className="text-sm text-text-muted">Đang kiểm kê</p>
                                 </div>
                             </CardBody>
                         </Card>
