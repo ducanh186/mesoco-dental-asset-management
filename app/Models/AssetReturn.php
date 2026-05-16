@@ -18,6 +18,7 @@ class AssetReturn extends Model
         'admin_id',
         'return_date',
         'reason',
+        'return_condition',
         'approved_by',
     ];
 

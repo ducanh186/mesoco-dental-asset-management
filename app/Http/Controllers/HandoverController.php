@@ -76,6 +76,7 @@ class HandoverController extends Controller
             'assigned_at' => $assignment->assign_date?->toDateString(),
             'returned_at' => $returnRecord?->return_date?->toDateString(),
             'return_reason' => $returnRecord?->reason,
+            'return_condition' => $returnRecord?->return_condition,
             'status' => $returnRecord ? 'returned' : 'active',
             'note' => $assignment->note,
             'assets' => $assignment->details->map(fn ($detail) => [

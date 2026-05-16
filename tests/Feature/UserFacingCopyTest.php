@@ -34,6 +34,11 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringNotContainsString('Hiển thị cả vị trí ngưng sử dụng', $locationsPage);
         $this->assertStringNotContainsString('nơi đặt tài sản', $locationsPage);
 
+        $reviewRequestsPage = file_get_contents(resource_path('js/pages/ReviewRequestsPage.jsx'));
+        $this->assertStringContainsString('openReviewModal(selectedRequest', $reviewRequestsPage);
+        $this->assertStringNotContainsString("openReviewModal(row, 'APPROVE')", $reviewRequestsPage);
+        $this->assertStringNotContainsString("openReviewModal(row, 'REJECT')", $reviewRequestsPage);
+
         $suppliersPage = file_get_contents(resource_path('js/pages/SuppliersPage.jsx'));
         $this->assertStringContainsString('Mã/ID nhà cung cấp', $suppliersPage);
         $this->assertStringContainsString("key: 'note'", $suppliersPage);

@@ -230,6 +230,13 @@ class AssetLocationResponsibilityTest extends TestCase
 
         $this->actingAs($manager)
             ->postJson("/api/assets/{$asset->id}/unassign")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['return_condition']);
+
+        $this->actingAs($manager)
+            ->postJson("/api/assets/{$asset->id}/unassign", [
+                'return_condition' => 'Thiết bị hoạt động bình thường khi thu hồi.',
+            ])
             ->assertOk()
             ->assertJsonPath('previous_assignment.staff_id', $staffUserId)
             ->assertJsonPath('previous_assignment.employee_id', $employee->id);
@@ -239,6 +246,7 @@ class AssetLocationResponsibilityTest extends TestCase
             'staff_id' => $staffUserId,
             'admin_id' => $manager->id,
             'approved_by' => $manager->id,
+            'return_condition' => 'Thiết bị hoạt động bình thường khi thu hồi.',
         ]);
 
         $this->assertDatabaseMissing('asset_assignments', [

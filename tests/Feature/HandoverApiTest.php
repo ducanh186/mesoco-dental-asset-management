@@ -55,6 +55,7 @@ class HandoverApiTest extends TestCase
             'approved_by' => $manager->id,
             'return_date' => now()->subDays(2),
             'reason' => 'Thu hồi sau dự án',
+            'return_condition' => 'Màn hình còn dùng tốt',
         ]);
 
         $this->actingAs($manager)
@@ -64,10 +65,11 @@ class HandoverApiTest extends TestCase
             ->assertJsonPath('summary.active', 1)
             ->assertJsonPath('summary.returned', 1)
             ->assertJsonPath('summary.assets', 2)
+            ->assertJsonFragment(['return_condition' => 'Màn hình còn dùng tốt'])
             ->assertJsonPath('data.0.staff_name', 'Nhan vien A')
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['id', 'code', 'staff_name', 'status', 'assets', 'assigned_at', 'returned_at'],
+                    '*' => ['id', 'code', 'staff_name', 'status', 'assets', 'assigned_at', 'returned_at', 'return_condition'],
                 ],
             ]);
     }

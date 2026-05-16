@@ -62,6 +62,7 @@ const AssetsPage = () => {
     const [handoverModalOpen, setHandoverModalOpen] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [confirmUnassignOpen, setConfirmUnassignOpen] = useState(false);
+    const [returnCondition, setReturnCondition] = useState('');
 
     const [createLoading, setCreateLoading] = useState(false);
     const [handoverLoading, setHandoverLoading] = useState(false);
@@ -584,9 +585,17 @@ const AssetsPage = () => {
         }
 
         try {
-            await assetsApi.unassign(selectedAsset.id);
+            if (!returnCondition.trim()) {
+                toast.error('Vui lòng nhập tình trạng thiết bị khi thu hồi.');
+                return;
+            }
+
+            await assetsApi.unassign(selectedAsset.id, {
+                return_condition: returnCondition.trim(),
+            });
             toast.success('Đã bỏ nhân viên chịu trách nhiệm.');
             setConfirmUnassignOpen(false);
+            setReturnCondition('');
             const updated = await assetsApi.get(selectedAsset.id);
             setSelectedAsset(updated.asset);
             fetchAssets();
@@ -1141,7 +1150,14 @@ const AssetsPage = () => {
 
                                     <div className="grid grid-cols-1 gap-3">
                                         {selectedAsset.current_assignment ? (
-                                            <Button variant="danger" fullWidth onClick={() => setConfirmUnassignOpen(true)}>
+                                            <Button
+                                                variant="danger"
+                                                fullWidth
+                                                onClick={() => {
+                                                    setReturnCondition('');
+                                                    setConfirmUnassignOpen(true);
+                                                }}
+                                            >
                                                 Bỏ người phụ trách
                                             </Button>
                                         ) : (
@@ -1218,15 +1234,35 @@ const AssetsPage = () => {
                 </div>
             )}
 
-            <ConfirmModal
+            <Modal
                 isOpen={confirmUnassignOpen}
                 onClose={() => setConfirmUnassignOpen(false)}
-                onConfirm={handleUnassignAsset}
-                title="Bỏ người phụ trách"
-                message={`Bạn có chắc muốn bỏ người phụ trách của ${selectedAsset?.name || ''}?`}
-                confirmText="Xác nhận"
-                variant="warning"
-            />
+                title="Thu hồi thiết bị"
+                size="sm"
+                footer={
+                    <div className="flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => setConfirmUnassignOpen(false)}>
+                            Hủy
+                        </Button>
+                        <Button variant="warning" onClick={handleUnassignAsset}>
+                            Xác nhận thu hồi
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-3">
+                    <p className="text-sm text-text-muted">
+                        Nhập tình trạng thiết bị tại thời điểm thu hồi {selectedAsset?.name || ''}.
+                    </p>
+                    <textarea
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                        rows={3}
+                        value={returnCondition}
+                        onChange={(event) => setReturnCondition(event.target.value)}
+                        placeholder="VD: Hoạt động bình thường, trầy nhẹ vỏ máy"
+                    />
+                </div>
+            </Modal>
 
             <ConfirmModal
                 isOpen={confirmDeleteOpen}

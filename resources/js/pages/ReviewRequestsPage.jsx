@@ -292,24 +292,6 @@ const ReviewRequestsPage = ({ user }) => {
                     <Button size="sm" variant="ghost" onClick={() => handleViewDetail(row)}>
                         {t('common.view')}
                     </Button>
-                    {row.can_be_reviewed && (
-                        <>
-                            <Button 
-                                size="sm" 
-                                variant="success" 
-                                onClick={() => openReviewModal(row, 'APPROVE')}
-                            >
-                                {t('review.approve')}
-                            </Button>
-                            <Button 
-                                size="sm" 
-                                variant="danger" 
-                                onClick={() => openReviewModal(row, 'REJECT')}
-                            >
-                                {t('review.reject')}
-                            </Button>
-                        </>
-                    )}
                 </div>
             )
         }

@@ -140,8 +140,8 @@ export const assetsApi = {
      * Unassign asset from current employee
      * POST /api/assets/{id}/unassign
      */
-    unassign: async (id) => {
-        const response = await axios.post(`/api/assets/${id}/unassign`);
+    unassign: async (id, payload = {}) => {
+        const response = await axios.post(`/api/assets/${id}/unassign`, payload);
         return response.data;
     },
 

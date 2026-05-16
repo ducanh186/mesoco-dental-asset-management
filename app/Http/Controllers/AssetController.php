@@ -391,7 +391,11 @@ class AssetController extends Controller
      */
     public function unassign(Request $request, Asset $asset): JsonResponse
     {
-        return DB::transaction(function () use ($request, $asset) {
+        $validated = $request->validate([
+            'return_condition' => ['required', 'string', 'max:255'],
+        ]);
+
+        return DB::transaction(function () use ($request, $asset, $validated) {
             // Find and lock the active assignment
             $currentAssignment = AssetAssignment::where('asset_id', $asset->id)
                 ->whereNull('unassigned_at')
@@ -427,6 +431,7 @@ class AssetController extends Controller
                     'admin_id' => $request->user()?->id,
                     'return_date' => now(),
                     'reason' => 'Returned from asset workspace.',
+                    'return_condition' => $validated['return_condition'],
                     'approved_by' => $request->user()?->id,
                 ]);
             }
