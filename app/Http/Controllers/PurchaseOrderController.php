@@ -10,6 +10,9 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class PurchaseOrderController extends Controller
 {
@@ -33,7 +36,7 @@ class PurchaseOrderController extends Controller
         }
 
         if ($status = $request->query('status')) {
-            $query->where('status', PurchaseOrder::normalizeStatus($status));
+            $query->whereIn('status', PurchaseOrder::statusesForFilter($status));
         }
 
         $perPage = (int) $request->query('per_page', 15);
@@ -45,8 +48,12 @@ class PurchaseOrderController extends Controller
         $summaryQuery = $this->visibleOrdersQuery($user);
 
         if ($status = $request->query('status')) {
-            $summaryQuery->where('status', PurchaseOrder::normalizeStatus($status));
+            $summaryQuery->whereIn('status', PurchaseOrder::statusesForFilter($status));
         }
+
+        $pendingDeliveryCount = (clone $summaryQuery)
+            ->whereIn('status', [PurchaseOrder::STATUS_PREPARING, PurchaseOrder::STATUS_SHIPPING])
+            ->count();
 
         return response()->json([
             'data' => collect($orders->items())->map(fn (PurchaseOrder $order) => $this->serializeOrder($order))->all(),
@@ -56,7 +63,8 @@ class PurchaseOrderController extends Controller
             'total' => $orders->total(),
             'summary' => [
                 'total' => (clone $summaryQuery)->count(),
-                'preparing' => (clone $summaryQuery)->where('status', PurchaseOrder::STATUS_PREPARING)->count(),
+                'pending_delivery' => $pendingDeliveryCount,
+                'preparing' => $pendingDeliveryCount,
                 'shipping' => (clone $summaryQuery)->where('status', PurchaseOrder::STATUS_SHIPPING)->count(),
                 'delivered' => (clone $summaryQuery)->where('status', PurchaseOrder::STATUS_DELIVERED)->count(),
             ],
@@ -100,9 +108,12 @@ class PurchaseOrderController extends Controller
             ]);
         });
 
+        $supplierNotification = $this->notifySupplier($order);
+
         return response()->json([
             'message' => 'Tạo đơn hàng thành công.',
             'data' => $this->serializeOrder($order),
+            'supplier_notification' => $supplierNotification,
         ], 201);
     }
 
@@ -110,7 +121,7 @@ class PurchaseOrderController extends Controller
     {
         $order = $this->findAccessibleOrder($request->user(), $purchaseOrder->id);
 
-        if (!$request->user()->hasOperationalAccess()) {
+        if (!$request->user()->isManager()) {
             abort(403);
         }
 
@@ -145,7 +156,7 @@ class PurchaseOrderController extends Controller
 
     public function destroy(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
     {
-        if (!$request->user()->hasOperationalAccess()) {
+        if (!$request->user()->isManager()) {
             abort(403);
         }
 
@@ -192,12 +203,18 @@ class PurchaseOrderController extends Controller
             ])
             ->withCount('items');
 
+        if ($user->isManager()) {
+            return $query;
+        }
+
         if ($user->isSupplier()) {
             abort_if(!$user->supplier_id, 403, 'Tài khoản nhà cung cấp chưa được liên kết.');
             $query->where('supplier_id', $user->supplier_id);
+
+            return $query;
         }
 
-        return $query;
+        abort(403);
     }
 
     private function findAccessibleOrder(User $user, int $orderId): PurchaseOrder
@@ -256,6 +273,7 @@ class PurchaseOrderController extends Controller
             'order_date' => optional($order->order_date)->format('Y-m-d'),
             'expected_delivery_date' => optional($order->expected_delivery_date)->format('Y-m-d'),
             'status' => $order->status,
+            'status_label' => PurchaseOrder::displayStatus($order->status),
             'payment_method' => $order->payment_method,
             'total_amount' => $order->total_amount,
             'note' => $order->note,
@@ -291,5 +309,44 @@ class PurchaseOrderController extends Controller
                 ];
             })->values()->all(),
         ];
+    }
+
+    private function notifySupplier(PurchaseOrder $order): array
+    {
+        $order->loadMissing(['supplier:id,code,name,contact_person,email', 'items']);
+        $email = $order->supplier?->email;
+
+        if (!$email) {
+            return [
+                'status' => 'skipped',
+                'message' => 'Nhà cung cấp chưa có email để nhận thông báo.',
+            ];
+        }
+
+        try {
+            Mail::raw(
+                "Đơn hàng {$order->order_code} đã được tạo cho nhà cung cấp {$order->supplier->name}.",
+                function ($message) use ($email, $order) {
+                    $message->to($email)
+                        ->subject("Thông báo đơn hàng {$order->order_code}");
+                }
+            );
+
+            return [
+                'status' => 'sent',
+                'message' => 'Thông báo nhà cung cấp đã được gửi qua mailer hiện tại.',
+            ];
+        } catch (Throwable $exception) {
+            Log::warning('Purchase order supplier notification failed.', [
+                'purchase_order_id' => $order->id,
+                'supplier_id' => $order->supplier_id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return [
+                'status' => 'failed',
+                'message' => 'Tạo đơn hàng thành công nhưng chưa gửi được thông báo nhà cung cấp.',
+            ];
+        }
     }
 }

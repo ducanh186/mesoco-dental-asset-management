@@ -60,7 +60,7 @@ class PurchaseOrderApiTest extends TestCase
     public function test_manager_can_create_purchase_order_without_price_or_payment_fields(): void
     {
         $manager = User::factory()->manager()->create();
-        $supplier = Supplier::factory()->create();
+        $supplier = Supplier::factory()->create(['email' => 'supplier@example.com']);
 
         $response = $this->actingAs($manager)->postJson('/api/purchase-orders', [
             'supplier_id' => $supplier->id,
@@ -81,7 +81,8 @@ class PurchaseOrderApiTest extends TestCase
             ->assertJsonPath('data.payment_method', null)
             ->assertJsonPath('data.total_amount', null)
             ->assertJsonPath('data.items.0.unit_price', null)
-            ->assertJsonPath('data.items.0.line_total', null);
+            ->assertJsonPath('data.items.0.line_total', null)
+            ->assertJsonPath('supplier_notification.status', 'sent');
 
         $this->assertDatabaseHas('purchase_order_items', [
             'item_name' => 'PC văn phòng',
@@ -111,7 +112,30 @@ class PurchaseOrderApiTest extends TestCase
         $response->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('summary.total', 1)
-            ->assertJsonPath('data.0.supplier.id', $supplierA->id);
+            ->assertJsonPath('data.0.supplier.id', $supplierA->id)
+            ->assertJsonPath('status_options', [
+                PurchaseOrder::STATUS_PREPARING,
+                PurchaseOrder::STATUS_DELIVERED,
+            ]);
+    }
+
+    public function test_shipping_status_is_displayed_as_pending_delivery(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+
+        PurchaseOrder::factory()->create([
+            'supplier_id' => $supplier->id,
+            'status' => PurchaseOrder::STATUS_SHIPPING,
+        ]);
+
+        $response = $this->actingAs($manager)->getJson('/api/purchase-orders?status=preparing');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('summary.pending_delivery', 1)
+            ->assertJsonPath('data.0.status', PurchaseOrder::STATUS_SHIPPING)
+            ->assertJsonPath('data.0.status_label', 'Chờ giao hàng');
     }
 
     public function test_supplier_can_update_status_for_own_order(): void
@@ -127,15 +151,16 @@ class PurchaseOrderApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($supplierUser)->patchJson("/api/purchase-orders/{$order->id}/status", [
-            'status' => PurchaseOrder::STATUS_SHIPPING,
+            'status' => PurchaseOrder::STATUS_DELIVERED,
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.status', PurchaseOrder::STATUS_SHIPPING);
+            ->assertJsonPath('data.status', PurchaseOrder::STATUS_DELIVERED)
+            ->assertJsonPath('data.status_label', 'Giao hàng thành công');
 
         $this->assertDatabaseHas('purchase_orders', [
             'id' => $order->id,
-            'status' => PurchaseOrder::STATUS_SHIPPING,
+            'status' => PurchaseOrder::STATUS_DELIVERED,
         ]);
     }
 
@@ -151,7 +176,7 @@ class PurchaseOrderApiTest extends TestCase
 
         $this->actingAs($supplierUser)
             ->patchJson("/api/purchase-orders/{$order->id}/status", [
-                'status' => PurchaseOrder::STATUS_SHIPPING,
+                'status' => PurchaseOrder::STATUS_DELIVERED,
             ])
             ->assertNotFound();
     }
@@ -161,6 +186,15 @@ class PurchaseOrderApiTest extends TestCase
         $employee = User::factory()->employee()->create();
 
         $this->actingAs($employee)
+            ->getJson('/api/purchase-orders')
+            ->assertForbidden();
+    }
+
+    public function test_technician_cannot_access_purchase_order_module(): void
+    {
+        $technician = User::factory()->technician()->create();
+
+        $this->actingAs($technician)
             ->getJson('/api/purchase-orders')
             ->assertForbidden();
     }

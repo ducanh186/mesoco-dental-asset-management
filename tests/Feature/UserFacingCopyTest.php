@@ -39,6 +39,10 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringContainsString("key: 'note'", $suppliersPage);
 
         $this->assertStringContainsString('Danh sách thiết bị', $purchaseOrdersPage);
+        $this->assertStringContainsString('Chờ giao hàng', $purchaseOrdersPage);
+        $this->assertStringContainsString('Chi tiết', $purchaseOrdersPage);
+        $this->assertStringNotContainsString('Chuẩn bị', $purchaseOrdersPage);
+        $this->assertStringNotContainsString('Đang giao', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Đơn giá', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Thanh toán', $purchaseOrdersPage);
 

@@ -12,7 +12,7 @@ import {
     Textarea,
     useToast,
 } from '../components/ui';
-import { getUserRole, hasOperationalAccess, ROLE_SUPPLIER } from '../utils/roles';
+import { getUserRole, isManager as userIsManager, ROLE_SUPPLIER } from '../utils/roles';
 
 const EMPTY_ITEM = {
     item_name: '',
@@ -35,9 +35,8 @@ const createEmptyForm = () => ({
 const getStatusVariant = (status) => {
     switch ((status || '').toLowerCase()) {
         case 'preparing':
-            return 'warning';
         case 'shipping':
-            return 'info';
+            return 'warning';
         case 'delivered':
             return 'success';
         default:
@@ -48,9 +47,8 @@ const getStatusVariant = (status) => {
 const getStatusLabel = (status) => {
     switch ((status || '').toLowerCase()) {
         case 'preparing':
-            return 'Chuẩn bị';
         case 'shipping':
-            return 'Đang giao';
+            return 'Chờ giao hàng';
         case 'delivered':
             return 'Giao hàng thành công';
         default:
@@ -62,7 +60,7 @@ const PurchaseOrdersPage = ({ user }) => {
     const toast = useToast();
     const role = getUserRole(user);
     const isSupplier = role === ROLE_SUPPLIER;
-    const isOperationalRole = hasOperationalAccess(user);
+    const canManageOrders = userIsManager(user);
 
     const [orders, setOrders] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
@@ -75,14 +73,15 @@ const PurchaseOrdersPage = ({ user }) => {
     });
     const [summary, setSummary] = useState({
         total: 0,
-        preparing: 0,
-        shipping: 0,
+        pending_delivery: 0,
         delivered: 0,
     });
-    const [statusOptions, setStatusOptions] = useState(['preparing', 'shipping', 'delivered']);
+    const [statusOptions, setStatusOptions] = useState(['preparing', 'delivered']);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
     const [editingOrderId, setEditingOrderId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState(createEmptyForm);
@@ -127,11 +126,10 @@ const PurchaseOrdersPage = ({ user }) => {
             });
             setSummary(response.summary || {
                 total: 0,
-                preparing: 0,
-                shipping: 0,
+                pending_delivery: 0,
                 delivered: 0,
             });
-            setStatusOptions(response.status_options || ['preparing', 'shipping', 'delivered']);
+            setStatusOptions(response.status_options || ['preparing', 'delivered']);
         } catch (error) {
             handleApiError(error, toast);
         } finally {
@@ -140,7 +138,7 @@ const PurchaseOrdersPage = ({ user }) => {
     }, [pagination.per_page, search, statusFilter, toast]);
 
     const fetchSuppliers = useCallback(async () => {
-        if (!isOperationalRole) {
+        if (!canManageOrders) {
             return;
         }
 
@@ -150,7 +148,7 @@ const PurchaseOrdersPage = ({ user }) => {
         } catch (error) {
             handleApiError(error, toast);
         }
-    }, [isOperationalRole, toast]);
+    }, [canManageOrders, toast]);
 
     useEffect(() => {
         fetchOrders(1);
@@ -171,9 +169,20 @@ const PurchaseOrdersPage = ({ user }) => {
         setIsModalOpen(true);
     };
 
+    const handleOpenDetail = async (order) => {
+        try {
+            const response = await purchaseOrdersApi.get(order.id);
+            setSelectedOrder(response.data);
+            setDetailModalOpen(true);
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
     const handleEdit = async (order) => {
         setEditingOrderId(order.id);
         setFormErrors({});
+        setDetailModalOpen(false);
 
         try {
             const response = await purchaseOrdersApi.get(order.id);
@@ -208,6 +217,8 @@ const PurchaseOrdersPage = ({ user }) => {
         try {
             await purchaseOrdersApi.delete(order.id);
             toast.success('Xóa đơn hàng thành công');
+            setDetailModalOpen(false);
+            setSelectedOrder(null);
             fetchOrders(pagination.current_page);
         } catch (error) {
             handleApiError(error, toast);
@@ -216,8 +227,9 @@ const PurchaseOrdersPage = ({ user }) => {
 
     const handleStatusUpdate = async (order, nextStatus) => {
         try {
-            await purchaseOrdersApi.updateStatus(order.id, { status: nextStatus });
+            const response = await purchaseOrdersApi.updateStatus(order.id, { status: nextStatus });
             toast.success('Cập nhật trạng thái đơn hàng thành công');
+            setSelectedOrder(response.data);
             fetchOrders(pagination.current_page);
         } catch (error) {
             handleApiError(error, toast);
@@ -289,8 +301,9 @@ const PurchaseOrdersPage = ({ user }) => {
                 await purchaseOrdersApi.update(editingOrderId, payload);
                 toast.success('Cập nhật đơn hàng thành công');
             } else {
-                await purchaseOrdersApi.create(payload);
-                toast.success('Tạo đơn hàng thành công');
+                const response = await purchaseOrdersApi.create(payload);
+                const notificationMessage = response.supplier_notification?.message || 'Thông báo nhà cung cấp đã được xử lý.';
+                toast.success(`Tạo đơn hàng thành công. ${notificationMessage}`);
             }
 
             setIsModalOpen(false);
@@ -342,9 +355,9 @@ const PurchaseOrdersPage = ({ user }) => {
         {
             key: 'status',
             label: 'Trạng thái',
-            render: (value) => (
+            render: (value, row) => (
                 <Badge variant={getStatusVariant(value)} size="sm">
-                    {getStatusLabel(value)}
+                    {row.status_label || getStatusLabel(value)}
                 </Badge>
             ),
         },
@@ -354,34 +367,9 @@ const PurchaseOrdersPage = ({ user }) => {
             align: 'right',
             render: (_, row) => (
                 <div className="flex gap-2 justify-end">
-                    {isOperationalRole ? (
-                        <>
-                            <Button size="sm" variant="ghost" onClick={() => handleEdit(row)}>
-                                Sửa
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => handleDelete(row)}
-                            >
-                                Xóa
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            {row.status === 'preparing' && (
-                                <Button size="sm" variant="ghost" onClick={() => handleStatusUpdate(row, 'shipping')}>
-                                    Chuyển sang giao
-                                </Button>
-                            )}
-                            {row.status === 'shipping' && (
-                                <Button size="sm" variant="ghost" onClick={() => handleStatusUpdate(row, 'delivered')}>
-                                    Xác nhận giao xong
-                                </Button>
-                            )}
-                        </>
-                    )}
+                    <Button size="sm" variant="ghost" onClick={() => handleOpenDetail(row)}>
+                        Chi tiết
+                    </Button>
                 </div>
             ),
         },
@@ -400,23 +388,19 @@ const PurchaseOrdersPage = ({ user }) => {
                             : 'Quản lý đơn đặt hàng theo nhà cung cấp, thiết bị, đơn vị và số lượng'}
                     </p>
                 </div>
-                {isOperationalRole && (
+                {canManageOrders && (
                     <Button onClick={handleCreate}>Tạo đơn hàng</Button>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-4">
                     <div className="text-sm text-text-muted">Tổng đơn hàng</div>
                     <div className="text-2xl font-semibold text-text mt-1">{summary.total}</div>
                 </Card>
                 <Card className="p-4">
-                    <div className="text-sm text-text-muted">Chuẩn bị</div>
-                    <div className="text-2xl font-semibold text-text mt-1">{summary.preparing}</div>
-                </Card>
-                <Card className="p-4">
-                    <div className="text-sm text-text-muted">Đang giao</div>
-                    <div className="text-2xl font-semibold text-text mt-1">{summary.shipping}</div>
+                    <div className="text-sm text-text-muted">Chờ giao hàng</div>
+                    <div className="text-2xl font-semibold text-text mt-1">{summary.pending_delivery ?? summary.preparing ?? 0}</div>
                 </Card>
                 <Card className="p-4">
                     <div className="text-sm text-text-muted">Giao thành công</div>
@@ -463,6 +447,75 @@ const PurchaseOrdersPage = ({ user }) => {
                     </div>
                 )}
             </Card>
+
+            <Modal
+                isOpen={detailModalOpen}
+                onClose={() => setDetailModalOpen(false)}
+                size="lg"
+                title={selectedOrder ? `Chi tiết ${selectedOrder.order_code}` : 'Chi tiết đơn hàng'}
+            >
+                {selectedOrder && (
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <div>
+                                <div className="text-xs font-semibold uppercase text-text-muted">Nhà cung cấp</div>
+                                <div className="mt-1 text-sm font-medium text-text">{selectedOrder.supplier?.name || '—'}</div>
+                                <div className="text-xs text-text-muted">{selectedOrder.supplier?.code || selectedOrder.supplier?.contact_person || '—'}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-semibold uppercase text-text-muted">Trạng thái</div>
+                                <div className="mt-1 inline-flex">
+                                    <Badge variant={getStatusVariant(selectedOrder.status)} size="sm">
+                                        {selectedOrder.status_label || getStatusLabel(selectedOrder.status)}
+                                    </Badge>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-semibold uppercase text-text-muted">Ngày tạo</div>
+                                <div className="mt-1 text-sm text-text">{selectedOrder.order_date || '—'}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-semibold uppercase text-text-muted">Ghi chú</div>
+                                <div className="mt-1 text-sm text-text">{selectedOrder.note || '—'}</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="mb-2 text-sm font-semibold text-text">Danh sách thiết bị</div>
+                            <div className="divide-y divide-border rounded-md border border-border">
+                                {(selectedOrder.items || []).map((item) => (
+                                    <div key={item.id} className="grid grid-cols-1 gap-2 p-3 text-sm md:grid-cols-[1fr_auto_auto]">
+                                        <div>
+                                            <div className="font-medium text-text">{item.item_name}</div>
+                                            <div className="text-xs text-text-muted">{item.note || 'Không có ghi chú'}</div>
+                                        </div>
+                                        <div className="text-text-muted">{item.unit || '—'}</div>
+                                        <div className="font-medium text-text">{item.qty}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-4">
+                            {isSupplier && selectedOrder.status !== 'delivered' && (
+                                <Button onClick={() => handleStatusUpdate(selectedOrder, 'delivered')}>
+                                    Xác nhận giao hàng thành công
+                                </Button>
+                            )}
+                            {canManageOrders && (
+                                <>
+                                    <Button variant="outline" onClick={() => handleEdit(selectedOrder)}>
+                                        Sửa
+                                    </Button>
+                                    <Button variant="danger" onClick={() => handleDelete(selectedOrder)}>
+                                        Xóa
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </Modal>
 
             <Modal
                 isOpen={isModalOpen}

@@ -22,6 +22,11 @@ class PurchaseOrder extends Model
         self::STATUS_DELIVERED,
     ];
 
+    public const USER_FACING_STATUSES = [
+        self::STATUS_PREPARING,
+        self::STATUS_DELIVERED,
+    ];
+
     protected $fillable = [
         'order_code',
         'supplier_id',
@@ -99,7 +104,23 @@ class PurchaseOrder extends Model
 
     public static function statusOptions(): array
     {
-        return self::STATUSES;
+        return self::USER_FACING_STATUSES;
+    }
+
+    public static function displayStatus(string $status): string
+    {
+        return match (self::normalizeStatus($status)) {
+            self::STATUS_DELIVERED => 'Giao hàng thành công',
+            default => 'Chờ giao hàng',
+        };
+    }
+
+    public static function statusesForFilter(string $status): array
+    {
+        return match (self::normalizeStatus($status)) {
+            self::STATUS_DELIVERED => [self::STATUS_DELIVERED],
+            default => [self::STATUS_PREPARING, self::STATUS_SHIPPING],
+        };
     }
 
     public static function generateCode(): string

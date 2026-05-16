@@ -10,7 +10,7 @@ class StorePurchaseOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasOperationalAccess();
+        return $this->user()->isManager();
     }
 
     public function rules(): array

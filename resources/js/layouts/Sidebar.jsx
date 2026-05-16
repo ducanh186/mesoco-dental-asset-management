@@ -183,9 +183,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.locations,
             navItems.suppliers,
         ]),
-        bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
-            navItems.purchaseOrders,
-        ]),
         bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
             navItems.requests,
             navItems.handover,

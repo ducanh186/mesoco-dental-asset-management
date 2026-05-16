@@ -153,6 +153,10 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::get('/review-requests', [\App\Http\Controllers\ReviewRequestController::class, 'index']);
         Route::post('/requests/{id}/review', [\App\Http\Controllers\ReviewRequestController::class, 'review']);
 
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
+        Route::put('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update']);
+        Route::delete('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy']);
+
         Route::get('/reports/summary', [ReportController::class, 'summary']);
         Route::get('/reports/export', [ReportController::class, 'export']);
     });
@@ -201,9 +205,6 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::apiResource('locations', LocationController::class);
         Route::get('/suppliers/dropdown', [SupplierController::class, 'dropdown']);
         Route::apiResource('suppliers', SupplierController::class);
-        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
-        Route::put('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update']);
-        Route::delete('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy']);
 
         Route::get('/disposal/summary', [DisposalController::class, 'summary']);
         Route::get('/disposal/assets', [DisposalController::class, 'assets']);
@@ -221,7 +222,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::post('/assets/{asset}/unlock', [AssetOffServiceController::class, 'unlock']);
     });
 
-    Route::middleware('role:manager,technician,supplier')->group(function () {
+    Route::middleware('role:manager,supplier')->group(function () {
         Route::get('/purchase-orders', [PurchaseOrderController::class, 'index']);
         Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show']);
         Route::patch('/purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus']);
