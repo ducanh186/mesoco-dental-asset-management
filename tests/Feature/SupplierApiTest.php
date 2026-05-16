@@ -32,12 +32,21 @@ class SupplierApiTest extends TestCase
     public function test_technician_can_list_suppliers(): void
     {
         $user = $this->createUser('technician');
-        Supplier::factory()->count(3)->create();
+        Supplier::factory()->count(2)->create();
+        Supplier::factory()->create([
+            'code' => null,
+            'name' => 'Supplier with note',
+            'note' => 'Handles spare parts',
+        ]);
 
         $this->actingAs($user)
             ->getJson('/api/suppliers')
             ->assertOk()
-            ->assertJsonCount(3, 'data');
+            ->assertJsonCount(3, 'data')
+            ->assertJsonFragment([
+                'name' => 'Supplier with note',
+                'note' => 'Handles spare parts',
+            ]);
     }
 
     public function test_manager_can_create_supplier(): void

@@ -21,12 +21,22 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringContainsString('Thiết bị Test', $assetsPage);
         $this->assertStringContainsString('Phụ kiện dùng', $assetsPage);
         $this->assertStringContainsString('Linh kiện thay thế', $assetsPage);
+        $this->assertStringNotContainsString("{ value: 'RAM'", $assetsPage);
+        $this->assertStringNotContainsString("{ value: 'SSD'", $assetsPage);
+        $this->assertStringNotContainsString("{ value: 'inventorying'", $assetsPage);
+        $this->assertStringNotContainsString('Đang kiểm kê</div>', $assetsPage);
         $this->assertStringNotContainsString('Tất cả phụ trách', $assetsPage);
         $this->assertStringNotContainsString('Danh mục tài sản', $assetsPage);
         $this->assertStringNotContainsString('Tạo tài sản', $assetsPage);
 
         $this->assertStringContainsString('nơi đặt thiết bị', $locationsPage);
+        $this->assertStringNotContainsString('areaFilter', $locationsPage);
+        $this->assertStringNotContainsString('Hiển thị cả vị trí ngưng sử dụng', $locationsPage);
         $this->assertStringNotContainsString('nơi đặt tài sản', $locationsPage);
+
+        $suppliersPage = file_get_contents(resource_path('js/pages/SuppliersPage.jsx'));
+        $this->assertStringContainsString('Mã/ID nhà cung cấp', $suppliersPage);
+        $this->assertStringContainsString("key: 'note'", $suppliersPage);
 
         $this->assertStringContainsString('Danh sách thiết bị', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Đơn giá', $purchaseOrdersPage);

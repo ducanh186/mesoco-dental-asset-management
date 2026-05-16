@@ -19,15 +19,29 @@ class AssetLatestErdFieldTest extends TestCase
             'Thiết bị Test',
             'Phụ kiện dùng',
             'Linh kiện thay thế',
-            'RAM',
-            'SSD',
-            'HDD',
-            'Tai nghe',
-            'Adapter',
-            'Cáp kết nối',
-            'Mainboard',
-            'Bộ nguồn',
         ], Asset::CATEGORIES);
+    }
+
+    public function test_asset_category_filter_groups_legacy_detail_categories_under_parent_category(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        Asset::factory()->create([
+            'asset_code' => 'RAM-001',
+            'name' => 'RAM spare',
+            'category' => 'RAM',
+        ]);
+        Asset::factory()->create([
+            'asset_code' => 'PC-001',
+            'name' => 'Office PC',
+            'category' => 'PC',
+        ]);
+
+        $response = $this->actingAs($manager)->getJson('/api/assets?category=Linh%20ki%E1%BB%87n%20thay%20th%E1%BA%BF');
+
+        $response->assertOk()
+            ->assertJsonPath('available_categories', Asset::CATEGORIES)
+            ->assertJsonPath('assets.0.category', 'Linh kiện thay thế');
+        $this->assertSame(['RAM-001'], collect($response->json('assets'))->pluck('asset_code')->all());
     }
 
     public function test_store_accepts_latest_erd_asset_alias_fields(): void

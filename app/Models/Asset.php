@@ -68,14 +68,25 @@ class Asset extends Model
         'Thiết bị Test',
         'Phụ kiện dùng',
         'Linh kiện thay thế',
-        'RAM',
-        'SSD',
-        'HDD',
-        'Tai nghe',
-        'Adapter',
-        'Cáp kết nối',
-        'Mainboard',
-        'Bộ nguồn',
+    ];
+
+    /**
+     * Legacy detailed categories retained for existing data compatibility.
+     */
+    public const CATEGORY_PARENT_MAP = [
+        'Laptop' => 'PC',
+        'Desktop' => 'PC',
+        'Server' => 'PC',
+        'Monitor' => 'Màn hình',
+        'Test device' => 'Thiết bị Test',
+        'Tai nghe' => 'Phụ kiện dùng',
+        'Adapter' => 'Phụ kiện dùng',
+        'Cáp kết nối' => 'Phụ kiện dùng',
+        'RAM' => 'Linh kiện thay thế',
+        'SSD' => 'Linh kiện thay thế',
+        'HDD' => 'Linh kiện thay thế',
+        'Mainboard' => 'Linh kiện thay thế',
+        'Bộ nguồn' => 'Linh kiện thay thế',
     ];
 
     /**
@@ -712,9 +723,31 @@ class Asset extends Model
     public function scopeByCategory($query, ?string $category)
     {
         if ($category) {
-            return $query->where('category', $category);
+            return $query->whereIn('category', self::categoriesForParent($category));
         }
         return $query;
+    }
+
+    public static function displayCategory(?string $category): ?string
+    {
+        if (!$category) {
+            return $category;
+        }
+
+        return self::CATEGORY_PARENT_MAP[$category] ?? $category;
+    }
+
+    public static function categoriesForParent(string $category): array
+    {
+        $categories = [$category];
+
+        foreach (self::CATEGORY_PARENT_MAP as $legacyCategory => $parentCategory) {
+            if ($parentCategory === $category) {
+                $categories[] = $legacyCategory;
+            }
+        }
+
+        return array_values(array_unique($categories));
     }
 
     /**

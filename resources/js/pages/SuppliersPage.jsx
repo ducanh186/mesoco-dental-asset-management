@@ -149,8 +149,10 @@ const SuppliersPage = () => {
     const columns = [
         {
             key: 'code',
-            label: 'Mã nhà cung cấp',
-            render: (value) => <span className="font-mono text-sm text-text-muted">{value || '—'}</span>,
+            label: 'Mã/ID nhà cung cấp',
+            render: (value, row) => (
+                <span className="font-mono text-sm text-text-muted">{value || `ID-${row.id}`}</span>
+            ),
         },
         {
             key: 'name',
@@ -175,6 +177,13 @@ const SuppliersPage = () => {
         {
             key: 'address',
             label: 'Địa chỉ',
+            render: (value) => (
+                <span className="text-text-muted">{value || '—'}</span>
+            ),
+        },
+        {
+            key: 'note',
+            label: 'Ghi chú',
             render: (value) => (
                 <span className="text-text-muted">{value || '—'}</span>
             ),

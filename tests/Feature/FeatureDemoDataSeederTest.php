@@ -24,7 +24,7 @@ class FeatureDemoDataSeederTest extends TestCase
         $this->assertDatabaseHas('locations', ['code' => null, 'name' => 'Bàn 8 - Kho tầng 3']);
 
         foreach (['RAM', 'SSD', 'HDD', 'Tai nghe', 'Adapter', 'Cáp kết nối', 'Mainboard', 'Bộ nguồn'] as $category) {
-            $this->assertContains($category, Asset::CATEGORIES);
+            $this->assertArrayHasKey($category, Asset::CATEGORY_PARENT_MAP);
             $this->assertDatabaseHas('assets', ['category' => $category]);
         }
 

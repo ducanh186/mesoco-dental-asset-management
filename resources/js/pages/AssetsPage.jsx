@@ -47,7 +47,6 @@ const AssetsPage = () => {
         available: 0,
         assigned: 0,
         maintenance: 0,
-        inventorying: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -99,14 +98,6 @@ const AssetsPage = () => {
         { value: 'Thiết bị Test', label: 'Thiết bị Test' },
         { value: 'Phụ kiện dùng', label: 'Phụ kiện dùng' },
         { value: 'Linh kiện thay thế', label: 'Linh kiện thay thế' },
-        { value: 'RAM', label: 'RAM' },
-        { value: 'SSD', label: 'SSD' },
-        { value: 'HDD', label: 'HDD' },
-        { value: 'Tai nghe', label: 'Tai nghe' },
-        { value: 'Adapter', label: 'Adapter' },
-        { value: 'Cáp kết nối', label: 'Cáp kết nối' },
-        { value: 'Mainboard', label: 'Mainboard' },
-        { value: 'Bộ nguồn', label: 'Bộ nguồn' },
     ];
 
     const assetStatuses = [
@@ -114,7 +105,6 @@ const AssetsPage = () => {
         { value: 'available', label: 'Sẵn sàng' },
         { value: 'assigned', label: 'Đã bàn giao' },
         { value: 'maintenance', label: 'Đang bảo trì' },
-        { value: 'inventorying', label: 'Đang kiểm kê' },
         { value: 'retired', label: 'Đã thu hủy' },
     ];
 
@@ -198,7 +188,6 @@ const AssetsPage = () => {
                 available: 0,
                 assigned: 0,
                 maintenance: 0,
-                inventorying: 0,
             });
         } catch (error) {
             handleApiError(error, toast);
@@ -730,7 +719,7 @@ const AssetsPage = () => {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card className="p-4">
                     <div className="text-sm text-text-muted">Thiết bị sẵn sàng</div>
                     <div className="mt-1 text-2xl font-semibold text-text">{summary.available}</div>
@@ -742,10 +731,6 @@ const AssetsPage = () => {
                 <Card className="p-4">
                     <div className="text-sm text-text-muted">Đang bảo trì</div>
                     <div className="mt-1 text-2xl font-semibold text-text">{summary.maintenance}</div>
-                </Card>
-                <Card className="p-4">
-                    <div className="text-sm text-text-muted">Đang kiểm kê</div>
-                    <div className="mt-1 text-2xl font-semibold text-text">{summary.inventorying}</div>
                 </Card>
             </div>
 

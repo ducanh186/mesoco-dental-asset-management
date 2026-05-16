@@ -31,8 +31,6 @@ const LocationsPage = () => {
     
     // Filter state
     const [search, setSearch] = useState('');
-    const [areaFilter, setAreaFilter] = useState('');
-    const [showInactive, setShowInactive] = useState(false);
     
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,7 +41,6 @@ const LocationsPage = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        is_active: true,
     });
     const [formErrors, setFormErrors] = useState({});
 
@@ -55,8 +52,7 @@ const LocationsPage = () => {
                 page,
                 per_page: pagination.per_page,
                 search: search || undefined,
-                area: areaFilter || undefined,
-                active_only: showInactive ? undefined : '1',
+                active_only: '1',
                 sort_by: 'name',
                 sort_dir: 'asc',
             };
@@ -74,22 +70,11 @@ const LocationsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [search, areaFilter, showInactive, pagination.per_page, toast]);
+    }, [search, pagination.per_page, toast]);
 
     useEffect(() => {
         fetchLocations(1);
-    }, [search, areaFilter, showInactive]);
-
-    const areaOptions = [
-        { value: '', label: 'Tất cả khu vực' },
-        { value: 'Kho tầng 1', label: 'Kho tầng 1' },
-        { value: 'Kho tầng 2', label: 'Kho tầng 2' },
-        { value: 'Kho tầng 3', label: 'Kho tầng 3' },
-        { value: 'Khu HR', label: 'Khu HR' },
-        { value: 'Khu kế toán', label: 'Khu kế toán' },
-        { value: 'Khu lễ tân', label: 'Khu lễ tân' },
-        { value: 'Khu dự án', label: 'Khu Dự án' },
-    ];
+    }, [search]);
 
     // Open modal for create
     const handleCreate = () => {
@@ -97,7 +82,6 @@ const LocationsPage = () => {
         setFormData({
             name: '',
             description: '',
-            is_active: true,
         });
         setFormErrors({});
         setIsModalOpen(true);
@@ -109,7 +93,6 @@ const LocationsPage = () => {
         setFormData({
             name: location.name,
             description: location.description || '',
-            is_active: location.is_active,
         });
         setFormErrors({});
         setIsModalOpen(true);
@@ -187,11 +170,6 @@ const LocationsPage = () => {
             render: (value, row) => (
                 <div>
                     <span className="font-medium text-text">{value}</span>
-                    {!row.is_active && (
-                        <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                            Ngưng sử dụng
-                        </span>
-                    )}
                 </div>
             ),
         },
@@ -254,26 +232,6 @@ const LocationsPage = () => {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
-                    <select
-                        value={areaFilter}
-                        onChange={(e) => setAreaFilter(e.target.value)}
-                        className="min-w-[180px] rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                        {areaOptions.map((option) => (
-                            <option key={option.value || 'all'} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                    <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={showInactive}
-                            onChange={(e) => setShowInactive(e.target.checked)}
-                            className="rounded border-border text-primary focus:ring-primary"
-                        />
-                        Hiển thị cả vị trí ngưng sử dụng
-                    </label>
                 </div>
             </Card>
 
@@ -333,21 +291,6 @@ const LocationsPage = () => {
                             <p className="text-red-500 text-sm mt-1">{formErrors.description[0]}</p>
                         )}
                     </div>
-
-                    {editingLocation && (
-                        <div>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="is_active"
-                                    checked={formData.is_active}
-                                    onChange={handleInputChange}
-                                    className="rounded border-border text-primary focus:ring-primary"
-                                />
-                                <span className="text-sm text-text">Đang hoạt động</span>
-                            </label>
-                        </div>
-                    )}
 
                     <div className="flex gap-3 pt-4 border-t border-border">
                         <Button
