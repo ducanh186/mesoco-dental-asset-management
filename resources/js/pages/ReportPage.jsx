@@ -140,7 +140,7 @@ const ReportPage = ({ user }) => {
                 <CardBody>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                         {reportTypes.map((type) => (
-                            <div key={type.key} className="border border-border rounded-lg p-4 space-y-3">
+                            <div id={type.key} key={type.key} className="border border-border rounded-lg p-4 space-y-3">
                                 <div>
                                     <h3 className="font-semibold text-text">{type.label}</h3>
                                     {type.method === 'rule_based' && (

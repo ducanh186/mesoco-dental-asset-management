@@ -12,6 +12,7 @@ use App\Models\Location;
 use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -130,6 +131,76 @@ class InventoryApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure(['assets', 'pagination']);
+    }
+
+    public function test_inventory_assets_include_latest_check_fields_without_n_plus_one(): void
+    {
+        Asset::query()->forceDelete();
+
+        $oldCheck = InventoryCheck::create([
+            'code' => 'INV-OLD-001',
+            'title' => 'Old inventory check',
+            'check_date' => now()->subDays(10)->toDateString(),
+            'status' => InventoryCheck::STATUS_COMPLETED,
+            'created_by_user_id' => $this->admin->id,
+        ]);
+
+        $latestCheck = InventoryCheck::create([
+            'code' => 'INV-LATEST-001',
+            'title' => 'Latest inventory check',
+            'check_date' => now()->toDateString(),
+            'status' => InventoryCheck::STATUS_COMPLETED,
+            'created_by_user_id' => $this->admin->id,
+        ]);
+
+        $assets = collect(range(1, 4))->map(fn (int $index) => Asset::factory()->create([
+            'asset_code' => sprintf('INV-NP-%03d', $index),
+            'name' => "Inventory N+1 Asset {$index}",
+        ]));
+
+        $latestCheckedAt = now()->seconds(0)->microseconds(0);
+
+        foreach ($assets as $index => $asset) {
+            InventoryCheckItem::create([
+                'inventory_check_id' => $oldCheck->id,
+                'asset_id' => $asset->id,
+                'expected_status' => Asset::STATUS_ACTIVE,
+                'result' => InventoryCheckItem::RESULT_MATCHED,
+                'condition_note' => 'old condition',
+                'counted_by_user_id' => $this->staff->id,
+                'checked_at' => $latestCheckedAt->copy()->subDays(3),
+            ]);
+
+            InventoryCheckItem::create([
+                'inventory_check_id' => $latestCheck->id,
+                'asset_id' => $asset->id,
+                'expected_status' => Asset::STATUS_ACTIVE,
+                'result' => InventoryCheckItem::RESULT_MATCHED,
+                'condition_note' => "latest condition {$index}",
+                'counted_by_user_id' => $this->admin->id,
+                'checked_at' => $latestCheckedAt->copy()->addMinutes($index),
+            ]);
+        }
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $response = $this->actingAs($this->admin)
+            ->getJson('/api/inventory/assets?per_page=4&sort_by=asset_code');
+
+        DB::disableQueryLog();
+
+        $response->assertOk()
+            ->assertJsonPath('assets.0.last_checked_at', $latestCheckedAt->copy()->toISOString())
+            ->assertJsonPath('assets.0.actual_condition', 'latest condition 0')
+            ->assertJsonPath('assets.0.checker.id', $this->admin->id)
+            ->assertJsonPath('assets.0.checker.name', $this->admin->name);
+
+        $inventoryItemQueries = collect(DB::getQueryLog())
+            ->filter(fn (array $query) => str_contains($query['query'], 'inventory_check_items'))
+            ->count();
+
+        $this->assertSame(1, $inventoryItemQueries);
     }
 
     public function test_employee_cannot_list_inventory_assets(): void

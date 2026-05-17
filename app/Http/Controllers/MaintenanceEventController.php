@@ -31,6 +31,7 @@ class MaintenanceEventController extends Controller
      * - asset_id: Filter by asset
      * - status: Filter by status (scheduled, in_progress, completed, canceled)
      * - type: Filter by type
+     * - type_group: Filter by user-facing group (maintenance_group, repair_group)
      * - from_date: Filter planned_at >= date
      * - to_date: Filter planned_at <= date
      * - priority: Filter by priority
@@ -60,6 +61,20 @@ class MaintenanceEventController extends Controller
         // Filter by type
         if ($request->filled('type')) {
             $query->where('type', $request->input('type'));
+        }
+
+        if ($request->input('type_group') === 'maintenance_group') {
+            $query->whereIn('type', [
+                MaintenanceEvent::TYPE_INSPECTION,
+                MaintenanceEvent::TYPE_PREVENTIVE,
+                MaintenanceEvent::TYPE_HARDWARE_UPGRADE,
+                MaintenanceEvent::TYPE_CALIBRATION,
+            ]);
+        } elseif ($request->input('type_group') === 'repair_group') {
+            $query->whereIn('type', [
+                MaintenanceEvent::TYPE_REPAIR,
+                MaintenanceEvent::TYPE_REPLACEMENT,
+            ]);
         }
 
         // Filter by priority

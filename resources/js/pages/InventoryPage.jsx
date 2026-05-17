@@ -254,6 +254,10 @@ const InventoryPage = ({ user }) => {
             || '—';
     };
 
+    const getDisplayStatus = (status) => (
+        status === 'inventorying' ? 'active' : status
+    );
+
     // Inventory columns
     const inventoryColumns = [
         {
@@ -276,7 +280,7 @@ const InventoryPage = ({ user }) => {
         {
             key: 'status',
             label: 'Trạng thái',
-            render: (value) => <StatusBadge status={value} />
+            render: (value) => <StatusBadge status={getDisplayStatus(value)} />
         },
         {
             key: 'assigned_to',
@@ -683,7 +687,7 @@ const InventoryPage = ({ user }) => {
                             </div>
                             <div>
                                 <p className="text-sm text-text-muted">Trạng thái</p>
-                                <StatusBadge status={selectedItem.status} />
+                                <StatusBadge status={getDisplayStatus(selectedItem.status)} />
                             </div>
                             <div>
                                 <p className="text-sm text-text-muted">Người sử dụng</p>

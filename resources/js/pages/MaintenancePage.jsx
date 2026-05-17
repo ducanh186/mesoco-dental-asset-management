@@ -104,6 +104,7 @@ const MaintenancePage = ({ user }) => {
                 page: currentPage,
                 per_page: 15,
                 status: statusFilter || undefined,
+                type_group: typeFilter || undefined,
             });
 
             setEvents(response.data || []);

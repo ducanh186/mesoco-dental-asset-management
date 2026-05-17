@@ -95,6 +95,30 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             labelKey: 'nav.reports', 
             icon: 'reports'
         },
+        deviceStatusReport: {
+            id: 'report-device-status',
+            path: '/reports#device_status',
+            labelKey: 'nav.deviceStatusReport',
+            icon: 'reports',
+        },
+        depreciationReport: {
+            id: 'report-depreciation',
+            path: '/reports#depreciation_remaining_value',
+            labelKey: 'nav.depreciationReport',
+            icon: 'reports',
+        },
+        disposalProposalReport: {
+            id: 'report-disposal-proposal',
+            path: '/reports#disposal_proposal',
+            labelKey: 'nav.disposalProposalReport',
+            icon: 'reports',
+        },
+        lifecycleAnalysisReport: {
+            id: 'report-lifecycle-analysis',
+            path: '/reports#lifecycle_analysis',
+            labelKey: 'nav.lifecycleAnalysisReport',
+            icon: 'reports',
+        },
         assetRecords: {
             id: 'asset-records',
             path: '/assets',
@@ -172,6 +196,10 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         ]),
         bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
             navItems.reports,
+            navItems.deviceStatusReport,
+            navItems.depreciationReport,
+            navItems.disposalProposalReport,
+            navItems.lifecycleAnalysisReport,
         ]),
     ];
 
@@ -203,6 +231,10 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         ]),
         bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
             navItems.reports,
+            navItems.deviceStatusReport,
+            navItems.depreciationReport,
+            navItems.disposalProposalReport,
+            navItems.lifecycleAnalysisReport,
         ]),
     ];
 
@@ -246,6 +278,11 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         if (path === '/dashboard') {
             return location.pathname === '/' || location.pathname === '/dashboard';
         }
+
+        if (location.hash && location.pathname === pathname) {
+            return false;
+        }
+
         return location.pathname.startsWith(pathname);
     };
 
