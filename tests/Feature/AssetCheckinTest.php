@@ -121,7 +121,7 @@ class AssetCheckinTest extends TestCase
 
         $this->assertDatabaseHas('asset_checkins', [
             'asset_id' => $this->asset->id,
-            'employee_id' => $this->employeeUser->employee_id,
+            'employee_id' => $this->employeeUser->id,
             'source' => 'manual',
         ]);
     }
@@ -234,7 +234,7 @@ class AssetCheckinTest extends TestCase
     {
         $checkin = AssetCheckin::create([
             'asset_id' => $this->asset->id,
-            'employee_id' => $this->employeeUser->employee_id,
+            'employee_id' => $this->employeeUser->id,
             'shift_id' => $this->shift->id,
             'shift_date' => now()->toDateString(),
             'checked_in_at' => now(),
@@ -257,7 +257,7 @@ class AssetCheckinTest extends TestCase
     {
         $checkin = AssetCheckin::create([
             'asset_id' => $this->asset->id,
-            'employee_id' => $this->employeeUser->employee_id,
+            'employee_id' => $this->employeeUser->id,
             'shift_id' => $this->shift->id,
             'shift_date' => now()->toDateString(),
             'checked_in_at' => now(),
@@ -274,7 +274,7 @@ class AssetCheckinTest extends TestCase
     {
         $checkin = AssetCheckin::create([
             'asset_id' => $this->asset->id,
-            'employee_id' => $this->employeeUser->employee_id,
+            'employee_id' => $this->employeeUser->id,
             'shift_id' => $this->shift->id,
             'shift_date' => now()->toDateString(),
             'checked_in_at' => now()->subHour(),
@@ -299,7 +299,7 @@ class AssetCheckinTest extends TestCase
     {
         AssetCheckin::create([
             'asset_id' => $this->asset->id,
-            'employee_id' => $this->employeeUser->employee_id,
+            'employee_id' => $this->employeeUser->id,
             'shift_id' => $this->shift->id,
             'shift_date' => now()->toDateString(),
             'checked_in_at' => now(),
@@ -318,7 +318,7 @@ class AssetCheckinTest extends TestCase
         // Today's check-in
         AssetCheckin::create([
             'asset_id' => $this->asset->id,
-            'employee_id' => $this->employeeUser->employee_id,
+            'employee_id' => $this->employeeUser->id,
             'shift_id' => $this->shift->id,
             'shift_date' => now()->toDateString(),
             'checked_in_at' => now(),
@@ -328,7 +328,7 @@ class AssetCheckinTest extends TestCase
         // Yesterday's check-in
         AssetCheckin::create([
             'asset_id' => $this->asset->id,
-            'employee_id' => $this->employeeUser->employee_id,
+            'employee_id' => $this->employeeUser->id,
             'shift_id' => $this->shift->id,
             'shift_date' => now()->subDay()->toDateString(),
             'checked_in_at' => now()->subDay(),

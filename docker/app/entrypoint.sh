@@ -35,11 +35,20 @@ if [ ! -f "vendor/autoload.php" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Install Node dependencies (if node_modules missing or empty)
+# Install Node dependencies (if node_modules missing, stale, or from another OS)
 # -----------------------------------------------------------------------------
-if [ ! -f "node_modules/.package-lock.json" ] || [ "package-lock.json" -nt "node_modules/.package-lock.json" ]; then
+NODE_PLATFORM="$(node -p "'node-' + process.platform + '-' + process.arch")"
+NODE_PLATFORM_FILE="node_modules/.docker-platform"
+INSTALLED_NODE_PLATFORM="$(cat "$NODE_PLATFORM_FILE" 2>/dev/null || true)"
+
+if [ ! -f "node_modules/.package-lock.json" ] || [ "package-lock.json" -nt "node_modules/.package-lock.json" ] || [ "$INSTALLED_NODE_PLATFORM" != "$NODE_PLATFORM" ]; then
     echo "[2/3] Installing Node dependencies (npm install)..."
+    if [ -d "node_modules" ] && [ "$INSTALLED_NODE_PLATFORM" != "$NODE_PLATFORM" ]; then
+        echo "      Resetting node_modules for container platform: $NODE_PLATFORM"
+        find node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+    fi
     npm install
+    echo "$NODE_PLATFORM" > "$NODE_PLATFORM_FILE"
 else
     echo "[2/3] Node dependencies already installed ✓"
 fi
@@ -75,7 +84,7 @@ fi
 echo "=============================================="
 echo "Ready! Run these commands in another terminal:"
 echo ""
-echo "  docker compose exec app php artisan migrate --seed"
+echo "  docker compose exec -T app php artisan migrate --seed"
 echo ""
 echo "Then open: http://localhost:8000"
 echo "=============================================="

@@ -25,5 +25,6 @@ docker/.env.runtime
 Homestead.json
 Homestead.yaml
 .agent
+.firecrawl/
 .sunlint-cache
 *.png

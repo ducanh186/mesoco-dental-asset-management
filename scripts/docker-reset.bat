@@ -82,7 +82,7 @@ if %RETRIES% gtr 30 (
     pause
     exit /b 1
 )
-%COMPOSE_CMD% exec app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception $e) { exit(1); }" >nul 2>&1
+%COMPOSE_CMD% exec -T app php -r "try { new PDO('mysql:host=db;port=3306;dbname=mesoco_dental', 'mesoco', 'secret'); echo 'OK'; } catch(Exception $e) { exit(1); }" >nul 2>&1
 if %errorlevel% neq 0 (
     echo    Waiting for MySQL... attempt %RETRIES%/30
     timeout /t 3 /nobreak >nul

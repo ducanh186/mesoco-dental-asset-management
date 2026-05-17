@@ -27,11 +27,20 @@ cd C:\Users\HP\mesoco-dental-asset-management
 
 ## 4. Nếu gặp lỗi vendor/autoload.php
 
-Lỗi này nghĩa là PHP dependency trong Docker container chưa sẵn sàng. Chạy:
+Lỗi này nghĩa là PHP dependency trong Docker container chưa sẵn sàng. Ưu tiên chạy lại Docker và chờ service sẵn sàng:
 
 ```powershell
 cd C:\Users\HP\mesoco-dental-asset-management\docker
+docker compose --env-file .env.runtime up -d --build --wait
+docker compose --env-file .env.runtime exec -T app test -f vendor/autoload.php
+docker compose --env-file .env.runtime exec -T app php artisan migrate:fresh --seed
+```
+
+Nếu `vendor/autoload.php` vẫn thiếu, cài lại Composer dependency trong container:
+
+```powershell
 docker compose --env-file .env.runtime exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
+docker compose --env-file .env.runtime exec -T app test -f vendor/autoload.php
 docker compose --env-file .env.runtime exec -T app php artisan migrate:fresh --seed
 ```
 

@@ -21,6 +21,7 @@ Giải thích nhanh:
 
 ## 2. Lấy Code Từ GitHub
 
+
 Nếu máy chưa có repo:
 
 ```powershell
@@ -148,18 +149,18 @@ cd D:\CODE\mesoco-dental-asset-management\docker
 Bật app:
 
 ```powershell
-docker compose up -d
+docker compose up -d --wait
 ```
 
-`up -d` nghĩa là bật container ở chế độ chạy nền.
+`up -d` nghĩa là bật container ở chế độ chạy nền. `--wait` nghĩa là chờ Docker báo service đã sẵn sàng rồi mới trả terminal về cho bạn.
 
 Bật app và build lại image:
 
 ```powershell
-docker compose up -d --build
+docker compose up -d --build --wait
 ```
 
-Dùng khi vừa pull code mới, sửa `Dockerfile`, sửa dependency hoặc app chạy không đúng bản mới.
+Dùng khi vừa pull code mới, sửa `Dockerfile`, sửa dependency hoặc app chạy không đúng bản mới. Lần đầu chạy có thể mất vài phút vì container cần cài Composer dependency vào Docker volume.
 
 Tắt app:
 
@@ -188,7 +189,7 @@ docker compose logs -f app
 Chạy migration:
 
 ```powershell
-docker compose exec app php artisan migrate
+docker compose exec -T app php artisan migrate
 ```
 
 Lệnh này cập nhật cấu trúc database theo migration Laravel.
@@ -196,7 +197,7 @@ Lệnh này cập nhật cấu trúc database theo migration Laravel.
 Seed lại dữ liệu demo:
 
 ```powershell
-docker compose exec app php artisan db:seed --class=DatabaseSeeder
+docker compose exec -T app php artisan db:seed --class=DatabaseSeeder
 ```
 
 Lệnh này tạo lại dữ liệu mẫu như tài khoản `E1001 / password`.
@@ -204,7 +205,7 @@ Lệnh này tạo lại dữ liệu mẫu như tài khoản `E1001 / password`.
 Reset database thật sạch:
 
 ```powershell
-docker compose exec app php artisan migrate:fresh --seed
+docker compose exec -T app php artisan migrate:fresh --seed
 ```
 
 Lệnh này xóa bảng cũ, tạo lại bảng mới và seed dữ liệu. Chỉ dùng cho local/dev, không dùng bừa trên production.
@@ -301,7 +302,7 @@ Nếu code mới có thay đổi dependency hoặc Docker:
 
 ```powershell
 cd D:\CODE\mesoco-dental-asset-management\docker
-docker compose up -d --build
+docker compose up -d --build --wait
 ```
 
 Sau đó mở lại:
@@ -347,7 +348,7 @@ Cách xử lý nhanh:
 ```powershell
 cd D:\CODE\mesoco-dental-asset-management\docker
 docker compose down
-docker compose up -d
+docker compose up -d --wait
 ```
 
 Nếu vẫn lỗi, có thể máy đang có app khác dùng cùng cổng. Đóng app đó hoặc đổi port trong `docker/docker-compose.yml`.
@@ -371,7 +372,7 @@ docker compose logs -f db
 Nếu database vẫn đang khởi động, chờ thêm 30-60 giây rồi chạy lại:
 
 ```powershell
-docker compose exec app php artisan migrate
+docker compose exec -T app php artisan migrate
 ```
 
 ### Lỗi 4: Đăng nhập `E1001 / password` không được
@@ -382,13 +383,13 @@ Cách xử lý:
 
 ```powershell
 cd D:\CODE\mesoco-dental-asset-management\docker
-docker compose exec app php artisan db:seed --class=DatabaseSeeder
+docker compose exec -T app php artisan db:seed --class=DatabaseSeeder
 ```
 
 Nếu vẫn không được, reset sạch database local:
 
 ```powershell
-docker compose exec app php artisan migrate:fresh --seed
+docker compose exec -T app php artisan migrate:fresh --seed
 ```
 
 ### Lỗi 5: Pull image quá chậm hoặc timeout
@@ -403,7 +404,7 @@ Cách xử lý:
 
 ```powershell
 docker pull mysql:8.0
-docker compose up -d --build
+docker compose up -d --build --wait
 ```
 
 Nếu lỗi nằm ở image khác, thay `mysql:8.0` bằng tên image đang báo lỗi.
@@ -414,14 +415,41 @@ Cách xử lý:
 
 ```powershell
 cd D:\CODE\mesoco-dental-asset-management\docker
-docker compose exec app php artisan config:clear
-docker compose exec app php artisan cache:clear
-docker compose up -d --build
+docker compose exec -T app php artisan config:clear
+docker compose exec -T app php artisan cache:clear
+docker compose up -d --build --wait
 ```
 
 Lệnh này xóa cache Laravel và build lại image.
 
-### Lỗi 7: Container bị `exited`
+### Lỗi 7: `vendor/autoload.php` bị thiếu
+
+Dấu hiệu:
+
+```text
+require(/var/www/html/vendor/autoload.php): Failed to open stream
+```
+
+Nguyên nhân thường gặp: Composer dependency trong Docker volume chưa cài xong, nhưng bạn đã chạy `php artisan` quá sớm.
+
+Cách xử lý:
+
+```powershell
+cd D:\CODE\mesoco-dental-asset-management\docker
+docker compose up -d --build --wait
+docker compose exec -T app test -f vendor/autoload.php
+docker compose exec -T app php artisan migrate:fresh --seed
+```
+
+Nếu lệnh `test -f vendor/autoload.php` vẫn lỗi, cài lại Composer dependency trong container:
+
+```powershell
+docker compose exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
+docker compose exec -T app test -f vendor/autoload.php
+docker compose exec -T app php artisan migrate:fresh --seed
+```
+
+### Lỗi 8: Container bị `exited`
 
 Kiểm tra trước:
 
@@ -453,7 +481,7 @@ Nếu muốn chạy test bên trong Docker:
 
 ```powershell
 cd D:\CODE\mesoco-dental-asset-management\docker
-docker compose exec app php artisan test
+docker compose exec -T app php artisan test
 ```
 
 ## 10. App Này Có Những Phần Chính Nào?
