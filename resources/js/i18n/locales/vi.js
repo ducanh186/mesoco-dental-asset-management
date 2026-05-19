@@ -672,8 +672,8 @@ export default {
         // Types (Phase 5)
         types: {
             all: 'Tất cả loại yêu cầu',
-            JUSTIFICATION: 'Báo sự cố thiết bị',
-            CONSUMABLE_REQUEST: 'Xin vật tư',
+            JUSTIFICATION: 'Sửa chữa',
+            CONSUMABLE_REQUEST: 'Bàn giao',
             maintenance: 'Yêu cầu bảo trì',
         },
 

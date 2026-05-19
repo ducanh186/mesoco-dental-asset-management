@@ -91,6 +91,51 @@ class PurchaseOrderApiTest extends TestCase
         ]);
     }
 
+    public function test_manager_must_provide_device_unit_when_creating_order_items(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+
+        $response = $this->actingAs($manager)->postJson('/api/purchase-orders', [
+            'supplier_id' => $supplier->id,
+            'order_date' => '2026-05-14',
+            'items' => [
+                [
+                    'item_name' => 'PC văn phòng',
+                    'qty' => 3,
+                ],
+            ],
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['items.0.unit']);
+    }
+
+    public function test_manager_must_provide_device_unit_when_updating_order_items(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+        $order = PurchaseOrder::factory()->create([
+            'supplier_id' => $supplier->id,
+            'status' => PurchaseOrder::STATUS_PREPARING,
+        ]);
+
+        $response = $this->actingAs($manager)->putJson("/api/purchase-orders/{$order->id}", [
+            'supplier_id' => $supplier->id,
+            'order_date' => '2026-05-14',
+            'status' => PurchaseOrder::STATUS_PREPARING,
+            'items' => [
+                [
+                    'item_name' => 'PC văn phòng',
+                    'qty' => 3,
+                ],
+            ],
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['items.0.unit']);
+    }
+
     public function test_supplier_only_sees_own_purchase_orders(): void
     {
         $supplierA = Supplier::factory()->create(['name' => 'NCC A']);

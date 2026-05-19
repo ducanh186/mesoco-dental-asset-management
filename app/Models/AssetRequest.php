@@ -33,6 +33,7 @@ class AssetRequest extends Model
 
     public const TYPE_JUSTIFICATION = 'JUSTIFICATION';
     public const TYPE_CONSUMABLE_REQUEST = 'CONSUMABLE_REQUEST';
+    public const WORKFLOW_LABELS = ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'];
 
     /**
      * Request statuses
@@ -235,6 +236,23 @@ class AssetRequest extends Model
         return $this->type === self::TYPE_JUSTIFICATION;
     }
 
+    public function workflowLabel(): string
+    {
+        $title = trim((string) $this->title);
+
+        foreach (self::WORKFLOW_LABELS as $label) {
+            if (str_starts_with($title, $label)) {
+                return $label;
+            }
+        }
+
+        return match ($this->type) {
+            self::TYPE_JUSTIFICATION => 'Sửa chữa',
+            self::TYPE_CONSUMABLE_REQUEST => 'Bàn giao',
+            default => (string) $this->type,
+        };
+    }
+
     /**
      * Approve this request.
      * 
@@ -421,6 +439,7 @@ class AssetRequest extends Model
             'id' => $this->id,
             'code' => $this->code,
             'type' => $this->type,
+            'workflow_label' => $this->workflowLabel(),
             'status' => $this->status,
             'title' => $this->title,
             'description' => $this->description,

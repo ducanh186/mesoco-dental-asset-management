@@ -180,6 +180,8 @@ const ReviewRequestsPage = ({ user }) => {
         }
     };
 
+    const getDisplayTypeLabel = (request) => request?.workflow_label || getTypeLabel(request?.type);
+
     const getTypeVariant = (type) => {
         switch (type) {
             case REQUEST_TYPES.JUSTIFICATION: return 'warning';
@@ -252,7 +254,7 @@ const ReviewRequestsPage = ({ user }) => {
         { 
             key: 'type', 
             label: t('requests.requestType'),
-            render: (value) => <Badge variant={getTypeVariant(value)} size="sm">{getTypeLabel(value)}</Badge>
+            render: (value, row) => <Badge variant={getTypeVariant(value)} size="sm">{getDisplayTypeLabel(row)}</Badge>
         },
         { 
             key: 'title', 
@@ -443,7 +445,7 @@ const ReviewRequestsPage = ({ user }) => {
                         {/* Status & Type */}
                         <div className="flex gap-3 flex-wrap">
                             <Badge variant={getTypeVariant(selectedRequest.type)} size="lg">
-                                {getTypeLabel(selectedRequest.type)}
+                                {getDisplayTypeLabel(selectedRequest)}
                             </Badge>
                             <Badge variant={getStatusVariant(selectedRequest.status)} size="lg">
                                 {getStatusLabel(selectedRequest.status)}

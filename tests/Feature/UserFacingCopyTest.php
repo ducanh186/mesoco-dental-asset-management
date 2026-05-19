@@ -15,6 +15,7 @@ class UserFacingCopyTest extends TestCase
         $inventoryPage = file_get_contents(resource_path('js/pages/InventoryPage.jsx'));
         $reportPage = file_get_contents(resource_path('js/pages/ReportPage.jsx'));
         $sidebar = file_get_contents(resource_path('js/layouts/Sidebar.jsx'));
+        $quickActions = file_get_contents(resource_path('js/components/dashboard/QuickActionGrid.jsx'));
         $vi = file_get_contents(resource_path('js/i18n/locales/vi.js'));
 
         $this->assertStringContainsString('Danh mục thiết bị', $assetsPage);
@@ -38,6 +39,11 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringNotContainsString('nơi đặt tài sản', $locationsPage);
 
         $reviewRequestsPage = file_get_contents(resource_path('js/pages/ReviewRequestsPage.jsx'));
+        $requestsPage = file_get_contents(resource_path('js/pages/RequestsPage.jsx'));
+        $this->assertStringContainsString('getDisplayTypeLabel(row)', $requestsPage);
+        $this->assertStringContainsString('getDisplayTypeLabel(selectedRequest)', $requestsPage);
+        $this->assertStringContainsString('getDisplayTypeLabel(row)', $reviewRequestsPage);
+        $this->assertStringContainsString('getDisplayTypeLabel(selectedRequest)', $reviewRequestsPage);
         $this->assertStringContainsString('openReviewModal(selectedRequest', $reviewRequestsPage);
         $this->assertStringNotContainsString("openReviewModal(row, 'APPROVE')", $reviewRequestsPage);
         $this->assertStringNotContainsString("openReviewModal(row, 'REJECT')", $reviewRequestsPage);
@@ -49,6 +55,11 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringContainsString('Danh sách thiết bị', $purchaseOrdersPage);
         $this->assertStringContainsString('Chờ giao hàng', $purchaseOrdersPage);
         $this->assertStringContainsString('Chi tiết', $purchaseOrdersPage);
+        $this->assertStringContainsString('Bạn chắc chắn muốn xóa?', $purchaseOrdersPage);
+        $this->assertStringContainsString('list="purchase-order-device-options"', $purchaseOrdersPage);
+        $this->assertStringContainsString('<datalist id="purchase-order-device-options">', $purchaseOrdersPage);
+        $this->assertStringContainsString('response.assets || response.data || []', $purchaseOrdersPage);
+        $this->assertStringNotContainsString('Xóa đơn hàng ${order.order_code}?', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Chuẩn bị', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Đang giao', $purchaseOrdersPage);
         $this->assertStringNotContainsString('Đơn giá', $purchaseOrdersPage);
@@ -65,6 +76,8 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringContainsString('Báo cáo phân tích vòng đời', $reportPage);
 
         $this->assertStringNotContainsString('Sơ đồ chức năng BFD', $sidebar);
+        $operationalQuickActions = str($quickActions)->between('if (isOperationalRole) {', 'if (isSupplier) {')->toString();
+        $this->assertStringNotContainsString("to: '/purchase-orders'", $operationalQuickActions);
         $this->assertStringContainsString('Quản lý hồ sơ', $vi);
         $this->assertStringContainsString('Khấu hao ≥ 75%', $vi);
         $this->assertStringNotContainsString('Khấu hao ≥ 90%', $vi);

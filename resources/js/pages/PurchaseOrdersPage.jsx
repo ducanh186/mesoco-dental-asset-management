@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { handleApiError, purchaseOrdersApi, suppliersApi } from '../services/api';
+import { assetsApi, handleApiError, purchaseOrdersApi, suppliersApi } from '../services/api';
 import {
     Badge,
     Button,
@@ -64,6 +64,7 @@ const PurchaseOrdersPage = ({ user }) => {
 
     const [orders, setOrders] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
+    const [deviceOptions, setDeviceOptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({
         current_page: 1,
@@ -93,6 +94,17 @@ const PurchaseOrdersPage = ({ user }) => {
             label: supplier.code ? `${supplier.code} - ${supplier.name}` : supplier.name,
         }))
     ), [suppliers]);
+
+    const purchaseOrderDeviceOptions = useMemo(() => (
+        deviceOptions.map((asset) => {
+            const label = asset.asset_code ? `${asset.asset_code} - ${asset.name}` : asset.name;
+
+            return {
+                id: asset.id,
+                label,
+            };
+        }).filter((asset) => asset.label)
+    ), [deviceOptions]);
 
     const statusSelectOptions = useMemo(() => (
         statusOptions.map((status) => ({
@@ -150,6 +162,19 @@ const PurchaseOrdersPage = ({ user }) => {
         }
     }, [canManageOrders, toast]);
 
+    const fetchDeviceOptions = useCallback(async () => {
+        if (!canManageOrders) {
+            return;
+        }
+
+        try {
+            const response = await assetsApi.list({ per_page: 100 });
+            setDeviceOptions(response.assets || response.data || []);
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    }, [canManageOrders, toast]);
+
     useEffect(() => {
         fetchOrders(1);
     }, [fetchOrders]);
@@ -157,6 +182,10 @@ const PurchaseOrdersPage = ({ user }) => {
     useEffect(() => {
         fetchSuppliers();
     }, [fetchSuppliers]);
+
+    useEffect(() => {
+        fetchDeviceOptions();
+    }, [fetchDeviceOptions]);
 
     const resetForm = () => {
         setFormData(createEmptyForm());
@@ -210,7 +239,7 @@ const PurchaseOrdersPage = ({ user }) => {
     };
 
     const handleDelete = async (order) => {
-        if (!window.confirm(`Xóa đơn hàng ${order.order_code}?`)) {
+        if (!window.confirm('Bạn chắc chắn muốn xóa?')) {
             return;
         }
 
@@ -592,6 +621,7 @@ const PurchaseOrdersPage = ({ user }) => {
                                                     value={item.item_name}
                                                     onChange={(event) => handleItemChange(index, 'item_name', event.target.value)}
                                                     error={formErrors[`items.${index}.item_name`]?.[0]}
+                                                    list="purchase-order-device-options"
                                                     required
                                                 />
                                                 <Input
@@ -600,6 +630,7 @@ const PurchaseOrdersPage = ({ user }) => {
                                                     onChange={(event) => handleItemChange(index, 'unit', event.target.value)}
                                                     error={formErrors[`items.${index}.unit`]?.[0]}
                                                     placeholder="cái / bộ / hộp"
+                                                    required
                                                 />
                                                 <Input
                                                     label="Số lượng"
@@ -625,6 +656,11 @@ const PurchaseOrdersPage = ({ user }) => {
                                         </Card>
                                     ))}
                                 </div>
+                                <datalist id="purchase-order-device-options">
+                                    {purchaseOrderDeviceOptions.map((asset) => (
+                                        <option key={asset.id} value={asset.label} />
+                                    ))}
+                                </datalist>
                             </Card>
                     </div>
 

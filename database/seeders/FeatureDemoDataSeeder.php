@@ -479,12 +479,30 @@ class FeatureDemoDataSeeder extends Seeder
             ['sku' => 'LAN-CAT6-03M', 'name' => 'Dây mạng Cat6 3m', 'unit' => 'sợi'],
             ['sku' => 'SSD-512-SATA', 'name' => 'Ổ cứng SSD 512GB', 'unit' => 'cái'],
         ];
+        $workflowLabels = ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'];
+        $workflowDescriptions = [
+            'Bàn giao' => 'Đề nghị bàn giao thiết bị cho nhân viên phụ trách.',
+            'Thu hồi' => 'Đề nghị thu hồi thiết bị sau khi kết thúc nhu cầu sử dụng.',
+            'Sửa chữa' => 'Thiết bị có dấu hiệu hoạt động không ổn định, cần kỹ thuật kiểm tra.',
+            'Thu hủy' => 'Thiết bị đã qua ngưỡng sử dụng, cần xem xét thu hủy theo quy trình.',
+        ];
 
         foreach (range(1, 30) as $number) {
-            $type = $number % 2 === 0 ? AssetRequest::TYPE_CONSUMABLE_REQUEST : AssetRequest::TYPE_JUSTIFICATION;
+            $workflowLabel = $workflowLabels[($number - 1) % count($workflowLabels)];
+            $type = $workflowLabel === 'Sửa chữa'
+                ? AssetRequest::TYPE_JUSTIFICATION
+                : AssetRequest::TYPE_CONSUMABLE_REQUEST;
             $status = $statuses[($number - 1) % count($statuses)];
             $asset = $assets[($number * 2) % $assets->count()];
             $requester = $employees[($number - 1) % $employees->count()];
+            $createdAt = now()
+                ->setDate(2026, 5, 6)
+                ->startOfDay()
+                ->addDays(($number - 1) % 8)
+                ->addHours($number % 8);
+            $reviewedAt = in_array($status, [AssetRequest::STATUS_APPROVED, AssetRequest::STATUS_REJECTED], true)
+                ? $createdAt->copy()->addHours(4)
+                : null;
 
             $request = AssetRequest::updateOrCreate(
                 ['code' => sprintf('DEMO-REQ-%03d', $number)],
@@ -492,17 +510,13 @@ class FeatureDemoDataSeeder extends Seeder
                     'type' => $type,
                     'status' => $status,
                     'requested_by_employee_id' => $requester->id,
-                    'asset_id' => $type === AssetRequest::TYPE_JUSTIFICATION ? $asset->id : null,
+                    'asset_id' => $asset->id,
                     'reviewed_by_user_id' => in_array($status, [AssetRequest::STATUS_APPROVED, AssetRequest::STATUS_REJECTED], true) ? $manager->id : null,
                     'assigned_to_user_id' => $status === AssetRequest::STATUS_APPROVED ? $technician->id : null,
-                    'reviewed_at' => in_array($status, [AssetRequest::STATUS_APPROVED, AssetRequest::STATUS_REJECTED], true) ? now()->subDays($number % 12) : null,
+                    'reviewed_at' => $reviewedAt,
                     'review_note' => $status === AssetRequest::STATUS_REJECTED ? 'Chưa đủ thông tin để duyệt yêu cầu.' : null,
-                    'title' => $type === AssetRequest::TYPE_JUSTIFICATION
-                        ? 'Báo sự cố thiết bị ' . $asset->asset_code
-                        : 'Yêu cầu cấp vật tư IT tháng ' . (($number % 12) + 1),
-                    'description' => $type === AssetRequest::TYPE_JUSTIFICATION
-                        ? 'Thiết bị có dấu hiệu hoạt động không ổn định, cần kỹ thuật kiểm tra.'
-                        : 'Nhân viên cần bổ sung vật tư phục vụ công việc hằng ngày.',
+                    'title' => $workflowLabel . ' thiết bị ' . $asset->asset_code,
+                    'description' => $workflowDescriptions[$workflowLabel],
                     'severity' => AssetRequest::SEVERITIES[$number % count(AssetRequest::SEVERITIES)],
                     'incident_at' => $type === AssetRequest::TYPE_JUSTIFICATION ? now()->subDays($number % 20 + 1) : null,
                     'suspected_cause' => $type === AssetRequest::TYPE_JUSTIFICATION
@@ -511,14 +525,22 @@ class FeatureDemoDataSeeder extends Seeder
                 ]
             );
 
-            if ($type === AssetRequest::TYPE_JUSTIFICATION) {
+            $request->timestamps = false;
+            $request->forceFill([
+                'created_at' => $createdAt,
+                'updated_at' => $reviewedAt ?? $createdAt->copy()->addHour(),
+            ])->save();
+            $request->timestamps = true;
+            $request->items()->delete();
+
+            if (in_array($workflowLabel, ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'], true)) {
                 RequestItem::updateOrCreate(
                     ['request_id' => $request->id, 'item_kind' => RequestItem::KIND_ASSET],
                     [
                         'asset_id' => $asset->id,
                         'qty' => 1,
                         'unit' => 'thiết bị',
-                        'note' => 'Kiểm tra thiết bị liên quan đến phiếu yêu cầu.',
+                        'note' => $workflowLabel . ' thiết bị theo phiếu yêu cầu demo.',
                     ]
                 );
             } else {
@@ -538,13 +560,13 @@ class FeatureDemoDataSeeder extends Seeder
 
             RequestEvent::updateOrCreate(
                 ['request_id' => $request->id, 'event_type' => RequestEvent::TYPE_CREATED],
-                ['actor_user_id' => $requester->user?->id, 'meta' => ['seed' => 'feature_demo'], 'created_at' => now()->subDays($number + 2)]
+                ['actor_user_id' => $requester->user?->id, 'meta' => ['seed' => 'feature_demo'], 'created_at' => $createdAt]
             );
 
             if ($status !== AssetRequest::STATUS_SUBMITTED) {
                 RequestEvent::updateOrCreate(
                     ['request_id' => $request->id, 'event_type' => $this->eventTypeForRequestStatus($status)],
-                    ['actor_user_id' => $manager->id, 'meta' => ['seed' => 'feature_demo'], 'created_at' => now()->subDays($number)]
+                    ['actor_user_id' => $manager->id, 'meta' => ['seed' => 'feature_demo'], 'created_at' => $reviewedAt]
                 );
             }
         }

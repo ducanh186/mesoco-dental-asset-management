@@ -668,8 +668,8 @@ export default {
         // Types (Phase 5)
         types: {
             all: 'All Types',
-            JUSTIFICATION: 'Equipment Issue Report',
-            CONSUMABLE_REQUEST: 'Consumable Request',
+            JUSTIFICATION: 'Repair',
+            CONSUMABLE_REQUEST: 'Handover',
             maintenance: 'Request Maintenance',
         },
 

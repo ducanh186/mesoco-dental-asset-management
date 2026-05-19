@@ -47,6 +47,24 @@ class FeatureDemoDataSeederTest extends TestCase
                 ->pluck('status')
                 ->all()
         );
+        $demoRequests = AssetRequest::query()
+            ->where('code', 'like', 'DEMO-REQ-%')
+            ->orderBy('code')
+            ->get();
+
+        $this->assertEqualsCanonicalizing(
+            ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'],
+            $demoRequests
+                ->map(fn (AssetRequest $request) => $request->toApiArray(false)['workflow_label'] ?? null)
+                ->unique()
+                ->values()
+                ->all()
+        );
+
+        foreach ($demoRequests as $request) {
+            $this->assertGreaterThanOrEqual('2026-05-06', $request->created_at->toDateString());
+            $this->assertLessThanOrEqual('2026-05-13', $request->created_at->toDateString());
+        }
 
         $this->assertDatabaseHas('suppliers', [
             'code' => 'NCC-001',
