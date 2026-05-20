@@ -438,6 +438,7 @@ class AssetController extends Controller
     public function unassign(Request $request, Asset $asset): JsonResponse
     {
         $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:255'],
             'return_condition' => ['required', 'string', 'max:255'],
         ]);
 
@@ -476,7 +477,7 @@ class AssetController extends Controller
                     'staff_id' => $activeAssignment->staff_id,
                     'admin_id' => $request->user()?->id,
                     'return_date' => now(),
-                    'reason' => 'Returned from asset workspace.',
+                    'reason' => $validated['reason'] ?? 'Returned from asset workspace.',
                     'return_condition' => $validated['return_condition'],
                     'approved_by' => $request->user()?->id,
                 ]);

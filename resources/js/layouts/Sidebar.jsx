@@ -190,7 +190,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         navGroup('maintenance-management', 'nav.maintenanceManagement', 'maintenance', [
             navItems.preventiveMaintenance,
             navItems.repairEvents,
-            navItems.repairLogs,
         ]),
         navGroup('inventory-disposal', 'nav.inventoryDisposal', 'inventory', [
             navItems.inventory,
@@ -198,44 +197,26 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         ]),
         navGroup('reports-statistics', 'nav.reportsStatistics', 'reports', [
             navItems.reports,
-            navItems.deviceStatusReport,
-            navItems.depreciationReport,
-            navItems.disposalProposalReport,
-            navItems.lifecycleAnalysisReport,
         ]),
     ];
 
     const technicianNavItems = [
         navItems.dashboard,
         navItems.qrScan,
-        navGroup('catalog-records', 'nav.catalogRecords', 'assets', [
-            navItems.assets,
-            navItems.locations,
-            navItems.suppliers,
-            navItems.profile,
-        ]),
-        navGroup('order-management', 'nav.orderManagement', 'purchaseOrders', [
-            navItems.purchaseOrders,
-        ]),
-        navItems.myDevices,
+        navItems.myRequests,
         navGroup('maintenance-management', 'nav.maintenanceManagement', 'maintenance', [
             navItems.preventiveMaintenance,
             navItems.repairEvents,
-            navItems.repairLogs,
         ]),
         navGroup('inventory-disposal', 'nav.inventoryDisposal', 'inventory', [
             navItems.inventory,
             navItems.disposal,
         ]),
-        navItems.myRequests,
     ];
 
     const employeeNavItems = [
         navItems.dashboard,
         navItems.qrScan,
-        navGroup('catalog-records', 'nav.catalogRecords', 'assets', [
-            navItems.profile,
-        ]),
         navItems.myDevices,
         navItems.myRequests,
     ];

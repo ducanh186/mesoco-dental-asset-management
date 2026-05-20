@@ -156,7 +156,7 @@ const InternalRoute = ({ children }) => (
 );
 
 const PurchaseOrderRoute = ({ children }) => (
-     <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_TECHNICIAN, ROLE_SUPPLIER]}>{children}</RoleRoute>
+     <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_SUPPLIER]}>{children}</RoleRoute>
 );
 
 // ============================================================================

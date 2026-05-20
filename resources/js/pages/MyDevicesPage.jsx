@@ -1,19 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useI18n } from '../i18n';
 import { preferLocalizedMessage } from '../services/api';
-import { hasOperationalAccess } from '../utils/roles';
 
 const SEVERITY_OPTIONS = [
     { value: 'low', labelKey: 'requests.severities.low' },
     { value: 'medium', labelKey: 'requests.severities.medium' },
     { value: 'high', labelKey: 'requests.severities.high' },
     { value: 'critical', labelKey: 'requests.severities.critical' },
-];
-
-const HANDOVER_WORKFLOWS = [
-    { value: 'Bàn giao', labelKey: 'myDevices.workflow.handover' },
-    { value: 'Thu hồi', labelKey: 'myDevices.workflow.recall' },
 ];
 
 const toLocalIsoString = (date) => {
@@ -46,7 +40,6 @@ const formatDateTime = (value) => {
 
 const MyDevicesPage = ({ user }) => {
     const { t } = useI18n();
-    const canRequestHandover = hasOperationalAccess(user);
     const [devices, setDevices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -74,14 +67,6 @@ const MyDevicesPage = ({ user }) => {
     const openRepairForm = (asset) => {
         setActiveForm({
             kind: 'repair',
-            asset,
-            initialDateTime: toLocalIsoString(new Date()),
-        });
-    };
-
-    const openHandoverForm = (asset) => {
-        setActiveForm({
-            kind: 'handover',
             asset,
             initialDateTime: toLocalIsoString(new Date()),
         });
@@ -184,15 +169,6 @@ const MyDevicesPage = ({ user }) => {
                                             >
                                                 {t('myDevices.action.createRepair')}
                                             </button>
-                                            {canRequestHandover && (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-secondary"
-                                                    onClick={() => openHandoverForm(device)}
-                                                >
-                                                    {t('myDevices.action.createHandover')}
-                                                </button>
-                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -212,14 +188,6 @@ const MyDevicesPage = ({ user }) => {
                 />
             )}
 
-            {activeForm?.kind === 'handover' && (
-                <HandoverRequestForm
-                    asset={activeForm.asset}
-                    initialDateTime={activeForm.initialDateTime}
-                    onClose={closeForm}
-                    onSubmitted={handleFormSubmitted}
-                />
-            )}
         </div>
     );
 };
@@ -337,116 +305,6 @@ const RepairRequestForm = ({ asset, initialDateTime, requesterName, onClose, onS
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={submitting}>
                         {submitting ? t('requests.submitting') : t('myDevices.form.submitRepair')}
-                    </button>
-                </div>
-            </form>
-        </div>
-    );
-};
-
-const HandoverRequestForm = ({ asset, initialDateTime, onClose, onSubmitted }) => {
-    const { t } = useI18n();
-    const [workflow, setWorkflow] = useState(HANDOVER_WORKFLOWS[0].value);
-    const computedTitle = useMemo(
-        () => `${workflow} ${asset.asset_code || ''} - ${asset.name || ''}`.trim(),
-        [workflow, asset.asset_code, asset.name]
-    );
-    const [title, setTitle] = useState(computedTitle);
-    const [note, setNote] = useState('');
-    const [eventAt, setEventAt] = useState(formatDateTime(initialDateTime));
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        setTitle(computedTitle);
-    }, [computedTitle]);
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setSubmitting(true);
-        setError(null);
-
-        try {
-            await axios.post('/api/requests', {
-                type: 'CONSUMABLE_REQUEST',
-                title,
-                description: note || null,
-                items: [
-                    {
-                        item_kind: 'CONSUMABLE',
-                        sku: asset.asset_code || null,
-                        name: asset.name || null,
-                        qty: 1,
-                        unit: 'cái',
-                        note: eventAt ? `${workflow} dự kiến: ${eventAt}` : null,
-                    },
-                ],
-            });
-            onSubmitted?.();
-        } catch (err) {
-            setError(preferLocalizedMessage(err.response?.data?.message, t('myDevices.submitFailed')));
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    return (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-            <form className="modal-card" onSubmit={handleSubmit}>
-                <h2>{t('myDevices.form.handoverTitle')}</h2>
-                <p className="modal-subtitle">
-                    {asset.asset_code} - {asset.name}
-                </p>
-
-                {error && <div className="alert alert-error">{error}</div>}
-
-                <label className="form-field">
-                    <span>{t('myDevices.form.workflow')}</span>
-                    <select value={workflow} onChange={(e) => setWorkflow(e.target.value)}>
-                        {HANDOVER_WORKFLOWS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {t(option.labelKey)}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-
-                <label className="form-field">
-                    <span>{t('myDevices.form.fieldTitle')}</span>
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                        maxLength={255}
-                    />
-                </label>
-
-                <label className="form-field">
-                    <span>{t('myDevices.form.eventAt')}</span>
-                    <input
-                        type="datetime-local"
-                        value={eventAt}
-                        onChange={(e) => setEventAt(e.target.value)}
-                    />
-                </label>
-
-                <label className="form-field">
-                    <span>{t('myDevices.form.note')}</span>
-                    <textarea
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        rows={3}
-                        maxLength={1000}
-                    />
-                </label>
-
-                <div className="modal-actions">
-                    <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting}>
-                        {t('common.cancel')}
-                    </button>
-                    <button type="submit" className="btn btn-primary" disabled={submitting}>
-                        {submitting ? t('requests.submitting') : t('myDevices.form.submitHandover')}
                     </button>
                 </div>
             </form>

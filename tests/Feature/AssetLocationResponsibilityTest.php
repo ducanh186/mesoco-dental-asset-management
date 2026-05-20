@@ -235,6 +235,7 @@ class AssetLocationResponsibilityTest extends TestCase
 
         $this->actingAs($manager)
             ->postJson("/api/assets/{$asset->id}/unassign", [
+                'reason' => 'Thu hồi để tái phân bổ.',
                 'return_condition' => 'Thiết bị hoạt động bình thường khi thu hồi.',
             ])
             ->assertOk()
@@ -246,6 +247,7 @@ class AssetLocationResponsibilityTest extends TestCase
             'staff_id' => $staffUserId,
             'admin_id' => $manager->id,
             'approved_by' => $manager->id,
+            'reason' => 'Thu hồi để tái phân bổ.',
             'return_condition' => 'Thiết bị hoạt động bình thường khi thu hồi.',
         ]);
 

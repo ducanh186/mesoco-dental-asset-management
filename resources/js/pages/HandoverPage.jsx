@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Card, Input, Select, Table, TablePagination, useToast } from '../components/ui';
-import { handleApiError, handoverApi } from '../services/api';
+import { assetsApi, handleApiError, handoverApi, usersApi } from '../services/api';
 
 const statusOptions = [
     { value: '', label: 'Tất cả' },
@@ -16,9 +16,24 @@ const statusMeta = {
 const HandoverPage = () => {
     const toast = useToast();
     const [records, setRecords] = useState([]);
+    const [availableAssets, setAvailableAssets] = useState([]);
+    const [employeeUsers, setEmployeeUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [formLoading, setFormLoading] = useState(true);
+    const [submittingHandover, setSubmittingHandover] = useState(false);
+    const [submittingReturn, setSubmittingReturn] = useState(false);
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('');
+    const [handoverForm, setHandoverForm] = useState({
+        asset_id: '',
+        staff_id: '',
+        note: '',
+    });
+    const [returnForm, setReturnForm] = useState({
+        asset_id: '',
+        reason: '',
+        return_condition: '',
+    });
     const [pagination, setPagination] = useState({
         current_page: 1,
         last_page: 1,
@@ -58,13 +73,99 @@ const HandoverPage = () => {
         }
     }, [pagination.per_page, search, status, toast]);
 
+    const fetchFormOptions = useCallback(async () => {
+        setFormLoading(true);
+
+        try {
+            const [assetsResponse, usersResponse] = await Promise.all([
+                assetsApi.available(),
+                usersApi.list({ role: 'employee', per_page: 100 }),
+            ]);
+
+            setAvailableAssets(assetsResponse.assets || []);
+            setEmployeeUsers(usersResponse.users || []);
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setFormLoading(false);
+        }
+    }, [toast]);
+
     useEffect(() => {
         fetchRecords(1);
     }, [fetchRecords]);
 
+    useEffect(() => {
+        fetchFormOptions();
+    }, [fetchFormOptions]);
+
     const clearFilters = () => {
         setSearch('');
         setStatus('');
+    };
+
+    const refreshAfterMutation = async () => {
+        await Promise.all([
+            fetchRecords(1),
+            fetchFormOptions(),
+        ]);
+    };
+
+    const assetOptions = availableAssets.map((asset) => ({
+        value: String(asset.id),
+        label: `${asset.asset_code || 'Chưa có mã'} - ${asset.name || 'Thiết bị'}`,
+    }));
+
+    const employeeOptions = employeeUsers.map((user) => ({
+        value: String(user.id),
+        label: `${user.employee_code || user.username || 'Chưa có mã'} - ${user.name || user.employee?.full_name || 'Người dùng'}`,
+    }));
+
+    const returnOptions = records
+        .filter((record) => record.status === 'active')
+        .flatMap((record) => (record.assets || [])
+            .filter((asset) => asset.id)
+            .map((asset) => ({
+                value: String(asset.id),
+                label: `${record.code} - ${asset.asset_code || 'Chưa có mã'} - ${record.staff_name}`,
+            })));
+
+    const handleCreateHandover = async (event) => {
+        event.preventDefault();
+        setSubmittingHandover(true);
+
+        try {
+            await assetsApi.assign(handoverForm.asset_id, {
+                staff_id: Number(handoverForm.staff_id),
+                department_name: handoverForm.note || undefined,
+            });
+            toast.success('Đã tạo phiếu bàn giao thiết bị.');
+            setHandoverForm({ asset_id: '', staff_id: '', note: '' });
+            await refreshAfterMutation();
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setSubmittingHandover(false);
+        }
+    };
+
+    const handleCreateReturn = async (event) => {
+        event.preventDefault();
+        setSubmittingReturn(true);
+
+        try {
+            await assetsApi.unassign(returnForm.asset_id, {
+                reason: returnForm.reason || undefined,
+                return_condition: returnForm.return_condition,
+            });
+            toast.success('Đã tạo phiếu thu hồi thiết bị.');
+            setReturnForm({ asset_id: '', reason: '', return_condition: '' });
+            await refreshAfterMutation();
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setSubmittingReturn(false);
+        }
     };
 
     const columns = [
@@ -135,6 +236,83 @@ const HandoverPage = () => {
             <div>
                 <h2 className="text-xl font-bold text-text">Bàn giao / Thu hồi</h2>
                 <p className="text-sm text-text-muted">Theo dõi phiếu bàn giao, thiết bị đã cấp và thông tin thu hồi.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <Card className="p-4">
+                    <form className="space-y-4" onSubmit={handleCreateHandover}>
+                        <div>
+                            <h3 className="text-base font-semibold text-text">Tạo phiếu bàn giao</h3>
+                            <p className="text-sm text-text-muted">Chọn thiết bị sẵn sàng và người nhận thiết bị.</p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <Select
+                                label="Thiết bị bàn giao"
+                                value={handoverForm.asset_id}
+                                onChange={(event) => setHandoverForm((current) => ({ ...current, asset_id: event.target.value }))}
+                                options={assetOptions}
+                                placeholder="Chọn thiết bị"
+                                disabled={formLoading || submittingHandover}
+                                required
+                            />
+                            <Select
+                                label="Người nhận"
+                                value={handoverForm.staff_id}
+                                onChange={(event) => setHandoverForm((current) => ({ ...current, staff_id: event.target.value }))}
+                                options={employeeOptions}
+                                placeholder="Chọn người nhận"
+                                disabled={formLoading || submittingHandover}
+                                required
+                            />
+                        </div>
+                        <Input
+                            label="Ghi chú"
+                            value={handoverForm.note}
+                            onChange={(event) => setHandoverForm((current) => ({ ...current, note: event.target.value }))}
+                            placeholder="Ghi chú bàn giao nếu có"
+                            disabled={submittingHandover}
+                        />
+                        <Button type="submit" disabled={formLoading || submittingHandover}>
+                            {submittingHandover ? 'Đang tạo...' : 'Tạo phiếu bàn giao'}
+                        </Button>
+                    </form>
+                </Card>
+
+                <Card className="p-4">
+                    <form className="space-y-4" onSubmit={handleCreateReturn}>
+                        <div>
+                            <h3 className="text-base font-semibold text-text">Tạo phiếu thu hồi</h3>
+                            <p className="text-sm text-text-muted">Thu hồi thiết bị đang bàn giao và ghi rõ tình trạng khi thu hồi.</p>
+                        </div>
+                        <Select
+                            label="Thiết bị cần thu hồi"
+                            value={returnForm.asset_id}
+                            onChange={(event) => setReturnForm((current) => ({ ...current, asset_id: event.target.value }))}
+                            options={returnOptions}
+                            placeholder="Chọn phiếu / thiết bị"
+                            disabled={loading || submittingReturn}
+                            required
+                        />
+                        <Input
+                            label="Lý do thu hồi"
+                            value={returnForm.reason}
+                            onChange={(event) => setReturnForm((current) => ({ ...current, reason: event.target.value }))}
+                            placeholder="Ví dụ: đổi thiết bị, nghỉ việc, tái phân bổ"
+                            disabled={submittingReturn}
+                        />
+                        <Input
+                            label="Tình trạng thiết bị khi thu hồi"
+                            value={returnForm.return_condition}
+                            onChange={(event) => setReturnForm((current) => ({ ...current, return_condition: event.target.value }))}
+                            placeholder="Ví dụ: hoạt động tốt, trầy xước nhẹ, lỗi màn hình"
+                            disabled={submittingReturn}
+                            required
+                        />
+                        <Button type="submit" disabled={loading || submittingReturn}>
+                            {submittingReturn ? 'Đang tạo...' : 'Tạo phiếu thu hồi'}
+                        </Button>
+                    </form>
+                </Card>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">

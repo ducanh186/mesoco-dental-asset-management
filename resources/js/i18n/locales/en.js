@@ -113,13 +113,13 @@ export default {
         bfdOperations: 'Operations Management',
         bfdMaintenance: 'Maintenance Management',
         bfdInventoryDisposal: 'Inventory & Disposal',
-        bfdReports: 'Reports & Statistics',
+        bfdReports: 'Statistics Reports',
         catalogRecords: 'Catalog & Records',
         orderManagement: 'Order Management',
         operationsManagement: 'Operations Management',
         maintenanceManagement: 'Maintenance Management',
         inventoryDisposal: 'Inventory & Disposal',
-        reportsStatistics: 'Reports & Statistics',
+        reportsStatistics: 'Statistics Reports',
         allocationManagement: 'Allocation Management',
         employees: 'Employee Profiles',
         assets: 'Equipment Catalog',
@@ -142,7 +142,7 @@ export default {
         maintenance: 'Maintenance Management',
         offService: 'Off Service',
         feedback: 'Feedback & Suggestions',
-        reports: 'Reports & Statistics',
+        reports: 'Statistics Reports',
         deviceStatusReport: 'Device Status',
         depreciationReport: 'Depreciation / Remaining Value',
         disposalProposalReport: 'Disposal Proposal',
@@ -674,8 +674,8 @@ export default {
         // Types (Phase 5)
         types: {
             all: 'All',
-            JUSTIFICATION: 'Repair',
-            CONSUMABLE_REQUEST: 'Handover',
+            JUSTIFICATION: 'Equipment incident report',
+            CONSUMABLE_REQUEST: 'Consumable / accessory request',
             maintenance: 'Request Maintenance',
         },
 
@@ -847,7 +847,7 @@ export default {
     // ========================================================================
     myDevices: {
         title: 'My Devices',
-        subtitle: 'Devices you are responsible for. Repair requests are available here; handover and recall appear only for permitted roles.',
+        subtitle: 'Devices you are responsible for. Report equipment incidents here so they can go through review and maintenance.',
         empty: 'You have no devices assigned to you yet.',
         loadFailed: 'Unable to load your devices. Please try again.',
         submitFailed: 'Unable to submit the request. Please try again.',

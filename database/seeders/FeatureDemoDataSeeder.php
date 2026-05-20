@@ -479,17 +479,15 @@ class FeatureDemoDataSeeder extends Seeder
             ['sku' => 'LAN-CAT6-03M', 'name' => 'Dây mạng Cat6 3m', 'unit' => 'sợi'],
             ['sku' => 'SSD-512-SATA', 'name' => 'Ổ cứng SSD 512GB', 'unit' => 'cái'],
         ];
-        $workflowLabels = ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'];
+        $workflowLabels = ['Báo sự cố thiết bị', 'Yêu cầu vật tư / linh kiện'];
         $workflowDescriptions = [
-            'Bàn giao' => 'Đề nghị bàn giao thiết bị cho nhân viên phụ trách.',
-            'Thu hồi' => 'Đề nghị thu hồi thiết bị sau khi kết thúc nhu cầu sử dụng.',
-            'Sửa chữa' => 'Thiết bị có dấu hiệu hoạt động không ổn định, cần kỹ thuật kiểm tra.',
-            'Thu hủy' => 'Thiết bị đã qua ngưỡng sử dụng, cần xem xét thu hủy theo quy trình.',
+            'Báo sự cố thiết bị' => 'Thiết bị có dấu hiệu hoạt động không ổn định, cần kỹ thuật kiểm tra.',
+            'Yêu cầu vật tư / linh kiện' => 'Đề nghị cấp vật tư hoặc linh kiện phục vụ công việc.',
         ];
 
         foreach (range(1, 30) as $number) {
             $workflowLabel = $workflowLabels[($number - 1) % count($workflowLabels)];
-            $type = $workflowLabel === 'Sửa chữa'
+            $type = $workflowLabel === 'Báo sự cố thiết bị'
                 ? AssetRequest::TYPE_JUSTIFICATION
                 : AssetRequest::TYPE_CONSUMABLE_REQUEST;
             $status = $statuses[($number - 1) % count($statuses)];
@@ -533,14 +531,14 @@ class FeatureDemoDataSeeder extends Seeder
             $request->timestamps = true;
             $request->items()->delete();
 
-            if (in_array($workflowLabel, ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'], true)) {
+            if ($type === AssetRequest::TYPE_JUSTIFICATION) {
                 RequestItem::updateOrCreate(
                     ['request_id' => $request->id, 'item_kind' => RequestItem::KIND_ASSET],
                     [
                         'asset_id' => $asset->id,
                         'qty' => 1,
                         'unit' => 'thiết bị',
-                        'note' => $workflowLabel . ' thiết bị theo phiếu yêu cầu demo.',
+                        'note' => 'Báo sự cố thiết bị theo phiếu yêu cầu demo.',
                     ]
                 );
             } else {

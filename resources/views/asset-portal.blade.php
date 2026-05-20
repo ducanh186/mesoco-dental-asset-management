@@ -326,8 +326,8 @@
         <div class="brand">
             <img src="{{ $logoUrl }}" alt="Mesoco">
             <div class="brand-copy">
-                <p class="brand-title">Quản lý tài sản thiết bị tại Mesoco</p>
-                <p class="brand-subtitle">Cổng tra cứu tài sản bằng mã QR</p>
+                <p class="brand-title">Quản lý thiết bị IT tại Mesoco</p>
+                <p class="brand-subtitle">Cổng tra cứu thiết bị bằng mã QR</p>
             </div>
         </div>
         <span class="role-chip">{{ $roleLabels[$visibilityRole] ?? $visibilityRole }}</span>
@@ -353,11 +353,11 @@
         <div>
             <article class="panel">
                 <div class="panel-title">
-                    <h2>Thông tin tài sản</h2>
+                    <h2>Thông tin thiết bị</h2>
                 </div>
                 <div class="info-grid">
                     <div class="info-row">
-                        <div class="label">Mã tài sản</div>
+                        <div class="label">Mã thiết bị</div>
                         <div class="value">{{ $asset['asset_code'] ?? 'N/A' }}</div>
                     </div>
                     <div class="info-row">

@@ -33,7 +33,7 @@ class AssetRequest extends Model
 
     public const TYPE_JUSTIFICATION = 'JUSTIFICATION';
     public const TYPE_CONSUMABLE_REQUEST = 'CONSUMABLE_REQUEST';
-    public const WORKFLOW_LABELS = ['Bàn giao', 'Thu hồi', 'Sửa chữa'];
+    public const WORKFLOW_LABELS = ['Báo sự cố thiết bị', 'Yêu cầu vật tư / linh kiện'];
 
     /**
      * Request statuses
@@ -251,8 +251,8 @@ class AssetRequest extends Model
         }
 
         return match ($this->type) {
-            self::TYPE_JUSTIFICATION => 'Sửa chữa',
-            self::TYPE_CONSUMABLE_REQUEST => 'Bàn giao',
+            self::TYPE_JUSTIFICATION => 'Báo sự cố thiết bị',
+            self::TYPE_CONSUMABLE_REQUEST => 'Yêu cầu vật tư / linh kiện',
             default => (string) $this->type,
         };
     }

@@ -117,13 +117,13 @@ export default {
         bfdOperations: 'Quản lý vận hành',
         bfdMaintenance: 'Quản lý bảo trì',
         bfdInventoryDisposal: 'Quản lý kiểm kê & thu hủy',
-        bfdReports: 'Báo cáo & thống kê',
+        bfdReports: 'Báo cáo thống kê',
         catalogRecords: 'Quản lý danh mục & hồ sơ',
         orderManagement: 'Quản lý đơn hàng',
         operationsManagement: 'Quản lý vận hành',
         maintenanceManagement: 'Quản lý bảo trì',
         inventoryDisposal: 'Quản lý kiểm kê & thu hủy',
-        reportsStatistics: 'Báo cáo & thống kê',
+        reportsStatistics: 'Báo cáo thống kê',
         allocationManagement: 'Quản lý cấp phát',
         employees: 'Hồ sơ nhân viên',
         assets: 'Danh mục thiết bị',
@@ -146,7 +146,7 @@ export default {
         maintenance: 'Quản lý bảo trì',
         offService: 'Tạm ngưng sử dụng',
         feedback: 'Phản hồi & đề xuất',
-        reports: 'Báo cáo & thống kê',
+        reports: 'Báo cáo thống kê',
         deviceStatusReport: 'Trạng thái thiết bị',
         depreciationReport: 'Khấu hao / giá trị còn lại',
         disposalProposalReport: 'Đề xuất thu hủy',
@@ -678,8 +678,8 @@ export default {
         // Types (Phase 5)
         types: {
             all: 'Tất cả',
-            JUSTIFICATION: 'Sửa chữa',
-            CONSUMABLE_REQUEST: 'Bàn giao',
+            JUSTIFICATION: 'Báo sự cố thiết bị',
+            CONSUMABLE_REQUEST: 'Yêu cầu vật tư / linh kiện',
             maintenance: 'Yêu cầu bảo trì',
         },
 
@@ -861,7 +861,7 @@ export default {
     // ========================================================================
     myDevices: {
         title: 'Thiết bị của tôi',
-        subtitle: 'Thiết bị bạn đang chịu trách nhiệm. Có thể tạo nhanh phiếu sửa chữa; bàn giao/thu hồi chỉ hiện với vai trò được phép.',
+        subtitle: 'Thiết bị bạn đang chịu trách nhiệm. Nếu thiết bị có sự cố, hãy tạo phiếu báo sự cố để đi qua luồng duyệt và bảo trì.',
         empty: 'Bạn chưa được giao thiết bị nào.',
         loadFailed: 'Không tải được danh sách thiết bị. Vui lòng thử lại.',
         submitFailed: 'Không gửi được phiếu. Vui lòng thử lại.',

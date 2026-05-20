@@ -17,11 +17,9 @@ import { useI18n } from '../i18n';
 import { disposalApi, handleApiError } from '../services/api';
 
 /**
- * DisposalPage - Asset disposal management (Thu hủy)
- * BFD Module 4: Quản lý thu hủy
- *
- * Shows assets with depreciation > 75% proposed for disposal,
- * and already retired/disposed assets.
+ * DisposalPage - equipment disposal management.
+ * Shows equipment with depreciation >= 75% proposed for disposal and
+ * already retired/disposed equipment.
  */
 const DisposalPage = ({ user }) => {
     const { t } = useI18n();
@@ -105,8 +103,7 @@ const DisposalPage = ({ user }) => {
 
     // Depreciation badge color
     const getDepreciationBadge = (percentage) => {
-        if (percentage >= 90) return 'danger';
-        if (percentage > 75) return 'warning';
+        if (percentage >= 75) return 'warning';
         return 'info';
     };
 

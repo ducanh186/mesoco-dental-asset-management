@@ -1,8 +1,16 @@
-# Mesoco Asset Management
+# Mesoco IT Asset Management
 
-Đây là hệ thống quản lý tài sản nội bộ cho Mesoco. Bạn có thể dùng app để xem tài sản, vị trí đặt tài sản, người đang chịu trách nhiệm, bảo trì, kiểm kê, đơn mua hàng, yêu cầu xử lý thiết bị và thanh lý tài sản.
+Đây là hệ thống quản lý thiết bị IT nội bộ cho Mesoco. Bạn có thể dùng app để xem thiết bị, vị trí đặt thiết bị, người đang chịu trách nhiệm, bảo trì, kiểm kê, đơn mua hàng, yêu cầu xử lý thiết bị và thu hủy thiết bị.
 
 Tài liệu này viết cho người mới. Mục tiêu là: tải code về, mở app bằng Docker, biết đăng nhập thử, biết vài lệnh hay dùng và biết xử lý những lỗi Docker phổ biến.
+
+## Final Cleanup Verification
+
+Ảnh dưới đây được chụp sau khi chạy browser verification ở local, dùng 3 role demo để kiểm tra navigation/RBAC sau final cleanup.
+
+| Manager | Technician | Employee |
+| --- | --- | --- |
+| ![Manager final cleanup](docs/screenshots/final-cleanup-manager.png) | ![Technician final cleanup](docs/screenshots/final-cleanup-technician.png) | ![Employee final cleanup](docs/screenshots/final-cleanup-employee.png) |
 
 ## 1. Cần Cài Gì Trước?
 
@@ -242,7 +250,7 @@ Project đã xử lý chuyện này trong script Docker. Khi bạn chạy `scrip
 http://192.168.x.x:8000/asset-portal/...
 ```
 
-Nhờ vậy điện thoại cùng Wi-Fi có thể quét QR và mở trang tài sản trên app đang chạy ở laptop.
+Nhờ vậy điện thoại cùng Wi-Fi có thể quét QR và mở trang thiết bị trên app đang chạy ở laptop.
 
 Cách test đúng cho tính năng này:
 
@@ -250,9 +258,9 @@ Cách test đúng cho tính năng này:
 2. Nhìn dòng `Backend` mà script in ra, ví dụ `http://192.168.123.5:8000`.
 3. Mở app trên laptop bằng `http://localhost:8000` hoặc bằng đúng link IP ở trên.
 4. Đăng nhập bằng tài khoản demo, ví dụ `E1001 / password`.
-5. Mở danh sách tài sản, xem QR hoặc in nhãn QR của một tài sản.
+5. Mở danh sách thiết bị, xem QR hoặc in nhãn QR của một thiết bị.
 6. Dùng điện thoại cùng Wi-Fi quét QR.
-7. Điện thoại sẽ mở link `http://192.168.x.x:8000/asset-portal/...` và xem được trang tài sản.
+7. Điện thoại sẽ mở link `http://192.168.x.x:8000/asset-portal/...` và xem được trang thiết bị.
 
 Muốn lấy IP laptop cho dễ, chạy:
 
@@ -278,7 +286,7 @@ scripts\docker-start.bat
 
 Sau khi đổi Wi-Fi hoặc đổi IP, chạy lại `scripts\docker-start.bat` để QR mới dùng IP hiện tại.
 
-Ghi chú về khấu hao: khi tài sản có khấu hao lớn hơn 75%, hệ thống chỉ đưa vào nhóm đề xuất theo dõi/thu hủy ở màn `Disposal`. App không tự thanh lý, không tự xóa vị trí và không tự đổi trạng thái nếu người dùng chưa bấm thao tác thu hủy.
+Ghi chú về khấu hao: khi thiết bị có khấu hao từ 75% trở lên, hệ thống chỉ đưa vào nhóm đề xuất theo dõi/thu hủy ở màn `Disposal`. App không tự thu hủy, không tự xóa vị trí và không tự đổi trạng thái nếu người dùng chưa bấm thao tác xác nhận thu hủy.
 
 ## 7. Khi Pull Code Mới Từ GitHub
 
@@ -486,13 +494,13 @@ docker compose exec -T app php artisan test
 
 ## 10. App Này Có Những Phần Chính Nào?
 
-- `Asset Catalog`: danh mục tài sản như laptop, desktop, monitor, network device, server, printer và thiết bị văn phòng.
+- `Asset Catalog`: danh mục thiết bị như laptop, desktop, monitor, network device, server, printer và thiết bị văn phòng.
 - `Responsible Handover`: theo dõi thiết bị đang ở vị trí nào và ai chịu trách nhiệm.
 - `Maintenance`: quản lý bảo trì, sửa chữa, nâng cấp, vệ sinh hoặc thay linh kiện.
 - `Inventory & Valuation`: kiểm kê, giá mua, khấu hao, giá trị còn lại và bảo hành.
 - `Purchase Orders`: quản lý đơn mua thiết bị và nhà cung cấp.
 - `Requests`: nhân viên gửi yêu cầu bàn giao, thu hồi hoặc xử lý sự cố thiết bị.
-- `Disposal`: thanh lý hoặc loại bỏ tài sản không còn sử dụng.
+- `Disposal`: thu hủy hoặc loại bỏ thiết bị không còn sử dụng.
 
 ## 11. Tài Khoản Demo
 
@@ -511,7 +519,7 @@ Sau khi seed dữ liệu, dùng các tài khoản sau để đăng nhập:
 - [docs/README.md](docs/README.md): mục lục tài liệu.
 - [docs/STACK.md](docs/STACK.md): stack và cách app chạy.
 - [docs/DB_CONVENTIONS.md](docs/DB_CONVENTIONS.md): quy ước database.
-- [docs/QR_FEATURE_GUIDE.md](docs/QR_FEATURE_GUIDE.md): hướng dẫn QR tài sản.
+- [docs/QR_FEATURE_GUIDE.md](docs/QR_FEATURE_GUIDE.md): hướng dẫn QR thiết bị.
 - [docs/RBAC_MATRIX.md](docs/RBAC_MATRIX.md): quyền theo role.
 - [docs/ROLE_FEATURES.md](docs/ROLE_FEATURES.md): chức năng theo từng người dùng.
 - [docs/SEED_DATA.md](docs/SEED_DATA.md): dữ liệu mẫu.

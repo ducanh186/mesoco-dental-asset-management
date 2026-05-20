@@ -32,7 +32,7 @@ class PurchaseOrderApiTest extends TestCase
                     'unit_price' => 1500000,
                 ],
                 [
-                    'item_name' => 'Bộ gương nha khoa',
+                    'item_name' => 'Bộ chuột bàn phím',
                     'qty' => 1,
                     'unit' => 'bộ',
                     'unit_price' => 450000,
