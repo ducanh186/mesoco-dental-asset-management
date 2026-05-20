@@ -140,31 +140,43 @@ const DisposalPage = ({ user }) => {
         );
     };
 
+    const formatCurrency = (value) => (value !== null && value !== undefined && value !== '')
+        ? `${Number(value).toLocaleString('vi-VN')} ₫`
+        : '—';
+    const formatPercent = (value) => (value !== null && value !== undefined && value !== '')
+        ? `${Number(value).toFixed(1)}%`
+        : '—';
+
     // Eligible tab columns
     const eligibleColumns = [
-        { key: 'asset_code', label: t('disposal.assetCode'), render: (row) => <span className="font-mono text-sm">{row.asset_code}</span> },
-        { key: 'name', label: t('disposal.assetName') },
-        { key: 'category', label: t('disposal.category') },
+        { key: 'asset_code', label: t('disposal.assetCode'), render: (value) => <span className="font-mono text-sm">{value || '—'}</span> },
+        { key: 'name', label: t('disposal.assetName'), render: (value) => value || '—' },
+        { key: 'category', label: t('disposal.category'), render: (value) => value || '—' },
         {
             key: 'depreciation_percentage', label: t('disposal.depreciation'),
-            render: (row) => (
-                <Badge variant={getDepreciationBadge(row.depreciation_percentage)}>
-                    {row.depreciation_percentage}%
-                </Badge>
-            )
+            render: (value) => value != null ? (
+                <Badge variant={getDepreciationBadge(value)}>{formatPercent(value)}</Badge>
+            ) : '—'
         },
         {
             key: 'purchase_cost', label: t('disposal.purchaseCost'),
-            render: (row) => row.purchase_cost?.toLocaleString('vi-VN') + ' ₫'
+            render: (value) => formatCurrency(value)
         },
         {
             key: 'current_book_value', label: t('disposal.bookValue'),
-            render: (row) => row.current_book_value?.toLocaleString('vi-VN') + ' ₫'
+            render: (value) => formatCurrency(value)
         },
-        { key: 'status', label: t('common.status.label'), render: (row) => <Badge>{t(`common.status.${row.status}`)}</Badge> },
+        {
+            key: 'status', label: t('common.status.label'),
+            render: (value) => {
+                if (!value) return '—';
+                const label = t(`common.status.${value}`);
+                return <Badge>{label.startsWith('common.status.') ? value : label}</Badge>;
+            }
+        },
         {
             key: 'actions', label: t('common.actions'),
-            render: (row) => (
+            render: (_, row) => (
                 <Button
                     size="sm"
                     variant="danger"
@@ -178,21 +190,21 @@ const DisposalPage = ({ user }) => {
 
     // Retired tab columns
     const retiredColumns = [
-        { key: 'asset_code', label: t('disposal.assetCode'), render: (row) => <span className="font-mono text-sm">{row.asset_code}</span> },
-        { key: 'name', label: t('disposal.assetName') },
-        { key: 'category', label: t('disposal.category') },
+        { key: 'asset_code', label: t('disposal.assetCode'), render: (value) => <span className="font-mono text-sm">{value || '—'}</span> },
+        { key: 'name', label: t('disposal.assetName'), render: (value) => value || '—' },
+        { key: 'category', label: t('disposal.category'), render: (value) => value || '—' },
         {
             key: 'depreciation_percentage', label: t('disposal.depreciation'),
-            render: (row) => row.depreciation_percentage != null ? (
-                <Badge variant="danger">{row.depreciation_percentage}%</Badge>
+            render: (value) => value != null ? (
+                <Badge variant="danger">{formatPercent(value)}</Badge>
             ) : '—'
         },
         {
             key: 'purchase_cost', label: t('disposal.purchaseCost'),
-            render: (row) => row.purchase_cost ? row.purchase_cost.toLocaleString('vi-VN') + ' ₫' : '—'
+            render: (value) => formatCurrency(value)
         },
-        { key: 'off_service_reason', label: t('disposal.reason') },
-        { key: 'off_service_from', label: t('disposal.retiredDate') },
+        { key: 'off_service_reason', label: t('disposal.reason'), render: (value) => value || '—' },
+        { key: 'off_service_from', label: t('disposal.retiredDate'), render: (value) => value || '—' },
     ];
 
     return (
