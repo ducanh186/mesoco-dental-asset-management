@@ -155,36 +155,6 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             labelKey: 'nav.lifecycleAnalysisReport',
             icon: 'reports',
         },
-        assetRecords: {
-            id: 'asset-records',
-            path: '/assets',
-            labelKey: 'nav.assetRecords',
-            icon: 'history',
-        },
-        handoverRecords: {
-            id: 'handover-records',
-            path: '/handover',
-            labelKey: 'nav.handoverRecords',
-            icon: 'history',
-        },
-        returnRecords: {
-            id: 'return-records',
-            path: '/handover',
-            labelKey: 'nav.returnRecords',
-            icon: 'history',
-        },
-        inventoryRecords: {
-            id: 'inventory-records',
-            path: '/inventory',
-            labelKey: 'nav.inventoryRecords',
-            icon: 'history',
-        },
-        maintenanceRecords: {
-            id: 'maintenance-records',
-            path: '/maintenance',
-            labelKey: 'nav.maintenanceRecords',
-            icon: 'history',
-        },
     };
 
     const bfdGroup = (id, labelKey, icon, children) => ({
