@@ -86,4 +86,26 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringContainsString('Khấu hao ≥ 75%', $vi);
         $this->assertStringNotContainsString('Khấu hao ≥ 90%', $vi);
     }
+
+    public function test_sidebar_supports_mouse_drag_resizing_on_desktop(): void
+    {
+        $adminLayout = file_get_contents(resource_path('js/layouts/AdminLayout.jsx'));
+        $sidebar = file_get_contents(resource_path('js/layouts/Sidebar.jsx'));
+        $css = file_get_contents(resource_path('css/app.css'));
+
+        $this->assertStringContainsString('SIDEBAR_WIDTH_STORAGE_KEY', $adminLayout);
+        $this->assertStringContainsString('SIDEBAR_MIN_WIDTH', $adminLayout);
+        $this->assertStringContainsString('SIDEBAR_MAX_WIDTH', $adminLayout);
+        $this->assertStringContainsString('handleSidebarResize', $adminLayout);
+        $this->assertStringContainsString("localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY", $adminLayout);
+        $this->assertStringContainsString("'--sidebar-width': `\${sidebarWidth}px`", $adminLayout);
+
+        $this->assertStringContainsString('sidebar-resize-handle', $sidebar);
+        $this->assertStringContainsString('aria-label="Kéo để thay đổi độ rộng sidebar"', $sidebar);
+        $this->assertStringContainsString('onMouseDown={onResizeStart}', $sidebar);
+
+        $this->assertStringContainsString('.sidebar-resize-handle', $css);
+        $this->assertStringContainsString('cursor: col-resize', $css);
+        $this->assertStringContainsString('.sidebar.is-resizing', $css);
+    }
 }

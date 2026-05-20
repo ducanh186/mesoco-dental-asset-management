@@ -1,7 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import Breadcrumbs from './Breadcrumbs';
+
+const SIDEBAR_WIDTH_STORAGE_KEY = 'mesoco.sidebar.width';
+const SIDEBAR_MIN_WIDTH = 220;
+const SIDEBAR_MAX_WIDTH = 360;
+const SIDEBAR_DEFAULT_WIDTH = 260;
+
+const clampSidebarWidth = (width) => Math.min(
+    SIDEBAR_MAX_WIDTH,
+    Math.max(SIDEBAR_MIN_WIDTH, width)
+);
+
+const getStoredSidebarWidth = () => {
+    if (typeof window === 'undefined') {
+        return SIDEBAR_DEFAULT_WIDTH;
+    }
+
+    const storedWidth = Number(window.localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY));
+    return Number.isFinite(storedWidth)
+        ? clampSidebarWidth(storedWidth)
+        : SIDEBAR_DEFAULT_WIDTH;
+};
 
 /**
  * AdminLayout - Mesoco admin layout
@@ -10,6 +31,8 @@ import Breadcrumbs from './Breadcrumbs';
 const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
+    const [sidebarWidth, setSidebarWidth] = useState(getStoredSidebarWidth);
+    const [sidebarResizing, setSidebarResizing] = useState(false);
 
     // Close mobile sidebar on route change
     useEffect(() => {
@@ -39,8 +62,48 @@ const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {
         setSidebarMobileOpen(!sidebarMobileOpen);
     };
 
+    const handleSidebarResize = useCallback((clientX) => {
+        const nextWidth = clampSidebarWidth(clientX);
+        setSidebarWidth(nextWidth);
+        window.localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(nextWidth));
+    }, []);
+
+    const startSidebarResize = (event) => {
+        if (event.button !== 0) {
+            return;
+        }
+
+        event.preventDefault();
+        setSidebarCollapsed(false);
+        setSidebarResizing(true);
+    };
+
+    useEffect(() => {
+        if (!sidebarResizing) {
+            return undefined;
+        }
+
+        const handleMouseMove = (event) => {
+            handleSidebarResize(event.clientX);
+        };
+
+        const handleMouseUp = () => {
+            setSidebarResizing(false);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [handleSidebarResize, sidebarResizing]);
+
     return (
-        <div className="admin-layout min-h-screen bg-background">
+        <div
+            className={`admin-layout min-h-screen bg-background ${sidebarResizing ? 'sidebar-is-resizing' : ''}`}
+            style={{ '--sidebar-width': `${sidebarWidth}px` }}
+        >
             {/* Mobile Overlay */}
             {sidebarMobileOpen && (
                 <div 
@@ -57,6 +120,8 @@ const AdminLayout = ({ children, title, breadcrumbs = [], user, onLogout }) => {
                 onToggle={toggleSidebar}
                 onExpand={expandSidebar}
                 onMobileClose={() => setSidebarMobileOpen(false)}
+                onResizeStart={startSidebarResize}
+                isResizing={sidebarResizing}
                 user={user}
             />
 

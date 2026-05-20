@@ -7,7 +7,16 @@ const mesocoLogoUrl = import.meta.env.DEV && typeof window !== 'undefined'
     ? `${window.location.protocol}//${window.location.hostname}:5173/images/mesoco_logo.png`
     : '/images/mesoco_logo.png';
 
-const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, user }) => {
+const Sidebar = ({
+    collapsed,
+    mobileOpen,
+    onToggle,
+    onExpand,
+    onMobileClose,
+    onResizeStart,
+    isResizing = false,
+    user,
+}) => {
     const location = useLocation();
     const { t, locale } = useI18n();
     const [expandedMenus, setExpandedMenus] = useState({});
@@ -490,7 +499,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
     };
 
     return (
-        <aside className={`sidebar bg-surface border-r border-border shadow-sm ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+        <aside className={`sidebar bg-surface border-r border-border shadow-sm ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''} ${isResizing ? 'is-resizing' : ''}`}>
             {/* Sidebar Header / Logo */}
             <div className="sidebar-header border-b border-border">
                 <Link to="/dashboard" className="sidebar-logo text-primary hover:text-primary-hover" onClick={onMobileClose}>
@@ -553,6 +562,15 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
                     </button>
                 </div>
             </nav>
+            {!collapsed && (
+                <button
+                    type="button"
+                    className="sidebar-resize-handle"
+                    onMouseDown={onResizeStart}
+                    aria-label="Kéo để thay đổi độ rộng sidebar"
+                    title="Kéo để thay đổi độ rộng sidebar"
+                />
+            )}
         </aside>
     );
 };
