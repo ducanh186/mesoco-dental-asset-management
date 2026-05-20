@@ -472,6 +472,16 @@ const RequestsPage = ({ user }) => {
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             />
                         </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setSearchQuery('');
+                                setTypeFilter('');
+                                setStatusFilter('');
+                            }}
+                        >
+                            {t('common.clearFilters')}
+                        </Button>
                     </div>
 
                     {/* Table */}

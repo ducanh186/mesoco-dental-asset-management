@@ -9,6 +9,7 @@ use App\Models\MaintenanceEvent;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * ReportController - Phase 8
@@ -88,6 +89,7 @@ class ReportController extends Controller
         $offService = Asset::where('status', 'off_service')->count();
         $maintenance = Asset::where('status', 'maintenance')->count();
         $retired = Asset::where('status', 'retired')->count();
+        $disposalProposal = $this->getDisposalProposalAssets()->count();
 
         return [
             'total' => $total,
@@ -96,6 +98,8 @@ class ReportController extends Controller
             'off_service' => $offService,
             'maintenance' => $maintenance,
             'retired' => $retired,
+            'deprecation_threshold_75_pct' => $disposalProposal,
+            'depreciation_threshold_75_pct' => $disposalProposal,
             'by_status' => [
                 'active' => $active,
                 'off_service' => $offService,
@@ -161,11 +165,7 @@ class ReportController extends Controller
     protected function getDisposalStats(Carbon $from, Carbon $to): array
     {
         $periodQuery = Disposal::whereBetween('disposed_at', [$from, $to]);
-        $eligibleForDisposal = Asset::query()
-            ->where('status', '!=', Asset::STATUS_RETIRED)
-            ->get()
-            ->filter(fn (Asset $asset) => $asset->isEligibleForDisposal())
-            ->count();
+        $eligibleForDisposal = $this->getDisposalProposalAssets()->count();
 
         return [
             'eligible' => $eligibleForDisposal,
@@ -198,12 +198,97 @@ class ReportController extends Controller
     /**
      * Export report as CSV (manager only)
      */
-    public function export(Request $request): JsonResponse
+    public function export(Request $request): StreamedResponse
     {
-        // Placeholder for future implementation
-        return response()->json([
-            'error_code' => 'NOT_IMPLEMENTED',
-            'message' => 'Export feature is planned for a future release.',
-        ], 501);
+        $validated = $request->validate([
+            'type' => ['required', 'string', 'in:device_status,disposal_proposal'],
+        ]);
+
+        [$filename, $headers, $rows] = match ($validated['type']) {
+            'device_status' => $this->deviceStatusCsvData(),
+            'disposal_proposal' => $this->disposalProposalCsvData(),
+        };
+
+        return response()->streamDownload(function () use ($headers, $rows) {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, $headers);
+
+            foreach ($rows as $row) {
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    private function deviceStatusCsvData(): array
+    {
+        $rows = Asset::query()
+            ->orderBy('asset_code')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Asset $asset) => [
+                $asset->asset_code,
+                $asset->name,
+                $asset->category,
+                $asset->status,
+                $asset->location,
+                $asset->purchase_date ? Carbon::parse((string) $asset->purchase_date)->toDateString() : null,
+            ])
+            ->all();
+
+        return [
+            'device-status.csv',
+            ['Asset Code', 'Name', 'Category', 'Status', 'Location', 'Purchase Date'],
+            $rows,
+        ];
+    }
+
+    private function disposalProposalCsvData(): array
+    {
+        $rows = $this->getDisposalProposalAssets()
+            ->map(function (Asset $asset) {
+                $valuation = $asset->getValuationData();
+
+                return [
+                    $asset->asset_code,
+                    $asset->name,
+                    $asset->category,
+                    $asset->status,
+                    $valuation['purchase_date'],
+                    $valuation['purchase_cost'],
+                    $valuation['accumulated_depreciation'],
+                    $valuation['depreciation_percentage'],
+                    $valuation['current_book_value'],
+                ];
+            })
+            ->all();
+
+        return [
+            'disposal-proposal.csv',
+            [
+                'Asset Code',
+                'Name',
+                'Category',
+                'Status',
+                'Purchase Date',
+                'Purchase Cost',
+                'Accumulated Depreciation',
+                'Depreciation Percentage',
+                'Current Book Value',
+            ],
+            $rows,
+        ];
+    }
+
+    private function getDisposalProposalAssets()
+    {
+        return Asset::query()
+            ->where('status', '!=', Asset::STATUS_RETIRED)
+            ->get()
+            ->filter(fn (Asset $asset) => $asset->isEligibleForDisposal())
+            ->values();
     }
 }

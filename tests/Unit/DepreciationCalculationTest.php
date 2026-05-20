@@ -274,6 +274,19 @@ class DepreciationCalculationTest extends TestCase
         $this->assertFalse($asset->isFullyDepreciated());
     }
 
+    public function test_asset_is_eligible_for_disposal_at_75_percent_depreciation(): void
+    {
+        $asset = $this->createAsset([
+            'purchase_date' => Carbon::parse('2020-01-01'),
+            'purchase_cost' => 10000.00,
+            'salvage_value' => 1000.00,
+            'useful_life_months' => 60,
+        ]);
+
+        $this->assertEquals(75.0, $asset->getDepreciationPercentage(Carbon::parse('2023-10-01')));
+        $this->assertTrue($asset->isEligibleForDisposal(Carbon::parse('2023-10-01')));
+    }
+
     // =========================================================================
     // Remaining Useful Life Tests
     // =========================================================================

@@ -649,12 +649,12 @@ class Asset extends Model
     }
 
     /**
-     * Check if asset should be proposed for disposal (depreciation > 75%).
+     * Check if asset should be proposed for disposal (depreciation >= 75%).
      */
     public function isEligibleForDisposal(?Carbon $asOfDate = null): bool
     {
         $percentage = $this->getDepreciationPercentage($asOfDate);
-        return $percentage !== null && $percentage > self::DISPOSAL_RECOMMENDATION_THRESHOLD;
+        return $percentage !== null && $percentage >= self::DISPOSAL_RECOMMENDATION_THRESHOLD;
     }
 
     /**

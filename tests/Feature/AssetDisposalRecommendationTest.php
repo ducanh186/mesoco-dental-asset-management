@@ -14,7 +14,7 @@ class AssetDisposalRecommendationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_asset_is_recommended_for_disposal_only_when_depreciation_is_above_75_percent(): void
+    public function test_asset_is_recommended_for_disposal_when_depreciation_is_at_least_75_percent(): void
     {
         $exactly75Percent = Asset::factory()->create([
             'purchase_cost' => 1000,
@@ -30,7 +30,7 @@ class AssetDisposalRecommendationTest extends TestCase
         ]);
 
         $this->assertSame(75.0, $exactly75Percent->getDepreciationPercentage());
-        $this->assertFalse($exactly75Percent->isEligibleForDisposal());
+        $this->assertTrue($exactly75Percent->isEligibleForDisposal());
         $this->assertTrue($above75Percent->isEligibleForDisposal());
     }
 

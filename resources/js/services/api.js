@@ -782,12 +782,15 @@ export const reportsApi = {
     },
 
     /**
-     * Export report (admin only - placeholder)
-     * GET /api/reports/export
+     * Export report as CSV blob.
+     * POST /api/reports/export with { type, from?, to? }
+     * Returns full axios response so caller can read headers (filename).
      */
-    export: async (params = {}) => {
-        const response = await axios.get('/api/reports/export', { params });
-        return response.data;
+    export: async (payload = {}) => {
+        const response = await axios.post('/api/reports/export', payload, {
+            responseType: 'blob',
+        });
+        return response;
     },
 };
 

@@ -169,6 +169,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
 
         Route::get('/reports/summary', [ReportController::class, 'summary']);
         Route::get('/reports/export', [ReportController::class, 'export']);
+        Route::post('/reports/export', [ReportController::class, 'export']);
     });
 
     /*

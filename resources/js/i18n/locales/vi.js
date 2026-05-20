@@ -24,6 +24,7 @@ export default {
         searchPlaceholder: 'Tìm kiếm...',
         selectOption: 'Chọn một tùy chọn...',
         filter: 'Lọc',
+        clearFilters: 'Xóa bộ lọc',
         sort: 'Sắp xếp',
         clear: 'Xóa',
         reset: 'Đặt lại',

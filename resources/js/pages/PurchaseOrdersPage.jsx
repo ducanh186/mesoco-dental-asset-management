@@ -438,7 +438,7 @@ const PurchaseOrdersPage = ({ user }) => {
             </div>
 
             <Card className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Input
                         placeholder="Tìm theo mã đơn, thiết bị, nhà cung cấp..."
                         value={search}
@@ -450,8 +450,18 @@ const PurchaseOrdersPage = ({ user }) => {
                         options={statusFilterOptions}
                         placeholder={false}
                     />
-                    <Button variant="outline" onClick={() => fetchOrders(1)}>
-                        Làm mới danh sách
+                    <Button variant="primary" onClick={() => fetchOrders(1)}>
+                        Lọc
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setSearch('');
+                            setStatusFilter('');
+                            fetchOrders(1);
+                        }}
+                    >
+                        Xóa bộ lọc
                     </Button>
                 </div>
             </Card>

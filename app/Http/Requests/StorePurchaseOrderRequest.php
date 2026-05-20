@@ -17,7 +17,7 @@ class StorePurchaseOrderRequest extends FormRequest
     {
         return [
             'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
-            'order_date' => ['required', 'date'],
+            'order_date' => ['sometimes', 'nullable', 'date'],
             'expected_delivery_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:order_date'],
             'status' => ['sometimes', 'string', Rule::in(PurchaseOrder::statusOptions())],
             'payment_method' => ['sometimes', 'nullable', 'string', 'max:100'],
@@ -40,6 +40,10 @@ class StorePurchaseOrderRequest extends FormRequest
 
         if (is_array($validated) && !isset($validated['status'])) {
             $validated['status'] = PurchaseOrder::STATUS_PREPARING;
+        }
+
+        if (is_array($validated) && empty($validated['order_date'])) {
+            $validated['order_date'] = now()->toDateString();
         }
 
         return $validated;

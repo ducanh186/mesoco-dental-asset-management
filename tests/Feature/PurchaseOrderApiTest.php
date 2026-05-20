@@ -91,6 +91,32 @@ class PurchaseOrderApiTest extends TestCase
         ]);
     }
 
+    public function test_manager_can_create_purchase_order_with_minimal_frontend_payload(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+
+        $response = $this->actingAs($manager)->postJson('/api/purchase-orders', [
+            'supplier_id' => $supplier->id,
+            'items' => [
+                [
+                    'item_name' => 'PC văn phòng',
+                    'qty' => 2,
+                    'unit' => 'cái',
+                    'note' => 'Nhập giá sau khi nhận hàng',
+                ],
+            ],
+            'note' => 'Đơn hàng tạo từ UI',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.order_date', now()->toDateString())
+            ->assertJsonPath('data.status', PurchaseOrder::STATUS_PREPARING)
+            ->assertJsonPath('data.total_amount', null)
+            ->assertJsonPath('data.items.0.unit_price', null)
+            ->assertJsonPath('data.items.0.note', 'Nhập giá sau khi nhận hàng');
+    }
+
     public function test_manager_must_provide_device_unit_when_creating_order_items(): void
     {
         $manager = User::factory()->manager()->create();

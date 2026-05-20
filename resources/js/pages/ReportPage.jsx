@@ -69,12 +69,27 @@ const ReportPage = ({ user }) => {
     const handleExport = async (type) => {
         setExportingType(type.key);
         try {
-            await reportsApi.export({
+            const response = await reportsApi.export({
                 type: type.key,
                 from: fromDate,
                 to: toDate,
             });
-            toast.success(`Đã tạo tệp ${type.label}.`);
+
+            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+
+            const disposition = response.headers?.['content-disposition'] || '';
+            const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^;"']+)["']?/i);
+            link.download = filenameMatch ? decodeURIComponent(filenameMatch[1]) : `${type.key}.csv`;
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast.success(`Đã tải xuống ${type.label}.`);
         } catch (error) {
             handleApiError(error, toast);
         } finally {

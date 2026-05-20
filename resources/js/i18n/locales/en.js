@@ -20,6 +20,7 @@ export default {
         searchPlaceholder: 'Search...',
         selectOption: 'Select an option...',
         filter: 'Filter',
+        clearFilters: 'Clear filters',
         sort: 'Sort',
         clear: 'Clear',
         reset: 'Reset',

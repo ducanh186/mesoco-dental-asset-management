@@ -526,6 +526,17 @@ const MaintenancePage = ({ user }) => {
                                 }}
                             />
                         </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setSearchQuery('');
+                                setStatusFilter('');
+                                setTypeFilter('');
+                                setCurrentPage(1);
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
                     </div>
 
                     <Table

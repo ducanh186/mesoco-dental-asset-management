@@ -257,4 +257,56 @@ class ReportTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('disposal.retired_in_period', 1);
     }
+
+    public function test_manager_can_export_device_status_report_as_csv(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Asset::factory()->create([
+            'asset_code' => 'IT-LAP-1001',
+            'name' => 'Developer Laptop',
+            'status' => Asset::STATUS_ACTIVE,
+            'category' => 'Laptop',
+        ]);
+
+        $response = $this->actingAs($admin)->post('/api/reports/export', [
+            'type' => 'device_status',
+        ]);
+
+        $response->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $csv = $response->streamedContent();
+        $rows = array_map('str_getcsv', preg_split('/\r\n|\n|\r/', trim($csv)));
+
+        $this->assertSame(['Asset Code', 'Name', 'Category', 'Status', 'Location', 'Purchase Date'], $rows[0]);
+        $this->assertContains(['IT-LAP-1001', 'Developer Laptop', 'Laptop', 'active', '', ''], $rows);
+    }
+
+    public function test_manager_can_export_empty_disposal_proposal_report_as_csv(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->post('/api/reports/export', [
+            'type' => 'disposal_proposal',
+        ]);
+
+        $response->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $rows = array_map('str_getcsv', preg_split('/\r\n|\n|\r/', trim($response->streamedContent())));
+
+        $this->assertSame([
+            'Asset Code',
+            'Name',
+            'Category',
+            'Status',
+            'Purchase Date',
+            'Purchase Cost',
+            'Accumulated Depreciation',
+            'Depreciation Percentage',
+            'Current Book Value',
+        ], $rows[0]);
+        $this->assertCount(1, $rows);
+    }
 }
