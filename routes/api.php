@@ -110,6 +110,16 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::get('/requests/{id}', [\App\Http\Controllers\RequestController::class, 'show']);
         Route::post('/requests/{id}/cancel', [\App\Http\Controllers\RequestController::class, 'cancel']);
 
+        /**
+         * Internal-role catalog read access + my-devices for "Thiết bị của tôi".
+         * Read-only listings; mutating endpoints stay on the manager+technician
+         * group below.
+         */
+        Route::get('/assets', [AssetController::class, 'index']);
+        Route::get('/assets/{asset}', [AssetController::class, 'show'])
+            ->whereNumber('asset');
+        Route::get('/my-devices', [AssetController::class, 'myDevices']);
+
         /*
         |--------------------------------------------------------------------------
         | FEEDBACK ROUTES - Internal authenticated roles
@@ -180,12 +190,12 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
         Route::post('/users', [UserController::class, 'store']);
         Route::get('/users/{user}', [UserController::class, 'show']);
 
-        Route::get('/assets', [AssetController::class, 'index']);
         Route::get('/assets/available', [AssetController::class, 'available']);
         Route::post('/assets', [AssetController::class, 'store']);
-        Route::get('/assets/{asset}', [AssetController::class, 'show']);
-        Route::put('/assets/{asset}', [AssetController::class, 'update']);
-        Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
+        Route::put('/assets/{asset}', [AssetController::class, 'update'])
+            ->whereNumber('asset');
+        Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])
+            ->whereNumber('asset');
         Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
         Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
         Route::post('/assets/{asset}/regenerate-qr', [AssetController::class, 'regenerateQr']);

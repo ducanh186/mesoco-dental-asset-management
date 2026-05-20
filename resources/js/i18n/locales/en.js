@@ -126,6 +126,9 @@ export default {
         handoverRecovery: 'Handover / Recovery',
         equipmentCatalog: 'Asset Catalog',
         myEquipment: 'My Responsible Assets',
+        myDevices: 'My Devices',
+        myRequests: 'My Requests',
+        repair: 'Repair',
         equipment: 'Equipment',
         shifts: 'Shifts',
         checkin: 'Shift Check-in',
@@ -834,6 +837,48 @@ export default {
         medium: 'Medium',
         high: 'High',
         urgent: 'Urgent',
+    },
+
+    // ========================================================================
+    // My Devices page
+    // ========================================================================
+    myDevices: {
+        title: 'My Devices',
+        subtitle: 'Devices you are responsible for, with quick actions to request repair or handover.',
+        empty: 'You have no devices assigned to you yet.',
+        loadFailed: 'Unable to load your devices. Please try again.',
+        submitFailed: 'Unable to submit the request. Please try again.',
+        summary: {
+            total: 'Total',
+            active: 'Active',
+            maintenance: 'In maintenance',
+        },
+        field: {
+            serial: 'Serial number',
+            location: 'Location',
+            status: 'Status',
+        },
+        action: {
+            createRepair: 'Create repair request',
+            createHandover: 'Handover / recall',
+        },
+        workflow: {
+            handover: 'Handover',
+            recall: 'Recall',
+        },
+        form: {
+            repairTitle: 'New repair request',
+            handoverTitle: 'New handover / recall request',
+            fieldTitle: 'Title',
+            severity: 'Severity',
+            incidentAt: 'Incident time',
+            eventAt: 'Planned date',
+            description: 'Description',
+            note: 'Note',
+            workflow: 'Workflow',
+            submitRepair: 'Submit repair request',
+            submitHandover: 'Submit request',
+        },
     },
 
     // ========================================================================

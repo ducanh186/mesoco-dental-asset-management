@@ -179,9 +179,55 @@ class AssetController extends Controller
     }
 
     /**
+     * Get assets the current user is responsible for, with full transform.
+     *
+     * GET /api/my-devices
+     */
+    public function myDevices(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $employee = $user->employee;
+
+        if (!$employee) {
+            return response()->json([
+                'assets' => [],
+                'summary' => [
+                    'total' => 0,
+                    'active' => 0,
+                    'maintenance' => 0,
+                ],
+            ]);
+        }
+
+        $assets = Asset::with([
+                'currentAssignment.employee.user',
+                'currentAssignment.assignedByUser',
+                'supplier',
+                'locationDefinition',
+                'latestQrIdentity',
+            ])
+            ->whereHas('currentAssignment', function ($query) use ($employee) {
+                $query->where('employee_id', $employee->id);
+            })
+            ->orderBy('asset_code')
+            ->get();
+
+        $transformed = $assets->map(fn(Asset $asset) => $this->transformAsset($asset));
+
+        return response()->json([
+            'assets' => $transformed,
+            'summary' => [
+                'total' => $assets->count(),
+                'active' => $assets->where('status', Asset::STATUS_ACTIVE)->count(),
+                'maintenance' => $assets->where('status', Asset::STATUS_MAINTENANCE)->count(),
+            ],
+        ]);
+    }
+
+    /**
      * Store a newly created asset.
      * Manager/Technician only.
-     * 
+     *
      * POST /api/assets
      */
     public function store(StoreAssetRequest $request): JsonResponse

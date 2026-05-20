@@ -39,9 +39,12 @@ class RequestController extends Controller
 
         $query = AssetRequest::with(['asset:id,asset_code,name', 'requester', 'reviewer', 'assignee:id,name,email']);
 
-        // Requesters only see their own requests.
-        // Operational roles can inspect the broader queue.
-        if ($httpRequest->boolean('mine') || !$user->hasOperationalAccess()) {
+        // Only managers see the broader queue. Technicians and employees see
+        // only their own requests by default. Managers may pass mine=1 to
+        // restrict to self-created requests when needed.
+        $shouldScopeToSelf = $httpRequest->boolean('mine') || !$user->isManager();
+
+        if ($shouldScopeToSelf) {
             $employee = $user->employee;
             if (!$employee) {
                 return response()->json([

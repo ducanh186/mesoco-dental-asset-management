@@ -124,6 +124,9 @@ export default {
         handoverRecovery: 'Bàn giao / Thu hồi',
         equipmentCatalog: 'Danh mục thiết bị',
         myEquipment: 'Thiết bị tôi phụ trách',
+        myDevices: 'Thiết bị của tôi',
+        myRequests: 'Phiếu yêu cầu của tôi',
+        repair: 'Sửa chữa',
         equipment: 'Thiết bị',
         shifts: 'Ca làm',
         checkin: 'Ghi nhận ca',
@@ -848,6 +851,48 @@ export default {
         medium: 'Bình thường',
         high: 'Nghiêm trọng',
         urgent: 'Khẩn',
+    },
+
+    // ========================================================================
+    // Thiết bị của tôi
+    // ========================================================================
+    myDevices: {
+        title: 'Thiết bị của tôi',
+        subtitle: 'Thiết bị bạn đang chịu trách nhiệm. Có thể tạo nhanh phiếu sửa chữa hoặc phiếu bàn giao/thu hồi.',
+        empty: 'Bạn chưa được giao thiết bị nào.',
+        loadFailed: 'Không tải được danh sách thiết bị. Vui lòng thử lại.',
+        submitFailed: 'Không gửi được phiếu. Vui lòng thử lại.',
+        summary: {
+            total: 'Tổng',
+            active: 'Đang sử dụng',
+            maintenance: 'Đang bảo trì',
+        },
+        field: {
+            serial: 'Số serial',
+            location: 'Vị trí',
+            status: 'Trạng thái',
+        },
+        action: {
+            createRepair: 'Tạo phiếu sửa chữa',
+            createHandover: 'Bàn giao / Thu hồi',
+        },
+        workflow: {
+            handover: 'Bàn giao',
+            recall: 'Thu hồi',
+        },
+        form: {
+            repairTitle: 'Tạo phiếu sửa chữa',
+            handoverTitle: 'Tạo phiếu bàn giao / thu hồi',
+            fieldTitle: 'Tiêu đề',
+            severity: 'Mức độ',
+            incidentAt: 'Thời điểm sự cố',
+            eventAt: 'Thời điểm dự kiến',
+            description: 'Mô tả',
+            note: 'Ghi chú',
+            workflow: 'Loại phiếu',
+            submitRepair: 'Gửi phiếu sửa chữa',
+            submitHandover: 'Gửi phiếu',
+        },
     },
 
     // ========================================================================

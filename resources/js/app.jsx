@@ -28,6 +28,7 @@ const RequestsPage = lazy(() => import('./pages/RequestsPage'));
 const ReviewRequestsPage = lazy(() => import('./pages/ReviewRequestsPage'));
 const DisposalPage = lazy(() => import('./pages/DisposalPage'));
 const QrScanPage = lazy(() => import('./pages/QrScanPage'));
+const MyDevicesPage = lazy(() => import('./pages/MyDevicesPage'));
 
 // UI Components
 import { ToastProvider } from './components/ui';
@@ -155,7 +156,7 @@ const InternalRoute = ({ children }) => (
 );
 
 const PurchaseOrderRoute = ({ children }) => (
-     <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_TECHNICIAN, ROLE_SUPPLIER]}>{children}</RoleRoute>
+     <RoleRoute allowedRoles={[ROLE_MANAGER, ROLE_SUPPLIER]}>{children}</RoleRoute>
 );
 
 // ============================================================================
@@ -939,6 +940,20 @@ const HandoverPageWrapper = () => {
      );
 };
 
+const MyDevicesPageWrapper = () => {
+     const { user } = useAuth();
+     const { t } = useI18n();
+
+     return (
+          <AdminLayoutWrapper
+               title={t('nav.myDevices')}
+               breadcrumbs={[{ label: t('nav.myDevices') }]}
+          >
+               <MyDevicesPage user={user} />
+          </AdminLayoutWrapper>
+     );
+};
+
 const QrScanPageWrapper = () => {
      const { user } = useAuth();
      const { t } = useI18n();
@@ -1211,9 +1226,14 @@ const App = () => {
                               } />
 
                          <Route path="/assets" element={
-                              <OperatorRoute>
+                              <InternalRoute>
                                    <AssetsPageWrapper />
-                              </OperatorRoute>
+                              </InternalRoute>
+                         } />
+                         <Route path="/my-devices" element={
+                              <InternalRoute>
+                                   <MyDevicesPageWrapper />
+                              </InternalRoute>
                          } />
                          <Route path="/handover" element={
                               <OperatorRoute>

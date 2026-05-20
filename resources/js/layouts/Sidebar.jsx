@@ -29,6 +29,18 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             labelKey: 'nav.qrScan',
             icon: 'qr',
         },
+        myDevices: {
+            id: 'my-devices',
+            path: '/my-devices',
+            labelKey: 'nav.myDevices',
+            icon: 'assets',
+        },
+        myRequests: {
+            id: 'my-requests',
+            path: '/requests',
+            labelKey: 'nav.myRequests',
+            icon: 'requests'
+        },
         requests: {
             id: 'requests',
             path: '/requests',
@@ -208,40 +220,27 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         navItems.qrScan,
         bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
             navItems.assets,
-            navItems.locations,
-            navItems.suppliers,
         ]),
-        bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
-            navItems.requests,
-            navItems.handover,
-        ]),
-        bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
-            navItems.maintenance,
-        ]),
+        navItems.myDevices,
+        {
+            ...navItems.maintenance,
+            labelKey: 'nav.repair',
+        },
         bfdGroup('bfd-inventory-disposal', 'nav.bfdInventoryDisposal', 'inventory', [
             navItems.inventory,
             navItems.disposal,
         ]),
-        bfdGroup('bfd-records', 'nav.recordsManagement', 'history', [
-            navItems.assetRecords,
-            navItems.handoverRecords,
-            navItems.returnRecords,
-            navItems.inventoryRecords,
-            navItems.maintenanceRecords,
-        ]),
-        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
-            navItems.reports,
-            navItems.deviceStatusReport,
-            navItems.depreciationReport,
-            navItems.disposalProposalReport,
-            navItems.lifecycleAnalysisReport,
-        ]),
+        navItems.myRequests,
     ];
 
     const employeeBfdItems = [
         navItems.dashboard,
         navItems.qrScan,
-        navItems.requests,
+        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
+            navItems.assets,
+        ]),
+        navItems.myDevices,
+        navItems.myRequests,
     ];
 
     const supplierBfdItems = [

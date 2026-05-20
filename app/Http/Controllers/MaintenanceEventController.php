@@ -39,6 +39,8 @@ class MaintenanceEventController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         $query = MaintenanceEvent::query()
             ->with([
                 'asset:id,name,asset_code',
@@ -47,6 +49,15 @@ class MaintenanceEventController extends Controller
                 'details.asset:id,name,asset_code',
             ])
             ->withCount('details');
+
+        // Technicians only see events assigned to them. Managers see all events.
+        // mine=1 forces scope to self even for managers.
+        $scopeToSelf = $request->boolean('mine')
+            || ($user && $user->isTechnician() && !$user->isManager());
+
+        if ($scopeToSelf && $user) {
+            $query->where('assigned_to_user_id', $user->id);
+        }
 
         // Filter by asset
         if ($request->filled('asset_id')) {
