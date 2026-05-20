@@ -309,4 +309,72 @@ class ReportTest extends TestCase
         ], $rows[0]);
         $this->assertCount(1, $rows);
     }
+
+    public function test_manager_can_export_depreciation_remaining_value_report_as_csv(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Asset::factory()->withValuation()->create([
+            'asset_code' => 'IT-LAP-2001',
+            'name' => 'Accounting Laptop',
+            'category' => 'Laptop',
+        ]);
+
+        $response = $this->actingAs($admin)->post('/api/reports/export', [
+            'type' => 'depreciation_remaining_value',
+        ]);
+
+        $response->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $rows = array_map('str_getcsv', preg_split('/\r\n|\n|\r/', trim($response->streamedContent())));
+
+        $this->assertSame([
+            'Asset Code',
+            'Name',
+            'Category',
+            'Purchase Date',
+            'Purchase Cost',
+            'Months In Service',
+            'Depreciation Percentage',
+            'Accumulated Depreciation',
+            'Current Book Value',
+        ], $rows[0]);
+        $this->assertSame('IT-LAP-2001', $rows[1][0]);
+    }
+
+    public function test_manager_can_export_lifecycle_analysis_report_as_csv(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Asset::factory()->withValuation()->create([
+            'asset_code' => 'IT-MON-3001',
+            'name' => 'Design Monitor',
+            'category' => 'Monitor',
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+
+        $response = $this->actingAs($admin)->post('/api/reports/export', [
+            'type' => 'lifecycle_analysis',
+        ]);
+
+        $response->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $rows = array_map('str_getcsv', preg_split('/\r\n|\n|\r/', trim($response->streamedContent())));
+
+        $this->assertSame([
+            'Asset Code',
+            'Name',
+            'Category',
+            'Status',
+            'Lifecycle Status',
+            'Responsible Employee',
+            'Location',
+            'Months In Service',
+            'Depreciation Percentage',
+            'Disposal Candidate',
+        ], $rows[0]);
+        $this->assertSame('IT-MON-3001', $rows[1][0]);
+    }
 }

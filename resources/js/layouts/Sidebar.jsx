@@ -157,7 +157,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         },
     };
 
-    const bfdGroup = (id, labelKey, icon, children) => ({
+    const navGroup = (id, labelKey, icon, children) => ({
         id,
         path: children[0]?.path || '/dashboard',
         labelKey,
@@ -170,33 +170,33 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
 
     const sectionLabel = (vi, en) => (locale === 'vi' ? vi : en);
 
-    const managerBfdItems = [
+    const managerNavItems = [
         navItems.dashboard,
         navItems.qrScan,
         navItems.reviewRequests,
-        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
+        navGroup('catalog-records', 'nav.catalogRecords', 'assets', [
             navItems.assets,
             navItems.locations,
             navItems.suppliers,
             navItems.profile,
         ]),
-        bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
+        navGroup('order-management', 'nav.orderManagement', 'purchaseOrders', [
             navItems.purchaseOrders,
         ]),
-        bfdGroup('bfd-operations', 'nav.bfdOperations', 'requests', [
+        navGroup('operations-management', 'nav.operationsManagement', 'requests', [
             navItems.requests,
             navItems.handover,
         ]),
-        bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
+        navGroup('maintenance-management', 'nav.maintenanceManagement', 'maintenance', [
             navItems.preventiveMaintenance,
             navItems.repairEvents,
             navItems.repairLogs,
         ]),
-        bfdGroup('bfd-inventory-disposal', 'nav.bfdInventoryDisposal', 'inventory', [
+        navGroup('inventory-disposal', 'nav.inventoryDisposal', 'inventory', [
             navItems.inventory,
             navItems.disposal,
         ]),
-        bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
+        navGroup('reports-statistics', 'nav.reportsStatistics', 'reports', [
             navItems.reports,
             navItems.deviceStatusReport,
             navItems.depreciationReport,
@@ -205,55 +205,61 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
         ]),
     ];
 
-    const technicianBfdItems = [
+    const technicianNavItems = [
         navItems.dashboard,
         navItems.qrScan,
-        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
+        navGroup('catalog-records', 'nav.catalogRecords', 'assets', [
             navItems.assets,
+            navItems.locations,
+            navItems.suppliers,
+            navItems.profile,
+        ]),
+        navGroup('order-management', 'nav.orderManagement', 'purchaseOrders', [
+            navItems.purchaseOrders,
         ]),
         navItems.myDevices,
-        bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
+        navGroup('maintenance-management', 'nav.maintenanceManagement', 'maintenance', [
             navItems.preventiveMaintenance,
             navItems.repairEvents,
             navItems.repairLogs,
         ]),
-        bfdGroup('bfd-inventory-disposal', 'nav.bfdInventoryDisposal', 'inventory', [
+        navGroup('inventory-disposal', 'nav.inventoryDisposal', 'inventory', [
             navItems.inventory,
             navItems.disposal,
         ]),
         navItems.myRequests,
     ];
 
-    const employeeBfdItems = [
+    const employeeNavItems = [
         navItems.dashboard,
         navItems.qrScan,
-        bfdGroup('bfd-catalog', 'nav.bfdCatalog', 'assets', [
-            navItems.assets,
+        navGroup('catalog-records', 'nav.catalogRecords', 'assets', [
+            navItems.profile,
         ]),
         navItems.myDevices,
         navItems.myRequests,
     ];
 
-    const supplierBfdItems = [
+    const supplierNavItems = [
         navItems.dashboard,
-        bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
+        navGroup('order-management', 'nav.orderManagement', 'purchaseOrders', [
             navItems.purchaseOrders,
         ]),
     ];
 
-    const bfdItems = isSupplier
-        ? supplierBfdItems
+    const roleNavItems = isSupplier
+        ? supplierNavItems
         : isManager
-            ? managerBfdItems
+            ? managerNavItems
             : isTechnician
-                ? technicianBfdItems
-                : employeeBfdItems;
+                ? technicianNavItems
+                : employeeNavItems;
 
     const navSections = [
         {
             id: 'main',
             label: sectionLabel('Menu chính', 'Main menu'),
-            items: bfdItems,
+            items: roleNavItems,
         },
     ];
 

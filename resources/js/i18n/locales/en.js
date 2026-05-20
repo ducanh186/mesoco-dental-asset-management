@@ -50,25 +50,25 @@ export default {
         print: 'Print',
         status: {
             label: 'Status',
-            active: 'Active',
+            active: 'Available',
             inactive: 'Inactive',
             pending: 'Pending',
             approved: 'Approved',
             rejected: 'Rejected',
             submitted: 'Submitted',
             cancelled: 'Cancelled',
-            maintenance: 'Maintenance',
+            maintenance: 'Under Maintenance',
             inProgress: 'In Progress',
             in_progress: 'In Progress',
             offService: 'Off Service',
             off_service: 'Off Service',
             available: 'Available',
             assigned: 'Assigned',
-            inventorying: 'Inventorying',
+            inventorying: 'In Inventory',
             overdue: 'Overdue',
             expired: 'Expired',
             terminated: 'Terminated',
-            retired: 'Retired',
+            retired: 'Disposed',
             draft: 'Draft',
             preparing: 'Preparing',
             shipping: 'Shipping',
@@ -107,7 +107,7 @@ export default {
     nav: {
         dashboard: 'Dashboard',
         profile: 'Profile',
-        qrScan: 'Asset QR Scan',
+        qrScan: 'Equipment QR Scan',
         bfdCatalog: 'Catalog & Profiles',
         bfdOrders: 'Order Management',
         bfdOperations: 'Operations Management',
@@ -115,12 +115,17 @@ export default {
         bfdInventoryDisposal: 'Inventory & Disposal',
         bfdReports: 'Reports & Statistics',
         catalogRecords: 'Catalog & Records',
+        orderManagement: 'Order Management',
+        operationsManagement: 'Operations Management',
+        maintenanceManagement: 'Maintenance Management',
+        inventoryDisposal: 'Inventory & Disposal',
+        reportsStatistics: 'Reports & Statistics',
         allocationManagement: 'Allocation Management',
         employees: 'Employee Profiles',
-        assets: 'Asset Catalog',
+        assets: 'Equipment Catalog',
         handoverRecovery: 'Handover / Recovery',
-        equipmentCatalog: 'Asset Catalog',
-        myEquipment: 'My Responsible Assets',
+        equipmentCatalog: 'Equipment Catalog',
+        myEquipment: 'My Responsible Equipment',
         myDevices: 'My Devices',
         myRequests: 'My Requests',
         userProfile: 'User Profile',
@@ -280,7 +285,7 @@ export default {
         
         // Admin/HR Cards
         totalEquipment: 'Total Equipment',
-        totalAssets: 'Total Assets',
+        totalAssets: 'Total Equipment',
         pendingApprovals: 'Pending Approvals',
         activeRequests: 'Active Requests',
         maintenanceDue: 'Maintenance Due',
@@ -293,7 +298,7 @@ export default {
         noScheduled: 'No scheduled tasks',
         
         // Employee cards
-        myEquipmentCount: 'My Responsible Assets',
+        myEquipmentCount: 'My Responsible Equipment',
         myActiveRequests: 'My Active Requests',
         alerts: 'Alerts',
         lockedCount: '{count} locked',
@@ -321,7 +326,7 @@ export default {
         addEquipment: 'Add Equipment',
         newRequest: 'New Request',
         viewReports: 'View Reports',
-        myEquipment: 'My Responsible Assets',
+        myEquipment: 'My Responsible Equipment',
         myRequests: 'My Requests',
         reviewRequests: 'Review Requests',
         maintenance: 'Maintenance Management',
@@ -354,7 +359,7 @@ export default {
         createRequest: 'Create Request',
         
         // Legacy keys
-        myAssignedAssets: 'My Assigned Assets',
+        myAssignedAssets: 'My Assigned Equipment',
         pendingRequests: 'Pending Requests',
         pendingApproval: '{count} pending approval',
         overdue: '{count} overdue',
@@ -365,8 +370,8 @@ export default {
     // Assets
     // ========================================================================
     assets: {
-        title: 'Assets',
-        subtitle: 'Manage assets by location and responsible employee',
+        title: 'Equipment',
+        subtitle: 'Manage equipment by location and responsible employee',
         allAssets: 'All Equipment',
         createAsset: 'Create New Equipment',
         editAsset: 'Edit Equipment',
@@ -386,7 +391,7 @@ export default {
         
         // Types
         types: {
-            all: 'All Types',
+            all: 'All',
             tray: 'Tray',
             machine: 'Machine',
             tool: 'Tool',
@@ -396,12 +401,12 @@ export default {
         
         // Statuses
         statuses: {
-            all: 'All Status',
-            active: 'Active',
+            all: 'All',
+            active: 'Available',
             off_service: 'Off Service',
             maintenance: 'Under Maintenance',
-            inventorying: 'Inventorying',
-            retired: 'Retired',
+            inventorying: 'In Inventory',
+            retired: 'Disposed',
         },
         
         // Assignment
@@ -495,7 +500,7 @@ export default {
     },
 
     // ========================================================================
-    // Asset Condition
+    // Equipment Condition
     // ========================================================================
     assetCondition: {
         ok: 'Working Well',
@@ -651,7 +656,7 @@ export default {
 
         // Status
         statuses: {
-            all: 'All Statuses',
+            all: 'All',
             DRAFT: 'Draft',
             SUBMITTED: 'Pending',
             APPROVED: 'Approved',
@@ -668,7 +673,7 @@ export default {
 
         // Types (Phase 5)
         types: {
-            all: 'All Types',
+            all: 'All',
             JUSTIFICATION: 'Repair',
             CONSUMABLE_REQUEST: 'Handover',
             maintenance: 'Request Maintenance',
@@ -842,7 +847,7 @@ export default {
     // ========================================================================
     myDevices: {
         title: 'My Devices',
-        subtitle: 'Devices you are responsible for, with quick actions to request repair or handover.',
+        subtitle: 'Devices you are responsible for. Repair requests are available here; handover and recall appear only for permitted roles.',
         empty: 'You have no devices assigned to you yet.',
         loadFailed: 'Unable to load your devices. Please try again.',
         submitFailed: 'Unable to submit the request. Please try again.',
@@ -852,13 +857,17 @@ export default {
             maintenance: 'In maintenance',
         },
         field: {
+            name: 'Device name',
+            code: 'Device code',
             serial: 'Serial number',
             location: 'Location',
             status: 'Status',
+            actions: 'Actions',
         },
         action: {
             createRepair: 'Create repair request',
             createHandover: 'Handover / recall',
+            repairUnavailable: 'Only assigned active devices can be used for repair requests.',
         },
         workflow: {
             handover: 'Handover',
@@ -867,15 +876,27 @@ export default {
         form: {
             repairTitle: 'New repair request',
             handoverTitle: 'New handover / recall request',
-            fieldTitle: 'Title',
-            severity: 'Severity',
+            device: 'Device',
+            deviceCode: 'Device code',
+            requester: 'Requester',
+            currentUser: 'Current user',
+            createdAt: 'Created at',
+            fieldTitle: 'Short issue description',
+            severity: 'Priority',
             incidentAt: 'Incident time',
             eventAt: 'Planned date',
-            description: 'Description',
+            description: 'Issue description',
             note: 'Note',
             workflow: 'Workflow',
             submitRepair: 'Submit repair request',
             submitHandover: 'Submit request',
+        },
+        status: {
+            active: 'Assigned',
+            maintenance: 'In maintenance',
+            offService: 'Off service',
+            inventorying: 'In inventory check',
+            retired: 'Retired',
         },
     },
 
@@ -925,7 +946,7 @@ export default {
         overdue: 'Overdue',
         // Types
         types: {
-            all: 'All Types',
+            all: 'All',
             scheduled: 'Scheduled',
             emergency: 'Emergency',
             preventive: 'Preventive',
@@ -988,7 +1009,7 @@ export default {
     reports: {
         title: 'Reports & Statistics',
         overview: 'Overview',
-        assetReport: 'Asset Report',
+        assetReport: 'Equipment Report',
         assetUsage: 'Equipment Usage Report',
         incidents: 'Incidents',
         requests: 'Distribution Forms',
@@ -1024,21 +1045,21 @@ export default {
         remainingValue: 'Remaining Value',
         eligibleTab: 'Disposal Proposals',
         retiredTab: 'Disposed',
-        assetCode: 'Asset Code',
-        assetName: 'Asset Name',
+        assetCode: 'Equipment Code',
+        assetName: 'Equipment Name',
         category: 'Category',
         depreciation: 'Depreciation',
         purchaseCost: 'Purchase Cost',
         bookValue: 'Book Value',
         reason: 'Disposal Reason',
-        reasonPlaceholder: 'Enter reason for disposing this asset...',
+        reasonPlaceholder: 'Enter reason for disposing this equipment...',
         retiredDate: 'Disposal Date',
         retire: 'Dispose',
-        retireSuccess: 'Asset disposed successfully.',
+        retireSuccess: 'Equipment disposed successfully.',
         retireConfirmTitle: 'Confirm Disposal',
         retireConfirmMessage: 'Are you sure you want to dispose {name} ({code})?',
         confirmRetire: 'Confirm Disposal',
-        noEligible: 'No assets in disposal proposals.',
+        noEligible: 'No equipment in disposal proposals.',
         noRetired: 'No disposed assets yet.',
     },
 
@@ -1115,12 +1136,12 @@ export default {
     // Printable Label
     // ========================================================================
     printableLabel: {
-        title: 'Asset Label',
+        title: 'Equipment Label',
         popupBlocked: 'Please allow popups to print the label',
-        unnamedAsset: 'Unnamed Asset',
+        unnamedAsset: 'Unnamed Equipment',
         scanInstruction: 'Use this label for inventory reconciliation',
-        handoverNote: 'Asset assigned to a responsible employee',
-        qrPortalHint: 'Scan to open the asset portal on mobile or in a browser',
+        handoverNote: 'Equipment assigned to a responsible employee',
+        qrPortalHint: 'Scan to open the equipment portal on mobile or in a browser',
         qrLoading: 'Generating QR...',
         qrUnavailable: 'Regenerate QR to print the label',
         internalPayload: 'Internal payload',
@@ -1131,7 +1152,7 @@ export default {
     // ========================================================================
     locationsPage: {
         title: 'Locations',
-        subtitle: 'Manage location code, name, and description for assets',
+        subtitle: 'Manage location code, name, and description for equipment',
         addLocation: 'Add Location',
         editLocation: 'Edit Location',
         searchPlaceholder: 'Search by location code or name...',
@@ -1150,10 +1171,10 @@ export default {
     // ========================================================================
     inventoryPage: {
         title: 'Inventory & Valuation',
-        totalAssets: 'Total Assets',
+        totalAssets: 'Total Equipment',
         assigned: 'Assigned',
         totalBookValue: 'Total Book Value',
-        warrantyExpiringSoon: '{count} assets with warranty expiring soon',
+        warrantyExpiringSoon: '{count} equipment items with warranty expiring soon',
         withinDays: 'Within {count} days',
         expiredCount: '{count} expired',
         showAll: 'Show All',
@@ -1166,13 +1187,13 @@ export default {
         valuationTab: 'Valuation',
         exportCsv: 'Export CSV',
         exporting: 'Exporting...',
-        noAssetsFound: 'No assets found',
+        noAssetsFound: 'No equipment found',
         adjustFilters: 'Try adjusting your search or filters.',
         code: 'Code',
         equipment: 'Equipment',
         bookValue: 'Book Value',
         fullyDepreciated: 'Fully Depr.',
-        detailTitle: 'Asset Details',
+        detailTitle: 'Equipment Details',
         purchaseDate: 'Purchase Date',
         warrantyExpiry: 'Warranty Expiry',
         purchaseCost: 'Purchase Cost',

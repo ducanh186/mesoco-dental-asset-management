@@ -37,7 +37,7 @@ class DisposalController extends Controller
 
         foreach ($allAssets as $asset) {
             $percentage = $asset->getDepreciationPercentage();
-            if ($percentage !== null && $percentage > Asset::DISPOSAL_RECOMMENDATION_THRESHOLD) {
+            if ($percentage !== null && $percentage >= Asset::DISPOSAL_RECOMMENDATION_THRESHOLD) {
                 $eligibleCount++;
                 $totalDepreciatedValue += $asset->getCurrentBookValue() ?? 0;
                 $highDepreciationCount++;
@@ -99,6 +99,15 @@ class DisposalController extends Controller
             return response()->json([
                 'message' => 'Thiết bị đã được thu hủy trước đó.',
                 'error' => 'ALREADY_RETIRED',
+            ], 422);
+        }
+
+        if (!$asset->isEligibleForDisposal()) {
+            return response()->json([
+                'message' => 'Chỉ được đề xuất thu hủy khi khấu hao đạt tối thiểu 75%.',
+                'error' => 'DISPOSAL_THRESHOLD_NOT_MET',
+                'depreciation_percentage' => $asset->getDepreciationPercentage(),
+                'required_depreciation_percentage' => Asset::DISPOSAL_RECOMMENDATION_THRESHOLD,
             ], 422);
         }
 

@@ -39,4 +39,24 @@ class DisposalSummaryThresholdTest extends TestCase
             ->assertJsonPath('eligible_for_disposal', 1)
             ->assertJsonPath('high_depreciation', 1);
     }
+
+    public function test_disposal_summary_includes_assets_at_exactly_75_percent_depreciation(): void
+    {
+        $manager = User::factory()->manager()->create();
+
+        Asset::factory()->create([
+            'purchase_cost' => 1000,
+            'purchase_price' => 1000,
+            'useful_life_months' => 100,
+            'salvage_value' => 0,
+            'purchase_date' => now()->subMonths(75),
+            'status' => Asset::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($manager)
+            ->getJson('/api/disposal/summary')
+            ->assertOk()
+            ->assertJsonPath('eligible_for_disposal', 1)
+            ->assertJsonPath('high_depreciation', 1);
+    }
 }

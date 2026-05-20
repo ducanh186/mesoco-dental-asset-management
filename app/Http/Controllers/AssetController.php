@@ -880,6 +880,7 @@ class AssetController extends Controller
             'location' => $this->transformLocation($asset),
             'location_name' => $this->locationLabel($asset),
             'status' => $asset->status,
+            'is_locked' => $asset->isLocked(),
             'lifecycle_status' => $asset->lifecycle_status,
             'qr_code' => $asset->qr_code ?: $asset->qr_value,
             'notes' => $asset->notes,

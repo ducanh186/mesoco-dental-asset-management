@@ -201,12 +201,14 @@ class ReportController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $validated = $request->validate([
-            'type' => ['required', 'string', 'in:device_status,disposal_proposal'],
+            'type' => ['required', 'string', 'in:device_status,depreciation_remaining_value,disposal_proposal,lifecycle_analysis'],
         ]);
 
         [$filename, $headers, $rows] = match ($validated['type']) {
             'device_status' => $this->deviceStatusCsvData(),
+            'depreciation_remaining_value' => $this->depreciationRemainingValueCsvData(),
             'disposal_proposal' => $this->disposalProposalCsvData(),
+            'lifecycle_analysis' => $this->lifecycleAnalysisCsvData(),
         };
 
         return response()->streamDownload(function () use ($headers, $rows) {
@@ -278,6 +280,89 @@ class ReportController extends Controller
                 'Accumulated Depreciation',
                 'Depreciation Percentage',
                 'Current Book Value',
+            ],
+            $rows,
+        ];
+    }
+
+    private function depreciationRemainingValueCsvData(): array
+    {
+        $rows = Asset::query()
+            ->orderBy('asset_code')
+            ->orderBy('id')
+            ->get()
+            ->map(function (Asset $asset) {
+                $valuation = $asset->getValuationData();
+
+                return [
+                    $asset->asset_code,
+                    $asset->name,
+                    $asset->category,
+                    $valuation['purchase_date'],
+                    $valuation['purchase_cost'],
+                    $valuation['months_in_service'],
+                    $valuation['depreciation_percentage'],
+                    $valuation['accumulated_depreciation'],
+                    $valuation['current_book_value'],
+                ];
+            })
+            ->all();
+
+        return [
+            'depreciation-remaining-value.csv',
+            [
+                'Asset Code',
+                'Name',
+                'Category',
+                'Purchase Date',
+                'Purchase Cost',
+                'Months In Service',
+                'Depreciation Percentage',
+                'Accumulated Depreciation',
+                'Current Book Value',
+            ],
+            $rows,
+        ];
+    }
+
+    private function lifecycleAnalysisCsvData(): array
+    {
+        $rows = Asset::query()
+            ->with(['currentAssignment.employee', 'locationDefinition'])
+            ->orderBy('asset_code')
+            ->orderBy('id')
+            ->get()
+            ->map(function (Asset $asset) {
+                $valuation = $asset->getValuationData();
+
+                return [
+                    $asset->asset_code,
+                    $asset->name,
+                    $asset->category,
+                    $asset->status,
+                    $asset->lifecycle_status,
+                    $asset->currentAssignment?->employee?->full_name,
+                    $asset->locationDefinition?->name ?? $asset->location,
+                    $valuation['months_in_service'],
+                    $valuation['depreciation_percentage'],
+                    $asset->isEligibleForDisposal() ? 'Yes' : 'No',
+                ];
+            })
+            ->all();
+
+        return [
+            'lifecycle-analysis.csv',
+            [
+                'Asset Code',
+                'Name',
+                'Category',
+                'Status',
+                'Lifecycle Status',
+                'Responsible Employee',
+                'Location',
+                'Months In Service',
+                'Depreciation Percentage',
+                'Disposal Candidate',
             ],
             $rows,
         ];

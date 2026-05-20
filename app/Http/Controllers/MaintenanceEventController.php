@@ -10,6 +10,7 @@ use App\Services\MaintenanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use InvalidArgumentException;
 
 /**
  * Controller for MaintenanceEvent CRUD and state transitions.
@@ -47,6 +48,8 @@ class MaintenanceEventController extends Controller
                 'creator:id,name',
                 'assignedUser:id,name,email',
                 'details.asset:id,name,asset_code',
+                'details.asset.currentAssignment.employee:id,employee_code,full_name',
+                'details.asset.currentAssignment.assignedByUser:id,name',
             ])
             ->withCount('details');
 
@@ -152,10 +155,14 @@ class MaintenanceEventController extends Controller
 
         $maintenanceEvent->load([
             'asset:id,name,asset_code,type,status',
+            'asset.currentAssignment.employee:id,employee_code,full_name',
+            'asset.currentAssignment.assignedByUser:id,name',
             'creator:id,name',
             'updater:id,name',
             'assignedUser:id,name,email',
             'details.asset:id,name,asset_code,type,status,location',
+            'details.asset.currentAssignment.employee:id,employee_code,full_name',
+            'details.asset.currentAssignment.assignedByUser:id,name',
             'details.technician:id,name,email',
             'details.supplier:id,name,code',
         ]);
@@ -172,16 +179,24 @@ class MaintenanceEventController extends Controller
      */
     public function store(StoreMaintenanceEventRequest $request): JsonResponse
     {
-        $event = $this->maintenanceService->create(
-            $request->validated(),
-            $request->user()
-        );
+        try {
+            $event = $this->maintenanceService->create(
+                $request->validated(),
+                $request->user()
+            );
+        } catch (InvalidArgumentException $exception) {
+            return $this->maintenanceValidationError($exception);
+        }
 
         $event->load([
             'asset:id,name,asset_code',
+            'asset.currentAssignment.employee:id,employee_code,full_name',
+            'asset.currentAssignment.assignedByUser:id,name',
             'creator:id,name',
             'assignedUser:id,name,email',
             'details.asset:id,name,asset_code,type,status,location',
+            'details.asset.currentAssignment.employee:id,employee_code,full_name',
+            'details.asset.currentAssignment.assignedByUser:id,name',
             'details.technician:id,name,email',
             'details.supplier:id,name,code',
         ]);
@@ -201,17 +216,25 @@ class MaintenanceEventController extends Controller
         UpdateMaintenanceEventRequest $request,
         MaintenanceEvent $maintenanceEvent
     ): JsonResponse {
-        $event = $this->maintenanceService->update(
-            $maintenanceEvent,
-            $request->validated(),
-            $request->user()
-        );
+        try {
+            $event = $this->maintenanceService->update(
+                $maintenanceEvent,
+                $request->validated(),
+                $request->user()
+            );
+        } catch (InvalidArgumentException $exception) {
+            return $this->maintenanceValidationError($exception);
+        }
 
         $event->load([
             'asset:id,name,asset_code',
+            'asset.currentAssignment.employee:id,employee_code,full_name',
+            'asset.currentAssignment.assignedByUser:id,name',
             'creator:id,name',
             'assignedUser:id,name,email',
             'details.asset:id,name,asset_code,type,status,location',
+            'details.asset.currentAssignment.employee:id,employee_code,full_name',
+            'details.asset.currentAssignment.assignedByUser:id,name',
             'details.technician:id,name,email',
             'details.supplier:id,name,code',
         ]);
@@ -255,9 +278,13 @@ class MaintenanceEventController extends Controller
 
         $event->load([
             'asset:id,name,asset_code,status',
+            'asset.currentAssignment.employee:id,employee_code,full_name',
+            'asset.currentAssignment.assignedByUser:id,name',
             'creator:id,name',
             'assignedUser:id,name,email',
             'details.asset:id,name,asset_code,type,status,location',
+            'details.asset.currentAssignment.employee:id,employee_code,full_name',
+            'details.asset.currentAssignment.assignedByUser:id,name',
             'details.technician:id,name,email',
             'details.supplier:id,name,code',
         ]);
@@ -290,9 +317,13 @@ class MaintenanceEventController extends Controller
 
         $event->load([
             'asset:id,name,asset_code,status',
+            'asset.currentAssignment.employee:id,employee_code,full_name',
+            'asset.currentAssignment.assignedByUser:id,name',
             'creator:id,name',
             'assignedUser:id,name,email',
             'details.asset:id,name,asset_code,type,status,location',
+            'details.asset.currentAssignment.employee:id,employee_code,full_name',
+            'details.asset.currentAssignment.assignedByUser:id,name',
             'details.technician:id,name,email',
             'details.supplier:id,name,code',
         ]);
@@ -321,9 +352,13 @@ class MaintenanceEventController extends Controller
 
         $event->load([
             'asset:id,name,asset_code,status',
+            'asset.currentAssignment.employee:id,employee_code,full_name',
+            'asset.currentAssignment.assignedByUser:id,name',
             'creator:id,name',
             'assignedUser:id,name,email',
             'details.asset:id,name,asset_code,type,status,location',
+            'details.asset.currentAssignment.employee:id,employee_code,full_name',
+            'details.asset.currentAssignment.assignedByUser:id,name',
             'details.technician:id,name,email',
             'details.supplier:id,name,code',
         ]);
@@ -379,5 +414,17 @@ class MaintenanceEventController extends Controller
             'upcoming_events' => $upcomingEvents,
             'overdue_events' => $overdueEvents,
         ]);
+    }
+
+    private function maintenanceValidationError(InvalidArgumentException $exception): JsonResponse
+    {
+        $message = $exception->getMessage();
+
+        return response()->json([
+            'message' => $message,
+            'error' => str_contains($message, 'retired asset')
+                ? 'ASSET_RETIRED'
+                : 'INVALID_MAINTENANCE_EVENT',
+        ], 422);
     }
 }

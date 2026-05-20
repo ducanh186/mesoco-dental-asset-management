@@ -33,6 +33,7 @@ const ReportPage = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [report, setReport] = useState(null);
     const [exportingType, setExportingType] = useState(null);
+    const [selectedReportType, setSelectedReportType] = useState('device_status');
     
     // Date range
     const [fromDate, setFromDate] = useState(() => {
@@ -63,6 +64,11 @@ const ReportPage = ({ user }) => {
     }, [fetchReport]);
 
     const handleRefresh = () => {
+        fetchReport();
+    };
+
+    const handleGenerateReport = (type) => {
+        setSelectedReportType(type.key);
         fetchReport();
     };
 
@@ -106,12 +112,42 @@ const ReportPage = ({ user }) => {
     }
 
     const { assets, maintenance, requests, disposal } = report || {};
+    const assignedCount = assets?.assigned || assets?.by_assignment?.assigned || assets?.by_status?.assigned || 0;
+    const inventoryingCount = assets?.inventorying || assets?.by_status?.inventorying || 0;
     const reportTypes = report?.report_types || [
         { key: 'device_status', label: 'Báo cáo trạng thái thiết bị', exportable: true },
         { key: 'depreciation_remaining_value', label: 'Báo cáo khấu hao / giá trị còn lại', exportable: true },
         { key: 'disposal_proposal', label: 'Báo cáo đề xuất thu hủy', exportable: true },
         { key: 'lifecycle_analysis', label: 'Báo cáo phân tích vòng đời', exportable: true, method: 'rule_based' },
     ];
+    const activeReportType = reportTypes.find((type) => type.key === selectedReportType) || reportTypes[0];
+    const reportPreviewRows = {
+        device_status: [
+            ['Tổng thiết bị', assets?.total || 0],
+            ['Sẵn sàng', assets?.active || 0],
+            ['Đã bàn giao', assignedCount],
+            ['Đang bảo trì', assets?.maintenance || 0],
+            ['Đang kiểm kê', inventoryingCount],
+            ['Đã thu hủy', assets?.retired || 0],
+        ],
+        depreciation_remaining_value: [
+            ['Thiết bị đủ điều kiện đề xuất thu hủy', assets?.depreciation_threshold_75_pct || 0],
+            ['Đang khóa', assets?.locked || 0],
+            ['Đang bảo trì', assets?.maintenance || 0],
+        ],
+        disposal_proposal: [
+            ['Đủ điều kiện thu hủy', disposal?.eligible || 0],
+            ['Thu hủy trong kỳ', disposal?.retired_in_period || 0],
+            ['Tổng đã thu hủy', disposal?.retired_total || 0],
+            ['Giá trị thu hồi', disposal?.recovered_value || 0],
+        ],
+        lifecycle_analysis: [
+            ['Bảo trì quá hạn', maintenance?.overdue || 0],
+            ['Đang sửa/bảo trì', maintenance?.in_progress || 0],
+            ['Lịch bảo trì sắp tới', maintenance?.scheduled || 0],
+            ['Hoàn thành trong kỳ', maintenance?.completed_in_period || 0],
+        ],
+    }[activeReportType?.key] || [];
 
     return (
         <div className="report-page space-y-6">
@@ -163,7 +199,7 @@ const ReportPage = ({ user }) => {
                                     )}
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button size="sm" variant="outline" onClick={handleRefresh}>
+                                    <Button size="sm" variant="outline" onClick={() => handleGenerateReport(type)}>
                                         Tạo báo cáo
                                     </Button>
                                     <Button
@@ -176,6 +212,33 @@ const ReportPage = ({ user }) => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </CardBody>
+            </Card>
+
+            <Card>
+                <CardHeader
+                    title={activeReportType?.label || 'Bảng báo cáo'}
+                    subtitle="Bảng dữ liệu tóm tắt để đối chiếu trước khi xuất file."
+                />
+                <CardBody>
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[420px] text-sm">
+                            <thead>
+                                <tr className="border-b border-border text-left text-text-muted">
+                                    <th className="py-2 pr-4 font-semibold">Chỉ tiêu</th>
+                                    <th className="py-2 text-right font-semibold">Giá trị</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {reportPreviewRows.map(([label, value]) => (
+                                    <tr key={label} className="border-b border-border">
+                                        <td className="py-2 pr-4 text-text">{label}</td>
+                                        <td className="py-2 text-right font-semibold text-text">{value}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </CardBody>
             </Card>
@@ -194,21 +257,21 @@ const ReportPage = ({ user }) => {
                                 <p className="text-3xl font-bold text-success">{assets?.active || 0}</p>
                                 <p className="text-sm text-text-muted">Sẵn sàng</p>
                             </div>
-                            <div className="text-center p-4 bg-error/10 rounded-lg">
-                                <p className="text-3xl font-bold text-error">{assets?.locked || 0}</p>
-                                <p className="text-sm text-text-muted">Đang khóa</p>
+                            <div className="text-center p-4 bg-info/10 rounded-lg">
+                                <p className="text-3xl font-bold text-info">{assignedCount}</p>
+                                <p className="text-sm text-text-muted">Đã bàn giao</p>
                             </div>
                             <div className="text-center p-4 bg-warning/10 rounded-lg">
-                                <p className="text-3xl font-bold text-warning">{assets?.off_service || 0}</p>
-                                <p className="text-sm text-text-muted">Ngừng hoạt động</p>
+                                <p className="text-3xl font-bold text-warning">{assets?.maintenance || 0}</p>
+                                <p className="text-sm text-text-muted">Đang bảo trì</p>
                             </div>
                             <div className="text-center p-4 bg-primary/10 rounded-lg">
-                                <p className="text-3xl font-bold text-primary">{assets?.maintenance || 0}</p>
-                                <p className="text-sm text-text-muted">Đang bảo trì</p>
+                                <p className="text-3xl font-bold text-primary">{inventoryingCount}</p>
+                                <p className="text-sm text-text-muted">Đang kiểm kê</p>
                             </div>
                             <div className="text-center p-4 bg-text-light/10 rounded-lg">
                                 <p className="text-3xl font-bold text-text-muted">{assets?.retired || 0}</p>
-                                <p className="text-sm text-text-muted">Đã thanh lý</p>
+                                <p className="text-sm text-text-muted">Đã thu hủy</p>
                             </div>
                         </div>
                     </CardBody>

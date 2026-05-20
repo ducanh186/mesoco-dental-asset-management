@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useI18n } from '../i18n';
 import { preferLocalizedMessage } from '../services/api';
+import { hasOperationalAccess } from '../utils/roles';
 
 const SEVERITY_OPTIONS = [
     { value: 'low', labelKey: 'requests.severities.low' },
@@ -45,6 +46,7 @@ const formatDateTime = (value) => {
 
 const MyDevicesPage = ({ user }) => {
     const { t } = useI18n();
+    const canRequestHandover = hasOperationalAccess(user);
     const [devices, setDevices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -92,6 +94,28 @@ const MyDevicesPage = ({ user }) => {
         await reload();
     };
 
+    const getStatusLabel = (status) => {
+        const labels = {
+            active: t('myDevices.status.active'),
+            maintenance: t('myDevices.status.maintenance'),
+            off_service: t('myDevices.status.offService'),
+            inventorying: t('myDevices.status.inventorying'),
+            retired: t('myDevices.status.retired'),
+        };
+
+        return labels[status] || status || '—';
+    };
+
+    const canCreateRepair = (device) => (
+        device?.status === 'active' && device?.is_assigned !== false && !device?.is_locked
+    );
+    const requesterName = user?.employee?.full_name
+        || user?.full_name
+        || user?.name
+        || user?.username
+        || user?.email
+        || t('myDevices.form.currentUser');
+
     return (
         <div className="page my-devices-page">
             <header className="page-header">
@@ -121,45 +145,60 @@ const MyDevicesPage = ({ user }) => {
                     <p>{t('myDevices.empty')}</p>
                 </div>
             ) : (
-                <div className="card-grid">
-                    {devices.map((device) => (
-                        <article key={device.id} className="device-card">
-                            <header>
-                                <h3>{device.name}</h3>
-                                <span className="badge">{device.asset_code}</span>
-                            </header>
-                            <dl>
-                                <div>
-                                    <dt>{t('myDevices.field.serial')}</dt>
-                                    <dd>{device.serial_number || '—'}</dd>
-                                </div>
-                                <div>
-                                    <dt>{t('myDevices.field.location')}</dt>
-                                    <dd>{device.location_name || '—'}</dd>
-                                </div>
-                                <div>
-                                    <dt>{t('myDevices.field.status')}</dt>
-                                    <dd>{device.status}</dd>
-                                </div>
-                            </dl>
-                            <footer className="card-actions">
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={() => openRepairForm(device)}
-                                >
-                                    {t('myDevices.action.createRepair')}
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={() => openHandoverForm(device)}
-                                >
-                                    {t('myDevices.action.createHandover')}
-                                </button>
-                            </footer>
-                        </article>
-                    ))}
+                <div className="device-table-card">
+                    <table className="device-table">
+                        <thead>
+                            <tr>
+                                <th>{t('myDevices.field.name')}</th>
+                                <th>{t('myDevices.field.code')}</th>
+                                <th>{t('myDevices.field.serial')}</th>
+                                <th>{t('myDevices.field.location')}</th>
+                                <th>{t('myDevices.field.status')}</th>
+                                <th>{t('myDevices.field.actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {devices.map((device) => (
+                                <tr key={device.id}>
+                                    <td data-label={t('myDevices.field.name')}>
+                                        <span className="device-name">{device.name || '—'}</span>
+                                    </td>
+                                    <td data-label={t('myDevices.field.code')}>
+                                        <code className="device-code">{device.asset_code || '—'}</code>
+                                    </td>
+                                    <td data-label={t('myDevices.field.serial')}>{device.serial_number || '—'}</td>
+                                    <td data-label={t('myDevices.field.location')}>{device.location_name || '—'}</td>
+                                    <td data-label={t('myDevices.field.status')}>
+                                        <span className={`device-status status-${device.status || 'unknown'}`}>
+                                            {getStatusLabel(device.status)}
+                                        </span>
+                                    </td>
+                                    <td data-label={t('myDevices.field.actions')}>
+                                        <div className="table-actions">
+                                            <button
+                                                type="button"
+                                                className="btn btn-primary"
+                                                onClick={() => openRepairForm(device)}
+                                                disabled={!canCreateRepair(device)}
+                                                title={!canCreateRepair(device) ? t('myDevices.action.repairUnavailable') : undefined}
+                                            >
+                                                {t('myDevices.action.createRepair')}
+                                            </button>
+                                            {canRequestHandover && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary"
+                                                    onClick={() => openHandoverForm(device)}
+                                                >
+                                                    {t('myDevices.action.createHandover')}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
 
@@ -167,6 +206,7 @@ const MyDevicesPage = ({ user }) => {
                 <RepairRequestForm
                     asset={activeForm.asset}
                     initialDateTime={activeForm.initialDateTime}
+                    requesterName={requesterName}
                     onClose={closeForm}
                     onSubmitted={handleFormSubmitted}
                 />
@@ -184,7 +224,7 @@ const MyDevicesPage = ({ user }) => {
     );
 };
 
-const RepairRequestForm = ({ asset, initialDateTime, onClose, onSubmitted }) => {
+const RepairRequestForm = ({ asset, initialDateTime, requesterName, onClose, onSubmitted }) => {
     const { t } = useI18n();
     const defaultTitle = `Sửa chữa ${asset.asset_code || ''} - ${asset.name || ''}`.trim();
     const [title, setTitle] = useState(defaultTitle);
@@ -230,6 +270,25 @@ const RepairRequestForm = ({ asset, initialDateTime, onClose, onSubmitted }) => 
                 </p>
 
                 {error && <div className="alert alert-error">{error}</div>}
+
+                <div className="readonly-grid">
+                    <div>
+                        <span>{t('myDevices.form.device')}</span>
+                        <strong>{asset.name || '—'}</strong>
+                    </div>
+                    <div>
+                        <span>{t('myDevices.form.deviceCode')}</span>
+                        <strong>{asset.asset_code || '—'}</strong>
+                    </div>
+                    <div>
+                        <span>{t('myDevices.form.requester')}</span>
+                        <strong>{requesterName}</strong>
+                    </div>
+                    <div>
+                        <span>{t('myDevices.form.createdAt')}</span>
+                        <strong>{incidentAt || '—'}</strong>
+                    </div>
+                </div>
 
                 <label className="form-field">
                     <span>{t('myDevices.form.fieldTitle')}</span>

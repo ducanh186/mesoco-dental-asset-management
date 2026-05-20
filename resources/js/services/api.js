@@ -585,6 +585,11 @@ export const purchaseOrdersApi = {
         const response = await axios.patch(`/api/purchase-orders/${id}/status`, data);
         return response.data;
     },
+
+    createReceipt: async (id, data = {}) => {
+        const response = await axios.post(`/api/purchase-orders/${id}/receipt`, data);
+        return response.data;
+    },
 };
 
 // ============================================================================

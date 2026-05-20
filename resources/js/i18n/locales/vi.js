@@ -61,7 +61,7 @@ export default {
             rejected: 'Từ chối',
             submitted: 'Chờ duyệt',
             cancelled: 'Đã hủy',
-            maintenance: 'Bảo trì',
+            maintenance: 'Đang bảo trì',
             inProgress: 'Đang xử lý',
             in_progress: 'Đang xử lý',
             offService: 'Tạm ngưng',
@@ -119,6 +119,11 @@ export default {
         bfdInventoryDisposal: 'Quản lý kiểm kê & thu hủy',
         bfdReports: 'Báo cáo & thống kê',
         catalogRecords: 'Quản lý danh mục & hồ sơ',
+        orderManagement: 'Quản lý đơn hàng',
+        operationsManagement: 'Quản lý vận hành',
+        maintenanceManagement: 'Quản lý bảo trì',
+        inventoryDisposal: 'Quản lý kiểm kê & thu hủy',
+        reportsStatistics: 'Báo cáo & thống kê',
         allocationManagement: 'Quản lý cấp phát',
         employees: 'Hồ sơ nhân viên',
         assets: 'Danh mục thiết bị',
@@ -390,7 +395,7 @@ export default {
         
         // Types
         types: {
-            all: 'Tất cả danh mục',
+            all: 'Tất cả',
             tray: 'PC',
             machine: 'Màn hình',
             tool: 'Thiết bị Test',
@@ -400,9 +405,9 @@ export default {
         
         // Statuses
         statuses: {
-            all: 'Tất cả trạng thái',
+            all: 'Tất cả',
             active: 'Sẵn sàng',
-            off_service: 'Tạm ngưng sử dụng',
+            off_service: 'Tạm ngưng',
             maintenance: 'Đang bảo trì',
             inventorying: 'Đang kiểm kê',
             retired: 'Đã thu hủy',
@@ -410,7 +415,7 @@ export default {
         
         // Assignment
         assignment: 'Phân công',
-        assigned: 'Đã giao',
+        assigned: 'Đã bàn giao',
         unassigned: 'Chưa giao',
         assignTo: 'Giao cho',
         assignAsset: 'Giao thiết bị',
@@ -655,7 +660,7 @@ export default {
 
         // Status
         statuses: {
-            all: 'Tất cả trạng thái',
+            all: 'Tất cả',
             DRAFT: 'Nháp',
             SUBMITTED: 'Chờ duyệt',
             APPROVED: 'Đã duyệt',
@@ -672,7 +677,7 @@ export default {
 
         // Types (Phase 5)
         types: {
-            all: 'Tất cả loại yêu cầu',
+            all: 'Tất cả',
             JUSTIFICATION: 'Sửa chữa',
             CONSUMABLE_REQUEST: 'Bàn giao',
             maintenance: 'Yêu cầu bảo trì',
@@ -856,7 +861,7 @@ export default {
     // ========================================================================
     myDevices: {
         title: 'Thiết bị của tôi',
-        subtitle: 'Thiết bị bạn đang chịu trách nhiệm. Có thể tạo nhanh phiếu sửa chữa hoặc phiếu bàn giao/thu hồi.',
+        subtitle: 'Thiết bị bạn đang chịu trách nhiệm. Có thể tạo nhanh phiếu sửa chữa; bàn giao/thu hồi chỉ hiện với vai trò được phép.',
         empty: 'Bạn chưa được giao thiết bị nào.',
         loadFailed: 'Không tải được danh sách thiết bị. Vui lòng thử lại.',
         submitFailed: 'Không gửi được phiếu. Vui lòng thử lại.',
@@ -866,13 +871,17 @@ export default {
             maintenance: 'Đang bảo trì',
         },
         field: {
+            name: 'Tên thiết bị',
+            code: 'Mã thiết bị',
             serial: 'Số serial',
             location: 'Vị trí',
             status: 'Trạng thái',
+            actions: 'Thao tác',
         },
         action: {
             createRepair: 'Tạo phiếu sửa chữa',
             createHandover: 'Bàn giao / Thu hồi',
+            repairUnavailable: 'Chỉ thiết bị đang bàn giao và còn hoạt động mới được tạo phiếu sửa chữa.',
         },
         workflow: {
             handover: 'Bàn giao',
@@ -881,15 +890,27 @@ export default {
         form: {
             repairTitle: 'Tạo phiếu sửa chữa',
             handoverTitle: 'Tạo phiếu bàn giao / thu hồi',
-            fieldTitle: 'Tiêu đề',
-            severity: 'Mức độ',
+            device: 'Thiết bị',
+            deviceCode: 'Mã thiết bị',
+            requester: 'Người yêu cầu',
+            currentUser: 'Người dùng hiện tại',
+            createdAt: 'Ngày tạo',
+            fieldTitle: 'Mô tả ngắn lỗi',
+            severity: 'Mức độ ưu tiên',
             incidentAt: 'Thời điểm sự cố',
             eventAt: 'Thời điểm dự kiến',
-            description: 'Mô tả',
+            description: 'Mô tả lỗi',
             note: 'Ghi chú',
             workflow: 'Loại phiếu',
             submitRepair: 'Gửi phiếu sửa chữa',
             submitHandover: 'Gửi phiếu',
+        },
+        status: {
+            active: 'Đã bàn giao',
+            maintenance: 'Đang bảo trì',
+            offService: 'Ngừng hoạt động',
+            inventorying: 'Đang kiểm kê',
+            retired: 'Đã thu hủy',
         },
     },
 
@@ -940,7 +961,7 @@ export default {
         createTicket: 'Tạo phiếu bảo trì',
         // Types
         types: {
-            all: 'Tất cả loại',
+            all: 'Tất cả',
             scheduled: 'Định kỳ',
             emergency: 'Khẩn cấp',
             preventive: 'Phòng ngừa',

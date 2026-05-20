@@ -79,7 +79,7 @@ class StoreMaintenanceEventRequest extends FormRequest
                 'max:255',
             ],
             'assigned_to_user_id' => [
-                'nullable',
+                'required',
                 'integer',
                 'exists:users,id',
             ],
@@ -131,6 +131,7 @@ class StoreMaintenanceEventRequest extends FormRequest
             'planned_at.required' => 'Vui lòng chọn thời gian dự kiến.',
             'planned_at.after_or_equal' => 'Thời gian dự kiến không được ở quá khứ.',
             'priority.in' => 'Mức độ ưu tiên không hợp lệ.',
+            'assigned_to_user_id.required' => 'Vui lòng chọn kỹ thuật viên phụ trách.',
         ];
     }
 }

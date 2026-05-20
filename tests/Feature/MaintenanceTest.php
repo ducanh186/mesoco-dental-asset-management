@@ -48,6 +48,7 @@ class MaintenanceTest extends TestCase
                 'type' => 'inspection',
                 'planned_at' => now()->addDays(7)->toDateTimeString(),
                 'priority' => 'normal',
+                'assigned_to_user_id' => $this->technician->id,
                 'note' => 'Annual inspection',
             ]);
 
@@ -69,9 +70,31 @@ class MaintenanceTest extends TestCase
                 'asset_id' => $this->asset->id,
                 'type' => 'calibration',
                 'planned_at' => now()->addDays(3)->toDateTimeString(),
+                'assigned_to_user_id' => $this->technician->id,
             ]);
 
         $response->assertStatus(201);
+    }
+
+    public function test_cannot_create_maintenance_event_for_retired_asset(): void
+    {
+        $this->asset->update(['status' => Asset::STATUS_RETIRED]);
+
+        $response = $this->actingAs($this->technician)
+            ->postJson('/api/maintenance-events', [
+                'asset_id' => $this->asset->id,
+                'type' => MaintenanceEvent::TYPE_REPAIR,
+                'planned_at' => now()->addDays(3)->toDateTimeString(),
+                'assigned_to_user_id' => $this->technician->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('error', 'ASSET_RETIRED');
+
+        $this->assertDatabaseMissing('maintenance_events', [
+            'asset_id' => $this->asset->id,
+            'type' => MaintenanceEvent::TYPE_REPAIR,
+        ]);
     }
 
     public function test_employee_cannot_create_maintenance_event(): void
@@ -81,6 +104,7 @@ class MaintenanceTest extends TestCase
                 'asset_id' => $this->asset->id,
                 'type' => 'inspection',
                 'planned_at' => now()->addDays(7)->toDateTimeString(),
+                'assigned_to_user_id' => $this->technician->id,
             ]);
 
         $response->assertStatus(403);
@@ -235,6 +259,7 @@ class MaintenanceTest extends TestCase
             ->postJson('/api/maintenance-events', [
                 'type' => 'inspection',
                 'planned_at' => now()->addDay()->toDateTimeString(),
+                'assigned_to_user_id' => $this->technician->id,
                 'details' => [
                     ['asset_id' => $this->asset->id, 'qty' => 1],
                     ['asset_id' => $secondAsset->id, 'qty' => 2],

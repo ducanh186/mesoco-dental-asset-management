@@ -64,6 +64,14 @@ const InventoryPage = ({ user }) => {
     // Export loading state
     const [exportLoading, setExportLoading] = useState(false);
     const [planLoading, setPlanLoading] = useState(false);
+    const [checksLoading, setChecksLoading] = useState(false);
+    const [checks, setChecks] = useState([]);
+    const [checksPagination, setChecksPagination] = useState({ current_page: 1, last_page: 1, per_page: 5, total: 0 });
+    const [selectedCheck, setSelectedCheck] = useState(null);
+    const [isCheckDetailOpen, setIsCheckDetailOpen] = useState(false);
+    const [checkItemDrafts, setCheckItemDrafts] = useState({});
+    const [checkUpdatingId, setCheckUpdatingId] = useState(null);
+    const [completingCheck, setCompletingCheck] = useState(false);
 
     // Fetch summary data
     const fetchSummary = useCallback(async () => {
@@ -148,10 +156,94 @@ const InventoryPage = ({ user }) => {
             });
             toast.success('Đã lập kế hoạch kiểm kê');
             fetchSummary();
+            fetchChecks(1);
         } catch (error) {
             handleApiError(error, toast);
         } finally {
             setPlanLoading(false);
+        }
+    };
+
+    const fetchChecks = useCallback(async (page = 1) => {
+        setChecksLoading(true);
+        try {
+            const data = await inventoryApi.checks({ page, per_page: 5 });
+            setChecks(data.data || []);
+            setChecksPagination(data.pagination || { current_page: 1, last_page: 1, per_page: 5, total: 0 });
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setChecksLoading(false);
+        }
+    }, [toast]);
+
+    const openCheckDetail = async (check) => {
+        try {
+            const data = await inventoryApi.showCheck(check.id);
+            const detail = data.data;
+            setSelectedCheck(detail);
+            setCheckItemDrafts(Object.fromEntries((detail.items || []).map((item) => [
+                item.id,
+                {
+                    actual_status: item.actual_status || item.expected_status || 'active',
+                    actual_location: item.actual_location || item.expected_location || '',
+                    result: item.result || 'pending',
+                    condition_note: item.condition_note || '',
+                    note: item.note || '',
+                },
+            ])));
+            setIsCheckDetailOpen(true);
+        } catch (error) {
+            handleApiError(error, toast);
+        }
+    };
+
+    const updateCheckDraft = (itemId, field, value) => {
+        setCheckItemDrafts((previous) => ({
+            ...previous,
+            [itemId]: {
+                ...(previous[itemId] || {}),
+                [field]: value,
+            },
+        }));
+    };
+
+    const saveCheckItem = async (item) => {
+        if (!selectedCheck) return;
+
+        setCheckUpdatingId(item.id);
+        try {
+            const response = await inventoryApi.updateCheckItem(selectedCheck.id, item.id, checkItemDrafts[item.id] || {});
+            toast.success('Đã cập nhật nhật ký kiểm kê');
+            setSelectedCheck((previous) => ({
+                ...previous,
+                items: (previous.items || []).map((line) => line.id === item.id ? response.data : line),
+            }));
+            fetchAssets();
+            fetchChecks(checksPagination.current_page);
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setCheckUpdatingId(null);
+        }
+    };
+
+    const completeSelectedCheck = async () => {
+        if (!selectedCheck) return;
+
+        setCompletingCheck(true);
+        try {
+            const response = await inventoryApi.completeCheck(selectedCheck.id);
+            toast.success('Đã hoàn tất kế hoạch kiểm kê');
+            setSelectedCheck(response.data);
+            setIsCheckDetailOpen(false);
+            fetchSummary();
+            fetchAssets();
+            fetchChecks(checksPagination.current_page);
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setCompletingCheck(false);
         }
     };
 
@@ -191,6 +283,7 @@ const InventoryPage = ({ user }) => {
     // Initial load
     useEffect(() => {
         fetchSummary();
+        fetchChecks();
     }, [fetchSummary]);
 
     // Fetch data based on view mode
@@ -220,6 +313,20 @@ const InventoryPage = ({ user }) => {
             day: 'numeric'
         });
     };
+
+    const getCheckStatusLabel = (status) => ({
+        in_progress: 'Đang kiểm kê',
+        completed: 'Hoàn thành',
+        canceled: 'Đã hủy',
+    }[status] || status || '—');
+
+    const getInventoryResultLabel = (result) => ({
+        pending: 'Chưa kiểm',
+        matched: 'Khớp dữ liệu',
+        missing: 'Không thấy thiết bị',
+        damaged: 'Hư hỏng',
+        moved: 'Sai vị trí/trạng thái',
+    }[result] || result || '—');
 
     const getAssetTypeLabel = useCallback((type) => {
         const normalizedType = String(type || '').trim().toLowerCase();
@@ -416,15 +523,37 @@ const InventoryPage = ({ user }) => {
 
     // Category options for filter
     const categoryOptions = [
-        { value: '', label: 'Tất cả nhóm' },
+        { value: '', label: 'Tất cả' },
         ...(filters?.categories || summary?.available_categories || []).map(c => ({ value: c, label: c }))
     ];
 
     const statusOptions = [
-        { value: '', label: 'Tất cả trạng thái' },
+        { value: '', label: 'Tất cả' },
         { value: 'active', label: 'Sẵn sàng' },
         { value: 'maintenance', label: 'Đang bảo trì' },
         { value: 'retired', label: 'Đã thu hủy' },
+    ];
+
+    const assetStatusOptions = [
+        { value: 'active', label: 'Sẵn sàng' },
+        { value: 'maintenance', label: 'Đang bảo trì' },
+        { value: 'retired', label: 'Đã thu hủy' },
+    ];
+
+    const inventoryResultOptions = [
+        { value: 'pending', label: 'Chưa kiểm' },
+        { value: 'matched', label: 'Khớp dữ liệu' },
+        { value: 'missing', label: 'Không thấy thiết bị' },
+        { value: 'damaged', label: 'Hư hỏng' },
+        { value: 'moved', label: 'Sai vị trí/trạng thái' },
+    ];
+
+    const conditionOptions = [
+        { value: 'Tốt, sử dụng bình thường', label: 'Tốt, sử dụng bình thường' },
+        { value: 'Cần theo dõi', label: 'Cần theo dõi' },
+        { value: 'Cần bảo trì', label: 'Cần bảo trì' },
+        { value: 'Hư hỏng', label: 'Hư hỏng' },
+        { value: 'Không tìm thấy khi kiểm kê', label: 'Không tìm thấy khi kiểm kê' },
     ];
 
     const locationOptions = [
@@ -681,6 +810,91 @@ const InventoryPage = ({ user }) => {
                 </CardBody>
             </Card>
 
+            <Card>
+                <CardHeader
+                    title="Kế hoạch và nhật ký kiểm kê"
+                    subtitle="Xem kế hoạch kiểm kê, thời gian kiểm kê gần nhất và cập nhật tình trạng thực tế."
+                    action={(
+                        <Button size="sm" variant="outline" onClick={() => fetchChecks(checksPagination.current_page)}>
+                            Làm mới
+                        </Button>
+                    )}
+                />
+                <CardBody>
+                    <Table
+                        loading={checksLoading}
+                        data={checks}
+                        emptyMessage="Chưa có kế hoạch kiểm kê"
+                        columns={[
+                            {
+                                key: 'code',
+                                label: 'Mã kế hoạch',
+                                render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>,
+                            },
+                            {
+                                key: 'title',
+                                label: 'Kế hoạch',
+                                render: (value, row) => (
+                                    <div>
+                                        <p className="font-medium text-text">{value || 'Kế hoạch kiểm kê thiết bị'}</p>
+                                        <p className="text-xs text-text-muted">{row.location || 'Tất cả vị trí'}</p>
+                                    </div>
+                                ),
+                            },
+                            {
+                                key: 'check_date',
+                                label: 'Ngày kiểm kê',
+                                render: (value) => formatDate(value),
+                            },
+                            {
+                                key: 'creator',
+                                label: 'Người kiểm kê',
+                                render: (value, row) => value?.name || row.completer?.name || 'Chưa phân công',
+                            },
+                            {
+                                key: 'items_count',
+                                label: 'Số thiết bị',
+                                align: 'center',
+                                render: (value) => value ?? 0,
+                            },
+                            {
+                                key: 'completed_at',
+                                label: 'Kiểm kê gần nhất',
+                                render: (value) => value ? formatDate(value) : 'Đang thực hiện',
+                            },
+                            {
+                                key: 'status',
+                                label: 'Trạng thái',
+                                render: (value) => (
+                                    <Badge variant={value === 'completed' ? 'success' : 'warning'} size="sm">
+                                        {getCheckStatusLabel(value)}
+                                    </Badge>
+                                ),
+                            },
+                            {
+                                key: 'actions',
+                                label: '',
+                                align: 'right',
+                                render: (_, row) => (
+                                    <Button size="sm" variant="ghost" onClick={() => openCheckDetail(row)}>
+                                        Xem / cập nhật
+                                    </Button>
+                                ),
+                            },
+                        ]}
+                    />
+                    {checks.length > 0 && (
+                        <TablePagination
+                            currentPage={checksPagination.current_page}
+                            totalPages={checksPagination.last_page}
+                            totalItems={checksPagination.total}
+                            pageSize={checksPagination.per_page}
+                            onPageChange={fetchChecks}
+                        />
+                    )}
+                </CardBody>
+            </Card>
+
             {/* Detail Modal */}
             <Modal
                 isOpen={isDetailOpen}
@@ -743,6 +957,118 @@ const InventoryPage = ({ user }) => {
                                 Đóng
                             </Button>
                         </div>
+                    </div>
+                )}
+            </Modal>
+
+            <Modal
+                isOpen={isCheckDetailOpen}
+                onClose={() => {
+                    setIsCheckDetailOpen(false);
+                    setSelectedCheck(null);
+                }}
+                title={selectedCheck ? `${selectedCheck.code} - ${selectedCheck.title || 'Kế hoạch kiểm kê'}` : 'Kế hoạch kiểm kê'}
+                size="xl"
+            >
+                {selectedCheck && (
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <p className="text-sm text-text-muted">Ngày kiểm kê</p>
+                                <p className="font-medium text-text">{formatDate(selectedCheck.check_date)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-muted">Người lập</p>
+                                <p className="font-medium text-text">{selectedCheck.creator?.name || '—'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-muted">Người hoàn tất</p>
+                                <p className="font-medium text-text">{selectedCheck.completer?.name || 'Chưa hoàn tất'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-muted">Trạng thái</p>
+                                <Badge variant={selectedCheck.status === 'completed' ? 'success' : 'warning'}>
+                                    {getCheckStatusLabel(selectedCheck.status)}
+                                </Badge>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            {(selectedCheck.items || []).map((item) => {
+                                const draft = checkItemDrafts[item.id] || {};
+                                const locationSelectOptions = [
+                                    { value: item.expected_location || '', label: item.expected_location || 'Vị trí dự kiến' },
+                                    ...locationOptions,
+                                ].filter((option, index, list) => option.value && list.findIndex((x) => x.value === option.value) === index);
+
+                                return (
+                                    <div key={item.id} className="rounded-lg border border-border p-4">
+                                        <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
+                                            <div>
+                                                <p className="font-semibold text-text">
+                                                    {item.asset?.asset_code || '—'} - {item.asset?.name || 'Thiết bị đã xóa'}
+                                                </p>
+                                                <p className="text-xs text-text-muted">
+                                                    Dự kiến: {item.expected_status || '—'} tại {item.expected_location || '—'}
+                                                </p>
+                                            </div>
+                                            <Badge variant={draft.result === 'matched' ? 'success' : draft.result === 'pending' ? 'warning' : 'danger'} size="sm">
+                                                {getInventoryResultLabel(draft.result)}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                                            <Select
+                                                label="Trạng thái thực tế"
+                                                options={assetStatusOptions}
+                                                value={draft.actual_status || ''}
+                                                onChange={(event) => updateCheckDraft(item.id, 'actual_status', event.target.value)}
+                                                disabled={selectedCheck.status !== 'in_progress'}
+                                            />
+                                            <Select
+                                                label="Vị trí thực tế"
+                                                options={locationSelectOptions}
+                                                value={draft.actual_location || ''}
+                                                onChange={(event) => updateCheckDraft(item.id, 'actual_location', event.target.value)}
+                                                disabled={selectedCheck.status !== 'in_progress'}
+                                            />
+                                            <Select
+                                                label="Tình trạng thực tế"
+                                                options={conditionOptions}
+                                                value={draft.condition_note || ''}
+                                                onChange={(event) => updateCheckDraft(item.id, 'condition_note', event.target.value)}
+                                                disabled={selectedCheck.status !== 'in_progress'}
+                                            />
+                                            <Select
+                                                label="Kết quả kiểm kê"
+                                                options={inventoryResultOptions}
+                                                value={draft.result || 'pending'}
+                                                onChange={(event) => updateCheckDraft(item.id, 'result', event.target.value)}
+                                                disabled={selectedCheck.status !== 'in_progress'}
+                                            />
+                                        </div>
+
+                                        <div className="mt-3 flex justify-end">
+                                            <Button
+                                                size="sm"
+                                                onClick={() => saveCheckItem(item)}
+                                                disabled={selectedCheck.status !== 'in_progress' || checkUpdatingId === item.id}
+                                            >
+                                                {checkUpdatingId === item.id ? 'Đang lưu...' : 'Cập nhật nhật ký'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {selectedCheck.status === 'in_progress' && (
+                            <div className="flex justify-end border-t border-border pt-4">
+                                <Button onClick={completeSelectedCheck} disabled={completingCheck}>
+                                    {completingCheck ? 'Đang hoàn tất...' : 'Hoàn tất kiểm kê'}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>

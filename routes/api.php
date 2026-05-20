@@ -165,6 +165,7 @@ Route::middleware(['auth:sanctum', 'must_change_password'])->group(function () u
 
         Route::post('/purchase-orders', [PurchaseOrderController::class, 'store']);
         Route::put('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update']);
+        Route::post('/purchase-orders/{purchaseOrder}/receipt', [PurchaseOrderController::class, 'storeReceipt']);
         Route::delete('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy']);
 
         Route::get('/reports/summary', [ReportController::class, 'summary']);

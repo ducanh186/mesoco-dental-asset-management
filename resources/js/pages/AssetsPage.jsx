@@ -93,7 +93,7 @@ const AssetsPage = () => {
     const [handoverTarget, setHandoverTarget] = useState('');
 
     const deviceCategories = [
-        { value: '', label: 'Tất cả danh mục' },
+        { value: '', label: 'Tất cả' },
         { value: 'PC', label: 'PC' },
         { value: 'Màn hình', label: 'Màn hình' },
         { value: 'Thiết bị Test', label: 'Thiết bị Test' },
@@ -102,7 +102,7 @@ const AssetsPage = () => {
     ];
 
     const assetStatuses = [
-        { value: '', label: 'Tất cả trạng thái' },
+        { value: '', label: 'Tất cả' },
         { value: 'available', label: 'Sẵn sàng' },
         { value: 'assigned', label: 'Đã bàn giao' },
         { value: 'maintenance', label: 'Đang bảo trì' },
@@ -460,7 +460,7 @@ const AssetsPage = () => {
         const safePayload = escapeHtml(payload || 'Chưa có payload QR');
         const safePortalUrl = escapeHtml(portalUrl || 'Tạo lại QR để có portal URL');
         const qrMarkup = qrImageUrl
-            ? `<img class="qr" src="${qrImageUrl}" alt="Asset QR" />`
+            ? `<img class="qr" src="${qrImageUrl}" alt="Equipment QR" />`
             : '<div class="qr-placeholder">Tạo lại QR để in nhãn</div>';
 
         return `<!doctype html>

@@ -33,7 +33,7 @@ class AssetRequest extends Model
 
     public const TYPE_JUSTIFICATION = 'JUSTIFICATION';
     public const TYPE_CONSUMABLE_REQUEST = 'CONSUMABLE_REQUEST';
-    public const WORKFLOW_LABELS = ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'];
+    public const WORKFLOW_LABELS = ['Bàn giao', 'Thu hồi', 'Sửa chữa'];
 
     /**
      * Request statuses
@@ -244,6 +244,10 @@ class AssetRequest extends Model
             if (str_starts_with($title, $label)) {
                 return $label;
             }
+        }
+
+        if (str_starts_with($title, 'Thu hủy')) {
+            return 'Đề xuất thu hủy tự động';
         }
 
         return match ($this->type) {

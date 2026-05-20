@@ -166,14 +166,14 @@ const FeedbackPage = ({ user }) => {
 
     // Options
     const statusOptions = [
-        { value: '', label: 'Tất cả trạng thái' },
+        { value: '', label: 'Tất cả' },
         { value: 'new', label: 'Mới' },
         { value: 'in_progress', label: 'Đang xử lý' },
         { value: 'resolved', label: 'Đã giải quyết' },
     ];
 
     const typeOptions = [
-        { value: '', label: 'Tất cả loại' },
+        { value: '', label: 'Tất cả' },
         { value: 'issue', label: 'Sự cố' },
         { value: 'suggestion', label: 'Đề xuất' },
         { value: 'praise', label: 'Khen ngợi' },

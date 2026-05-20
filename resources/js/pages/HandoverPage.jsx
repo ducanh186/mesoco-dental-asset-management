@@ -3,7 +3,7 @@ import { Badge, Button, Card, Input, Select, Table, TablePagination, useToast } 
 import { handleApiError, handoverApi } from '../services/api';
 
 const statusOptions = [
-    { value: '', label: 'Tất cả trạng thái' },
+    { value: '', label: 'Tất cả' },
     { value: 'active', label: 'Đang bàn giao' },
     { value: 'returned', label: 'Đã thu hồi' },
 ];

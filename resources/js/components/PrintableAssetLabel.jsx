@@ -149,7 +149,7 @@ const PrintableAssetLabel = ({ asset, onClose }) => {
                     </div>
                     <div className="flex justify-center mb-3">
                         {qrImageUrl ? (
-                            <img src={qrImageUrl} alt="Asset QR" className="w-44 h-44 object-contain" />
+                            <img src={qrImageUrl} alt="Equipment QR" className="w-44 h-44 object-contain" />
                         ) : (
                             <div className="w-44 h-44 flex items-center justify-center border border-dashed border-border rounded text-center text-xs text-text-muted px-3">
                                 {printableQrValue ? t('printableLabel.qrLoading') : t('printableLabel.qrUnavailable')}

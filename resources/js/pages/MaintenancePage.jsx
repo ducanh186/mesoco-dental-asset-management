@@ -76,7 +76,7 @@ const MaintenancePage = ({ user }) => {
     });
 
     const statusOptions = [
-        { value: '', label: 'Tất cả trạng thái' },
+        { value: '', label: 'Tất cả' },
         { value: 'scheduled', label: 'Đã lên lịch' },
         { value: 'in_progress', label: 'Đang thực hiện' },
         { value: 'completed', label: 'Hoàn thành' },
@@ -84,7 +84,7 @@ const MaintenancePage = ({ user }) => {
     ];
 
     const typeOptions = [
-        { value: '', label: 'Tất cả nhóm' },
+        { value: '', label: 'Tất cả' },
         { value: 'maintenance_group', label: 'Bảo trì' },
         { value: 'repair_group', label: 'Sửa chữa' },
     ];
@@ -209,6 +209,16 @@ const MaintenancePage = ({ user }) => {
     const getTypeLabel = (type) => getMaintenanceGroup(type) === 'repair_group' ? 'Sửa chữa' : 'Bảo trì';
     const getPriorityLabel = (priority) => priorityOptions.find((option) => option.value === priority)?.label || 'Không xác định';
     const getStatusLabel = (status) => statusOptions.find((option) => option.value === status)?.label || 'Không xác định';
+    const getResponsibleInfo = (asset) => {
+        const assignment = asset?.current_assignment || asset?.currentAssignment;
+        const employee = assignment?.employee || assignment?.assignee;
+        const assignedBy = assignment?.assigned_by_user || assignment?.assignedByUser || assignment?.assigned_by;
+
+        return {
+            responsible: employee?.full_name || employee?.name || '-',
+            assignedBy: assignedBy?.name || '-',
+        };
+    };
 
     const getStatusVariant = (status) => {
         switch (status) {
@@ -267,9 +277,10 @@ const MaintenancePage = ({ user }) => {
         const totalQty = detailLines.reduce((sum, detail) => sum + Number(detail.qty || 0), 0);
 
         if (detailLines.length === 1) {
+            const holder = getResponsibleInfo(first.asset || event.asset).responsible;
             return {
                 title: first.asset?.name || event.asset?.name || '-',
-                subtitle: `${first.asset?.asset_code || event.asset?.asset_code || ''} | SL: ${first.qty || 1}`,
+                subtitle: `${first.asset?.asset_code || event.asset?.asset_code || ''} | SL: ${first.qty || 1} | Người đang giữ: ${holder}`,
                 totalLines: 1,
                 totalQty,
             };
@@ -338,6 +349,7 @@ const MaintenancePage = ({ user }) => {
                 technician: detail.technician || event.assigned_user,
                 issue: detail.issue_description || event.note || '-',
                 action: detail.action_taken || event.result_note || '-',
+                started_at: detail.started_at || event.started_at,
                 completed_at: detail.completed_at || event.completed_at,
                 status_after: detail.asset?.status || event.asset?.status || '-',
                 cost: detail.cost ?? event.cost,
@@ -391,6 +403,11 @@ const MaintenancePage = ({ user }) => {
 
         if (normalizedDetails.length === 0) {
             toast.error('Phiếu bảo trì phải có ít nhất một thiết bị.');
+            return;
+        }
+
+        if (!formData.assigned_to_user_id) {
+            toast.error('Vui lòng chọn kỹ thuật viên phụ trách.');
             return;
         }
 
@@ -591,9 +608,14 @@ const MaintenancePage = ({ user }) => {
             render: (value) => <span className="text-sm text-text">{value}</span>,
         },
         {
-            key: 'completed_at',
-            label: 'Ngày sửa',
-            render: (value) => formatDateTime(value),
+            key: 'started_at',
+            label: 'Bắt đầu / hoàn thành',
+            render: (value, row) => (
+                <div>
+                    <p className="text-sm text-text">{formatDateTime(value)}</p>
+                    <p className="text-xs text-text-muted">Xong: {formatDateTime(row.completed_at)}</p>
+                </div>
+            ),
         },
         {
             key: 'status_after',
@@ -647,9 +669,9 @@ const MaintenancePage = ({ user }) => {
                 <CardHeader
                     title={activeViewMeta.title}
                     subtitle={activeViewMeta.subtitle}
-                    action={canManage ? (
+                    action={canManage && activeView === 'preventive' ? (
                         <Button size="sm" onClick={() => setShowCreateModal(true)}>
-                            + Tạo phiếu mới
+                            + Lập kế hoạch bảo trì
                         </Button>
                     ) : null}
                 />
@@ -725,7 +747,7 @@ const MaintenancePage = ({ user }) => {
             <Modal
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
-                title="Tạo phiếu bảo trì"
+                title="Lập kế hoạch bảo trì định kỳ"
                 size="lg"
             >
                 <div className="space-y-5">
@@ -733,9 +755,9 @@ const MaintenancePage = ({ user }) => {
                         <div>
                             <label className="block text-sm font-medium text-text mb-1">Loại bảo trì *</label>
                             <Select
-                                options={typeOptions.filter((option) => option.value)}
-                                value={getMaintenanceGroup(formData.type)}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, type: createTypeFromGroup(e.target.value) }))}
+                                options={[{ value: 'maintenance_group', label: 'Bảo trì định kì' }]}
+                                value="maintenance_group"
+                                disabled
                             />
                             <p className="mt-1 text-xs text-text-muted">Bảo trì định kỳ nên được lập theo chu kỳ 6-12 tháng.</p>
                         </div>
@@ -759,7 +781,7 @@ const MaintenancePage = ({ user }) => {
                             <label className="block text-sm font-medium text-text mb-1">Kỹ thuật viên phụ trách</label>
                             <Select
                                 options={[
-                                    { value: '', label: 'Chưa phân công' },
+                                    { value: '', label: 'Chọn kỹ thuật viên...' },
                                     ...technicians.map((technician) => ({
                                         value: String(technician.id),
                                         label: technician.name,
@@ -767,6 +789,7 @@ const MaintenancePage = ({ user }) => {
                                 ]}
                                 value={formData.assigned_to_user_id}
                                 onChange={(e) => setFormData((prev) => ({ ...prev, assigned_to_user_id: e.target.value }))}
+                                required
                             />
                         </div>
                     </div>
@@ -912,6 +935,12 @@ const MaintenancePage = ({ user }) => {
                                         <div>
                                             <div className="font-medium text-text">{detail.asset?.name || 'Thiết bị đã xóa'}</div>
                                             <div className="text-sm text-text-muted">{detail.asset?.asset_code || '-'}</div>
+                                            <div className="text-xs text-text-muted">
+                                                Người đang giữ: {getResponsibleInfo(detail.asset).responsible}
+                                            </div>
+                                            <div className="text-xs text-text-muted">
+                                                Bàn giao bởi: {getResponsibleInfo(detail.asset).assignedBy}
+                                            </div>
                                         </div>
                                         <div className="text-right">
                                             <div className="text-sm text-text-muted">Số lượng</div>

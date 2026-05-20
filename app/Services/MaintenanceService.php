@@ -32,6 +32,7 @@ class MaintenanceService
 
         return DB::transaction(function () use ($data, $user) {
             $detailLines = $this->normalizeDetailLines($data);
+            $this->assertAssetsServiceable($detailLines);
             $assignment = $this->resolveAssignmentData($data);
             $primaryAssetId = $this->resolvePrimaryAssetId($data, $detailLines);
 
@@ -108,6 +109,7 @@ class MaintenanceService
             $detailLines = null;
             if (array_key_exists('details', $data) || array_key_exists('asset_id', $data)) {
                 $detailLines = $this->normalizeDetailLines($data);
+                $this->assertAssetsServiceable($detailLines);
                 $updateData['asset_id'] = $this->resolvePrimaryAssetId($data, $detailLines);
             }
 
@@ -423,6 +425,33 @@ class MaintenanceService
         if ($priority && !in_array($priority, MaintenanceEvent::PRIORITIES)) {
             throw new InvalidArgumentException(
                 "Invalid priority. Allowed: " . implode(', ', MaintenanceEvent::PRIORITIES)
+            );
+        }
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $detailLines
+     */
+    private function assertAssetsServiceable(array $detailLines): void
+    {
+        $assetIds = collect($detailLines)
+            ->pluck('asset_id')
+            ->map(fn ($assetId) => (int) $assetId)
+            ->unique()
+            ->values();
+
+        if ($assetIds->isEmpty()) {
+            return;
+        }
+
+        $retiredAsset = Asset::query()
+            ->whereIn('id', $assetIds)
+            ->where('status', Asset::STATUS_RETIRED)
+            ->first();
+
+        if ($retiredAsset) {
+            throw new InvalidArgumentException(
+                "Cannot create or update maintenance for retired asset {$retiredAsset->asset_code}."
             );
         }
     }

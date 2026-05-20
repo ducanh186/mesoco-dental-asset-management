@@ -1,5 +1,5 @@
 # Mesoco IT Asset Management Spec
-
+claude --resume 389426fd-50de-4412-9e81-171880885966
 ## 1. Mục đích
 
 Tài liệu này là bản đặc tả phục vụ triển khai code, được chắt lọc từ file luận văn đã trích xuất và chuẩn hóa lại theo phạm vi đang active của repository này.

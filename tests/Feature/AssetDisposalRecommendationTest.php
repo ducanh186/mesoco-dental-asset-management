@@ -76,4 +76,30 @@ class AssetDisposalRecommendationTest extends TestCase
         $this->assertNull($asset->location);
         $this->assertFalse($asset->isAssigned());
     }
+
+    public function test_cannot_retire_asset_below_75_percent_depreciation(): void
+    {
+        $manager = User::factory()->manager()->create(['must_change_password' => false]);
+        $asset = Asset::factory()->create([
+            'status' => Asset::STATUS_ACTIVE,
+            'purchase_cost' => 1000,
+            'salvage_value' => 0,
+            'useful_life_months' => 100,
+            'purchase_date' => now()->subMonths(70),
+        ]);
+
+        $this->actingAs($manager)
+            ->postJson("/api/disposal/assets/{$asset->id}/retire", [
+                'reason' => 'Chua du nguong thu huy',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'DISPOSAL_THRESHOLD_NOT_MET');
+
+        $asset->refresh();
+
+        $this->assertSame(Asset::STATUS_ACTIVE, $asset->status);
+        $this->assertDatabaseMissing('disposals', [
+            'asset_id' => $asset->id,
+        ]);
+    }
 }

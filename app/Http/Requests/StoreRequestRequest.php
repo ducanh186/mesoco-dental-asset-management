@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\AssetRequest;
 use App\Models\RequestItem;
+use App\Models\Asset;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -154,6 +155,11 @@ class StoreRequestRequest extends FormRequest
                         $validator->errors()->add(
                             "items.{$index}.asset_id",
                             'Bạn chỉ có thể báo cáo sự cố cho thiết bị mình đang chịu trách nhiệm.'
+                        );
+                    } elseif ($asset->status !== Asset::STATUS_ACTIVE || $asset->isLocked()) {
+                        $validator->errors()->add(
+                            "items.{$index}.asset_id",
+                            'Chỉ thiết bị đang bàn giao và còn hoạt động mới được tạo phiếu sửa chữa.'
                         );
                     }
                 }

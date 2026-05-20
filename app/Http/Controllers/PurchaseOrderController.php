@@ -6,12 +6,15 @@ use App\Http\Requests\StorePurchaseOrderRequest;
 use App\Http\Requests\UpdatePurchaseOrderRequest;
 use App\Http\Requests\UpdatePurchaseOrderStatusRequest;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\PurchaseReceipt;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class PurchaseOrderController extends Controller
@@ -164,7 +167,7 @@ class PurchaseOrderController extends Controller
         $order->delete();
 
         return response()->json([
-            'message' => 'Xóa đơn hàng thành công.',
+            'message' => 'Hủy đơn hàng thành công.',
         ]);
     }
 
@@ -192,6 +195,113 @@ class PurchaseOrderController extends Controller
         ]);
     }
 
+    public function storeReceipt(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
+    {
+        if (!$request->user()->isManager()) {
+            abort(403);
+        }
+
+        $order = $this->findAccessibleOrder($request->user(), $purchaseOrder->id);
+
+        if ($order->status !== PurchaseOrder::STATUS_DELIVERED) {
+            throw ValidationException::withMessages([
+                'purchase_order_id' => 'Chỉ đơn hàng giao thành công mới được lập phiếu nhập hàng.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'received_at' => ['nullable', 'date'],
+            'note' => ['nullable', 'string'],
+            'items' => ['nullable', 'array'],
+            'items.*.purchase_order_item_id' => ['required_with:items', 'integer', 'exists:purchase_order_items,id'],
+            'items.*.accepted_qty' => ['nullable', 'numeric', 'min:0'],
+            'items.*.rejected_qty' => ['nullable', 'numeric', 'min:0'],
+            'items.*.condition_status' => ['nullable', 'string', 'in:accepted,partial,rejected'],
+            'items.*.note' => ['nullable', 'string'],
+        ]);
+
+        $orderItemIds = $order->items()->pluck('id')->all();
+        $submittedItemIds = collect($validated['items'] ?? [])
+            ->pluck('purchase_order_item_id')
+            ->filter()
+            ->all();
+
+        if (array_diff($submittedItemIds, $orderItemIds) !== []) {
+            throw ValidationException::withMessages([
+                'items' => 'Dòng thiết bị nhập hàng không thuộc đơn hàng này.',
+            ]);
+        }
+
+        $created = false;
+        $receipt = DB::transaction(function () use ($request, $order, $validated, &$created) {
+            $receipt = $order->receipt()->first();
+
+            if (!$receipt) {
+                $created = true;
+                $receipt = $order->receipt()->create([
+                    'received_by_user_id' => $request->user()->id,
+                    'received_at' => $validated['received_at'] ?? now(),
+                    'status' => PurchaseReceipt::STATUS_COMPLETED,
+                    'note' => $validated['note'] ?? null,
+                ]);
+            } else {
+                $receipt->update([
+                    'received_by_user_id' => $request->user()->id,
+                    'received_at' => $validated['received_at'] ?? $receipt->received_at,
+                    'status' => PurchaseReceipt::STATUS_COMPLETED,
+                    'note' => $validated['note'] ?? $receipt->note,
+                ]);
+                $receipt->items()->delete();
+            }
+
+            $submittedItems = collect($validated['items'] ?? [])
+                ->keyBy('purchase_order_item_id');
+
+            $order->items()->orderBy('id')->get()->each(function (PurchaseOrderItem $orderItem) use ($receipt, $submittedItems) {
+                $submitted = $submittedItems->get($orderItem->id, []);
+                $acceptedQty = array_key_exists('accepted_qty', $submitted) ? (float) $submitted['accepted_qty'] : (float) $orderItem->qty;
+                $rejectedQty = array_key_exists('rejected_qty', $submitted) ? (float) $submitted['rejected_qty'] : 0.0;
+
+                if (($acceptedQty + $rejectedQty) > (float) $orderItem->qty) {
+                    throw ValidationException::withMessages([
+                        'items' => 'Số lượng đạt và không đạt không được vượt quá số lượng đặt.',
+                    ]);
+                }
+
+                $receipt->items()->create([
+                    'purchase_order_item_id' => $orderItem->id,
+                    'asset_id' => $orderItem->asset_id,
+                    'item_name' => $orderItem->item_name,
+                    'ordered_qty' => $orderItem->qty,
+                    'accepted_qty' => $acceptedQty,
+                    'rejected_qty' => $rejectedQty,
+                    'unit' => $orderItem->unit,
+                    'condition_status' => $submitted['condition_status'] ?? 'accepted',
+                    'note' => $submitted['note'] ?? null,
+                ]);
+            });
+
+            return $receipt->fresh([
+                'receiver:id,name,employee_code',
+                'items',
+            ]);
+        });
+
+        $order->refresh()->loadMissing([
+            'supplier:id,code,name,contact_person,email',
+            'requester:id,name,employee_code',
+            'approver:id,name,employee_code',
+            'items',
+            'receipt.receiver:id,name,employee_code',
+            'receipt.items',
+        ]);
+
+        return response()->json([
+            'message' => $created ? 'Tạo phiếu nhập hàng thành công.' : 'Cập nhật phiếu nhập hàng thành công.',
+            'data' => $this->serializeOrder($order),
+        ], $created ? 201 : 200);
+    }
+
     private function visibleOrdersQuery(User $user)
     {
         $query = PurchaseOrder::query()
@@ -200,6 +310,8 @@ class PurchaseOrderController extends Controller
                 'requester:id,name,employee_code',
                 'approver:id,name,employee_code',
                 'items',
+                'receipt.receiver:id,name,employee_code',
+                'receipt.items',
             ])
             ->withCount('items');
 
@@ -265,6 +377,8 @@ class PurchaseOrderController extends Controller
             'requester:id,name,employee_code',
             'approver:id,name,employee_code',
             'items',
+            'receipt.receiver:id,name,employee_code',
+            'receipt.items',
         ]);
 
         return [
@@ -308,6 +422,39 @@ class PurchaseOrderController extends Controller
                     'category_id' => $item->category_id,
                 ];
             })->values()->all(),
+            'receipt' => $order->receipt ? $this->serializeReceipt($order->receipt) : null,
+        ];
+    }
+
+    private function serializeReceipt(PurchaseReceipt $receipt): array
+    {
+        $receipt->loadMissing(['receiver:id,name,employee_code', 'items']);
+
+        return [
+            'id' => $receipt->id,
+            'receipt_code' => $receipt->receipt_code,
+            'purchase_order_id' => $receipt->purchase_order_id,
+            'received_at' => optional($receipt->received_at)->format('Y-m-d H:i:s'),
+            'status' => $receipt->status,
+            'status_label' => 'Đã nhập hàng',
+            'note' => $receipt->note,
+            'receiver' => $receipt->receiver ? [
+                'id' => $receipt->receiver->id,
+                'name' => $receipt->receiver->name,
+                'employee_code' => $receipt->receiver->employee_code,
+            ] : null,
+            'items' => $receipt->items->map(fn ($item) => [
+                'id' => $item->id,
+                'purchase_order_item_id' => $item->purchase_order_item_id,
+                'asset_id' => $item->asset_id,
+                'item_name' => $item->item_name,
+                'ordered_qty' => $item->ordered_qty,
+                'accepted_qty' => $item->accepted_qty,
+                'rejected_qty' => $item->rejected_qty,
+                'unit' => $item->unit,
+                'condition_status' => $item->condition_status,
+                'note' => $item->note,
+            ])->values()->all(),
         ];
     }
 

@@ -235,6 +235,118 @@ class PurchaseOrderApiTest extends TestCase
         ]);
     }
 
+    public function test_manager_can_create_goods_receipt_for_delivered_purchase_order(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+        $order = PurchaseOrder::factory()->create([
+            'supplier_id' => $supplier->id,
+            'status' => PurchaseOrder::STATUS_DELIVERED,
+        ]);
+        $firstItem = PurchaseOrderItem::factory()->create([
+            'purchase_order_id' => $order->id,
+            'item_name' => 'Laptop văn phòng',
+            'qty' => 2,
+            'unit' => 'cái',
+        ]);
+        $secondItem = PurchaseOrderItem::factory()->create([
+            'purchase_order_id' => $order->id,
+            'item_name' => 'Màn hình 27 inch',
+            'qty' => 1,
+            'unit' => 'cái',
+        ]);
+
+        $response = $this->actingAs($manager)
+            ->postJson("/api/purchase-orders/{$order->id}/receipt", [
+                'received_at' => '2026-05-21 09:30:00',
+                'note' => 'Hàng đạt chuẩn, nhập kho.',
+                'items' => [
+                    [
+                        'purchase_order_item_id' => $firstItem->id,
+                        'accepted_qty' => 2,
+                        'rejected_qty' => 0,
+                        'condition_status' => 'accepted',
+                        'note' => 'Đạt chuẩn',
+                    ],
+                    [
+                        'purchase_order_item_id' => $secondItem->id,
+                        'accepted_qty' => 1,
+                        'rejected_qty' => 0,
+                        'condition_status' => 'accepted',
+                        'note' => 'Đạt chuẩn',
+                    ],
+                ],
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.receipt.purchase_order_id', $order->id)
+            ->assertJsonPath('data.receipt.status', 'completed')
+            ->assertJsonPath('data.receipt.items.0.item_name', 'Laptop văn phòng')
+            ->assertJsonPath('data.receipt.items.0.accepted_qty', '2.00')
+            ->assertJsonPath('data.receipt.items.1.item_name', 'Màn hình 27 inch');
+
+        $this->assertDatabaseHas('purchase_receipts', [
+            'purchase_order_id' => $order->id,
+            'received_by_user_id' => $manager->id,
+            'status' => 'completed',
+            'note' => 'Hàng đạt chuẩn, nhập kho.',
+        ]);
+
+        $this->assertDatabaseHas('purchase_receipt_items', [
+            'purchase_order_item_id' => $firstItem->id,
+            'item_name' => 'Laptop văn phòng',
+            'accepted_qty' => 2,
+            'condition_status' => 'accepted',
+        ]);
+    }
+
+    public function test_cannot_create_goods_receipt_before_purchase_order_is_delivered(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+        $order = PurchaseOrder::factory()->create([
+            'supplier_id' => $supplier->id,
+            'status' => PurchaseOrder::STATUS_PREPARING,
+        ]);
+        PurchaseOrderItem::factory()->create(['purchase_order_id' => $order->id]);
+
+        $this->actingAs($manager)
+            ->postJson("/api/purchase-orders/{$order->id}/receipt", [
+                'items' => [],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Chỉ đơn hàng giao thành công mới được lập phiếu nhập hàng.');
+    }
+
+    public function test_goods_receipt_rejects_items_from_another_purchase_order(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $supplier = Supplier::factory()->create();
+        $order = PurchaseOrder::factory()->create([
+            'supplier_id' => $supplier->id,
+            'status' => PurchaseOrder::STATUS_DELIVERED,
+        ]);
+        PurchaseOrderItem::factory()->create(['purchase_order_id' => $order->id]);
+
+        $otherOrder = PurchaseOrder::factory()->create([
+            'supplier_id' => $supplier->id,
+            'status' => PurchaseOrder::STATUS_DELIVERED,
+        ]);
+        $otherItem = PurchaseOrderItem::factory()->create(['purchase_order_id' => $otherOrder->id]);
+
+        $this->actingAs($manager)
+            ->postJson("/api/purchase-orders/{$order->id}/receipt", [
+                'items' => [
+                    [
+                        'purchase_order_item_id' => $otherItem->id,
+                        'accepted_qty' => 1,
+                    ],
+                ],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Dòng thiết bị nhập hàng không thuộc đơn hàng này.');
+    }
+
     public function test_supplier_cannot_update_other_supplier_order(): void
     {
         $supplierA = Supplier::factory()->create();

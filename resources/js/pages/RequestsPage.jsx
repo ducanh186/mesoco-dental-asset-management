@@ -335,11 +335,11 @@ const RequestsPage = ({ user }) => {
             render: (value, row) => <Badge variant={getTypeVariant(value)} size="sm">{getDisplayTypeLabel(row)}</Badge>
         },
         { 
-            key: 'title', 
-            label: 'Tiêu đề',
+            key: 'description',
+            label: 'Mô tả',
             render: (value, row) => (
                 <div>
-                    <p className="font-medium text-text">{value}</p>
+                    <p className="font-medium text-text">{value || row.title || '-'}</p>
                     {row.severity && (
                         <Badge variant={getSeverityVariant(row.severity)} size="sm" outline className="mt-1">
                             {getSeverityLabel(row.severity)}
@@ -560,7 +560,7 @@ const RequestsPage = ({ user }) => {
                     </div>
 
                     <Input
-                        label={t('requests.title')}
+                        label="Mô tả ngắn"
                         placeholder={t('requests.titlePlaceholder')}
                         value={formData.title}
                         onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
@@ -701,10 +701,8 @@ const RequestsPage = ({ user }) => {
 
                         {/* Title & Description */}
                         <div>
-                            <h3 className="text-lg font-semibold text-text">{selectedRequest.title}</h3>
-                            {selectedRequest.description && (
-                                <p className="mt-1 text-text-muted">{selectedRequest.description}</p>
-                            )}
+                            <p className="text-sm font-medium text-text-muted">Mô tả</p>
+                            <h3 className="text-lg font-semibold text-text">{selectedRequest.description || selectedRequest.title}</h3>
                         </div>
 
                         {/* Meta Info */}

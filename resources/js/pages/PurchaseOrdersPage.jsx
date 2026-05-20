@@ -83,6 +83,8 @@ const PurchaseOrdersPage = ({ user }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [detailStatusValue, setDetailStatusValue] = useState('');
+    const [receiptLoading, setReceiptLoading] = useState(false);
     const [editingOrderId, setEditingOrderId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState(createEmptyForm);
@@ -114,7 +116,7 @@ const PurchaseOrdersPage = ({ user }) => {
     ), [statusOptions]);
 
     const statusFilterOptions = useMemo(() => ([
-        { value: '', label: 'Tất cả trạng thái' },
+        { value: '', label: 'Tất cả' },
         ...statusSelectOptions,
     ]), [statusSelectOptions]);
 
@@ -202,6 +204,7 @@ const PurchaseOrdersPage = ({ user }) => {
         try {
             const response = await purchaseOrdersApi.get(order.id);
             setSelectedOrder(response.data);
+            setDetailStatusValue(response.data?.status || '');
             setDetailModalOpen(true);
         } catch (error) {
             handleApiError(error, toast);
@@ -259,9 +262,36 @@ const PurchaseOrdersPage = ({ user }) => {
             const response = await purchaseOrdersApi.updateStatus(order.id, { status: nextStatus });
             toast.success('Cập nhật trạng thái đơn hàng thành công');
             setSelectedOrder(response.data);
+            setDetailStatusValue(response.data?.status || '');
             fetchOrders(pagination.current_page);
         } catch (error) {
             handleApiError(error, toast);
+        }
+    };
+
+    const handleCreateReceipt = async (order) => {
+        setReceiptLoading(true);
+
+        try {
+            const response = await purchaseOrdersApi.createReceipt(order.id, {
+                received_at: new Date().toISOString(),
+                note: 'Phiếu nhập hàng tạo sau khi đơn hàng giao thành công.',
+                items: (order.items || []).map((item) => ({
+                    purchase_order_item_id: item.id,
+                    accepted_qty: item.qty,
+                    rejected_qty: 0,
+                    condition_status: 'accepted',
+                    note: 'Đạt chuẩn',
+                })),
+            });
+
+            toast.success('Đã tạo phiếu nhập hàng');
+            setSelectedOrder(response.data);
+            fetchOrders(pagination.current_page);
+        } catch (error) {
+            handleApiError(error, toast);
+        } finally {
+            setReceiptLoading(false);
         }
     };
 
@@ -514,6 +544,27 @@ const PurchaseOrdersPage = ({ user }) => {
                                     </Badge>
                                 </div>
                             </div>
+                            {(canManageOrders || isSupplier) && (
+                                <div>
+                                    <div className="text-xs font-semibold uppercase text-text-muted">Cập nhật trạng thái</div>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        <Select
+                                            value={detailStatusValue}
+                                            onChange={(event) => setDetailStatusValue(event.target.value)}
+                                            options={statusSelectOptions}
+                                            placeholder={false}
+                                            disabled={selectedOrder.status === 'delivered'}
+                                        />
+                                        <Button
+                                            variant="outline"
+                                            disabled={selectedOrder.status === 'delivered' || detailStatusValue === selectedOrder.status}
+                                            onClick={() => handleStatusUpdate(selectedOrder, detailStatusValue)}
+                                        >
+                                            Cập nhật trạng thái
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                             <div>
                                 <div className="text-xs font-semibold uppercase text-text-muted">Ngày tạo</div>
                                 <div className="mt-1 text-sm text-text">{selectedOrder.order_date || '—'}</div>
@@ -539,6 +590,61 @@ const PurchaseOrdersPage = ({ user }) => {
                                 ))}
                             </div>
                         </div>
+
+                        {selectedOrder.status === 'delivered' && (
+                            <div>
+                                <div className="mb-2 text-sm font-semibold text-text">Phiếu nhập hàng</div>
+                                {selectedOrder.receipt ? (
+                                    <div className="rounded-md border border-success/40 bg-success/5 p-3">
+                                        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                                            <div>
+                                                <div className="text-xs font-semibold uppercase text-text-muted">Mã phiếu nhập</div>
+                                                <div className="mt-1 font-medium text-text">{selectedOrder.receipt.receipt_code}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-semibold uppercase text-text-muted">Người nhập</div>
+                                                <div className="mt-1 text-text">{selectedOrder.receipt.receiver?.name || '—'}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-semibold uppercase text-text-muted">Thời gian nhập</div>
+                                                <div className="mt-1 text-text">{selectedOrder.receipt.received_at || '—'}</div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 divide-y divide-border">
+                                            {(selectedOrder.receipt.items || []).map((item) => (
+                                                <div key={`receipt-${item.id}`} className="grid grid-cols-1 gap-2 py-2 text-sm md:grid-cols-[1fr_auto_auto_auto]">
+                                                    <div>
+                                                        <div className="font-medium text-text">{item.item_name}</div>
+                                                        <div className="text-xs text-text-muted">
+                                                            {item.asset_id ? `Thiết bị hiện có #${item.asset_id}` : 'Thiết bị mới, cần nhập vào danh mục thiết bị'}
+                                                        </div>
+                                                    </div>
+                                                    <Badge variant="success" size="sm">Đạt chuẩn</Badge>
+                                                    <div className="font-medium text-text">Đạt: {item.accepted_qty} {item.unit || ''}</div>
+                                                    <div className="text-text-muted">Không đạt: {item.rejected_qty} {item.unit || ''}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-md border border-warning/40 bg-warning/5 p-3">
+                                        <p className="text-sm text-text-muted">
+                                            Đơn hàng đã giao thành công nhưng chưa có phiếu nhập hàng được lưu trong hệ thống.
+                                        </p>
+                                        {canManageOrders && (
+                                            <Button
+                                                className="mt-3"
+                                                variant="outline"
+                                                disabled={receiptLoading}
+                                                onClick={() => handleCreateReceipt(selectedOrder)}
+                                            >
+                                                {receiptLoading ? 'Đang tạo phiếu...' : 'Tạo phiếu nhập hàng'}
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-4">
                             {isSupplier && selectedOrder.status !== 'delivered' && (

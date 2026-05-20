@@ -59,8 +59,12 @@ class ErdAlignmentTest extends TestCase
     public function test_retiring_asset_creates_disposal_record(): void
     {
         $admin = User::factory()->admin()->create(['must_change_password' => false]);
-        $asset = Asset::factory()->withValuation()->create([
+        $asset = Asset::factory()->create([
             'status' => Asset::STATUS_ACTIVE,
+            'purchase_cost' => 1000,
+            'salvage_value' => 0,
+            'useful_life_months' => 100,
+            'purchase_date' => now()->subMonths(80),
         ]);
 
         $response = $this->actingAs($admin)->postJson("/api/disposal/assets/{$asset->id}/retire", [
@@ -122,6 +126,7 @@ class ErdAlignmentTest extends TestCase
         $response = $this->actingAs($technician)->postJson('/api/maintenance-events', [
             'type' => 'inspection',
             'planned_at' => now()->addDay()->toDateTimeString(),
+            'assigned_to_user_id' => $technician->id,
             'details' => [
                 ['asset_id' => $assetA->id, 'qty' => 2],
                 ['asset_id' => $assetB->id, 'qty' => 1],

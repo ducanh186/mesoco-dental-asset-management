@@ -53,7 +53,7 @@ class FeatureDemoDataSeederTest extends TestCase
             ->get();
 
         $this->assertEqualsCanonicalizing(
-            ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Thu hủy'],
+            ['Bàn giao', 'Thu hồi', 'Sửa chữa', 'Đề xuất thu hủy tự động'],
             $demoRequests
                 ->map(fn (AssetRequest $request) => $request->toApiArray(false)['workflow_label'] ?? null)
                 ->unique()
