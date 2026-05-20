@@ -25,11 +25,13 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringContainsString('Thiết bị Test', $assetsPage);
         $this->assertStringContainsString('Phụ kiện dùng', $assetsPage);
         $this->assertStringContainsString('Linh kiện thay thế', $assetsPage);
+        $this->assertStringContainsString("{ value: 'inventorying', label: 'Đang kiểm kê' }", $assetsPage);
+        $this->assertStringContainsString('Tra cứu nhanh thiết bị theo danh mục, trạng thái thiết bị và vị trí.', $assetsPage);
+        $this->assertStringContainsString('placeholder=""', $assetsPage);
         $this->assertStringNotContainsString("{ value: 'RAM'", $assetsPage);
         $this->assertStringNotContainsString("{ value: 'SSD'", $assetsPage);
-        $this->assertStringNotContainsString("{ value: 'inventorying'", $assetsPage);
-        $this->assertStringNotContainsString('Đang kiểm kê</div>', $assetsPage);
         $this->assertStringNotContainsString('Tất cả phụ trách', $assetsPage);
+        $this->assertStringNotContainsString('Tất cả vị trí', $assetsPage);
         $this->assertStringNotContainsString('Danh mục tài sản', $assetsPage);
         $this->assertStringNotContainsString('Tạo tài sản', $assetsPage);
 

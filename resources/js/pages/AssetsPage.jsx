@@ -106,6 +106,7 @@ const AssetsPage = () => {
         { value: 'available', label: 'Sẵn sàng' },
         { value: 'assigned', label: 'Đã bàn giao' },
         { value: 'maintenance', label: 'Đang bảo trì' },
+        { value: 'inventorying', label: 'Đang kiểm kê' },
         { value: 'retired', label: 'Đã thu hủy' },
     ];
 
@@ -285,7 +286,7 @@ const AssetsPage = () => {
     };
 
     const locationOptions = [
-        { value: '', label: 'Tất cả vị trí' },
+        { value: '', label: 'Tất cả' },
         ...locations.map((location) => ({
             value: String(location.id),
             label: `${location.id} - ${location.name}`,
@@ -721,7 +722,7 @@ const AssetsPage = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-text">Danh mục thiết bị</h2>
-                    <p className="text-sm text-text-muted">Tra cứu nhanh thiết bị theo danh mục, vị trí và trạng thái vận hành.</p>
+                    <p className="text-sm text-text-muted">Tra cứu nhanh thiết bị theo danh mục, trạng thái thiết bị và vị trí.</p>
                 </div>
                 <Button onClick={() => setCreateModalOpen(true)}>
                     + Tạo thiết bị
@@ -757,6 +758,7 @@ const AssetsPage = () => {
                         <Select
                             options={deviceCategories}
                             value={categoryFilter}
+                            placeholder=""
                             onChange={(e) => {
                                 setCategoryFilter(e.target.value);
                                 setCurrentPage(1);
@@ -765,6 +767,7 @@ const AssetsPage = () => {
                         <Select
                             options={assetStatuses}
                             value={statusFilter}
+                            placeholder=""
                             onChange={(e) => {
                                 setStatusFilter(e.target.value);
                                 setCurrentPage(1);
@@ -773,6 +776,7 @@ const AssetsPage = () => {
                         <Select
                             options={locationOptions}
                             value={locationFilter}
+                            placeholder=""
                             onChange={(e) => {
                                 setLocationFilter(e.target.value);
                                 setCurrentPage(1);

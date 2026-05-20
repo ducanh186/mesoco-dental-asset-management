@@ -514,7 +514,21 @@ Sau khi seed dữ liệu, dùng các tài khoản sau để đăng nhập:
 | employee | `E1004` | `frontdesk@mesoco.vn` | `password` | Test assignment |
 | employee | `E1005` | `warehouse@mesoco.vn` | `password` | Test assignment kho |
 
-## 12. Tài Liệu Khác
+## 12. Evidence Final Clean-Up
+
+Checklist evidence sau đợt final clean-up nằm tại:
+
+- [docs/final-cleanup-checklist-evidence.md](docs/final-cleanup-checklist-evidence.md)
+
+Ảnh kiểm chứng nhanh:
+
+![Manager dashboard](docs/screenshots/checklist/01-navigation-rbac-manager.png)
+
+![Danh mục thiết bị](docs/screenshots/checklist/02-assets-wording-status.png)
+
+![Employee dashboard](docs/screenshots/checklist/18-employee-dashboard-rbac.png)
+
+## 13. Tài Liệu Khác
 
 - [docs/README.md](docs/README.md): mục lục tài liệu.
 - [docs/STACK.md](docs/STACK.md): stack và cách app chạy.
@@ -525,7 +539,7 @@ Sau khi seed dữ liệu, dùng các tài khoản sau để đăng nhập:
 - [docs/SEED_DATA.md](docs/SEED_DATA.md): dữ liệu mẫu.
 - [docs/CLASS_DIAGRAM.md](docs/CLASS_DIAGRAM.md): sơ đồ class.
 
-## 13. Ghi Nhớ Ngắn
+## 14. Ghi Nhớ Ngắn
 
 Nếu chỉ nhớ 4 dòng, hãy nhớ:
 

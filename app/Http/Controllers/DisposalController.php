@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Controller for asset disposal management (Thu hủy).
  *
- * BFD Module: Quản lý thu hủy
- * - Lists assets proposed for disposal (depreciation > 75%)
+ * Disposal workflow for equipment lifecycle management.
+ * - Lists assets proposed for disposal (depreciation >= 75%)
  * - Allows retiring assets (changing status to 'retired')
  * - Summary statistics for disposal management
  */
@@ -173,7 +173,7 @@ class DisposalController extends Controller
     }
 
     /**
-     * Get assets proposed for disposal (depreciation > 75%, not retired).
+     * Get assets proposed for disposal (depreciation >= 75%, not retired).
      */
     private function eligibleAssets(Request $request, int $perPage): JsonResponse
     {

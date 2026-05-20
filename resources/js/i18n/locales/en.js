@@ -1038,7 +1038,7 @@ export default {
     // ========================================================================
     disposal: {
         title: 'Equipment Disposal',
-        subtitle: 'Manage disposal proposals when depreciation is > 75%',
+        subtitle: 'Manage disposal proposals when depreciation is >= 75%',
         eligibleForDisposal: 'Disposal Proposals',
         highDepreciation: 'Depreciation >= 75%',
         alreadyRetired: 'Already Disposed',

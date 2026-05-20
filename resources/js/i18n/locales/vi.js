@@ -1052,7 +1052,7 @@ export default {
     // ========================================================================
     disposal: {
         title: 'Thu hủy thiết bị',
-        subtitle: 'Quản lý danh sách đề xuất thu hủy khi khấu hao > 75%',
+        subtitle: 'Quản lý danh sách đề xuất thu hủy khi khấu hao ≥ 75%',
         eligibleForDisposal: 'Đề xuất thu hủy',
         highDepreciation: 'Khấu hao ≥ 75%',
         alreadyRetired: 'Đã thu hủy',

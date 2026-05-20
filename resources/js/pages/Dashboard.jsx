@@ -292,7 +292,7 @@ const Dashboard = ({ user }) => {
             const totalInventoryValue = inventoryValuation?.total_current_book_value || 0;
             const inProgressCount = maintenanceEvents.filter(m => m.status === 'in_progress').length;
             const scheduledCount = maintenanceEvents.filter(m => m.status === 'scheduled').length;
-            const highDepreciationCount = globalAssets.filter((asset) => Number(asset.valuation?.depreciation_percentage || 0) > 75).length;
+            const highDepreciationCount = globalAssets.filter((asset) => Number(asset.valuation?.depreciation_percentage || 0) >= 75).length;
 
             return [
                 {
@@ -555,8 +555,8 @@ const Dashboard = ({ user }) => {
                                             <div className="dashboard-alert-percent">{asset.percentage.toFixed(1)}%</div>
                                             <div className="dashboard-alert-value">Giá trị còn lại {formatCurrency(asset.currentBookValue)}</div>
                                         </div>
-                                        <Badge variant={asset.percentage > 75 ? 'danger' : 'warning'} size="sm">
-                                            {asset.percentage > 75 ? 'Đề xuất thu hủy' : 'Theo dõi'}
+                                        <Badge variant={asset.percentage >= 75 ? 'danger' : 'warning'} size="sm">
+                                            {asset.percentage >= 75 ? 'Đề xuất thu hủy' : 'Theo dõi'}
                                         </Badge>
                                     </div>
                                 </div>
