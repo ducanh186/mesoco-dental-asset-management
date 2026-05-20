@@ -182,45 +182,36 @@ const Sidebar = ({
     const managerNavItems = [
         navItems.dashboard,
         navItems.qrScan,
-        navItems.reviewRequests,
         navGroup('catalog-records', 'nav.catalogRecords', 'assets', [
             navItems.assets,
             navItems.locations,
             navItems.suppliers,
             navItems.profile,
         ]),
-        navGroup('order-management', 'nav.orderManagement', 'purchaseOrders', [
-            navItems.purchaseOrders,
-        ]),
-        navGroup('operations-management', 'nav.operationsManagement', 'requests', [
-            navItems.requests,
-            navItems.handover,
-        ]),
+        navItems.purchaseOrders,
+        navItems.requests,
+        navItems.reviewRequests,
+        navItems.handover,
         navGroup('maintenance-management', 'nav.maintenanceManagement', 'maintenance', [
             navItems.preventiveMaintenance,
             navItems.repairEvents,
         ]),
-        navGroup('inventory-disposal', 'nav.inventoryDisposal', 'inventory', [
-            navItems.inventory,
-            navItems.disposal,
-        ]),
-        navGroup('reports-statistics', 'nav.reportsStatistics', 'reports', [
-            navItems.reports,
-        ]),
+        navItems.inventory,
+        navItems.disposal,
+        navItems.reports,
     ];
 
     const technicianNavItems = [
         navItems.dashboard,
         navItems.qrScan,
+        navItems.myDevices,
         navItems.myRequests,
         navGroup('maintenance-management', 'nav.maintenanceManagement', 'maintenance', [
             navItems.preventiveMaintenance,
             navItems.repairEvents,
         ]),
-        navGroup('inventory-disposal', 'nav.inventoryDisposal', 'inventory', [
-            navItems.inventory,
-            navItems.disposal,
-        ]),
+        navItems.inventory,
+        navItems.disposal,
     ];
 
     const employeeNavItems = [
