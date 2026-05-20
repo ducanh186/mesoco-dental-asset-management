@@ -21,6 +21,26 @@ const emptyDetailLine = () => ({
     qty: '1',
 });
 
+const getMaintenanceViewFromHash = () => {
+    if (typeof window === 'undefined') {
+        return 'preventive';
+    }
+
+    if (window.location.hash === '#repair-log') {
+        return 'repair_log';
+    }
+
+    if (window.location.hash === '#repair') {
+        return 'repair';
+    }
+
+    return 'preventive';
+};
+
+const getTypeFilterForView = (view) => (
+    view === 'preventive' ? 'maintenance_group' : 'repair_group'
+);
+
 const MaintenancePage = ({ user }) => {
     const toast = useToast();
     const canManage = hasOperationalAccess(user);
@@ -32,7 +52,8 @@ const MaintenancePage = ({ user }) => {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [typeFilter, setTypeFilter] = useState('');
+    const [activeView, setActiveView] = useState(() => getMaintenanceViewFromHash());
+    const [typeFilter, setTypeFilter] = useState(() => getTypeFilterForView(getMaintenanceViewFromHash()));
     const [currentPage, setCurrentPage] = useState(1);
 
     const [assets, setAssets] = useState([]);
@@ -42,6 +63,7 @@ const MaintenancePage = ({ user }) => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [confirmAction, setConfirmAction] = useState(null);
     const [formLoading, setFormLoading] = useState(false);
+    const [completionForm, setCompletionForm] = useState({ result_note: '', cost: '' });
 
     const [formData, setFormData] = useState({
         type: 'preventive',
@@ -68,6 +90,27 @@ const MaintenancePage = ({ user }) => {
     ];
     const repairTypes = ['repair', 'replacement'];
 
+    const viewOptions = [
+        {
+            value: 'preventive',
+            label: 'Bảo trì định kì',
+            title: 'Phiếu bảo trì định kì',
+            subtitle: 'Theo dõi các phiếu bảo trì phòng ngừa theo lịch.',
+        },
+        {
+            value: 'repair',
+            label: 'Sửa chữa',
+            title: 'Phiếu sửa chữa',
+            subtitle: 'Theo dõi thiết bị đang cần sửa chữa hoặc thay thế.',
+        },
+        {
+            value: 'repair_log',
+            label: 'Nhật ký sửa chữa',
+            title: 'Nhật ký sửa chữa',
+            subtitle: 'Lịch sử lỗi, hành động sửa, kỹ thuật viên, chi phí và trạng thái thiết bị sau sửa.',
+        },
+    ];
+
     const priorityOptions = [
         { value: 'low', label: 'Thấp' },
         { value: 'normal', label: 'Bình thường' },
@@ -81,6 +124,20 @@ const MaintenancePage = ({ user }) => {
 
     useEffect(() => {
         fetchSummary();
+    }, []);
+
+    useEffect(() => {
+        const syncViewFromHash = () => {
+            const nextView = getMaintenanceViewFromHash();
+            setActiveView(nextView);
+            setTypeFilter(getTypeFilterForView(nextView));
+            setCurrentPage(1);
+        };
+
+        syncViewFromHash();
+        window.addEventListener('hashchange', syncViewFromHash);
+
+        return () => window.removeEventListener('hashchange', syncViewFromHash);
     }, []);
 
     useEffect(() => {
@@ -226,6 +283,17 @@ const MaintenancePage = ({ user }) => {
         };
     };
 
+    const handleViewChange = (view) => {
+        const nextHash = view === 'repair_log' ? '#repair-log' : view === 'repair' ? '#repair' : '#preventive';
+        setActiveView(view);
+        setTypeFilter(getTypeFilterForView(view));
+        setCurrentPage(1);
+
+        if (typeof window !== 'undefined' && window.location.hash !== nextHash) {
+            window.history.replaceState(null, '', `${window.location.pathname}${nextHash}`);
+        }
+    };
+
     const filteredEvents = events.filter((event) => {
         if (typeFilter && getMaintenanceGroup(event.type) !== typeFilter) {
             return false;
@@ -253,6 +321,28 @@ const MaintenancePage = ({ user }) => {
             .toLowerCase()
             .includes(q);
     });
+
+    const repairLogRows = filteredEvents
+        .filter((event) => getMaintenanceGroup(event.type) === 'repair_group' && event.status === 'completed')
+        .flatMap((event) => {
+            const details = event.details && event.details.length > 0
+                ? event.details
+                : [{ id: `event-${event.id}`, asset: event.asset, issue_description: event.note }];
+
+            return details.map((detail) => ({
+                id: `${event.id}-${detail.id}`,
+                event,
+                detail,
+                code: event.code,
+                asset: detail.asset || event.asset,
+                technician: detail.technician || event.assigned_user,
+                issue: detail.issue_description || event.note || '-',
+                action: detail.action_taken || event.result_note || '-',
+                completed_at: detail.completed_at || event.completed_at,
+                status_after: detail.asset?.status || event.asset?.status || '-',
+                cost: detail.cost ?? event.cost,
+            }));
+        });
 
     const updateDetailLine = (index, field, value) => {
         setFormData((prev) => ({
@@ -336,7 +426,12 @@ const MaintenancePage = ({ user }) => {
     const openDetail = async (event) => {
         try {
             const response = await maintenanceApi.get(event.id);
-            setSelectedEvent(response.data || event);
+            const eventData = response.data || event;
+            setSelectedEvent(eventData);
+            setCompletionForm({
+                result_note: eventData.result_note || '',
+                cost: eventData.cost ? String(eventData.cost) : '',
+            });
             setShowDetailModal(true);
         } catch (error) {
             handleApiError(error, toast);
@@ -357,7 +452,10 @@ const MaintenancePage = ({ user }) => {
 
     const handleComplete = async (event) => {
         try {
-            await maintenanceApi.complete(event.id, { result_note: 'Hoàn thành theo phiếu bảo trì' });
+            await maintenanceApi.complete(event.id, {
+                result_note: completionForm.result_note || 'Hoàn thành theo phiếu bảo trì',
+                cost: completionForm.cost === '' ? null : Number(completionForm.cost),
+            });
             toast.success(`Đã hoàn thành ${event.code}.`);
             setShowDetailModal(false);
             fetchEvents();
@@ -451,8 +549,8 @@ const MaintenancePage = ({ user }) => {
                         </Button>
                     )}
                     {canManage && row.status === 'in_progress' && (
-                        <Button size="sm" onClick={() => handleComplete(row)}>
-                            Hoàn thành
+                        <Button size="sm" onClick={() => openDetail(row)}>
+                            Cập nhật
                         </Button>
                     )}
                 </div>
@@ -460,7 +558,65 @@ const MaintenancePage = ({ user }) => {
         },
     ];
 
+    const repairLogColumns = [
+        {
+            key: 'code',
+            label: 'Mã phiếu',
+            width: '130px',
+            render: (value) => <code className="text-sm bg-surface-muted px-2 py-1 rounded">{value}</code>,
+        },
+        {
+            key: 'asset',
+            label: 'Thiết bị',
+            render: (asset) => (
+                <div>
+                    <div className="font-medium text-text">{asset?.name || '-'}</div>
+                    <div className="text-xs text-text-muted">{asset?.asset_code || '-'}</div>
+                </div>
+            ),
+        },
+        {
+            key: 'technician',
+            label: 'Kỹ thuật viên',
+            render: (technician) => technician?.name || '-',
+        },
+        {
+            key: 'issue',
+            label: 'Lỗi',
+            render: (value) => <span className="text-sm text-text">{value}</span>,
+        },
+        {
+            key: 'action',
+            label: 'Hành động sửa',
+            render: (value) => <span className="text-sm text-text">{value}</span>,
+        },
+        {
+            key: 'completed_at',
+            label: 'Ngày sửa',
+            render: (value) => formatDateTime(value),
+        },
+        {
+            key: 'status_after',
+            label: 'Trạng thái sau sửa',
+            render: (value) => <Badge variant={value === 'active' ? 'success' : 'default'} size="sm">{value}</Badge>,
+        },
+        {
+            key: 'cost',
+            label: 'Chi phí',
+            align: 'right',
+            render: (value) => value ? Number(value).toLocaleString('vi-VN') : '-',
+        },
+    ];
+
     const stats = summary?.stats || { scheduled: 0, in_progress: 0, completed: 0, overdue: 0 };
+    const activeViewMeta = viewOptions.find((option) => option.value === activeView) || viewOptions[0];
+    const tableColumns = activeView === 'repair_log' ? repairLogColumns : columns;
+    const tableData = activeView === 'repair_log' ? repairLogRows : filteredEvents;
+    const emptyMessage = activeView === 'repair_log'
+        ? 'Chưa có nhật ký sửa chữa nào'
+        : activeView === 'repair'
+            ? 'Chưa có phiếu sửa chữa nào'
+            : 'Chưa có phiếu bảo trì định kì nào';
 
     return (
         <div className="space-y-6">
@@ -489,8 +645,8 @@ const MaintenancePage = ({ user }) => {
 
             <Card>
                 <CardHeader
-                    title="Phiếu bảo trì"
-                    subtitle="Một phiếu có thể chứa nhiều thiết bị và số lượng trong từng dòng chi tiết."
+                    title={activeViewMeta.title}
+                    subtitle={activeViewMeta.subtitle}
                     action={canManage ? (
                         <Button size="sm" onClick={() => setShowCreateModal(true)}>
                             + Tạo phiếu mới
@@ -498,6 +654,19 @@ const MaintenancePage = ({ user }) => {
                     ) : null}
                 />
                 <CardBody>
+                    <div className="flex flex-wrap gap-2 mb-5">
+                        {viewOptions.map((option) => (
+                            <Button
+                                key={option.value}
+                                size="sm"
+                                variant={activeView === option.value ? 'primary' : 'outline'}
+                                onClick={() => handleViewChange(option.value)}
+                            >
+                                {option.label}
+                            </Button>
+                        ))}
+                    </div>
+
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
                         <div className="flex-1">
                             <Input
@@ -517,21 +686,14 @@ const MaintenancePage = ({ user }) => {
                             />
                         </div>
                         <div className="w-full sm:w-48">
-                            <Select
-                                options={typeOptions}
-                                value={typeFilter}
-                                onChange={(e) => {
-                                    setTypeFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                            />
+                            <Select options={typeOptions} value={typeFilter} disabled />
                         </div>
                         <Button
                             variant="outline"
                             onClick={() => {
                                 setSearchQuery('');
                                 setStatusFilter('');
-                                setTypeFilter('');
+                                setTypeFilter(getTypeFilterForView(activeView));
                                 setCurrentPage(1);
                             }}
                         >
@@ -540,10 +702,10 @@ const MaintenancePage = ({ user }) => {
                     </div>
 
                     <Table
-                        columns={columns}
-                        data={filteredEvents}
+                        columns={tableColumns}
+                        data={tableData}
                         loading={loading}
-                        emptyMessage="Chưa có phiếu bảo trì nào"
+                        emptyMessage={emptyMessage}
                     />
 
                     {pagination.total > 0 && (
@@ -764,6 +926,30 @@ const MaintenancePage = ({ user }) => {
                             <div>
                                 <div className="text-sm text-text-muted">Kết quả</div>
                                 <div className="text-text">{selectedEvent.result_note}</div>
+                            </div>
+                        )}
+
+                        {canManage && selectedEvent.status === 'in_progress' && (
+                            <div className="grid grid-cols-1 md:grid-cols-[1fr_160px] gap-4 rounded-xl border border-border bg-surface-muted/30 p-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-text mb-1">Hành động sửa chữa / kết quả</label>
+                                    <textarea
+                                        className="w-full min-h-[88px] rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text"
+                                        value={completionForm.result_note}
+                                        onChange={(e) => setCompletionForm((prev) => ({ ...prev, result_note: e.target.value }))}
+                                        placeholder="Ví dụ: Vệ sinh máy, thay linh kiện, kiểm tra lại hoạt động ổn định."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-text mb-1">Chi phí nếu có</label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        value={completionForm.cost}
+                                        onChange={(e) => setCompletionForm((prev) => ({ ...prev, cost: e.target.value }))}
+                                        placeholder="0"
+                                    />
+                                </div>
                             </div>
                         )}
 

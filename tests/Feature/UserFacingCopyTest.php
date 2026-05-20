@@ -55,7 +55,8 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringContainsString('Danh sách thiết bị', $purchaseOrdersPage);
         $this->assertStringContainsString('Chờ giao hàng', $purchaseOrdersPage);
         $this->assertStringContainsString('Chi tiết', $purchaseOrdersPage);
-        $this->assertStringContainsString('Bạn chắc chắn muốn xóa?', $purchaseOrdersPage);
+        $this->assertStringContainsString('Cập nhật trạng thái', $purchaseOrdersPage);
+        $this->assertStringContainsString('Bạn chắc chắn muốn hủy đơn hàng này?', $purchaseOrdersPage);
         $this->assertStringContainsString('list="purchase-order-device-options"', $purchaseOrdersPage);
         $this->assertStringContainsString('<datalist id="purchase-order-device-options">', $purchaseOrdersPage);
         $this->assertStringContainsString('response.assets || response.data || []', $purchaseOrdersPage);
@@ -78,7 +79,8 @@ class UserFacingCopyTest extends TestCase
         $this->assertStringNotContainsString('Sơ đồ chức năng BFD', $sidebar);
         $operationalQuickActions = str($quickActions)->between('if (isOperationalRole) {', 'if (isSupplier) {')->toString();
         $this->assertStringNotContainsString("to: '/purchase-orders'", $operationalQuickActions);
-        $this->assertStringContainsString('Quản lý hồ sơ', $vi);
+        $this->assertStringContainsString('Quản lý danh mục và hồ sơ', $vi);
+        $this->assertStringContainsString('Hồ sơ người dùng', $vi);
         $this->assertStringContainsString('Khấu hao ≥ 75%', $vi);
         $this->assertStringNotContainsString('Khấu hao ≥ 90%', $vi);
     }

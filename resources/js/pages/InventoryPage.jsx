@@ -311,6 +311,16 @@ const InventoryPage = ({ user }) => {
             )
         },
         {
+            key: 'inventory_result',
+            label: 'Kết quả kiểm kê',
+            render: (value, row) => (
+                <div>
+                    <p className="text-sm text-text">{value || 'Chưa có kết quả'}</p>
+                    <p className="text-xs text-text-muted">Thực tế: {row.actual_status || 'Chưa ghi nhận'}</p>
+                </div>
+            )
+        },
+        {
             key: 'actions',
             label: '',
             align: 'right',

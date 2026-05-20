@@ -41,6 +41,12 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             labelKey: 'nav.myRequests',
             icon: 'requests'
         },
+        profile: {
+            id: 'profile',
+            path: '/profile',
+            labelKey: 'nav.userProfile',
+            icon: 'users',
+        },
         requests: {
             id: 'requests',
             path: '/requests',
@@ -88,6 +94,24 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             path: '/maintenance', 
             labelKey: 'nav.maintenance', 
             icon: 'maintenance'
+        },
+        preventiveMaintenance: {
+            id: 'maintenance-preventive',
+            path: '/maintenance#preventive',
+            labelKey: 'nav.preventiveMaintenance',
+            icon: 'maintenance',
+        },
+        repairEvents: {
+            id: 'maintenance-repair',
+            path: '/maintenance#repair',
+            labelKey: 'nav.repair',
+            icon: 'maintenance',
+        },
+        repairLogs: {
+            id: 'repair-logs',
+            path: '/maintenance#repair-log',
+            labelKey: 'nav.repairLogs',
+            icon: 'history',
         },
         inventory: {
             id: 'inventory',
@@ -184,6 +208,7 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.assets,
             navItems.locations,
             navItems.suppliers,
+            navItems.profile,
         ]),
         bfdGroup('bfd-orders', 'nav.bfdOrders', 'purchaseOrders', [
             navItems.purchaseOrders,
@@ -193,18 +218,13 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.handover,
         ]),
         bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
-            navItems.maintenance,
+            navItems.preventiveMaintenance,
+            navItems.repairEvents,
+            navItems.repairLogs,
         ]),
         bfdGroup('bfd-inventory-disposal', 'nav.bfdInventoryDisposal', 'inventory', [
             navItems.inventory,
             navItems.disposal,
-        ]),
-        bfdGroup('bfd-records', 'nav.recordsManagement', 'history', [
-            navItems.assetRecords,
-            navItems.handoverRecords,
-            navItems.returnRecords,
-            navItems.inventoryRecords,
-            navItems.maintenanceRecords,
         ]),
         bfdGroup('bfd-reports', 'nav.bfdReports', 'reports', [
             navItems.reports,
@@ -222,10 +242,11 @@ const Sidebar = ({ collapsed, mobileOpen, onToggle, onExpand, onMobileClose, use
             navItems.assets,
         ]),
         navItems.myDevices,
-        {
-            ...navItems.maintenance,
-            labelKey: 'nav.repair',
-        },
+        bfdGroup('bfd-maintenance', 'nav.bfdMaintenance', 'maintenance', [
+            navItems.preventiveMaintenance,
+            navItems.repairEvents,
+            navItems.repairLogs,
+        ]),
         bfdGroup('bfd-inventory-disposal', 'nav.bfdInventoryDisposal', 'inventory', [
             navItems.inventory,
             navItems.disposal,

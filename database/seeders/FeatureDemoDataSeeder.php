@@ -729,7 +729,13 @@ class FeatureDemoDataSeeder extends Seeder
                         'expected_location' => $asset->location,
                         'actual_location' => $actualLocation,
                         'result' => $result,
-                        'condition_note' => $result === InventoryCheckItem::RESULT_DAMAGED ? 'Có dấu hiệu hư hỏng, cần tạo lịch bảo trì.' : null,
+                        'condition_note' => match ($result) {
+                            InventoryCheckItem::RESULT_DAMAGED => 'Có dấu hiệu hư hỏng, cần tạo lịch bảo trì.',
+                            InventoryCheckItem::RESULT_MOVED => 'Thiết bị hoạt động bình thường nhưng đang ở vị trí phát sinh.',
+                            InventoryCheckItem::RESULT_MISSING => 'Chưa tìm thấy tại vị trí dự kiến, cần đối soát lại.',
+                            InventoryCheckItem::RESULT_MATCHED => 'Thiết bị đúng vị trí, tình trạng sử dụng tốt.',
+                            default => 'Đã ghi nhận tình trạng thực tế trong đợt kiểm kê.',
+                        },
                         'counted_by_user_id' => $technician->id,
                         'checked_at' => $status === InventoryCheck::STATUS_IN_PROGRESS ? null : now()->subDays($number),
                         'note' => 'Dòng kiểm kê demo cho thiết bị ' . $asset->asset_code,
@@ -737,6 +743,49 @@ class FeatureDemoDataSeeder extends Seeder
                 );
             }
         }
+
+        $snapshot = InventoryCheck::updateOrCreate(
+            ['code' => 'DEMO-INV-SNAPSHOT'],
+            [
+                'title' => 'Kiểm kê demo có dữ liệu hiển thị',
+                'check_date' => now()->toDateString(),
+                'status' => InventoryCheck::STATUS_COMPLETED,
+                'created_by_user_id' => $manager->id,
+                'completed_by_user_id' => $technician->id,
+                'completed_at' => now()->subHour(),
+                'location' => 'Toàn bộ văn phòng demo',
+                'note' => 'Snapshot demo để bảng kiểm kê luôn có người kiểm, tình trạng thực tế và kết quả kiểm kê.',
+            ]
+        );
+
+        $assets->take(30)->values()->each(function (Asset $asset, int $index) use ($snapshot, $technician): void {
+            $result = [
+                InventoryCheckItem::RESULT_MATCHED,
+                InventoryCheckItem::RESULT_MOVED,
+                InventoryCheckItem::RESULT_DAMAGED,
+                InventoryCheckItem::RESULT_MISSING,
+            ][$index % 4];
+
+            InventoryCheckItem::updateOrCreate(
+                ['inventory_check_id' => $snapshot->id, 'asset_id' => $asset->id],
+                [
+                    'expected_status' => $asset->status,
+                    'actual_status' => $result === InventoryCheckItem::RESULT_DAMAGED ? Asset::STATUS_MAINTENANCE : $asset->status,
+                    'expected_location' => $asset->location,
+                    'actual_location' => $result === InventoryCheckItem::RESULT_MOVED ? 'Vị trí phát sinh trong kiểm kê' : $asset->location,
+                    'result' => $result,
+                    'condition_note' => match ($result) {
+                        InventoryCheckItem::RESULT_DAMAGED => 'Có dấu hiệu hư hỏng, cần tạo lịch bảo trì.',
+                        InventoryCheckItem::RESULT_MOVED => 'Hoạt động bình thường, cần cập nhật vị trí thực tế.',
+                        InventoryCheckItem::RESULT_MISSING => 'Chưa tìm thấy tại vị trí dự kiến, cần đối soát lại.',
+                        default => 'Thiết bị đúng vị trí, tình trạng sử dụng tốt.',
+                    },
+                    'counted_by_user_id' => $technician->id,
+                    'checked_at' => now()->subMinutes(30 - $index),
+                    'note' => 'Snapshot kiểm kê demo cho thiết bị ' . $asset->asset_code,
+                ]
+            );
+        });
     }
 
     /**

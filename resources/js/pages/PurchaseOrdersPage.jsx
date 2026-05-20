@@ -239,13 +239,13 @@ const PurchaseOrdersPage = ({ user }) => {
     };
 
     const handleDelete = async (order) => {
-        if (!window.confirm('Bạn chắc chắn muốn xóa?')) {
+        if (!window.confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) {
             return;
         }
 
         try {
             await purchaseOrdersApi.delete(order.id);
-            toast.success('Xóa đơn hàng thành công');
+            toast.success('Đã hủy đơn hàng thành công');
             setDetailModalOpen(false);
             setSelectedOrder(null);
             fetchOrders(pagination.current_page);
@@ -399,6 +399,11 @@ const PurchaseOrdersPage = ({ user }) => {
                     <Button size="sm" variant="ghost" onClick={() => handleOpenDetail(row)}>
                         Chi tiết
                     </Button>
+                    {(canManageOrders || isSupplier) && row.status !== 'delivered' && (
+                        <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(row, 'delivered')}>
+                            Cập nhật trạng thái
+                        </Button>
+                    )}
                 </div>
             ),
         },
@@ -547,7 +552,7 @@ const PurchaseOrdersPage = ({ user }) => {
                                         Sửa
                                     </Button>
                                     <Button variant="danger" onClick={() => handleDelete(selectedOrder)}>
-                                        Xóa
+                                        Hủy
                                     </Button>
                                 </>
                             )}

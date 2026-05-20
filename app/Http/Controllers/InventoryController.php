@@ -370,6 +370,8 @@ class InventoryController extends Controller
                 'depreciation_percentage' => $asset->getDepreciationPercentage(),
                 'last_checked_at' => $asset->latestInventoryItem?->checked_at?->toISOString(),
                 'actual_condition' => $asset->latestInventoryItem?->condition_note,
+                'inventory_result' => $asset->latestInventoryItem?->result,
+                'actual_status' => $asset->latestInventoryItem?->actual_status,
                 'checker' => $asset->latestInventoryItem?->countedBy ? [
                     'id' => $asset->latestInventoryItem->countedBy->id,
                     'name' => $asset->latestInventoryItem->countedBy->name,
